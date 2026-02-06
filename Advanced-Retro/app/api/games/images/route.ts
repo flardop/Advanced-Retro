@@ -38,12 +38,21 @@ export async function GET(request: NextRequest) {
       preferSource: preferSource || 'libretro',
     });
 
+    // Log para debugging
+    console.log(`Searching images for: "${gameName}" on ${platform || 'game-boy-color'}`);
+    console.log(`Found ${results.length} result(s):`, results.map(r => ({ source: r.source, url: r.url })));
+
     return NextResponse.json({
       success: true,
       gameName,
       platform: platform || 'game-boy-color',
       images: results,
       count: results.length,
+      debug: {
+        searchedName: gameName,
+        platform: platform || 'game-boy-color',
+        sourcesTried: ['libretro', 'splash', 'igdb'],
+      },
     });
   } catch (error) {
     console.error('Error in /api/games/images:', error);
