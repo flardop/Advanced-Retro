@@ -1,10 +1,42 @@
-import { getFeaturedProducts } from '@/lib/data';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { supabaseClient } from '@/lib/supabaseClient';
+import { sampleProducts } from '@/lib/sampleData';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getProductImageUrl } from '@/lib/imageUrl';
 
-export default async function FeaturedProducts() {
-  const products = await getFeaturedProducts(8);
+export default function FeaturedProducts() {
+  const [products, setProducts] = useState<any[]>(sampleProducts.slice(0, 8));
+
+  useEffect(() => {
+    const load = async () => {
+      if (!supabaseClient) {
+        setProducts(sampleProducts.slice(0, 8));
+        return;
+      }
+      try {
+        const { data, error } = await supabaseClient
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(8);
+        if (error) {
+          console.warn('Error fetching featured products:', error);
+          setProducts(sampleProducts.slice(0, 8));
+          return;
+        }
+        if (data && data.length > 0) {
+          setProducts(data);
+        }
+      } catch (error) {
+        console.warn('Exception fetching featured products:', error);
+        setProducts(sampleProducts.slice(0, 8));
+      }
+    };
+    load();
+  }, []);
 
   return (
     <section className="section">
