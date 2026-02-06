@@ -33,38 +33,58 @@ async function searchLibRetro(
 
     const platformPath = platformMap[platform] || platformMap['game-boy-color'];
     
-    // Normalizar nombre del juego para URL
-    const normalizedName = gameName
-      .replace(/[^a-zA-Z0-9\s]/g, '')
-      .replace(/\s+/g, '%20')
-      .trim();
-
-    // Intentar diferentes variantes del nombre
-    const variants = [
-      `${normalizedName}%20(USA).png`,
-      `${normalizedName}%20(Europe).png`,
-      `${normalizedName}%20(USA,%20Europe).png`,
-      `${normalizedName}.png`,
+    // Normalizar nombre del juego - mantener caracteres especiales comunes
+    const cleanName = gameName.trim();
+    
+    // Generar múltiples variantes del nombre
+    const nameVariants = [
+      cleanName, // Nombre original
+      cleanName.replace(/[^a-zA-Z0-9\s]/g, ''), // Sin caracteres especiales
+      cleanName.toLowerCase(), // Minúsculas
+      cleanName.toUpperCase(), // Mayúsculas
+      cleanName.replace(/\s+/g, ' ').trim(), // Espacios normalizados
     ];
 
+    // Regiones comunes
+    const regions = ['(USA)', '(Europe)', '(USA, Europe)', '(Japan)', '(World)', ''];
+    
     const baseUrl = 'https://thumbnails.libretro.com';
     const boxartPath = `${platformPath}/Named_Boxarts`;
 
-    for (const variant of variants) {
-      const url = `${baseUrl}/${boxartPath}/${variant}`;
+    // Intentar todas las combinaciones
+    for (const nameVariant of nameVariants) {
+      const encodedName = encodeURIComponent(nameVariant);
       
-      // Verificar si la imagen existe (HEAD request)
-      try {
-        const response = await fetch(url, { method: 'HEAD' });
-        if (response.ok) {
-          return {
-            url,
-            source: 'libretro',
-            type: 'boxart',
-          };
+      for (const region of regions) {
+        const fileName = region 
+          ? `${encodedName}%20${encodeURIComponent(region)}.png`
+          : `${encodedName}.png`;
+        
+        const url = `${baseUrl}/${boxartPath}/${fileName}`;
+        
+        // Verificar si la imagen existe (HEAD request con timeout)
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 segundos timeout
+          
+          const response = await fetch(url, { 
+            method: 'HEAD',
+            signal: controller.signal,
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (response.ok && response.status === 200) {
+            return {
+              url,
+              source: 'libretro',
+              type: 'boxart',
+            };
+          }
+        } catch (err) {
+          // Continuar con siguiente variante
+          continue;
         }
-      } catch {
-        // Continuar con siguiente variante
       }
     }
 
@@ -165,11 +185,15 @@ async function searchSplash(
   platform: string = 'game-boy'
 ): Promise<GameImageResult | null> {
   try {
-    // Convertir nombre a slug
-    const slug = gameName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    // Generar múltiples slugs posibles
+    const slugVariants = [
+      // Slug simple
+      gameName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+      // Sin "the", "a", etc.
+      gameName.toLowerCase().replace(/\b(the|a|an)\b/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+      // Con guiones preservados
+      gameName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+    ];
 
     const platformMap: Record<string, string> = {
       'game-boy': 'game-boy',
@@ -178,20 +202,35 @@ async function searchSplash(
     };
 
     const platformSlug = platformMap[platform] || 'game-boy';
-    const url = `https://splash.games.directory/covers/${platformSlug}/${slug}.png`;
 
-    // Verificar si existe
-    try {
-      const response = await fetch(url, { method: 'HEAD' });
-      if (response.ok) {
-        return {
-          url,
-          source: 'splash',
-          type: 'cover',
-        };
+    for (const slug of slugVariants) {
+      if (!slug) continue;
+      
+      const url = `https://splash.games.directory/covers/${platformSlug}/${slug}.png`;
+
+      // Verificar si existe con timeout
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch(url, { 
+          method: 'HEAD',
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok && response.status === 200) {
+          return {
+            url,
+            source: 'splash',
+            type: 'cover',
+          };
+        }
+      } catch {
+        // Continuar con siguiente variante
+        continue;
       }
-    } catch {
-      // No encontrado
     }
 
     return null;
@@ -210,41 +249,7 @@ export async function searchGameImages(
 ): Promise<GameImageResult[]> {
   const { gameName, platform = 'game-boy-color', preferSource = 'libretro' } = options;
 
-  const results: GameImageResult[] = [];
-  const sources = ['libretro', 'igdb', 'splash'] as const;
-
-  // Ordenar fuentes según preferencia
-  const orderedSources = [
-    preferSource,
-    ...sources.filter((s) => s !== preferSource),
-  ];
-
-  for (const source of orderedSources) {
-    let result: GameImageResult | null = null;
-
-    switch (source) {
-      case 'libretro':
-        result = await searchLibRetro(gameName, platform);
-        break;
-      case 'igdb':
-        result = await searchIGDB(gameName, platform);
-        break;
-      case 'splash':
-        result = await searchSplash(gameName, platform);
-        break;
-    }
-
-    if (result) {
-      results.push(result);
-      // Si encontramos una imagen de buena calidad, podemos parar aquí
-      if (result.source === 'libretro' || result.source === 'igdb') {
-        break;
-      }
-    }
-  }
-
-  // Si no encontramos nada, retornar placeholder
-  if (results.length === 0) {
+  if (!gameName || !gameName.trim()) {
     return [
       {
         url: '/placeholder.svg',
@@ -254,7 +259,61 @@ export async function searchGameImages(
     ];
   }
 
-  return results;
+  const results: GameImageResult[] = [];
+  const sources = ['libretro', 'splash', 'igdb'] as const;
+
+  // Ordenar fuentes según preferencia, pero siempre intentar todas
+  const orderedSources = [
+    preferSource,
+    ...sources.filter((s) => s !== preferSource),
+  ];
+
+  // Intentar todas las fuentes en paralelo para mayor velocidad
+  const searchPromises = orderedSources.map(async (source) => {
+    try {
+      switch (source) {
+        case 'libretro':
+          return await searchLibRetro(gameName, platform);
+        case 'igdb':
+          return await searchIGDB(gameName, platform);
+        case 'splash':
+          return await searchSplash(gameName, platform);
+        default:
+          return null;
+      }
+    } catch (error) {
+      console.error(`Error searching ${source}:`, error);
+      return null;
+    }
+  });
+
+  const searchResults = await Promise.all(searchPromises);
+
+  // Filtrar resultados nulos y agregar a la lista
+  for (const result of searchResults) {
+    if (result && result.url !== '/placeholder.svg') {
+      results.push(result);
+    }
+  }
+
+  // Si encontramos resultados, retornarlos (priorizar según orden)
+  if (results.length > 0) {
+    // Ordenar: preferSource primero, luego otros
+    return results.sort((a, b) => {
+      const aIndex = orderedSources.indexOf(a.source);
+      const bIndex = orderedSources.indexOf(b.source);
+      return aIndex - bIndex;
+    });
+  }
+
+  // Si no encontramos nada, retornar placeholder
+  return [
+    {
+      url: '/placeholder.svg',
+      source: 'fallback',
+      type: 'cover',
+    },
+  ];
 }
 
 /**
