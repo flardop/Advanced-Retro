@@ -208,10 +208,10 @@ async function searchSplash(
       
       const url = `https://splash.games.directory/covers/${platformSlug}/${slug}.png`;
 
-      // Verificar si existe con timeout
+      // Verificar si existe con timeout y mejor manejo de errores
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const timeoutId = setTimeout(() => controller.abort(), 2000); // Reducido a 2 segundos
         
         const response = await fetch(url, { 
           method: 'HEAD',
@@ -220,6 +220,12 @@ async function searchSplash(
         
         clearTimeout(timeoutId);
         
+        // Si Splash! devuelve error 500, saltarlo silenciosamente
+        if (response.status === 500) {
+          console.warn('Splash! returned 500 error, skipping');
+          return null;
+        }
+        
         if (response.ok && response.status === 200) {
           return {
             url,
@@ -227,15 +233,22 @@ async function searchSplash(
             type: 'cover',
           };
         }
-      } catch {
-        // Continuar con siguiente variante
-        continue;
+      } catch (err: any) {
+        // Si es error de red o timeout, continuar con siguiente variante
+        if (err.name === 'AbortError' || err.message?.includes('fetch')) {
+          continue;
+        }
+        // Si es error 500 del servidor, retornar null inmediatamente
+        if (err.message?.includes('500')) {
+          console.warn('Splash! service error, skipping');
+          return null;
+        }
       }
     }
 
     return null;
   } catch (error) {
-    console.error('Error searching Splash:', error);
+    console.warn('Error searching Splash! (service may be down):', error);
     return null;
   }
 }
@@ -247,6 +260,7 @@ async function searchSplash(
 export async function searchGameImages(
   options: GameImageSearchOptions
 ): Promise<GameImageResult[]> {
+  // Cambiar preferencia por defecto a 'libretro' ya que Splash! está dando errores
   const { gameName, platform = 'game-boy-color', preferSource = 'libretro' } = options;
 
   if (!gameName || !gameName.trim()) {
@@ -260,7 +274,8 @@ export async function searchGameImages(
   }
 
   const results: GameImageResult[] = [];
-  const sources = ['libretro', 'splash', 'igdb'] as const;
+  // Cambiar orden: LibRetro primero (más confiable), luego IGDB, Splash al final
+  const sources = ['libretro', 'igdb', 'splash'] as const;
 
   // Ordenar fuentes según preferencia, pero siempre intentar todas
   const orderedSources = [
