@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#11131a"/>
+  <rect x="80" y="120" width="640" height="560" fill="#161a26" stroke="#24283a" stroke-width="8"/>
+  <circle cx="240" cy="320" r="60" fill="#2cdbf5" opacity="0.6"/>
+  <rect x="180" y="440" width="440" height="20" fill="#7df9ff" opacity="0.4"/>
+  <rect x="180" y="480" width="360" height="16" fill="#a2a7bf" opacity="0.5"/>
+  <text x="400" y="220" text-anchor="middle" fill="#7df9ff" font-family="Arial, sans-serif" font-size="28">
+    ADVANCED RETRO
+  </text>
+  <text x="400" y="260" text-anchor="middle" fill="#a2a7bf" font-family="Arial, sans-serif" font-size="16">
+    Imagen pendiente
+  </text>
+</svg>
