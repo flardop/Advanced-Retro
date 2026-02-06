@@ -5,6 +5,8 @@ import Benefits from '@/components/sections/Benefits';
 import RetroStory from '@/components/sections/RetroStory';
 import FinalCTA from '@/components/sections/FinalCTA';
 
+export const dynamic = 'force-dynamic';
+
 export default function HomePage() {
   return (
     <>
