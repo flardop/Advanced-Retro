@@ -1,11 +1,20 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
     <footer className="border-t border-line mt-20">
       <div className="container py-10 grid gap-8 md:grid-cols-4 text-sm text-textMuted">
         <div>
-          <p className="title-display text-primary">ADVANCED RETRO</p>
+          <Link href="/" className="inline-block">
+            <Image
+              src="/logo.png"
+              alt="Advanced Retro"
+              width={160}
+              height={42}
+              className="h-10 w-auto object-contain"
+            />
+          </Link>
           <p className="mt-2">
             Tienda premium de retro gaming y coleccionismo.
           </p>

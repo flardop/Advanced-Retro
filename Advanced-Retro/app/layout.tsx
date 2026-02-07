@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: 'ADVANCED RETRO — Premium Retro E-commerce',
   description: 'Tienda premium de retro gaming y coleccionismo.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
   openGraph: {
     title: 'ADVANCED RETRO',
     description: 'Experiencia premium retro gaming.',

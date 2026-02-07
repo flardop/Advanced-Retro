@@ -38,6 +38,11 @@ function LoginForm() {
           toast.error('Ya existe una cuenta con este correo. Inicia sesión.');
           return;
         }
+        if (data?.session) {
+          toast.success('Cuenta creada. Ya estás dentro.');
+          router.push('/perfil');
+          return;
+        }
         toast.success(
           'Te hemos enviado un correo de confirmación. Haz clic en el enlace del correo para activar tu cuenta. Revisa también la carpeta de spam.',
           { duration: 8000 }

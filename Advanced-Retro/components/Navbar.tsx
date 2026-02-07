@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
 
@@ -22,8 +23,15 @@ export default function Navbar() {
   return (
     <header className={`sticky top-0 z-50 ${scrolled ? 'bg-[#0b0c10]/90 backdrop-blur border-b border-line' : ''}`}>
       <div className="container h-16 flex items-center justify-between">
-        <Link href="/" className="title-display text-lg text-primary">
-          ADVANCED RETRO
+        <Link href="/" className="flex items-center shrink-0">
+          <Image
+            src="/logo.png"
+            alt="Advanced Retro — Juegos y nostalgia retro"
+            width={180}
+            height={48}
+            className="h-10 w-auto object-contain"
+            priority
+          />
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm text-textMuted">
           <Link href="/tienda">Tienda</Link>
