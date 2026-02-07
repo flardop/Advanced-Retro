@@ -15,6 +15,51 @@ export interface GameImageSearchOptions {
   preferSource?: 'libretro' | 'igdb' | 'splash';
 }
 
+// Simple in-memory cache for runtime to avoid duplicate network requests
+const imageCache = new Map<string, GameImageResult | null>();
+
+// Helper: normalize game name (remove diacritics, trim, normalize spaces)
+function normalizeName(name: string) {
+  return name
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[:\\/\\?"'<>|]/g, '')
+    .trim();
+}
+
+// Helper: slugify for splash
+function slugify(name: string) {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// Helper: HEAD request with retries and timeout
+async function headExists(url: string, timeout = 3000, retries = 2): Promise<boolean> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      const res = await fetch(url, { method: 'HEAD', signal: controller.signal });
+      clearTimeout(id);
+      if (res.ok) return true;
+      // If 404, no need to retry
+      if (res.status === 404) return false;
+      // Otherwise try again
+    } catch (err: any) {
+      if (attempt === retries) return false;
+      // backoff
+      await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+      continue;
+    }
+  }
+  return false;
+}
+
 /**
  * Busca imágenes de juegos desde LibRetro CDN (gratis, sin API key)
  * Formato: https://thumbnails.libretro.com/Nintendo%20-%20Game%20Boy%20Color/Named_Boxarts/[Game Title].png
@@ -34,15 +79,16 @@ async function searchLibRetro(
     const platformPath = platformMap[platform] || platformMap['game-boy-color'];
     
     // Normalizar nombre del juego - mantener caracteres especiales comunes
-    const cleanName = gameName.trim();
-    
+    const cleanName = normalizeName(gameName);
+
     // Generar múltiples variantes del nombre
     const nameVariants = [
-      cleanName, // Nombre original
-      cleanName.replace(/[^a-zA-Z0-9\s]/g, ''), // Sin caracteres especiales
-      cleanName.toLowerCase(), // Minúsculas
-      cleanName.toUpperCase(), // Mayúsculas
-      cleanName.replace(/\s+/g, ' ').trim(), // Espacios normalizados
+      cleanName,
+      cleanName.replace(/[^a-zA-Z0-9\s]/g, ''),
+      cleanName.replace(/Pokemon/g, 'Pokémon'),
+      cleanName.replace(/Pokémon/g, 'Pokemon'),
+      cleanName.toLowerCase(),
+      cleanName.replace(/\s+/g, ' ').trim(),
     ];
 
     // Regiones comunes
@@ -54,37 +100,29 @@ async function searchLibRetro(
     // Intentar todas las combinaciones
     for (const nameVariant of nameVariants) {
       const encodedName = encodeURIComponent(nameVariant);
-      
+
       for (const region of regions) {
-        const fileName = region 
+        const fileName = region
           ? `${encodedName}%20${encodeURIComponent(region)}.png`
           : `${encodedName}.png`;
-        
+
         const url = `${baseUrl}/${boxartPath}/${fileName}`;
-        
-        // Verificar si la imagen existe (HEAD request con timeout)
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 segundos timeout
-          
-          const response = await fetch(url, { 
-            method: 'HEAD',
-            signal: controller.signal,
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if (response.ok && response.status === 200) {
-            return {
-              url,
-              source: 'libretro',
-              type: 'boxart',
-            };
-          }
-        } catch (err) {
-          // Continuar con siguiente variante
+
+        // Check cache first
+        const cacheKey = `libretro:${platform}:${url}`;
+        if (imageCache.has(cacheKey)) {
+          const cached = imageCache.get(cacheKey);
+          if (cached) return cached;
           continue;
         }
+
+        const exists = await headExists(url, 3000, 2);
+        if (exists) {
+          const result = { url, source: 'libretro' as const, type: 'boxart' as const };
+          imageCache.set(cacheKey, result);
+          return result;
+        }
+        imageCache.set(cacheKey, null);
       }
     }
 
@@ -109,48 +147,45 @@ async function searchIGDB(
   if (!clientId || !clientSecret) {
     return null; // No hay credenciales configuradas
   }
-
+  // token cache
+  let token: { access_token: string; expires_at: number } | null = (searchIGDB as any)._token || null;
   try {
-    // Obtener token de acceso
-    const tokenResponse = await fetch('https://id.twitch.tv/oauth2/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'client_credentials',
-      }),
-    });
+    if (!token || Date.now() > token.expires_at) {
+      const tokenResponse = await fetch('https://id.twitch.tv/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          grant_type: 'client_credentials',
+        }),
+      });
 
-    if (!tokenResponse.ok) {
-      return null;
+      if (!tokenResponse.ok) return null;
+      const tokenJson = await tokenResponse.json();
+      token = { access_token: tokenJson.access_token, expires_at: Date.now() + (tokenJson.expires_in || 3600) * 1000 - 5000 };
+      (searchIGDB as any)._token = token;
     }
 
-    const { access_token } = await tokenResponse.json();
-
-    // Mapeo de plataformas a IDs de IGDB
     const platformMap: Record<string, number> = {
-      'game-boy': 33, // Game Boy
-      'game-boy-color': 22, // Game Boy Color
-      'game-boy-advance': 24, // Game Boy Advance
+      'game-boy': 33,
+      'game-boy-color': 22,
+      'game-boy-advance': 24,
     };
 
     const platformId = platformMap[platform] || platformMap['game-boy-color'];
 
-    // Buscar juego
+    const cacheKey = `igdb:${platform}:${normalizeName(gameName)}`;
+    if (imageCache.has(cacheKey)) return imageCache.get(cacheKey) || null;
+
     const searchResponse = await fetch('https://api.igdb.com/v4/games', {
       method: 'POST',
       headers: {
         'Client-ID': clientId,
-        Authorization: `Bearer ${access_token}`,
+        Authorization: `Bearer ${token.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        search: gameName,
-        fields: 'name,cover',
-        where: `platforms = ${platformId}`,
-        limit: 1,
-      }),
+      body: `search \"${gameName.replace(/\\\"/g, '\\\\"')}\"; fields name,cover; where platforms = ${platformId}; limit 1;`,
     });
 
     if (!searchResponse.ok) {
@@ -159,17 +194,15 @@ async function searchIGDB(
 
     const games = await searchResponse.json();
     if (!games || games.length === 0 || !games[0].cover) {
+      imageCache.set(cacheKey, null);
       return null;
     }
 
     const coverId = games[0].cover;
     const coverUrl = `https://images.igdb.com/igdb/image/upload/t_cover_big/${coverId}.jpg`;
-
-    return {
-      url: coverUrl,
-      source: 'igdb',
-      type: 'cover',
-    };
+    const result = { url: coverUrl, source: 'igdb' as const, type: 'cover' as const };
+    imageCache.set(cacheKey, result);
+    return result;
   } catch (error) {
     console.error('Error searching IGDB:', error);
     return null;
@@ -186,13 +219,11 @@ async function searchSplash(
 ): Promise<GameImageResult | null> {
   try {
     // Generar múltiples slugs posibles
+    const base = normalizeName(gameName).toLowerCase();
     const slugVariants = [
-      // Slug simple
-      gameName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
-      // Sin "the", "a", etc.
-      gameName.toLowerCase().replace(/\b(the|a|an)\b/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
-      // Con guiones preservados
-      gameName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      slugify(base),
+      slugify(base.replace(/\b(the|a|an)\b/g, '')),
+      slugify(base.replace(/[:;,.()\[\]]/g, '')),
     ];
 
     const platformMap: Record<string, string> = {
@@ -205,45 +236,22 @@ async function searchSplash(
 
     for (const slug of slugVariants) {
       if (!slug) continue;
-      
-      const url = `https://splash.games.directory/covers/${platformSlug}/${slug}.png`;
 
-      // Verificar si existe con timeout y mejor manejo de errores
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000); // Reducido a 2 segundos
-        
-        const response = await fetch(url, { 
-          method: 'HEAD',
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        
-        // Si Splash! devuelve error 500, saltarlo silenciosamente
-        if (response.status === 500) {
-          console.warn('Splash! returned 500 error, skipping');
-          return null;
-        }
-        
-        if (response.ok && response.status === 200) {
-          return {
-            url,
-            source: 'splash',
-            type: 'cover',
-          };
-        }
-      } catch (err: any) {
-        // Si es error de red o timeout, continuar con siguiente variante
-        if (err.name === 'AbortError' || err.message?.includes('fetch')) {
-          continue;
-        }
-        // Si es error 500 del servidor, retornar null inmediatamente
-        if (err.message?.includes('500')) {
-          console.warn('Splash! service error, skipping');
-          return null;
-        }
+      const url = `https://splash.games.directory/covers/${platformSlug}/${slug}.png`;
+      const cacheKey = `splash:${platform}:${url}`;
+      if (imageCache.has(cacheKey)) {
+        const cached = imageCache.get(cacheKey);
+        if (cached) return cached;
+        continue;
       }
+
+      const exists = await headExists(url, 2500, 1);
+      if (exists) {
+        const result = { url, source: 'splash' as const, type: 'cover' as const };
+        imageCache.set(cacheKey, result);
+        return result;
+      }
+      imageCache.set(cacheKey, null);
     }
 
     return null;
