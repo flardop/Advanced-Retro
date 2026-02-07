@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 
 export default function AdminPanel() {
@@ -76,7 +77,7 @@ export default function AdminPanel() {
             <h1 className="title-display text-3xl mt-2">Panel de administración</h1>
             <p className="text-textMuted mt-1">Gestión profesional de productos, pedidos y usuarios.</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="glass px-4 py-3 text-center min-w-[120px]">
               <p className="text-xs text-textMuted">Productos</p>
               <p className="text-primary text-lg font-semibold">{products.length}</p>
@@ -89,6 +90,12 @@ export default function AdminPanel() {
               <p className="text-xs text-textMuted">Usuarios</p>
               <p className="text-primary text-lg font-semibold">{users.length}</p>
             </div>
+            <Link
+              href="/update-images"
+              className="chip bg-primary/20 text-primary hover:bg-primary/30 border border-primary/40"
+            >
+              🖼️ Actualizar imágenes
+            </Link>
           </div>
         </div>
         {errorMessage && (

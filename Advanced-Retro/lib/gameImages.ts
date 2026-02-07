@@ -313,11 +313,11 @@ export async function searchGameImages(
 
   // Si encontramos resultados, retornarlos (priorizar según orden)
   if (results.length > 0) {
-    // Ordenar: preferSource primero, luego otros
+    // Ordenar: preferSource primero, luego otros (fallback al final)
     return results.sort((a, b) => {
-      const aIndex = orderedSources.indexOf(a.source);
-      const bIndex = orderedSources.indexOf(b.source);
-      return aIndex - bIndex;
+      const aIdx = a.source === 'fallback' ? 999 : orderedSources.indexOf(a.source);
+      const bIdx = b.source === 'fallback' ? 999 : orderedSources.indexOf(b.source);
+      return aIdx - bIdx;
     });
   }
 
