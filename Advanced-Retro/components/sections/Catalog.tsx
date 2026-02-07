@@ -29,7 +29,7 @@ export default function Catalog() {
 
   const filtered = useMemo(() => {
     if (active === 'all') return products;
-    return products.filter((p) => p.category_id === active);
+    return products.filter((p) => String(p?.category_id ?? p?.category ?? p?.category?.id) === String(active));
   }, [products, active]);
 
   return (
@@ -45,7 +45,11 @@ export default function Catalog() {
               Todos
             </button>
             {categories.map((c) => (
-              <button key={c.id} className={`chip ${active === c.id ? 'text-primary' : ''}`} onClick={() => setActive(c.id)}>
+              <button
+                key={c.id ?? c.slug ?? c.name}
+                className={`chip ${String(active) === String(c.id ?? c.slug ?? c.name) ? 'text-primary' : ''}`}
+                onClick={() => setActive(String(c.id ?? c.slug ?? c.name))}
+              >
                 {c.name}
               </button>
             ))}

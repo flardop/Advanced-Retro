@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     // Obtener todos los productos
     const { data: products, error: fetchError } = await supabaseAdmin
       .from('products')
-      .select('id, name, images, category_id')
+      .select('*')
       .order('name');
 
     if (fetchError) {
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
 
     // Procesar productos en lotes para no sobrecargar
     for (const product of products) {
-      const categorySlug = categoryMap.get(product.category_id);
+      const categorySlug = categoryMap.get(product.category_id ?? product.category);
       
       // Determinar plataforma según categoría
       let platform: 'game-boy' | 'game-boy-color' | 'game-boy-advance' = 'game-boy-color';

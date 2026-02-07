@@ -32,7 +32,7 @@ async function updateProductImages() {
   // Obtener todos los productos
   const { data: products, error: fetchError } = await supabase
     .from('products')
-    .select('id, name, images, category_id')
+    .select('*')
     .order('name');
 
   if (fetchError) {
@@ -61,7 +61,7 @@ async function updateProductImages() {
   let errors = 0;
 
   for (const product of products) {
-    const categorySlug = categoryMap.get(product.category_id);
+    const categorySlug = categoryMap.get(product.category_id ?? product.category);
     
     // Determinar plataforma según categoría
     let platform: 'game-boy' | 'game-boy-color' | 'game-boy-advance' = 'game-boy-color';
