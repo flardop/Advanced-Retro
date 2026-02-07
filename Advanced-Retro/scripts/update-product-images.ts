@@ -25,6 +25,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const dryRun = process.argv.includes('--dry-run');
+const forceUpdate = process.argv.includes('--force');
 
 async function updateProductImages() {
   console.log('🔍 Obteniendo productos de la base de datos...');
@@ -76,7 +77,7 @@ async function updateProductImages() {
       product.images.length > 0 &&
       product.images.some((img: string) => img && !img.includes('placeholder'));
 
-    if (hasValidImages) {
+    if (hasValidImages && !forceUpdate) {
       console.log(`⏭️  Saltando "${product.name}" (ya tiene imágenes)`);
       skipped++;
       continue;
