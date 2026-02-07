@@ -24,6 +24,8 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const dryRun = process.argv.includes('--dry-run');
+
 async function updateProductImages() {
   console.log('🔍 Obteniendo productos de la base de datos...');
 
@@ -91,20 +93,25 @@ async function updateProductImages() {
         continue;
       }
 
-      // Actualizar producto con nueva imagen
-      const { error: updateError } = await supabase
-        .from('products')
-        .update({
-          images: [imageUrl],
-        })
-        .eq('id', product.id);
-
-      if (updateError) {
-        console.error(`❌ Error actualizando "${product.name}":`, updateError);
-        errors++;
-      } else {
-        console.log(`✅ Actualizado "${product.name}" → ${imageUrl}`);
+      // Actualizar producto con nueva imagen (o simular si dry-run)
+      if (dryRun) {
+        console.log(`(dry-run) ✅ Simulado actualizar "${product.name}" → ${imageUrl}`);
         updated++;
+      } else {
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({
+            images: [imageUrl],
+          })
+          .eq('id', product.id);
+
+        if (updateError) {
+          console.error(`❌ Error actualizando "${product.name}":`, updateError);
+          errors++;
+        } else {
+          console.log(`✅ Actualizado "${product.name}" → ${imageUrl}`);
+          updated++;
+        }
       }
 
       // Pequeña pausa para no sobrecargar las APIs
