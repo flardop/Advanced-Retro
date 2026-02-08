@@ -66,37 +66,6 @@ const nameNormalizations: Record<string, string> = {
 
   // Super Mario Land 2
   'Super Mario Land 2: 6 Golden Coins': 'Super Mario Land 2',
-
-  // Accesos (estos NO tienen equivalente en juegos, se ignoran)
-  'Cable Link Game Boy': null, // Accesorio - ignorar
-  'Caja Misteriosa Estándar': null,
-  'Caja Misteriosa Premium': null,
-  'Caja Original Game Boy': null,
-  'Funda Game Boy original': null,
-  'Lupa Light para Game Boy': null,
-  'Pegatina Donkey Kong saga': null,
-  'Pegatina Kirby': null,
-  'Pegatina Mario Game Boy': null,
-  'Pegatina Metroid': null,
-  'Pegatina Pokémon saga': null,
-  'Pegatina Zelda saga': null,
-  'Caja repro Bubble Bobble': null,
-  'Caja repro Castlevania II': null,
-  'Caja repro Donkey Kong': null,
-  'Caja repro DuckTales': null,
-  'Caja repro Jurassic Park': null,
-  "Caja repro Kirby's Dream Land": null,
-  'Caja repro Lucky Luke': null,
-  'Caja repro Mega Man II': null,
-  'Caja repro Metroid II': null,
-  'Caja repro Pokémon Amarillo': null,
-  'Caja repro Pokémon Azul': null,
-  'Caja repro Pokémon Rojo': null,
-  'Caja repro Super Mario Land': null,
-  'Caja repro Super Mario Land 2': null,
-  'Caja repro Tetris': null,
-  'Caja repro Wario Land': null,
-  "Caja repro Zelda Link's Awakening": null,
 };
 
 async function normalizeProductNames() {

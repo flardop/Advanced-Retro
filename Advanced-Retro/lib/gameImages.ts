@@ -5,14 +5,14 @@
 
 export interface GameImageResult {
   url: string;
-  source: 'libretro' | 'igdb' | 'splash' | 'fallback';
+  source: 'libretro' | 'igdb' | 'splash' | 'rawg' | 'fallback';
   type: 'cover' | 'screenshot' | 'boxart';
 }
 
 export interface GameImageSearchOptions {
   gameName: string;
   platform?: 'game-boy' | 'game-boy-color' | 'game-boy-advance';
-  preferSource?: 'libretro' | 'igdb' | 'splash';
+  preferSource?: 'libretro' | 'igdb' | 'splash' | 'rawg';
 }
 
 // Simple in-memory cache for runtime to avoid duplicate network requests
@@ -262,9 +262,63 @@ async function searchSplash(
 }
 
 /**
- * Función principal para buscar imágenes de juegos
- * Intenta múltiples fuentes según preferencia
+ * Busca imágenes desde RAWG API (gratuito, sin API key requerido)
+ * Formato: https://rawg.io/api/games?search=[game]&page_size=1
+ * Retorna cover_image si está disponible
  */
+async function searchRAWG(
+  gameName: string,
+  platform: string = 'game-boy-color'
+): Promise<GameImageResult | null> {
+  try {
+    const normalizedName = normalizeName(gameName);
+    const cacheKey = `rawg:${platform}:${normalizedName}`;
+
+    if (imageCache.has(cacheKey)) {
+      return imageCache.get(cacheKey) || null;
+    }
+
+    // Hacer búsqueda en RAWG
+    const searchResponse = await fetch(
+      `https://api.rawg.io/api/games?search=${encodeURIComponent(normalizedName)}&page_size=1`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+
+    if (!searchResponse.ok) {
+      imageCache.set(cacheKey, null);
+      return null;
+    }
+
+    const data = (await searchResponse.json()) as any;
+    const games = data.results || [];
+
+    if (games.length === 0) {
+      imageCache.set(cacheKey, null);
+      return null;
+    }
+
+    const game = games[0];
+    // RAWG retorna background_image (poster/cover)
+    const imageUrl = game.background_image;
+
+    if (!imageUrl) {
+      imageCache.set(cacheKey, null);
+      return null;
+    }
+
+    const result: GameImageResult = {
+      url: imageUrl,
+      source: 'rawg' as const,
+      type: 'cover' as const,
+    };
+
+    imageCache.set(cacheKey, result);
+    return result;
+  } catch (error) {
+    console.error('Error searching RAWG:', error);
+    return null;
+  }
+}
 export async function searchGameImages(
   options: GameImageSearchOptions
 ): Promise<GameImageResult[]> {
@@ -282,8 +336,8 @@ export async function searchGameImages(
   }
 
   const results: GameImageResult[] = [];
-  // Cambiar orden: LibRetro primero (más confiable), luego IGDB, Splash al final
-  const sources = ['libretro', 'igdb', 'splash'] as const;
+  // Orden: LibRetro (más confiable), IGDB, Splash, RAWG como fallback
+  const sources = ['libretro', 'igdb', 'splash', 'rawg'] as const;
 
   // Ordenar fuentes según preferencia, pero siempre intentar todas
   const orderedSources = [
@@ -301,6 +355,8 @@ export async function searchGameImages(
           return await searchIGDB(gameName, platform);
         case 'splash':
           return await searchSplash(gameName, platform);
+        case 'rawg':
+          return await searchRAWG(gameName, platform);
         default:
           return null;
       }
