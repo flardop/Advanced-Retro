@@ -20,6 +20,7 @@ export interface Product {
   curiosities: string[];
   tips: string[];
   images: string[];
+  purchase_options?: string[];
   created_at: string;
 }
 

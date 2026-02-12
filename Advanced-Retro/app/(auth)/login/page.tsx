@@ -173,6 +173,16 @@ function LoginForm() {
             </button>
           </div>
 
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <strong className="block mb-1">Configuración OAuth</strong>
+            <p className="text-sm text-textMuted">Para activar Google/Apple pega las credenciales en <code>.env.local</code> o en tu panel de Vercel:</p>
+            <ul className="text-sm mt-2">
+              <li><strong>Google:</strong> `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`</li>
+              <li><strong>Apple:</strong> `APPLE_CLIENT_ID`, `APPLE_CLIENT_SECRET`</li>
+            </ul>
+            <p className="text-xs text-textMuted mt-2">Ver instrucciones completas en <a href="/docs/GOOGLE_OAUTH_SETUP.md" className="underline">GOOGLE_OAUTH_SETUP.md</a></p>
+          </div>
+
           <p className="text-sm text-textMuted mt-6">
             {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
             <button

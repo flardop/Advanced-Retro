@@ -17,11 +17,7 @@ export const sampleProducts = [
     long_description: 'Consola revisada, pads limpios y pantalla restaurada.',
     curiosities: ['Primer modelo lanzado en 1989.'],
     tips: ['Guarda la caja en ambiente seco.'],
-    images: [
-      'https://darrmonhygphreshbplz.supabase.co/storage/v1/object/public/public/games/IMG_3674.jpeg',
-      'https://darrmonhygphreshbplz.supabase.co/storage/v1/object/public/public/games/IMG_3699.jpeg'
-    ],
-    purchase_options: [ 'Juego completo', 'Solo cartucho', 'Caja', 'Manual (completo)', 'Parte interior del manual (separada)' ],
+    images: [],
     created_at: new Date().toISOString(),
   },
   {
@@ -36,10 +32,7 @@ export const sampleProducts = [
     long_description: 'Estado coleccionista con etiquetas intactas.',
     curiosities: ['Uno de los títulos más buscados.'],
     tips: ['Usa fundas protectoras.'],
-    images: [
-      'https://darrmonhygphreshbplz.supabase.co/storage/v1/object/public/public/games/pokemon-azul-manual.jpeg',
-      'https://darrmonhygphreshbplz.supabase.co/storage/v1/object/public/public/games/pokemon-pinball-cartucho.jpeg'
-    ],
+    images: ['/Imagenes/Juegos/Consolas/pokemon-azul-manual.jpeg'],
     purchase_options: [
       'Juego completo',
       'Solo cartucho',
@@ -61,11 +54,7 @@ export const sampleProducts = [
     long_description: 'Incluye una rareza garantizada y extras premium.',
     curiosities: ['La selección cambia cada mes.'],
     tips: ['Ideal para regalar.'],
-    images: [
-      'https://darrmonhygphreshbplz.supabase.co/storage/v1/object/public/public/games/protector-caja-todos.jpeg',
-      'https://darrmonhygphreshbplz.supabase.co/storage/v1/object/public/public/games/parte-interior-todos.jpeg'
-    ],
-    purchase_options: [ 'Juego completo', 'Solo cartucho', 'Caja', 'Manual (completo)', 'Parte interior del manual (separada)' ],
+    images: [],
     created_at: new Date().toISOString(),
   },
 ];
