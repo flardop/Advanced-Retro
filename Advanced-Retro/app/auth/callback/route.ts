@@ -5,10 +5,23 @@ import { cookies } from 'next/headers';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
+  const oauthError = searchParams.get('error');
+  const oauthErrorDescription = searchParams.get('error_description');
   const origin = new URL(request.url).origin;
   const redirectTo = (searchParams.get('next') || '/perfil').startsWith('/')
     ? searchParams.get('next')!
     : '/perfil';
+
+  if (oauthError) {
+    if (oauthError === 'access_denied') {
+      return NextResponse.redirect(`${origin}/login?error=oauth_cancelled`);
+    }
+
+    const reason = oauthErrorDescription || oauthError;
+    return NextResponse.redirect(
+      `${origin}/login?error=oauth_failed&reason=${encodeURIComponent(reason)}`
+    );
+  }
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=missing_code`);

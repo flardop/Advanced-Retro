@@ -19,6 +19,11 @@ function LoginForm() {
     if (err === 'confirm') toast.error('El enlace de confirmación ha expirado o no es válido. Inicia sesión y te podemos reenviar el correo.');
     if (err === 'missing_code') toast.error('Faltan datos en el enlace. Prueba de nuevo desde el correo.');
     if (err === 'config') toast.error('Configuración de auth incompleta.');
+    if (err === 'oauth_cancelled') toast.error('Has cancelado el acceso social. Puedes intentarlo de nuevo.');
+    if (err === 'oauth_failed') {
+      const reason = searchParams.get('reason');
+      toast.error(reason ? decodeURIComponent(reason) : 'No se pudo completar el acceso con proveedor social.');
+    }
   }, [searchParams]);
 
   const handleAuth = async () => {
@@ -102,7 +107,18 @@ function LoginForm() {
       provider,
       options: { redirectTo },
     });
-    if (error) toast.error(error.message);
+    if (error) {
+      const msg = error.message?.toLowerCase() || '';
+      if (msg.includes('provider') && msg.includes('enabled')) {
+        toast.error(
+          provider === 'google'
+            ? 'Google no está habilitado en Supabase (Authentication > Providers > Google).'
+            : 'Apple no está habilitado en Supabase (Authentication > Providers > Apple).'
+        );
+        return;
+      }
+      toast.error(error.message);
+    }
   };
 
   return (
@@ -173,14 +189,12 @@ function LoginForm() {
             </button>
           </div>
 
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-            <strong className="block mb-1">Configuración OAuth</strong>
-            <p className="text-sm text-textMuted">Para activar Google/Apple pega las credenciales en <code>.env.local</code> o en tu panel de Vercel:</p>
-            <ul className="text-sm mt-2">
-              <li><strong>Google:</strong> `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`</li>
-              <li><strong>Apple:</strong> `APPLE_CLIENT_ID`, `APPLE_CLIENT_SECRET`</li>
-            </ul>
-            <p className="text-xs text-textMuted mt-2">Ver instrucciones completas en <a href="/docs/GOOGLE_OAUTH_SETUP.md" className="underline">GOOGLE_OAUTH_SETUP.md</a></p>
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
+            <strong className="block mb-1">Configurar Google / Apple</strong>
+            <p className="text-textMuted">
+              Estos proveedores se activan en Supabase: <strong>Authentication → Providers</strong>.
+              No necesitas variables OAuth de Google/Apple en este proyecto.
+            </p>
           </div>
 
           <p className="text-sm text-textMuted mt-6">
