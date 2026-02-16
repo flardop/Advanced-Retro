@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
+const nextPublicSupabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const nextPublicStripePublishableKey =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY || '';
+
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: nextPublicSupabaseAnonKey,
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: nextPublicStripePublishableKey,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
