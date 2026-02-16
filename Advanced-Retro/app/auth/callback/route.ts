@@ -15,7 +15,10 @@ export async function GET(request: Request) {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.ANON;
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.redirect(`${origin}/login?error=config`);
   }
