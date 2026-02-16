@@ -97,7 +97,7 @@ function LoginForm() {
     }
   };
 
-  const oauthLogin = async (provider: 'google' | 'apple') => {
+  const oauthLogin = async (provider: 'google' | 'apple' | 'github') => {
     if (!supabaseClient) {
       toast.error('Configura Supabase en .env.local');
       return;
@@ -113,7 +113,9 @@ function LoginForm() {
         toast.error(
           provider === 'google'
             ? 'Google no está habilitado en Supabase (Authentication > Providers > Google).'
-            : 'Apple no está habilitado en Supabase (Authentication > Providers > Apple).'
+            : provider === 'apple'
+              ? 'Apple no está habilitado en Supabase (Authentication > Providers > Apple).'
+              : 'GitHub no está habilitado en Supabase (Authentication > Providers > GitHub).'
         );
         return;
       }
@@ -183,6 +185,9 @@ function LoginForm() {
           <div className="grid gap-2">
             <button className="button-secondary" onClick={() => oauthLogin('google')}>
               Continuar con Google
+            </button>
+            <button className="button-secondary" onClick={() => oauthLogin('github')}>
+              Continuar con GitHub
             </button>
             <button className="button-secondary" onClick={() => oauthLogin('apple')}>
               Continuar con Apple
