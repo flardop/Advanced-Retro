@@ -105,7 +105,7 @@ export default function Catalog() {
                   src={getProductImageUrl(product)}
                   alt={product.name}
                   fill
-                  className="object-cover"
+                  className="object-contain p-2"
                 />
                 <span className="absolute top-3 left-3 chip text-xs">{product.status}</span>
               </div>

@@ -1,23 +1,37 @@
 'use client';
 
+import Link from 'next/link';
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { sampleProducts } from '@/lib/sampleData';
 import { useCartStore } from '@/store/cartStore';
-import Image from 'next/image';
-import toast from 'react-hot-toast';
 import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
+import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
 
 type BundleOptionType = 'cartucho' | 'caja' | 'manual' | 'insert' | 'protector';
+type EditionKind = 'original' | 'repro' | 'sin-especificar';
 
 type BundleOption = {
   id: string;
   name: string;
   price: number;
   image?: string;
+  images: string[];
   stock: number;
   type: BundleOptionType;
   defaultSelected: boolean;
+};
+
+type EditionOption = {
+  id: string;
+  name: string;
+  edition: EditionKind;
+  price: number;
+  stock: number;
+  image?: string;
+  score: number;
 };
 
 type ProductSocialReview = {
@@ -54,6 +68,15 @@ const BUNDLE_TYPE_LABEL: Record<BundleOptionType, string> = {
   protector: 'Protector',
 };
 
+const EDITION_LABEL: Record<EditionKind, string> = {
+  original: 'Original',
+  repro: 'Repro 1:1',
+  'sin-especificar': 'Sin etiqueta',
+};
+
+const EDITION_ORDER: EditionKind[] = ['original', 'repro', 'sin-especificar'];
+const PLACEHOLDER = '/placeholder.svg';
+
 function normalizeText(value: string): string {
   return value
     .normalize('NFD')
@@ -66,7 +89,10 @@ function normalizeText(value: string): string {
 
 function cleanBaseTitle(name: string): string {
   return normalizeText(name)
-    .replace(/\b(caja|repro|manual|insert|interior|protector|cartucho|pegatina|funda|game boy|universal)\b/g, ' ')
+    .replace(
+      /\b(caja|repro|replica|reproduccion|manual|insert|interior|protector|cartucho|pegatina|funda|game boy|color|advance|original|oficial|autentico|authentic|oem|version|edicion|completo|solo)\b/g,
+      ' '
+    )
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -84,14 +110,43 @@ function scoreByTokens(base: string, candidate: string): number {
   return overlap / Math.max(baseTokens.size, candidateTokens.size);
 }
 
+function isGameCategory(category: unknown): boolean {
+  return String(category || '').trim() === 'juegos-gameboy';
+}
+
 function detectOptionType(product: any): BundleOptionType | null {
   const n = normalizeText(String(product?.name || ''));
   if (!n) return null;
   if (n.includes('manual')) return 'manual';
-  if (n.includes('insert')) return 'insert';
+  if (n.includes('insert') || n.includes('inlay') || n.includes('interior')) return 'insert';
   if (n.includes('protector')) return 'protector';
   if (n.includes('caja') || String(product?.category || '').trim() === 'cajas-gameboy') return 'caja';
   return null;
+}
+
+function detectEditionKind(product: any): EditionKind {
+  const source = normalizeText(`${String(product?.name || '')} ${String(product?.description || '')}`);
+  if (
+    /\b(repro|replica|reproduccion|1 1|1x1|copy|copia|fanmade|replacement)\b/.test(source)
+  ) {
+    return 'repro';
+  }
+  if (/\b(original|oficial|autentico|authentic|oem|genuine)\b/.test(source)) {
+    return 'original';
+  }
+  return 'sin-especificar';
+}
+
+function uniqueStrings(values: string[]): string[] {
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of values) {
+    const value = typeof raw === 'string' ? raw.trim() : '';
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
 }
 
 function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[] {
@@ -100,10 +155,15 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
     name: String(baseProduct.name || 'Cartucho'),
     price: Number(baseProduct.price || 0),
     image: getProductImageUrl(baseProduct),
+    images: getProductImageUrls(baseProduct),
     stock: Number(baseProduct.stock || 0),
     type: 'cartucho',
     defaultSelected: true,
   };
+
+  if (!isGameCategory(baseProduct?.category)) {
+    return [base];
+  }
 
   const baseTitle = cleanBaseTitle(String(baseProduct.name || ''));
   const matchesByType: Partial<Record<BundleOptionType, { product: any; score: number }>> = {};
@@ -111,6 +171,7 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
   for (const product of allProducts) {
     if (!product || String(product.id) === String(baseProduct.id)) continue;
     if (!Number.isFinite(Number(product.price))) continue;
+    if (Number(product.stock || 0) <= 0) continue;
 
     const type = detectOptionType(product);
     if (!type) continue;
@@ -134,6 +195,7 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
         name: String(found.product.name || BUNDLE_TYPE_LABEL[type]),
         price: Number(found.product.price || 0),
         image: getProductImageUrl(found.product),
+        images: getProductImageUrls(found.product),
         stock: Number(found.product.stock || 0),
         type,
         defaultSelected: false,
@@ -142,6 +204,73 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
     .filter((item): item is BundleOption => Boolean(item));
 
   return [base, ...extras];
+}
+
+function buildEditionOptions(baseProduct: any, allProducts: any[]): EditionOption[] {
+  const byEdition = new Map<EditionKind, EditionOption>();
+  const baseEdition = detectEditionKind(baseProduct);
+  const baseCategory = normalizeText(String(baseProduct?.category || ''));
+  const baseTitle = cleanBaseTitle(String(baseProduct?.name || ''));
+
+  byEdition.set(baseEdition, {
+    id: String(baseProduct.id),
+    name: String(baseProduct.name || 'Producto'),
+    edition: baseEdition,
+    price: Number(baseProduct.price || 0),
+    stock: Number(baseProduct.stock || 0),
+    image: getProductImageUrl(baseProduct),
+    score: 1,
+  });
+
+  for (const product of allProducts) {
+    if (!product || String(product.id) === String(baseProduct.id)) continue;
+
+    const productCategory = normalizeText(String(product?.category || ''));
+    if (baseCategory && productCategory !== baseCategory) continue;
+
+    const candidateTitle = cleanBaseTitle(String(product.name || ''));
+    const score = scoreByTokens(baseTitle, candidateTitle);
+    if (score < 0.5) continue;
+
+    const edition = detectEditionKind(product);
+    const current = byEdition.get(edition);
+    if (!current || score > current.score) {
+      byEdition.set(edition, {
+        id: String(product.id),
+        name: String(product.name || 'Producto'),
+        edition,
+        price: Number(product.price || 0),
+        stock: Number(product.stock || 0),
+        image: getProductImageUrl(product),
+        score,
+      });
+    }
+  }
+
+  const list = EDITION_ORDER.map((edition) => byEdition.get(edition)).filter(
+    (item): item is EditionOption => Boolean(item)
+  );
+
+  if (!list.find((item) => item.id === String(baseProduct.id))) {
+    list.unshift({
+      id: String(baseProduct.id),
+      name: String(baseProduct.name || 'Producto'),
+      edition: baseEdition,
+      price: Number(baseProduct.price || 0),
+      stock: Number(baseProduct.stock || 0),
+      image: getProductImageUrl(baseProduct),
+      score: 1,
+    });
+  }
+
+  return list;
+}
+
+function buildGalleryImages(product: any, bundleOptions: BundleOption[]): string[] {
+  const main = getProductImageUrls(product);
+  const extras = bundleOptions.flatMap((option) => option.images || []);
+  const merged = uniqueStrings([...main, ...extras]);
+  return merged.length > 0 ? merged.slice(0, 16) : [PLACEHOLDER];
 }
 
 function getOrCreateVisitorId(): string {
@@ -174,6 +303,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
 
   const [bundleOptions, setBundleOptions] = useState<BundleOption[]>([]);
   const [selectedBundleIds, setSelectedBundleIds] = useState<Record<string, boolean>>({});
+  const [editionOptions, setEditionOptions] = useState<EditionOption[]>([]);
 
   const [visitorId, setVisitorId] = useState('');
   const [socialSummary, setSocialSummary] = useState<ProductSocialSummary>(EMPTY_SUMMARY);
@@ -186,6 +316,11 @@ export default function ProductDetail({ productId }: { productId: string }) {
   const [reviewPhotos, setReviewPhotos] = useState<string[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
+  const [priceSource, setPriceSource] = useState<'orders' | 'current' | 'none'>('none');
+  const [loadingPriceHistory, setLoadingPriceHistory] = useState(false);
+  const [priceHistoryError, setPriceHistoryError] = useState('');
+
   const add = useCartStore((s) => s.add);
 
   useEffect(() => {
@@ -195,45 +330,31 @@ export default function ProductDetail({ productId }: { productId: string }) {
   useEffect(() => {
     const load = async () => {
       if (!supabaseClient) {
-        const fallback = sampleProducts.find((p) => p.id === productId) || null;
+        const fallback = sampleProducts.find((p) => String(p.id) === String(productId)) || null;
         setProduct(fallback);
-        if (fallback) setBundleOptions(buildBundleOptions(fallback, sampleProducts));
+
+        if (fallback) {
+          const options = buildBundleOptions(fallback, sampleProducts);
+          setBundleOptions(options);
+          setEditionOptions(buildEditionOptions(fallback, sampleProducts));
+        }
         return;
       }
 
-      const { data } = await supabaseClient
-        .from('products')
-        .select('*')
-        .eq('id', productId)
-        .single();
+      const { data } = await supabaseClient.from('products').select('*').eq('id', productId).single();
       setProduct(data || null);
 
       if (!data) return;
 
-      const shouldOfferBundle = String(data.category || '') === 'juegos-gameboy';
-      if (!shouldOfferBundle) {
-        setBundleOptions([
-          {
-            id: String(data.id),
-            name: String(data.name || 'Producto'),
-            price: Number(data.price || 0),
-            image: getProductImageUrl(data),
-            stock: Number(data.stock || 0),
-            type: 'cartucho',
-            defaultSelected: true,
-          },
-        ]);
-        return;
-      }
-
       const { data: candidates } = await supabaseClient
         .from('products')
-        .select('id,name,price,image,images,stock,category')
-        .in('category', ['juegos-gameboy', 'cajas-gameboy', 'accesorios'])
-        .gt('stock', 0)
-        .limit(600);
+        .select('id,name,price,image,images,stock,category,description')
+        .order('created_at', { ascending: false })
+        .limit(1200);
 
-      setBundleOptions(buildBundleOptions(data, candidates || []));
+      const pool = candidates && candidates.length > 0 ? candidates : [data];
+      setBundleOptions(buildBundleOptions(data, pool));
+      setEditionOptions(buildEditionOptions(data, pool));
     };
 
     load();
@@ -282,16 +403,71 @@ export default function ProductDetail({ productId }: { productId: string }) {
       .catch(() => undefined);
   }, [productId, visitorId, refreshSocial]);
 
-  const images = useMemo(() => (product ? getProductImageUrls(product) : []), [product]);
+  const refreshPriceHistory = useCallback(async () => {
+    if (!productId) return;
+    setLoadingPriceHistory(true);
+    setPriceHistoryError('');
+
+    try {
+      const res = await fetch(`/api/products/${encodeURIComponent(productId)}/price-history`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'No se pudo cargar el historico de precios');
+
+      const nextPoints = Array.isArray(data?.points)
+        ? data.points
+            .map((point: any) => ({
+              date: String(point?.date || ''),
+              price: Number(point?.price || 0),
+            }))
+            .filter((point: PriceHistoryPoint) => point.date && Number.isFinite(point.price) && point.price > 0)
+        : [];
+
+      if (nextPoints.length > 0) {
+        setPriceHistory(nextPoints);
+        setPriceSource(data?.source === 'orders' ? 'orders' : 'current');
+      } else if (Number.isFinite(Number(product?.price)) && Number(product.price) > 0) {
+        setPriceHistory([{ date: new Date().toISOString(), price: Number(product.price) }]);
+        setPriceSource('current');
+      } else {
+        setPriceHistory([]);
+        setPriceSource('none');
+      }
+    } catch (error: any) {
+      setPriceHistoryError(error?.message || 'No se pudo cargar la grafica de precios');
+      if (Number.isFinite(Number(product?.price)) && Number(product.price) > 0) {
+        setPriceHistory([{ date: new Date().toISOString(), price: Number(product.price) }]);
+        setPriceSource('current');
+      }
+    } finally {
+      setLoadingPriceHistory(false);
+    }
+  }, [productId, product?.price]);
+
+  useEffect(() => {
+    refreshPriceHistory();
+  }, [refreshPriceHistory]);
+
+  const images = useMemo(
+    () => (product ? buildGalleryImages(product, bundleOptions) : [PLACEHOLDER]),
+    [product, bundleOptions]
+  );
+
+  useEffect(() => {
+    if (selectedImage > images.length - 1) {
+      setSelectedImage(0);
+    }
+  }, [images, selectedImage]);
 
   const selectedBundleOptions = useMemo(
     () => bundleOptions.filter((option) => selectedBundleIds[option.id]),
     [bundleOptions, selectedBundleIds]
   );
+
   const selectedUnitPrice = useMemo(
     () => selectedBundleOptions.reduce((sum, option) => sum + option.price, 0),
     [selectedBundleOptions]
   );
+
   const selectedTotalPrice = selectedUnitPrice * Math.max(1, qty);
 
   if (!product) {
@@ -328,7 +504,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
       return;
     }
     if (!Number.isInteger(reviewRating) || reviewRating < 1 || reviewRating > 5) {
-      toast.error('La valoración debe ser entre 1 y 5');
+      toast.error('La valoracion debe ser entre 1 y 5');
       return;
     }
 
@@ -368,7 +544,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
     const picked = selectedBundleOptions.filter((option) => option.stock > 0);
 
     if (picked.length === 0) {
-      toast.error('Selecciona al menos una opción');
+      toast.error('Selecciona al menos una opcion');
       return;
     }
 
@@ -384,29 +560,39 @@ export default function ProductDetail({ productId }: { productId: string }) {
       });
     }
 
-    toast.success(`Añadidos ${picked.length} artículo(s) al carrito`);
+    toast.success(`Añadidos ${picked.length} articulo(s) al carrito`);
   };
 
   return (
     <section className="section">
       <div className="container grid gap-10 lg:grid-cols-2">
         <div className="glass p-6">
-          <div className="relative w-full h-[460px] bg-surface border border-line">
-            <Image src={images[selectedImage] || images[0]} alt={product.name} fill className="object-cover" />
+          <div className="relative w-full h-[500px] bg-surface border border-line flex items-center justify-center overflow-hidden">
+            <Image
+              src={images[selectedImage] || images[0] || PLACEHOLDER}
+              alt={product.name}
+              fill
+              className="object-contain p-4"
+            />
             {product.status ? <span className="absolute top-4 left-4 chip text-xs">{product.status}</span> : null}
+            <span className="absolute bottom-4 right-4 chip text-xs">Foto {selectedImage + 1} / {images.length}</span>
           </div>
+
           <div className="grid grid-cols-4 gap-3 mt-4">
-            {images.slice(0, 8).map((img: string, index: number) => (
+            {images.slice(0, 12).map((img: string, index: number) => (
               <button
                 type="button"
                 key={`${img}-${index}`}
-                className={`relative h-20 border bg-surface ${selectedImage === index ? 'border-primary' : 'border-line'}`}
+                className={`relative h-20 border bg-surface overflow-hidden ${
+                  selectedImage === index ? 'border-primary' : 'border-line'
+                }`}
                 onClick={() => setSelectedImage(index)}
               >
-                <Image src={img} alt={product.name} fill className="object-cover" />
+                <Image src={img} alt={`${product.name} miniatura ${index + 1}`} fill className="object-contain p-1" />
               </button>
             ))}
           </div>
+          <p className="text-xs text-textMuted mt-2">Sin recortes: la imagen se muestra completa.</p>
         </div>
 
         <div className="glass p-6">
@@ -420,7 +606,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
           </div>
 
           <h1 className="title-display text-3xl mt-2">{product.name}</h1>
-          <p className="text-primary text-2xl mt-4">{(product.price / 100).toFixed(2)} €</p>
+          <p className="text-primary text-2xl mt-4">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
           <p className="text-textMuted mt-4">{product.long_description || product.description}</p>
 
           <div className="mt-4 flex items-center gap-3">
@@ -435,6 +621,33 @@ export default function ProductDetail({ productId }: { productId: string }) {
               {socialLoading ? 'Actualizando...' : 'Actualizar actividad'}
             </button>
           </div>
+
+          {editionOptions.length > 1 ? (
+            <div className="mt-6 border-t border-line pt-6">
+              <p className="font-semibold">Elige version del producto</p>
+              <p className="text-sm text-textMuted mt-1">
+                Puedes cambiar rapido entre original y repro 1:1 cuando existan variantes.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {editionOptions.map((edition) => {
+                  const isCurrent = String(edition.id) === String(product.id);
+                  const label = EDITION_LABEL[edition.edition];
+                  const labelPrice = `${(edition.price / 100).toFixed(2)} €`;
+
+                  return (
+                    <Link
+                      key={`${edition.id}-${edition.edition}`}
+                      href={`/producto/${edition.id}`}
+                      className={`chip ${isCurrent ? 'text-primary border-primary' : ''}`}
+                    >
+                      {label} · {labelPrice}
+                      {edition.stock <= 0 ? ' · sin stock' : ''}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-6 grid gap-4">
             <div>
@@ -456,30 +669,54 @@ export default function ProductDetail({ productId }: { productId: string }) {
           </div>
 
           <div className="mt-8 border-t border-line pt-6">
-            <p className="font-semibold mb-3">Configura tu compra</p>
+            <p className="font-semibold mb-2">Completa tu juego (caja, manual, insert, protector)</p>
+            <p className="text-sm text-textMuted mb-3">
+              Marca lo que quieres comprar y, si quieres, abre cada ficha para ver mas fotos y detalles.
+            </p>
             <div className="space-y-2">
-              {bundleOptions.map((option) => (
-                <label key={option.id} className="flex items-center justify-between gap-3 border border-line px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(selectedBundleIds[option.id])}
-                      onChange={(e) =>
-                        setSelectedBundleIds((prev) => ({
-                          ...prev,
-                          [option.id]: e.target.checked,
-                        }))
-                      }
-                      disabled={option.stock <= 0}
-                    />
-                    <span className="text-sm">{BUNDLE_TYPE_LABEL[option.type]}: {option.name}</span>
+              {bundleOptions.map((option) => {
+                const isCurrentProduct = String(option.id) === String(product.id);
+
+                return (
+                  <div key={option.id} className="flex items-center justify-between gap-3 border border-line px-3 py-2">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(selectedBundleIds[option.id])}
+                        onChange={(e) =>
+                          setSelectedBundleIds((prev) => ({
+                            ...prev,
+                            [option.id]: e.target.checked,
+                          }))
+                        }
+                        disabled={option.stock <= 0}
+                      />
+                      <div>
+                        <p className="text-sm">
+                          <span className="text-textMuted">{BUNDLE_TYPE_LABEL[option.type]}:</span>{' '}
+                          {isCurrentProduct ? (
+                            <span className="font-semibold">{option.name}</span>
+                          ) : (
+                            <Link href={`/producto/${option.id}`} className="text-primary hover:underline">
+                              {option.name}
+                            </Link>
+                          )}
+                        </p>
+                        {!isCurrentProduct ? (
+                          <Link href={`/producto/${option.id}`} className="text-xs text-textMuted hover:text-primary">
+                            Abrir producto
+                          </Link>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm text-primary">{(option.price / 100).toFixed(2)} €</p>
+                      <p className="text-xs text-textMuted">Stock {option.stock}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-primary">{(option.price / 100).toFixed(2)} €</p>
-                    <p className="text-xs text-textMuted">Stock {option.stock}</p>
-                  </div>
-                </label>
-              ))}
+                );
+              })}
             </div>
 
             <div className="mt-4 flex items-center gap-3">
@@ -491,13 +728,39 @@ export default function ProductDetail({ productId }: { productId: string }) {
                 onChange={(e) => setQty(Number(e.target.value))}
               />
               <button className="button-primary" onClick={addSelectedToCart}>
-                Añadir selección al carrito
+                Añadir seleccion al carrito
               </button>
             </div>
 
             <p className="mt-3 text-sm text-textMuted">
-              Total selección ({Math.max(1, qty)} ud): <span className="text-primary">{(selectedTotalPrice / 100).toFixed(2)} €</span>
+              Total seleccion ({Math.max(1, qty)} ud):{' '}
+              <span className="text-primary">{(selectedTotalPrice / 100).toFixed(2)} €</span>
             </p>
+          </div>
+
+          <div className="mt-8 border-t border-line pt-6">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <p className="font-semibold">Historico de precio del producto</p>
+              <button type="button" className="chip" onClick={refreshPriceHistory} disabled={loadingPriceHistory}>
+                {loadingPriceHistory ? 'Cargando...' : 'Actualizar grafica'}
+              </button>
+            </div>
+
+            {priceHistory.length > 0 ? (
+              <PriceHistoryChart points={priceHistory} />
+            ) : (
+              <p className="text-sm text-textMuted">Aun no hay datos suficientes para mostrar tendencia.</p>
+            )}
+
+            <p className="text-xs text-textMuted mt-2">
+              Fuente:{' '}
+              {priceSource === 'orders'
+                ? 'ventas reales de la tienda'
+                : priceSource === 'current'
+                  ? 'precio actual del catalogo'
+                  : 'sin datos'}
+            </p>
+            {priceHistoryError ? <p className="text-xs text-red-400 mt-1">{priceHistoryError}</p> : null}
           </div>
         </div>
       </div>
@@ -521,7 +784,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
                 placeholder="Coleccionista"
               />
 
-              <label className="block text-sm text-textMuted">Tu valoración</label>
+              <label className="block text-sm text-textMuted">Tu valoracion</label>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((value) => (
                   <button
@@ -543,7 +806,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
                 placeholder="Comparte tu experiencia con este producto..."
               />
 
-              <label className="block text-sm text-textMuted">Fotos (máx. 3)</label>
+              <label className="block text-sm text-textMuted">Fotos (max. 3)</label>
               <input
                 type="file"
                 accept="image/*"
@@ -562,37 +825,35 @@ export default function ProductDetail({ productId }: { productId: string }) {
               {reviewPhotos.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2">
                   {reviewPhotos.map((photo, index) => (
-                    <div key={`${photo.slice(0, 20)}-${index}`} className="relative h-20 border border-line">
-                      <Image src={photo} alt={`preview-${index + 1}`} fill className="object-cover" unoptimized />
+                    <div key={`${photo.slice(0, 20)}-${index}`} className="relative h-20 border border-line bg-surface">
+                      <Image src={photo} alt={`preview-${index + 1}`} fill className="object-contain" unoptimized />
                     </div>
                   ))}
                 </div>
               ) : null}
 
               <button className="button-primary" onClick={submitReview} disabled={submittingReview}>
-                {submittingReview ? 'Publicando...' : 'Publicar valoración'}
+                {submittingReview ? 'Publicando...' : 'Publicar valoracion'}
               </button>
             </div>
 
             <div className="space-y-4 max-h-[520px] overflow-auto pr-1">
               {reviews.length === 0 ? (
-                <p className="text-textMuted">Aún no hay reseñas. Sé el primero en opinar.</p>
+                <p className="text-textMuted">Aun no hay reseñas. Se el primero en opinar.</p>
               ) : (
                 reviews.map((review) => (
                   <div key={review.id} className="border border-line p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold">{review.authorName}</p>
-                      <p className="text-xs text-textMuted">
-                        {new Date(review.createdAt).toLocaleDateString('es-ES')}
-                      </p>
+                      <p className="text-xs text-textMuted">{new Date(review.createdAt).toLocaleDateString('es-ES')}</p>
                     </div>
-                    <p className="text-sm text-primary mt-1">Puntuación: {review.rating}/5</p>
+                    <p className="text-sm text-primary mt-1">Puntuacion: {review.rating}/5</p>
                     <p className="text-sm mt-2 text-textMuted">{review.comment}</p>
                     {review.photos?.length ? (
                       <div className="grid grid-cols-3 gap-2 mt-3">
                         {review.photos.map((photo) => (
-                          <div key={photo} className="relative h-20 border border-line">
-                            <Image src={photo} alt="review-photo" fill className="object-cover" />
+                          <div key={photo} className="relative h-20 border border-line bg-surface">
+                            <Image src={photo} alt="review-photo" fill className="object-contain" />
                           </div>
                         ))}
                       </div>
