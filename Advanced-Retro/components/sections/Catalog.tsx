@@ -131,6 +131,16 @@ export default function Catalog() {
     return next;
   }, [categories, products]);
 
+  const completeProductIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const product of products) {
+      if (isCompleteGameProduct(product, products)) {
+        set.add(String(product.id));
+      }
+    }
+    return set;
+  }, [products]);
+
   const filtered = useMemo(() => {
     if (active === 'all') {
       return products.filter((product) => !isManualProduct(product));
@@ -141,7 +151,7 @@ export default function Catalog() {
     }
 
     if (String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY) {
-      return products.filter((product) => isCompleteGameProduct(product, products));
+      return products.filter((product) => completeProductIds.has(String(product.id)));
     }
 
     if (String(active).toLowerCase() === 'juegos-gameboy') {
@@ -157,7 +167,7 @@ export default function Catalog() {
       if (!isCategoryMatch) return false;
       return !isManualProduct(product);
     });
-  }, [products, active]);
+  }, [products, active, completeProductIds]);
 
   return (
     <section className="section">
@@ -196,8 +206,14 @@ export default function Catalog() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((product) => (
-            <Link key={product.id} href={`/producto/${product.id}`} className="glass p-4 hover:shadow-glow transition-shadow">
+          {filtered.map((product) => {
+            const productId = String(product.id);
+            const isComplete = completeProductIds.has(productId);
+            const isCompleteView = String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY;
+            const href = isCompleteView ? `/producto/${productId}?complete=1` : `/producto/${productId}`;
+
+            return (
+            <Link key={product.id} href={href} className="glass p-4 hover:shadow-glow transition-shadow">
               <div className="relative w-full h-56 bg-surface border border-line overflow-hidden">
                 <Image
                   src={getProductImageUrl(product)}
@@ -217,9 +233,14 @@ export default function Catalog() {
                 <p className="text-xs text-textMuted mt-1">
                   Visitas: {metrics[product.id]?.visits ?? 0} · Me gusta: {metrics[product.id]?.likes ?? 0}
                 </p>
+                {isComplete ? (
+                  <p className="text-xs text-primary mt-1">
+                    Pack completo disponible
+                  </p>
+                ) : null}
               </div>
             </Link>
-          ))}
+          )})}
         </div>
       </div>
     </section>
