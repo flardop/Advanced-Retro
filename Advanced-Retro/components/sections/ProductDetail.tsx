@@ -294,7 +294,13 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-export default function ProductDetail({ productId }: { productId: string }) {
+export default function ProductDetail({
+  productId,
+  prefillComplete = false,
+}: {
+  productId: string;
+  prefillComplete?: boolean;
+}) {
   const [product, setProduct] = useState<any | null>(null);
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -363,10 +369,13 @@ export default function ProductDetail({ productId }: { productId: string }) {
     const initialSelection: Record<string, boolean> = {};
     for (const option of bundleOptions) {
       initialSelection[option.id] = option.defaultSelected;
+      if (prefillComplete && option.stock > 0) {
+        initialSelection[option.id] = true;
+      }
     }
     setSelectedBundleIds(initialSelection);
-    setShowCompleteGameOptions(false);
-  }, [bundleOptions]);
+    setShowCompleteGameOptions(prefillComplete);
+  }, [bundleOptions, prefillComplete]);
 
   useEffect(() => {
     if (showCompleteGameOptions) return;
@@ -493,6 +502,9 @@ export default function ProductDetail({ productId }: { productId: string }) {
     [selectedBundleOptions]
   );
 
+  const buildProductHref = (id: string | number): string =>
+    prefillComplete ? `/producto/${id}?complete=1` : `/producto/${id}`;
+
   const selectedTotalPrice = selectedUnitPrice * Math.max(1, qty);
 
   if (!product) {
@@ -562,6 +574,20 @@ export default function ProductDetail({ productId }: { productId: string }) {
     } finally {
       setSubmittingReview(false);
     }
+  };
+
+  const applyCompletePack = () => {
+    setShowCompleteGameOptions(true);
+    setSelectedBundleIds((prev) => {
+      const next = { ...prev };
+      for (const option of bundleOptions) {
+        if (option.stock > 0) {
+          next[option.id] = true;
+        }
+      }
+      return next;
+    });
+    toast.success('Pack completo seleccionado');
   };
 
   const addSelectedToCart = () => {
@@ -662,7 +688,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
                   return (
                     <Link
                       key={`${edition.id}-${edition.edition}`}
-                      href={`/producto/${edition.id}`}
+                      href={buildProductHref(edition.id)}
                       className={`chip ${isCurrent ? 'text-primary border-primary' : ''}`}
                     >
                       {label} · {labelPrice}
@@ -698,7 +724,14 @@ export default function ProductDetail({ productId }: { productId: string }) {
             <p className="text-sm text-textMuted mb-3">
               La caja puede ser original o repro según el producto enlazado. Marca solo lo que quieras añadir.
             </p>
-            <div className="mb-3">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="chip"
+                onClick={applyCompletePack}
+              >
+                Seleccionar pack completo
+              </button>
               <button
                 type="button"
                 className={`chip ${showCompleteGameOptions ? 'text-primary border-primary' : ''}`}
@@ -707,6 +740,9 @@ export default function ProductDetail({ productId }: { productId: string }) {
                 {showCompleteGameOptions ? 'Ocultar manuales' : 'Juego completo: mostrar manuales'}
               </button>
             </div>
+            {prefillComplete ? (
+              <p className="text-xs text-primary mb-3">Modo juego completo activado: opciones preseleccionadas.</p>
+            ) : null}
             <div className="space-y-2">
               {displayedBundleOptions.map((option) => {
                 const isCurrentProduct = String(option.id) === String(product.id);
@@ -731,13 +767,13 @@ export default function ProductDetail({ productId }: { productId: string }) {
                           {isCurrentProduct ? (
                             <span className="font-semibold">{option.name}</span>
                           ) : (
-                            <Link href={`/producto/${option.id}`} className="text-primary hover:underline">
+                            <Link href={buildProductHref(option.id)} className="text-primary hover:underline">
                               {option.name}
                             </Link>
                           )}
                         </p>
                         {!isCurrentProduct ? (
-                          <Link href={`/producto/${option.id}`} className="text-xs text-textMuted hover:text-primary">
+                          <Link href={buildProductHref(option.id)} className="text-xs text-textMuted hover:text-primary">
                             Abrir producto
                           </Link>
                         ) : null}
@@ -762,7 +798,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
                 onChange={(e) => setQty(Number(e.target.value))}
               />
               <button className="button-primary" onClick={addSelectedToCart}>
-                Añadir seleccion al carrito
+                {prefillComplete ? 'Añadir pack completo al carrito' : 'Añadir seleccion al carrito'}
               </button>
             </div>
 
