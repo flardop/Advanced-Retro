@@ -6,30 +6,71 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { sampleCategories, sampleProducts } from '@/lib/sampleData';
 import { getProductImageUrl } from '@/lib/imageUrl';
+import { buildCategoriesFromProducts } from '@/lib/productCategories';
+
+function getCategoryKey(category: any): string {
+  return String(category?.id ?? category?.slug ?? category?.name ?? '');
+}
+
+function getProductCategoryKey(product: any): string {
+  return String(product?.category_id ?? product?.category ?? product?.category?.id ?? '');
+}
 
 export default function Catalog() {
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [active, setActive] = useState<string>('all');
+  const [metrics, setMetrics] = useState<Record<string, { visits: number; likes: number }>>({});
+
+  const loadMetrics = async (productIds: string[]) => {
+    if (productIds.length === 0) return;
+    try {
+      const res = await fetch('/api/products/social/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) return;
+
+      const next: Record<string, { visits: number; likes: number }> = {};
+      for (const [id, summary] of Object.entries<any>(data?.metrics || {})) {
+        next[id] = {
+          visits: Number(summary?.visits || 0),
+          likes: Number(summary?.likes || 0),
+        };
+      }
+      setMetrics(next);
+    } catch {
+      setMetrics({});
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
       if (!supabaseClient) {
         setCategories(sampleCategories);
         setProducts(sampleProducts);
+        loadMetrics(sampleProducts.map((product) => String(product.id)));
         return;
       }
-      const { data: cats } = await supabaseClient.from('categories').select('*').order('name');
       const { data: prods } = await supabaseClient.from('products').select('*').order('created_at', { ascending: false });
-      setCategories(cats || []);
-      setProducts(prods || []);
+      const safeProducts = prods || [];
+      const { data: cats } = await supabaseClient.from('categories').select('*').order('name');
+
+      const derivedCategories = buildCategoriesFromProducts(safeProducts);
+      const safeCategories = cats && cats.length > 0 ? cats : derivedCategories;
+
+      setProducts(safeProducts);
+      setCategories(safeCategories.length > 0 ? safeCategories : sampleCategories);
+      loadMetrics(safeProducts.map((product) => String(product.id)));
     };
     load();
   }, []);
 
   const filtered = useMemo(() => {
     if (active === 'all') return products;
-    return products.filter((p) => String(p?.category_id ?? p?.category ?? p?.category?.id) === String(active));
+    return products.filter((p) => getProductCategoryKey(p) === String(active));
   }, [products, active]);
 
   return (
@@ -46,9 +87,9 @@ export default function Catalog() {
             </button>
             {categories.map((c) => (
               <button
-                key={c.id ?? c.slug ?? c.name}
-                className={`chip ${String(active) === String(c.id ?? c.slug ?? c.name) ? 'text-primary' : ''}`}
-                onClick={() => setActive(String(c.id ?? c.slug ?? c.name))}
+                key={getCategoryKey(c)}
+                className={`chip ${String(active) === getCategoryKey(c) ? 'text-primary' : ''}`}
+                onClick={() => setActive(getCategoryKey(c))}
               >
                 {c.name}
               </button>
@@ -75,6 +116,9 @@ export default function Catalog() {
                   {(product.price / 100).toFixed(2)} €
                 </p>
                 <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
+                <p className="text-xs text-textMuted mt-1">
+                  Visitas: {metrics[product.id]?.visits ?? 0} · Me gusta: {metrics[product.id]?.likes ?? 0}
+                </p>
               </div>
             </Link>
           ))}

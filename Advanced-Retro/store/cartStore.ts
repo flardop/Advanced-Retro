@@ -7,6 +7,8 @@ type CartItem = {
   price: number;
   image?: string;
   quantity: number;
+  optionType?: 'cartucho' | 'caja' | 'manual' | 'insert' | 'protector';
+  bundleParentId?: string;
 };
 
 type CartState = {

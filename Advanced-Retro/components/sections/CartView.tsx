@@ -24,6 +24,9 @@ export default function CartView() {
                   <div>
                     <p className="font-semibold">{item.name}</p>
                     <p className="text-textMuted text-sm">{(item.price / 100).toFixed(2)} €</p>
+                    {item.optionType ? (
+                      <p className="text-xs text-textMuted capitalize">Tipo: {item.optionType}</p>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-2">
                     <input
