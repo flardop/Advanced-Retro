@@ -266,11 +266,9 @@ function buildEditionOptions(baseProduct: any, allProducts: any[]): EditionOptio
   return list;
 }
 
-function buildGalleryImages(product: any, bundleOptions: BundleOption[]): string[] {
-  const main = getProductImageUrls(product);
-  const extras = bundleOptions.flatMap((option) => option.images || []);
-  const merged = uniqueStrings([...main, ...extras]);
-  return merged.length > 0 ? merged.slice(0, 16) : [PLACEHOLDER];
+function buildGalleryImages(product: any): string[] {
+  const main = uniqueStrings(getProductImageUrls(product));
+  return main.length > 0 ? main.slice(0, 16) : [PLACEHOLDER];
 }
 
 function getOrCreateVisitorId(): string {
@@ -304,6 +302,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
   const [bundleOptions, setBundleOptions] = useState<BundleOption[]>([]);
   const [selectedBundleIds, setSelectedBundleIds] = useState<Record<string, boolean>>({});
   const [editionOptions, setEditionOptions] = useState<EditionOption[]>([]);
+  const [showCompleteGameOptions, setShowCompleteGameOptions] = useState(false);
 
   const [visitorId, setVisitorId] = useState('');
   const [socialSummary, setSocialSummary] = useState<ProductSocialSummary>(EMPTY_SUMMARY);
@@ -366,7 +365,27 @@ export default function ProductDetail({ productId }: { productId: string }) {
       initialSelection[option.id] = option.defaultSelected;
     }
     setSelectedBundleIds(initialSelection);
+    setShowCompleteGameOptions(false);
   }, [bundleOptions]);
+
+  useEffect(() => {
+    if (showCompleteGameOptions) return;
+
+    const hasAnyManual = bundleOptions.some(
+      (option) => option.type === 'manual' && Boolean(selectedBundleIds[option.id])
+    );
+    if (!hasAnyManual) return;
+
+    setSelectedBundleIds((prev) => {
+      const next = { ...prev };
+      for (const option of bundleOptions) {
+        if (option.type === 'manual') {
+          next[option.id] = false;
+        }
+      }
+      return next;
+    });
+  }, [bundleOptions, selectedBundleIds, showCompleteGameOptions]);
 
   const refreshSocial = useCallback(async () => {
     if (!productId || !visitorId) return;
@@ -447,10 +466,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
     refreshPriceHistory();
   }, [refreshPriceHistory]);
 
-  const images = useMemo(
-    () => (product ? buildGalleryImages(product, bundleOptions) : [PLACEHOLDER]),
-    [product, bundleOptions]
-  );
+  const images = useMemo(() => (product ? buildGalleryImages(product) : [PLACEHOLDER]), [product]);
 
   useEffect(() => {
     if (selectedImage > images.length - 1) {
@@ -461,6 +477,15 @@ export default function ProductDetail({ productId }: { productId: string }) {
   const selectedBundleOptions = useMemo(
     () => bundleOptions.filter((option) => selectedBundleIds[option.id]),
     [bundleOptions, selectedBundleIds]
+  );
+
+  const displayedBundleOptions = useMemo(
+    () =>
+      bundleOptions.filter((option) => {
+        if (option.type !== 'manual') return true;
+        return showCompleteGameOptions;
+      }),
+    [bundleOptions, showCompleteGameOptions]
   );
 
   const selectedUnitPrice = useMemo(
@@ -651,7 +676,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
 
           <div className="mt-6 grid gap-4">
             <div>
-              <p className="font-semibold">Curiosidades retro</p>
+              <p className="font-semibold">Detalles del producto</p>
               <ul className="list-disc list-inside text-textMuted">
                 {(product.curiosities || []).map((item: string) => (
                   <li key={item}>{item}</li>
@@ -669,12 +694,21 @@ export default function ProductDetail({ productId }: { productId: string }) {
           </div>
 
           <div className="mt-8 border-t border-line pt-6">
-            <p className="font-semibold mb-2">Completa tu juego (caja, manual, insert, protector)</p>
+            <p className="font-semibold mb-2">Opciones adicionales al comprar (caja, manual, insert, protector)</p>
             <p className="text-sm text-textMuted mb-3">
-              Marca lo que quieres comprar y, si quieres, abre cada ficha para ver mas fotos y detalles.
+              La caja puede ser original o repro según el producto enlazado. Marca solo lo que quieras añadir.
             </p>
+            <div className="mb-3">
+              <button
+                type="button"
+                className={`chip ${showCompleteGameOptions ? 'text-primary border-primary' : ''}`}
+                onClick={() => setShowCompleteGameOptions((value) => !value)}
+              >
+                {showCompleteGameOptions ? 'Ocultar manuales' : 'Juego completo: mostrar manuales'}
+              </button>
+            </div>
             <div className="space-y-2">
-              {bundleOptions.map((option) => {
+              {displayedBundleOptions.map((option) => {
                 const isCurrentProduct = String(option.id) === String(product.id);
 
                 return (

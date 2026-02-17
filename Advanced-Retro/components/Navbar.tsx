@@ -50,6 +50,7 @@ export default function Navbar() {
         <nav className="hidden md:flex items-center gap-6 text-sm text-textMuted">
           <Link href="/tienda">Tienda</Link>
           <Link href="/tienda?category=cajas-misteriosas">Mystery</Link>
+          <Link href="/tienda?category=manuales">Manuales</Link>
           <Link href="/servicio-compra">Encargos</Link>
           <Link href="/contacto">Contacto</Link>
           {isAdmin ? <Link href="/admin">Admin</Link> : null}
@@ -69,6 +70,7 @@ export default function Navbar() {
           <div className="container py-3 flex flex-col gap-2 text-sm text-textMuted">
             <Link href="/tienda" onClick={() => setOpen(false)}>Tienda</Link>
             <Link href="/tienda?category=cajas-misteriosas" onClick={() => setOpen(false)}>Mystery</Link>
+            <Link href="/tienda?category=manuales" onClick={() => setOpen(false)}>Manuales</Link>
             <Link href="/servicio-compra" onClick={() => setOpen(false)}>Encargos</Link>
             <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
             {isAdmin ? <Link href="/admin" onClick={() => setOpen(false)}>Admin</Link> : null}

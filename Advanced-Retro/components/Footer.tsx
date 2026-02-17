@@ -24,6 +24,7 @@ export default function Footer() {
           <ul className="mt-2 space-y-1">
             <li><Link href="/tienda">Catálogo</Link></li>
             <li><Link href="/tienda?category=cajas-misteriosas">Mystery</Link></li>
+            <li><Link href="/tienda?category=manuales">Manuales</Link></li>
             <li><Link href="/servicio-compra">Encargos 5€</Link></li>
             <li><Link href="/contacto">Contacto</Link></li>
           </ul>

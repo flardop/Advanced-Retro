@@ -7,6 +7,9 @@ import Image from 'next/image';
 import { sampleCategories, sampleProducts } from '@/lib/sampleData';
 import { getProductImageUrl } from '@/lib/imageUrl';
 import { buildCategoriesFromProducts } from '@/lib/productCategories';
+import { isManualProduct } from '@/lib/productClassification';
+
+const MANUALS_CATEGORY = 'manuales';
 
 function getCategoryKey(category: any): string {
   return String(category?.id ?? category?.slug ?? category?.name ?? '');
@@ -68,9 +71,47 @@ export default function Catalog() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const categoryParam = String(params.get('category') || '').trim();
+    if (!categoryParam) return;
+    setActive(categoryParam);
+  }, []);
+
+  const catalogCategories = useMemo(() => {
+    const hasManuals = products.some((product) => isManualProduct(product));
+    if (!hasManuals) return categories;
+
+    const existsManualCategory = categories.some(
+      (category) => getCategoryKey(category).toLowerCase() === MANUALS_CATEGORY
+    );
+
+    if (existsManualCategory) return categories;
+    return [
+      ...categories,
+      {
+        id: MANUALS_CATEGORY,
+        slug: MANUALS_CATEGORY,
+        name: 'Manuales',
+      },
+    ];
+  }, [categories, products]);
+
   const filtered = useMemo(() => {
-    if (active === 'all') return products;
-    return products.filter((p) => getProductCategoryKey(p) === String(active));
+    if (active === 'all') {
+      return products.filter((product) => !isManualProduct(product));
+    }
+
+    if (String(active).toLowerCase() === MANUALS_CATEGORY) {
+      return products.filter((product) => isManualProduct(product));
+    }
+
+    return products.filter((product) => {
+      const isCategoryMatch = getProductCategoryKey(product) === String(active);
+      if (!isCategoryMatch) return false;
+      return !isManualProduct(product);
+    });
   }, [products, active]);
 
   return (
@@ -85,7 +126,7 @@ export default function Catalog() {
             <button className={`chip ${active === 'all' ? 'text-primary' : ''}`} onClick={() => setActive('all')}>
               Todos
             </button>
-            {categories.map((c) => (
+            {catalogCategories.map((c) => (
               <button
                 key={getCategoryKey(c)}
                 className={`chip ${String(active) === getCategoryKey(c) ? 'text-primary' : ''}`}

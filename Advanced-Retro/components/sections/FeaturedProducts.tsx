@@ -6,9 +6,14 @@ import { sampleProducts } from '@/lib/sampleData';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getProductImageUrl } from '@/lib/imageUrl';
+import { isManualProduct } from '@/lib/productClassification';
+
+function filterFeaturedProducts(input: any[]): any[] {
+  return input.filter((product) => !isManualProduct(product)).slice(0, 8);
+}
 
 export default function FeaturedProducts() {
-  const [products, setProducts] = useState<any[]>(sampleProducts.slice(0, 8));
+  const [products, setProducts] = useState<any[]>(filterFeaturedProducts(sampleProducts));
   const [metrics, setMetrics] = useState<Record<string, { visits: number; likes: number }>>({});
 
   const loadMetrics = async (productIds: string[]) => {
@@ -38,7 +43,7 @@ export default function FeaturedProducts() {
   useEffect(() => {
     const load = async () => {
       if (!supabaseClient) {
-        const fallback = sampleProducts.slice(0, 8);
+        const fallback = filterFeaturedProducts(sampleProducts);
         setProducts(fallback);
         loadMetrics(fallback.map((product) => String(product.id)));
         return;
@@ -51,20 +56,23 @@ export default function FeaturedProducts() {
           .limit(8);
         if (error) {
           console.warn('Error fetching featured products:', error);
-          setProducts(sampleProducts.slice(0, 8));
+          const fallback = filterFeaturedProducts(sampleProducts);
+          setProducts(fallback);
+          loadMetrics(fallback.map((product) => String(product.id)));
           return;
         }
         if (data && data.length > 0) {
-          setProducts(data);
-          loadMetrics(data.map((product) => String(product.id)));
+          const filtered = filterFeaturedProducts(data);
+          setProducts(filtered);
+          loadMetrics(filtered.map((product) => String(product.id)));
           return;
         }
-        const fallback = sampleProducts.slice(0, 8);
+        const fallback = filterFeaturedProducts(sampleProducts);
         setProducts(fallback);
         loadMetrics(fallback.map((product) => String(product.id)));
       } catch (error) {
         console.warn('Exception fetching featured products:', error);
-        const fallback = sampleProducts.slice(0, 8);
+        const fallback = filterFeaturedProducts(sampleProducts);
         setProducts(fallback);
         loadMetrics(fallback.map((product) => String(product.id)));
       }
