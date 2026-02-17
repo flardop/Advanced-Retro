@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { ensureTicketForOrder } from '@/lib/supportTickets';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -41,7 +42,7 @@ async function applyPaidOrderWithStockUpdate(orderId: string) {
     .update({ status: 'processing' })
     .eq('id', orderId)
     .eq('status', 'pending')
-    .select('id')
+    .select('id,user_id,total')
     .maybeSingle();
 
   if (claimError) throw claimError;
@@ -49,13 +50,25 @@ async function applyPaidOrderWithStockUpdate(orderId: string) {
   if (!claimedOrder) {
     const { data: existingOrder, error: orderStatusError } = await supabaseAdmin
       .from('orders')
-      .select('status')
+      .select('id,status,user_id,total')
       .eq('id', orderId)
       .maybeSingle();
 
     if (orderStatusError) throw orderStatusError;
     if (!existingOrder) throw new Error(`Order ${orderId} not found`);
-    if (existingOrder.status === 'paid' || existingOrder.status === 'processing') return;
+    if (existingOrder.status === 'paid') {
+      try {
+        await ensureTicketForOrder({
+          orderId,
+          userId: existingOrder.user_id,
+          orderTotalCents: existingOrder.total,
+        });
+      } catch (ticketError) {
+        console.warn('Ticket creation skipped:', ticketError);
+      }
+      return;
+    }
+    if (existingOrder.status === 'processing') return;
     throw new Error(`Order ${orderId} is in unexpected status "${existingOrder.status}"`);
   }
 
@@ -148,6 +161,16 @@ async function applyPaidOrderWithStockUpdate(orderId: string) {
     await rollbackStock(updates);
     await restoreOrderToPending(orderId);
     throw new Error(markPaidError?.message || `Could not mark order ${orderId} as paid`);
+  }
+
+  try {
+    await ensureTicketForOrder({
+      orderId,
+      userId: claimedOrder.user_id,
+      orderTotalCents: claimedOrder.total,
+    });
+  } catch (ticketError) {
+    console.warn('Ticket creation skipped:', ticketError);
   }
 }
 

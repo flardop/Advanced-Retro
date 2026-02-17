@@ -64,6 +64,9 @@ export default function ConciergeServicePage() {
             <Link href="/contacto" className="button-primary">
               Solicitar encargo
             </Link>
+            <Link href="/perfil" className="button-secondary">
+              Abrir ticket privado
+            </Link>
             <Link href="/tienda" className="button-secondary">
               Ver catalogo
             </Link>

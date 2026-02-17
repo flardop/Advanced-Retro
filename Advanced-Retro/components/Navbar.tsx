@@ -8,6 +8,7 @@ import { supabaseClient } from '@/lib/supabaseClient';
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<{ email?: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -15,7 +16,20 @@ export default function Navbar() {
     onScroll();
     window.addEventListener('scroll', onScroll);
     if (supabaseClient) {
-      supabaseClient.auth.getUser().then(({ data }) => setUser(data.user));
+      supabaseClient.auth.getUser().then(async ({ data }) => {
+        setUser(data.user);
+        if (!data.user) {
+          setIsAdmin(false);
+          return;
+        }
+        try {
+          const res = await fetch('/api/auth/profile');
+          const payload = await res.json();
+          setIsAdmin(payload?.user?.profile?.role === 'admin');
+        } catch {
+          setIsAdmin(false);
+        }
+      });
     }
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -38,7 +52,7 @@ export default function Navbar() {
           <Link href="/tienda?category=cajas-misteriosas">Mystery</Link>
           <Link href="/servicio-compra">Encargos</Link>
           <Link href="/contacto">Contacto</Link>
-          <Link href="/admin">Admin</Link>
+          {isAdmin ? <Link href="/admin">Admin</Link> : null}
         </nav>
         <div className="flex items-center gap-3">
           <Link href="/carrito" className="chip">Carrito</Link>
@@ -57,7 +71,7 @@ export default function Navbar() {
             <Link href="/tienda?category=cajas-misteriosas" onClick={() => setOpen(false)}>Mystery</Link>
             <Link href="/servicio-compra" onClick={() => setOpen(false)}>Encargos</Link>
             <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
-            <Link href="/admin" onClick={() => setOpen(false)}>Admin</Link>
+            {isAdmin ? <Link href="/admin" onClick={() => setOpen(false)}>Admin</Link> : null}
           </div>
         </div>
       )}

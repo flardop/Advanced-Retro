@@ -33,6 +33,7 @@ export default function Footer() {
           <ul className="mt-2 space-y-1">
             <li><Link href="/terminos">Términos</Link></li>
             <li><Link href="/privacidad">Privacidad</Link></li>
+            <li><Link href="/cookies">Cookies</Link></li>
           </ul>
         </div>
         <div>
