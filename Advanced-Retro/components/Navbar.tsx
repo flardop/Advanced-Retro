@@ -49,8 +49,11 @@ export default function Navbar() {
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm text-textMuted">
           <Link href="/tienda">Tienda</Link>
+          <Link href="/tienda?category=juegos-gameboy">Juegos</Link>
+          <Link href="/tienda?category=cajas-gameboy">Cajas</Link>
           <Link href="/tienda?category=cajas-misteriosas">Mystery</Link>
           <Link href="/tienda?category=manuales">Manuales</Link>
+          <Link href="/tienda?category=juego-completo">Juego completo</Link>
           <Link href="/servicio-compra">Encargos</Link>
           <Link href="/contacto">Contacto</Link>
           {isAdmin ? <Link href="/admin">Admin</Link> : null}
@@ -69,8 +72,11 @@ export default function Navbar() {
         <div className="md:hidden border-t border-line">
           <div className="container py-3 flex flex-col gap-2 text-sm text-textMuted">
             <Link href="/tienda" onClick={() => setOpen(false)}>Tienda</Link>
+            <Link href="/tienda?category=juegos-gameboy" onClick={() => setOpen(false)}>Juegos</Link>
+            <Link href="/tienda?category=cajas-gameboy" onClick={() => setOpen(false)}>Cajas</Link>
             <Link href="/tienda?category=cajas-misteriosas" onClick={() => setOpen(false)}>Mystery</Link>
             <Link href="/tienda?category=manuales" onClick={() => setOpen(false)}>Manuales</Link>
+            <Link href="/tienda?category=juego-completo" onClick={() => setOpen(false)}>Juego completo</Link>
             <Link href="/servicio-compra" onClick={() => setOpen(false)}>Encargos</Link>
             <Link href="/contacto" onClick={() => setOpen(false)}>Contacto</Link>
             {isAdmin ? <Link href="/admin" onClick={() => setOpen(false)}>Admin</Link> : null}

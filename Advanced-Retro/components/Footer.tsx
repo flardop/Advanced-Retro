@@ -23,6 +23,9 @@ export default function Footer() {
           <p className="text-text">Tienda</p>
           <ul className="mt-2 space-y-1">
             <li><Link href="/tienda">Catálogo</Link></li>
+            <li><Link href="/tienda?category=juegos-gameboy">Juegos</Link></li>
+            <li><Link href="/tienda?category=cajas-gameboy">Cajas</Link></li>
+            <li><Link href="/tienda?category=juego-completo">Juego completo</Link></li>
             <li><Link href="/tienda?category=cajas-misteriosas">Mystery</Link></li>
             <li><Link href="/tienda?category=manuales">Manuales</Link></li>
             <li><Link href="/servicio-compra">Encargos 5€</Link></li>

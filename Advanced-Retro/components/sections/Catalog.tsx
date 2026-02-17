@@ -7,9 +7,22 @@ import Image from 'next/image';
 import { sampleCategories, sampleProducts } from '@/lib/sampleData';
 import { getProductImageUrl } from '@/lib/imageUrl';
 import { buildCategoriesFromProducts } from '@/lib/productCategories';
-import { isManualProduct } from '@/lib/productClassification';
+import {
+  isBoxProduct,
+  isCompleteGameProduct,
+  isMainGameProduct,
+  isManualProduct,
+} from '@/lib/productClassification';
 
 const MANUALS_CATEGORY = 'manuales';
+const COMPLETE_GAMES_CATEGORY = 'juego-completo';
+const QUICK_FILTERS = [
+  { id: 'all', label: 'Todos' },
+  { id: 'juegos-gameboy', label: 'Juegos' },
+  { id: 'cajas-gameboy', label: 'Cajas' },
+  { id: MANUALS_CATEGORY, label: 'Manuales' },
+  { id: COMPLETE_GAMES_CATEGORY, label: 'Juego completo' },
+];
 
 function getCategoryKey(category: any): string {
   return String(category?.id ?? category?.slug ?? category?.name ?? '');
@@ -18,6 +31,8 @@ function getCategoryKey(category: any): string {
 function getProductCategoryKey(product: any): string {
   return String(product?.category_id ?? product?.category ?? product?.category?.id ?? '');
 }
+
+const QUICK_FILTER_IDS = new Set(QUICK_FILTERS.map((filter) => filter.id));
 
 export default function Catalog() {
   const [products, setProducts] = useState<any[]>([]);
@@ -81,21 +96,39 @@ export default function Catalog() {
 
   const catalogCategories = useMemo(() => {
     const hasManuals = products.some((product) => isManualProduct(product));
-    if (!hasManuals) return categories;
+    const hasComplete = products.some((product) => isCompleteGameProduct(product, products));
 
-    const existsManualCategory = categories.some(
+    let next = [...categories];
+
+    const hasManualCategory = next.some(
       (category) => getCategoryKey(category).toLowerCase() === MANUALS_CATEGORY
     );
+    if (hasManuals && !hasManualCategory) {
+      next = [
+        ...next,
+        {
+          id: MANUALS_CATEGORY,
+          slug: MANUALS_CATEGORY,
+          name: 'Manuales',
+        },
+      ];
+    }
 
-    if (existsManualCategory) return categories;
-    return [
-      ...categories,
-      {
-        id: MANUALS_CATEGORY,
-        slug: MANUALS_CATEGORY,
-        name: 'Manuales',
-      },
-    ];
+    const hasCompleteCategory = next.some(
+      (category) => getCategoryKey(category).toLowerCase() === COMPLETE_GAMES_CATEGORY
+    );
+    if (hasComplete && !hasCompleteCategory) {
+      next = [
+        ...next,
+        {
+          id: COMPLETE_GAMES_CATEGORY,
+          slug: COMPLETE_GAMES_CATEGORY,
+          name: 'Juego completo',
+        },
+      ];
+    }
+
+    return next;
   }, [categories, products]);
 
   const filtered = useMemo(() => {
@@ -105,6 +138,18 @@ export default function Catalog() {
 
     if (String(active).toLowerCase() === MANUALS_CATEGORY) {
       return products.filter((product) => isManualProduct(product));
+    }
+
+    if (String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY) {
+      return products.filter((product) => isCompleteGameProduct(product, products));
+    }
+
+    if (String(active).toLowerCase() === 'juegos-gameboy') {
+      return products.filter((product) => isMainGameProduct(product));
+    }
+
+    if (String(active).toLowerCase() === 'cajas-gameboy') {
+      return products.filter((product) => isBoxProduct(product));
     }
 
     return products.filter((product) => {
@@ -122,11 +167,22 @@ export default function Catalog() {
             <h1 className="title-display text-3xl">Catálogo</h1>
             <p className="text-textMuted">Explora colecciones completas.</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button className={`chip ${active === 'all' ? 'text-primary' : ''}`} onClick={() => setActive('all')}>
-              Todos
-            </button>
-            {catalogCategories.map((c) => (
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              {QUICK_FILTERS.map((filter) => (
+                <button
+                  key={filter.id}
+                  className={`chip ${active === filter.id ? 'text-primary border-primary' : ''}`}
+                  onClick={() => setActive(filter.id)}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+            {catalogCategories
+              .filter((category) => !QUICK_FILTER_IDS.has(getCategoryKey(category)))
+              .map((c) => (
               <button
                 key={getCategoryKey(c)}
                 className={`chip ${String(active) === getCategoryKey(c) ? 'text-primary' : ''}`}
@@ -135,6 +191,7 @@ export default function Catalog() {
                 {c.name}
               </button>
             ))}
+            </div>
           </div>
         </div>
 

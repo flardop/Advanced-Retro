@@ -2,9 +2,9 @@ import Link from 'next/link';
 
 export default function Collections() {
   const collections = [
-    { title: 'Game Boy Clásica', subtitle: 'Cartuchos originales', href: '/tienda?category=gameboy-classic' },
-    { title: 'Color Series', subtitle: 'Ediciones coloreadas', href: '/tienda?category=gameboy-color' },
-    { title: 'Mystery Boxes', subtitle: 'Sorpresas premium', href: '/tienda?category=cajas-misteriosas' },
+    { title: 'Juegos', subtitle: 'Cartuchos y títulos principales', href: '/tienda?category=juegos-gameboy' },
+    { title: 'Cajas', subtitle: 'Cajas para completar tu colección', href: '/tienda?category=cajas-gameboy' },
+    { title: 'Juego Completo', subtitle: 'Opciones con caja + manual disponibles', href: '/tienda?category=juego-completo' },
   ];
 
   return (
