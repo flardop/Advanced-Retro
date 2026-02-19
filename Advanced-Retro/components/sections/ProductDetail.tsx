@@ -9,6 +9,7 @@ import { sampleProducts } from '@/lib/sampleData';
 import { useCartStore } from '@/store/cartStore';
 import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
 import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
+import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
 
 type BundleOptionType =
   | 'cartucho'
@@ -567,6 +568,14 @@ export default function ProductDetail({
 
   const refreshPriceHistory = useCallback(async () => {
     if (!productId) return;
+    if (!product) return;
+    if (isMysteryOrRouletteProduct(product as any)) {
+      setPriceHistory([]);
+      setMarketGuide(null);
+      setPriceSource('none');
+      setPriceHistoryError('');
+      return;
+    }
     setLoadingPriceHistory(true);
     setPriceHistoryError('');
 
@@ -609,7 +618,7 @@ export default function ProductDetail({
     } finally {
       setLoadingPriceHistory(false);
     }
-  }, [productId, product?.price]);
+  }, [productId, product]);
 
   useEffect(() => {
     refreshPriceHistory();
@@ -646,6 +655,7 @@ export default function ProductDetail({
     prefillComplete ? `/producto/${id}?complete=1` : `/producto/${id}`;
 
   const selectedTotalPrice = selectedUnitPrice * Math.max(1, qty);
+  const hideMarketPricing = isMysteryOrRouletteProduct(product as any);
 
   if (!product) {
     return (
@@ -975,63 +985,67 @@ export default function ProductDetail({
             </p>
           </div>
 
-          <div className="mt-8 border-t border-line pt-6">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <p className="font-semibold">Historico de precio del producto</p>
-              <button type="button" className="chip" onClick={refreshPriceHistory} disabled={loadingPriceHistory}>
-                {loadingPriceHistory ? 'Cargando...' : 'Actualizar grafica'}
-              </button>
-            </div>
+          {hideMarketPricing ? null : (
+            <>
+              <div className="mt-8 border-t border-line pt-6">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <p className="font-semibold">Historico de precio del producto</p>
+                  <button type="button" className="chip" onClick={refreshPriceHistory} disabled={loadingPriceHistory}>
+                    {loadingPriceHistory ? 'Cargando...' : 'Actualizar grafica'}
+                  </button>
+                </div>
 
-            {priceHistory.length > 0 ? (
-              <PriceHistoryChart points={priceHistory} />
-            ) : (
-              <p className="text-sm text-textMuted">Aun no hay datos suficientes para mostrar tendencia.</p>
-            )}
-
-            <p className="text-xs text-textMuted mt-2">
-              Fuente:{' '}
-              {priceSource === 'orders'
-                ? 'ventas reales de la tienda'
-                : priceSource === 'current'
-                  ? 'precio actual del catalogo'
-                  : 'sin datos'}
-            </p>
-            {priceHistoryError ? <p className="text-xs text-red-400 mt-1">{priceHistoryError}</p> : null}
-          </div>
-
-          <div className="mt-6 border-t border-line pt-6">
-            <p className="font-semibold mb-2">Comparativa de mercado (PriceCharting)</p>
-            {!marketGuide ? (
-              <p className="text-sm text-textMuted">Sin datos de mercado por ahora.</p>
-            ) : (
-              <div className="space-y-2 text-sm">
-                {marketGuide.available ? (
-                  <>
-                    <p className="text-textMuted">
-                      {marketGuide.productName || product.name}
-                      {marketGuide.consoleName ? ` · ${marketGuide.consoleName}` : ''}
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                      <p className="chip">Loose: {marketGuide.loosePrice ? `${(marketGuide.loosePrice / 100).toFixed(2)} €` : '—'}</p>
-                      <p className="chip">CIB: {marketGuide.cibPrice ? `${(marketGuide.cibPrice / 100).toFixed(2)} €` : '—'}</p>
-                      <p className="chip">Nuevo: {marketGuide.newPrice ? `${(marketGuide.newPrice / 100).toFixed(2)} €` : '—'}</p>
-                      <p className="chip">Solo caja: {marketGuide.boxOnlyPrice ? `${(marketGuide.boxOnlyPrice / 100).toFixed(2)} €` : '—'}</p>
-                      <p className="chip">Solo manual: {marketGuide.manualOnlyPrice ? `${(marketGuide.manualOnlyPrice / 100).toFixed(2)} €` : '—'}</p>
-                      <p className="chip">Graded: {marketGuide.gradedPrice ? `${(marketGuide.gradedPrice / 100).toFixed(2)} €` : '—'}</p>
-                    </div>
-                    <p className="text-xs text-textMuted">
-                      PriceCharting no ofrece histórico de ventas por API; esta sección muestra valores actuales de mercado.
-                    </p>
-                  </>
+                {priceHistory.length > 0 ? (
+                  <PriceHistoryChart points={priceHistory} />
                 ) : (
-                  <p className="text-sm text-textMuted">
-                    No se pudo consultar PriceCharting{marketGuide.note ? `: ${marketGuide.note}` : '.'}
-                  </p>
+                  <p className="text-sm text-textMuted">Aun no hay datos suficientes para mostrar tendencia.</p>
+                )}
+
+                <p className="text-xs text-textMuted mt-2">
+                  Fuente:{' '}
+                  {priceSource === 'orders'
+                    ? 'ventas reales de la tienda'
+                    : priceSource === 'current'
+                      ? 'precio actual del catalogo'
+                      : 'sin datos'}
+                </p>
+                {priceHistoryError ? <p className="text-xs text-red-400 mt-1">{priceHistoryError}</p> : null}
+              </div>
+
+              <div className="mt-6 border-t border-line pt-6">
+                <p className="font-semibold mb-2">Comparativa de mercado (PriceCharting)</p>
+                {!marketGuide ? (
+                  <p className="text-sm text-textMuted">Sin datos de mercado por ahora.</p>
+                ) : (
+                  <div className="space-y-2 text-sm">
+                    {marketGuide.available ? (
+                      <>
+                        <p className="text-textMuted">
+                          {marketGuide.productName || product.name}
+                          {marketGuide.consoleName ? ` · ${marketGuide.consoleName}` : ''}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                          <p className="chip">Loose: {marketGuide.loosePrice ? `${(marketGuide.loosePrice / 100).toFixed(2)} €` : '—'}</p>
+                          <p className="chip">CIB: {marketGuide.cibPrice ? `${(marketGuide.cibPrice / 100).toFixed(2)} €` : '—'}</p>
+                          <p className="chip">Nuevo: {marketGuide.newPrice ? `${(marketGuide.newPrice / 100).toFixed(2)} €` : '—'}</p>
+                          <p className="chip">Solo caja: {marketGuide.boxOnlyPrice ? `${(marketGuide.boxOnlyPrice / 100).toFixed(2)} €` : '—'}</p>
+                          <p className="chip">Solo manual: {marketGuide.manualOnlyPrice ? `${(marketGuide.manualOnlyPrice / 100).toFixed(2)} €` : '—'}</p>
+                          <p className="chip">Graded: {marketGuide.gradedPrice ? `${(marketGuide.gradedPrice / 100).toFixed(2)} €` : '—'}</p>
+                        </div>
+                        <p className="text-xs text-textMuted">
+                          PriceCharting no ofrece histórico de ventas por API; esta sección muestra valores actuales de mercado.
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-textMuted">
+                        No se pudo consultar PriceCharting{marketGuide.note ? `: ${marketGuide.note}` : '.'}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
 

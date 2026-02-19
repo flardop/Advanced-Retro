@@ -14,6 +14,11 @@
 import { createClient } from '@supabase/supabase-js';
 import { searchGameImages } from '../lib/gameImages';
 import { detectImagePlatformFromProduct, stripProductNameForExternalSearch } from '../lib/catalogPlatform';
+import {
+  getFallbackImageUrls,
+  hasAnyValidProductImage,
+  isLikelyProductImageUrl,
+} from '../lib/productImageRules';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -33,7 +38,7 @@ async function updateProductImages() {
   let usesCategoryId = true;
   let productsQuery: any = await supabase
     .from('products')
-    .select('id, name, images, category_id')
+    .select('id, name, image, images, category_id')
     .order('name');
 
   // Compatibilidad con esquema antiguo (products.category en texto)
@@ -41,7 +46,7 @@ async function updateProductImages() {
     usesCategoryId = false;
     productsQuery = await supabase
       .from('products')
-      .select('id, name, images, category')
+      .select('id, name, image, images, category')
       .order('name');
   }
 
@@ -74,12 +79,11 @@ async function updateProductImages() {
       ? categoryMap.get(product.category_id)
       : product.category;
 
-    // Si ya tiene imágenes válidas, podemos saltarlo (opcional)
-    const hasValidImages =
-      product.images &&
-      Array.isArray(product.images) &&
-      product.images.length > 0 &&
-      product.images.some((img: string) => img && !img.includes('placeholder'));
+    const existingImages = [
+      ...(Array.isArray(product.images) ? product.images : []),
+      String((product as any).image || ''),
+    ];
+    const hasValidImages = hasAnyValidProductImage(existingImages);
 
     if (hasValidImages && !forceUpdate) {
       console.log(`⏭️  Saltando "${product.name}" (ya tiene imágenes)`);
@@ -91,13 +95,25 @@ async function updateProductImages() {
       console.log(`🔍 Buscando imagen para: "${product.name}"...`);
 
       const searchTerm = stripProductNameForExternalSearch(product.name) || product.name;
+      const platform = detectImagePlatformFromProduct({
+        category: categorySlug,
+        name: product.name,
+      });
       const imageResults = await searchGameImages({
         gameName: searchTerm,
-        platform: detectImagePlatformFromProduct({ category: categorySlug, name: product.name }),
+        platform,
         preferSource: 'libretro',
       });
 
-      const imageUrls = [...new Set(imageResults.map((item) => item.url).filter(Boolean))].slice(0, 6);
+      let imageUrls = [...new Set(imageResults.map((item) => item.url).filter(isLikelyProductImageUrl))].slice(0, 6);
+      if (imageUrls.length === 0) {
+        imageUrls = getFallbackImageUrls({
+          category: categorySlug,
+          platform,
+          name: product.name,
+        }).filter(isLikelyProductImageUrl);
+      }
+
       const imageUrl = imageUrls[0] || '';
 
       if (!imageUrl || imageUrl === '/placeholder.svg') {

@@ -3,6 +3,11 @@ import { supabaseServer } from '@/lib/supabaseServer';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { searchGameImages } from '@/lib/gameImages';
 import { detectImagePlatformFromProduct, stripProductNameForExternalSearch } from '@/lib/catalogPlatform';
+import {
+  getFallbackImageUrls,
+  hasAnyValidProductImage,
+  isLikelyProductImageUrl,
+} from '@/lib/productImageRules';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,14 +47,14 @@ export async function POST(req: NextRequest) {
     let usesCategoryId = true;
     let productsQuery: any = await supabaseAdmin
       .from('products')
-      .select('id, name, images, category_id')
+      .select('id, name, image, images, category_id')
       .order('name');
 
     if (productsQuery.error && productsQuery.error.message.includes('category_id')) {
       usesCategoryId = false;
       productsQuery = await supabaseAdmin
         .from('products')
-        .select('id, name, images, category')
+        .select('id, name, image, images, category')
         .order('name');
     }
 
@@ -96,11 +101,10 @@ export async function POST(req: NextRequest) {
 
       // Verificar si ya tiene imágenes válidas (a menos que forceUpdate esté activado)
       if (!forceUpdate) {
-        const hasValidImages =
-          product.images &&
-          Array.isArray(product.images) &&
-          product.images.length > 0 &&
-          product.images.some((img: string) => img && !img.includes('placeholder') && !img.includes('/placeholder.svg'));
+        const hasValidImages = hasAnyValidProductImage([
+          ...(Array.isArray(product.images) ? product.images : []),
+          String(product.image || ''),
+        ]);
 
         if (hasValidImages) {
           results.skipped++;
@@ -132,10 +136,18 @@ export async function POST(req: NextRequest) {
             platform,
             preferSource: 'libretro',
           });
-          imageUrls = [...new Set(found.map((item) => item.url).filter(Boolean))].slice(0, 6);
+          imageUrls = [...new Set(found.map((item) => item.url).filter(isLikelyProductImageUrl))].slice(0, 6);
           if (imageUrls.length > 0 && imageUrls[0] !== '/placeholder.svg') {
             break;
           }
+        }
+
+        if (imageUrls.length === 0) {
+          imageUrls = getFallbackImageUrls({
+            category: categorySlug,
+            platform,
+            name: product.name,
+          }).filter(isLikelyProductImageUrl);
         }
 
         const imageUrl = imageUrls[0] || '';

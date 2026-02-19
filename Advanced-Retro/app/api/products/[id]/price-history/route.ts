@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { toPriceChartingConsoleName, stripProductNameForExternalSearch } from '@/lib/catalogPlatform';
 import { fetchPriceChartingSnapshotByQuery } from '@/lib/priceCharting';
+import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,13 +128,17 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
     const sorted = compactPoints(sortByDate(points), 80);
 
-    const externalName = stripProductNameForExternalSearch(String(product.name || '')) || String(product.name || '');
-    const externalConsole = toPriceChartingConsoleName({
-      category: String((product as any).category || ''),
-      name: String(product.name || ''),
-    });
-    const priceChartingQuery = `${externalName} ${externalConsole}`.trim();
-    const marketGuide = await fetchPriceChartingSnapshotByQuery(priceChartingQuery);
+    let marketGuide: any = null;
+    if (!isMysteryOrRouletteProduct(product as any)) {
+      const externalName =
+        stripProductNameForExternalSearch(String(product.name || '')) || String(product.name || '');
+      const externalConsole = toPriceChartingConsoleName({
+        category: String((product as any).category || ''),
+        name: String(product.name || ''),
+      });
+      const priceChartingQuery = `${externalName} ${externalConsole}`.trim();
+      marketGuide = await fetchPriceChartingSnapshotByQuery(priceChartingQuery);
+    }
 
     if (sorted.length > 0) {
       return NextResponse.json({

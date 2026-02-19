@@ -21,6 +21,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'splash.games.directory' },
       { protocol: 'https', hostname: 'thumbnails.libretro.com' },
       { protocol: 'https', hostname: 'images.igdb.com' },
+      { protocol: 'https', hostname: 'upload.wikimedia.org' },
     ],
   },
 };
