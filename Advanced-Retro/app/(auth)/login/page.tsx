@@ -176,7 +176,11 @@ function LoginForm() {
     }
     const nextPath = searchParams.get('next');
     const safeNextPath = typeof nextPath === 'string' && nextPath.startsWith('/') ? nextPath : '/perfil';
-    const redirectTo = resolveAbsolutePathUrl(safeNextPath) || resolveAuthCallbackUrl(safeNextPath);
+    const redirectTo = resolveAuthCallbackUrl(safeNextPath);
+    if (!redirectTo) {
+      toast.error('No se pudo preparar el callback de login. Revisa NEXT_PUBLIC_SITE_URL.');
+      return;
+    }
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider,
       options: { redirectTo },

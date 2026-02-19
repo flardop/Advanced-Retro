@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey =
@@ -8,12 +8,8 @@ const anonKey =
 
 export const supabaseClient =
   supabaseUrl && anonKey
-    ? createClient(supabaseUrl, anonKey, {
-        auth: {
-          flowType: 'pkce',
-          detectSessionInUrl: true,
-          persistSession: true,
-          autoRefreshToken: true,
-        },
+    ? createClientComponentClient({
+        supabaseUrl,
+        supabaseKey: anonKey,
       })
     : null;
