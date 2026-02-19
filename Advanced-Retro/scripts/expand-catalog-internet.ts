@@ -53,92 +53,236 @@ const BOX_CATEGORY_BY_PLATFORM: Record<CatalogImagePlatform, string> = {
   gamecube: 'cajas-gameboy',
 };
 
-const GAME_SEEDS: BaseGameSeed[] = [
-  {
-    title: 'Pokemon Crystal (Game Boy Color)',
-    category: 'juegos-gameboy',
-    platform: 'game-boy-color',
-    price: 7999,
-    stock: 8,
-  },
-  {
-    title: 'The Legend of Zelda: Oracle of Ages (Game Boy Color)',
-    category: 'juegos-gameboy',
-    platform: 'game-boy-color',
-    price: 5499,
-    stock: 9,
-  },
-  {
-    title: 'Wario Land 3 (Game Boy Color)',
-    category: 'juegos-gameboy',
-    platform: 'game-boy-color',
-    price: 4499,
-    stock: 10,
-  },
-  {
-    title: 'Pokemon Emerald (Game Boy Advance)',
-    category: 'juegos-gameboy',
-    platform: 'game-boy-advance',
-    price: 9999,
-    stock: 6,
-  },
-  {
-    title: 'Metroid Fusion (Game Boy Advance)',
-    category: 'juegos-gameboy',
-    platform: 'game-boy-advance',
-    price: 6999,
-    stock: 9,
-  },
-  {
-    title: 'The Legend of Zelda: The Minish Cap (Game Boy Advance)',
-    category: 'juegos-gameboy',
-    platform: 'game-boy-advance',
-    price: 7499,
-    stock: 7,
-  },
-  {
-    title: 'Super Metroid (Super Nintendo)',
-    category: 'juegos-gameboy',
-    platform: 'super-nintendo',
-    price: 9999,
-    stock: 6,
-  },
-  {
-    title: 'Chrono Trigger (Super Nintendo)',
-    category: 'juegos-gameboy',
-    platform: 'super-nintendo',
-    price: 12999,
-    stock: 5,
-  },
-  {
-    title: 'The Legend of Zelda: A Link to the Past (Super Nintendo)',
-    category: 'juegos-gameboy',
-    platform: 'super-nintendo',
-    price: 8999,
-    stock: 8,
-  },
-  {
-    title: 'The Legend of Zelda: The Wind Waker (GameCube)',
-    category: 'juegos-gameboy',
-    platform: 'gamecube',
-    price: 7999,
-    stock: 7,
-  },
-  {
-    title: 'Metroid Prime (GameCube)',
-    category: 'juegos-gameboy',
-    platform: 'gamecube',
-    price: 5999,
-    stock: 9,
-  },
-  {
-    title: 'Super Smash Bros. Melee (GameCube)',
-    category: 'juegos-gameboy',
-    platform: 'gamecube',
-    price: 6999,
-    stock: 7,
-  },
-];
+const PLATFORM_LABEL: Record<CatalogImagePlatform, string> = {
+  'game-boy': 'Game Boy',
+  'game-boy-color': 'Game Boy Color',
+  'game-boy-advance': 'Game Boy Advance',
+  'super-nintendo': 'Super Nintendo',
+  gamecube: 'GameCube',
+};
+
+const BASE_PRICE_BY_PLATFORM: Record<CatalogImagePlatform, number> = {
+  'game-boy': 3299,
+  'game-boy-color': 4499,
+  'game-boy-advance': 5999,
+  'super-nintendo': 7499,
+  gamecube: 6499,
+};
+
+const GAME_TITLE_CATALOG: Record<CatalogImagePlatform, string[]> = {
+  'game-boy': [
+    "Pokemon Red",
+    "Pokemon Blue",
+    "Pokemon Yellow",
+    "Pokemon Gold",
+    "Pokemon Silver",
+    "Pokemon Trading Card Game",
+    "The Legend of Zelda: Link's Awakening",
+    "Super Mario Land",
+    "Super Mario Land 2: 6 Golden Coins",
+    "Wario Land: Super Mario Land 3",
+    "Kirby's Dream Land",
+    "Kirby's Dream Land 2",
+    "Donkey Kong",
+    "Donkey Kong Land",
+    "Donkey Kong Land 2",
+    "Donkey Kong Land III",
+    "Metroid II: Return of Samus",
+    "Tetris",
+    "Dr. Mario",
+    "Castlevania: The Adventure",
+    "Castlevania II: Belmont's Revenge",
+    "Mega Man IV",
+    "Mega Man V",
+    "Final Fantasy Legend",
+    "Final Fantasy Legend II",
+    "Final Fantasy Legend III",
+    "DuckTales",
+    "Gargoyle's Quest",
+    "Kid Icarus: Of Myths and Monsters",
+    "Mole Mania",
+  ],
+  'game-boy-color': [
+    "Pokemon Crystal",
+    "Pokemon Pinball",
+    "Pokemon Puzzle Challenge",
+    "The Legend of Zelda: Oracle of Ages",
+    "The Legend of Zelda: Oracle of Seasons",
+    "The Legend of Zelda: Link's Awakening DX",
+    "Super Mario Bros. Deluxe",
+    "Wario Land II",
+    "Wario Land 3",
+    "Metal Gear Solid",
+    "Shantae",
+    "Resident Evil Gaiden",
+    "Dragon Warrior Monsters",
+    "Dragon Warrior Monsters 2: Cobi's Journey",
+    "Mario Tennis",
+    "Mario Golf",
+    "Tetris DX",
+    "Mega Man Xtreme",
+    "Mega Man Xtreme 2",
+    "Harvest Moon GBC",
+    "Donkey Kong Country",
+    "Rayman 2",
+    "Perfect Dark",
+    "Bionic Commando: Elite Forces",
+    "Bomberman Quest",
+  ],
+  'game-boy-advance': [
+    "Pokemon Ruby",
+    "Pokemon Sapphire",
+    "Pokemon Emerald",
+    "Pokemon FireRed",
+    "Pokemon LeafGreen",
+    "Metroid Fusion",
+    "Metroid: Zero Mission",
+    "The Legend of Zelda: The Minish Cap",
+    "The Legend of Zelda: A Link to the Past & Four Swords",
+    "Mario Kart: Super Circuit",
+    "Super Mario Advance",
+    "Super Mario Advance 2: Super Mario World",
+    "Super Mario Advance 3: Yoshi's Island",
+    "Super Mario Advance 4: Super Mario Bros. 3",
+    "Wario Land 4",
+    "WarioWare, Inc.: Mega Microgame$!",
+    "Advance Wars",
+    "Advance Wars 2: Black Hole Rising",
+    "Golden Sun",
+    "Golden Sun: The Lost Age",
+    "Fire Emblem",
+    "Fire Emblem: The Sacred Stones",
+    "Kirby: Nightmare in Dream Land",
+    "Kirby & The Amazing Mirror",
+    "Mario & Luigi: Superstar Saga",
+    "Castlevania: Circle of the Moon",
+    "Castlevania: Harmony of Dissonance",
+    "Castlevania: Aria of Sorrow",
+    "Final Fantasy Tactics Advance",
+    "F-Zero: Maximum Velocity",
+    "Sonic Advance",
+    "Sonic Advance 2",
+    "Sonic Advance 3",
+    "Kingdom Hearts: Chain of Memories",
+    "Drill Dozer",
+  ],
+  'super-nintendo': [
+    "Super Mario World",
+    "Super Mario World 2: Yoshi's Island",
+    "Super Mario Kart",
+    "The Legend of Zelda: A Link to the Past",
+    "Super Metroid",
+    "Chrono Trigger",
+    "EarthBound",
+    "Donkey Kong Country",
+    "Donkey Kong Country 2: Diddy's Kong Quest",
+    "Donkey Kong Country 3: Dixie Kong's Double Trouble",
+    "Super Castlevania IV",
+    "Contra III: The Alien Wars",
+    "Street Fighter II Turbo",
+    "Killer Instinct",
+    "F-Zero",
+    "Star Fox",
+    "Kirby Super Star",
+    "Mega Man X",
+    "Mega Man X2",
+    "Mega Man X3",
+    "Super Mario RPG: Legend of the Seven Stars",
+    "Secret of Mana",
+    "Final Fantasy III",
+    "Teenage Mutant Ninja Turtles IV: Turtles in Time",
+    "Pilotwings",
+    "Super Ghouls 'n Ghosts",
+    "Breath of Fire II",
+    "Terranigma",
+    "ActRaiser",
+    "Illusion of Gaia",
+  ],
+  gamecube: [
+    "The Legend of Zelda: The Wind Waker",
+    "The Legend of Zelda: Twilight Princess",
+    "Super Mario Sunshine",
+    "Mario Kart: Double Dash!!",
+    "Super Smash Bros. Melee",
+    "Metroid Prime",
+    "Metroid Prime 2: Echoes",
+    "Luigi's Mansion",
+    "Pikmin",
+    "Pikmin 2",
+    "Paper Mario: The Thousand-Year Door",
+    "Animal Crossing",
+    "F-Zero GX",
+    "Fire Emblem: Path of Radiance",
+    "Resident Evil 4",
+    "Resident Evil",
+    "Resident Evil Zero",
+    "Pokemon Colosseum",
+    "Pokemon XD: Gale of Darkness",
+    "Star Fox Adventures",
+    "Star Fox Assault",
+    "Tales of Symphonia",
+    "Baten Kaitos: Eternal Wings and the Lost Ocean",
+    "SoulCalibur II",
+    "Viewtiful Joe",
+    "Viewtiful Joe 2",
+    "Sonic Adventure 2: Battle",
+    "Eternal Darkness: Sanity's Requiem",
+    "TimeSplitters 2",
+    "Skies of Arcadia Legends",
+  ],
+};
+
+function estimatePrice(platform: CatalogImagePlatform, title: string): number {
+  const normalized = title.toLowerCase();
+  let price = BASE_PRICE_BY_PLATFORM[platform];
+
+  if (
+    /(pokemon|zelda|metroid|chrono trigger|earthbound|shantae|path of radiance|skies of arcadia|resident evil)/.test(
+      normalized
+    )
+  ) {
+    price += 1800;
+  }
+
+  if (/(mario|kirby|donkey kong|f-zero|star fox|advance wars|fire emblem)/.test(normalized)) {
+    price += 800;
+  }
+
+  return roundTo50(Math.max(1800, price));
+}
+
+function estimateStock(title: string, index: number): number {
+  const normalized = title.toLowerCase();
+  if (/(pokemon|zelda|metroid|chrono trigger|earthbound|shantae|path of radiance)/.test(normalized)) {
+    return 4 + (index % 4);
+  }
+  return 7 + (index % 8);
+}
+
+function buildLargeGameSeedCatalog(): BaseGameSeed[] {
+  const out: BaseGameSeed[] = [];
+
+  (Object.keys(GAME_TITLE_CATALOG) as CatalogImagePlatform[]).forEach((platform) => {
+    const titles = GAME_TITLE_CATALOG[platform];
+    titles.forEach((rawTitle, index) => {
+      const hasPlatformSuffix = /\(game boy|game boy color|game boy advance|super nintendo|gamecube\)/i.test(
+        rawTitle
+      );
+      const title = hasPlatformSuffix ? rawTitle : `${rawTitle} (${PLATFORM_LABEL[platform]})`;
+      out.push({
+        title,
+        category: 'juegos-gameboy',
+        platform,
+        price: estimatePrice(platform, rawTitle),
+        stock: estimateStock(rawTitle, index),
+      });
+    });
+  });
+
+  return out;
+}
+
+const GAME_SEEDS: BaseGameSeed[] = buildLargeGameSeedCatalog();
 
 const CONSOLE_SEEDS: ConsoleSeed[] = [
   {
@@ -420,6 +564,7 @@ async function main() {
   let skipped = 0;
 
   console.log(`Mode: ${force ? 'FORCE' : 'SAFE'} | Seeding juegos y consolas...`);
+  console.log(`Juegos objetivo: ${GAME_SEEDS.length} | Consolas objetivo: ${CONSOLE_SEEDS.length}`);
 
   for (const seed of GAME_SEEDS) {
     const query = stripProductNameForExternalSearch(seed.title) || seed.title;
