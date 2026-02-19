@@ -5,11 +5,37 @@ import { supabaseClient } from '@/lib/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
+function normalizeOrigin(raw: string): string | undefined {
+  const value = String(raw || '').trim();
+  if (!value) return undefined;
+  const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  try {
+    return new URL(withProtocol).origin;
+  } catch {
+    return undefined;
+  }
+}
+
+function getOriginCandidates(): string[] {
+  const runtimeOrigin =
+    typeof window !== 'undefined' ? normalizeOrigin(window.location.origin) : undefined;
+  const configuredSiteUrl = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL?.trim() || '');
+  const candidates = [runtimeOrigin, configuredSiteUrl].filter(Boolean) as string[];
+  return [...new Set(candidates)];
+}
+
+function safeDecode(raw: string | null): string | null {
+  if (!raw) return null;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 function resolveAbsolutePathUrl(path: string): string | undefined {
   if (!path.startsWith('/')) return undefined;
-  const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || '';
-  const bases = [configuredSiteUrl, runtimeOrigin].filter(Boolean);
+  const bases = getOriginCandidates();
   for (const base of bases) {
     try {
       return new URL(path, base).toString();
@@ -21,9 +47,7 @@ function resolveAbsolutePathUrl(path: string): string | undefined {
 }
 
 function resolveAuthCallbackUrl(nextPath?: string | null): string | undefined {
-  const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || '';
-  const candidates = [configuredSiteUrl, runtimeOrigin].filter(Boolean);
+  const candidates = getOriginCandidates();
 
   for (const base of candidates) {
     try {
@@ -51,20 +75,24 @@ function LoginForm() {
 
   useEffect(() => {
     const err = searchParams.get('error');
-    const errorDescription = searchParams.get('error_description');
+    const errorDescription = safeDecode(searchParams.get('error_description'));
+    const reason = safeDecode(searchParams.get('reason'));
     if (err === 'confirm') toast.error('El enlace de confirmación ha expirado o no es válido. Inicia sesión y te podemos reenviar el correo.');
     if (err === 'missing_code' || err === 'oauth_incomplete') {
-      toast.error('Login social incompleto. Revisa Site URL y Redirect URLs en Supabase/Google.');
+      toast.error(
+        reason
+          ? `Login social incompleto: ${reason}`
+          : 'Login social incompleto. Revisa Site URL y Redirect URLs en Supabase/Google.'
+      );
     }
     if (err === 'config') toast.error('Configuración de auth incompleta.');
     if (err === 'oauth_cancelled') toast.error('Has cancelado el acceso social. Puedes intentarlo de nuevo.');
     if (err === 'oauth_failed') {
-      const reason = searchParams.get('reason');
-      toast.error(reason ? decodeURIComponent(reason) : 'No se pudo completar el acceso con proveedor social.');
+      toast.error(reason || 'No se pudo completar el acceso con proveedor social.');
       return;
     }
     if (err && !['confirm', 'missing_code', 'oauth_incomplete', 'config', 'oauth_cancelled', 'oauth_failed'].includes(err)) {
-      const readable = errorDescription ? decodeURIComponent(errorDescription) : err;
+      const readable = errorDescription || err;
       toast.error(`Error OAuth: ${readable}`);
     }
   }, [searchParams]);
@@ -78,7 +106,7 @@ function LoginForm() {
       if (mode === 'register') {
         const callbackUrl = resolveAuthCallbackUrl('/perfil');
         const { data, error } = await supabaseClient.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: { data: { name }, emailRedirectTo: callbackUrl },
         });
@@ -97,7 +125,7 @@ function LoginForm() {
           { duration: 8000 }
         );
       } else {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        const { error } = await supabaseClient.auth.signInWithPassword({ email: email.trim(), password });
         if (error) {
           const msg = error.message?.toLowerCase() || '';
           if (msg.includes('email') && (msg.includes('confirm') || msg.includes('verified'))) {

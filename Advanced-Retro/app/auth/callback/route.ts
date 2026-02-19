@@ -126,8 +126,23 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}${redirectTo}`);
     }
 
-    return NextResponse.redirect(`${origin}/login?error=oauth_incomplete`);
-  } catch {
+    const queryKeys = [...searchParams.keys()].slice(0, 12).join(',');
+    const reason = queryKeys ? `missing exchange params (${queryKeys})` : 'missing exchange params';
+    return NextResponse.redirect(`${origin}/login?error=oauth_incomplete&reason=${encodeURIComponent(reason)}`);
+  } catch (error: any) {
+    const message = String(error?.message || '').trim();
+    const lower = message.toLowerCase();
+
+    if (lower.includes('expired') || lower.includes('otp') || lower.includes('token')) {
+      return NextResponse.redirect(`${origin}/login?error=confirm`);
+    }
+
+    if (message) {
+      return NextResponse.redirect(
+        `${origin}/login?error=oauth_failed&reason=${encodeURIComponent(message.slice(0, 240))}`
+      );
+    }
+
     return NextResponse.redirect(`${origin}/login?error=confirm`);
   }
 }
