@@ -72,6 +72,7 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
     id: user.id,
     email: safeEmail,
     role: 'user',
+    name: safeName,
   };
 
   const { error: upsertError } = await supabaseAdmin

@@ -5,6 +5,24 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
+function userNameFromAuth(user: any): string {
+  const metadataName =
+    user?.user_metadata?.name ||
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.user_name;
+
+  if (typeof metadataName === 'string' && metadataName.trim()) {
+    return metadataName.trim().slice(0, 80);
+  }
+
+  const email = typeof user?.email === 'string' ? user.email : '';
+  if (email.includes('@')) {
+    return email.split('@')[0].slice(0, 80);
+  }
+
+  return 'Coleccionista';
+}
+
 export default async function AdminPage() {
   const supabase = supabaseServer();
   const {
@@ -24,6 +42,7 @@ export default async function AdminPage() {
       id: user.id,
       email: user.email || `${user.id}@local.invalid`,
       role: 'user',
+      name: userNameFromAuth(user),
     },
     { onConflict: 'id' }
   );
@@ -31,10 +50,7 @@ export default async function AdminPage() {
   await supabaseAdmin
     .from('users')
     .update({
-      name:
-        typeof user.user_metadata?.name === 'string'
-          ? user.user_metadata.name.slice(0, 80)
-          : null,
+      name: userNameFromAuth(user),
       updated_at: new Date().toISOString(),
     })
     .eq('id', user.id);
