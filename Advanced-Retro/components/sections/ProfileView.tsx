@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { supabaseClient } from '@/lib/supabaseClient';
@@ -64,7 +64,14 @@ function parseImageLines(input: string): string[] {
   return [...new Set(list)];
 }
 
+function isConciergeTicket(ticket: { subject?: string } | null | undefined): boolean {
+  return String(ticket?.subject || '').toLowerCase().includes('encargo');
+}
+
 export default function ProfileView() {
+  const autoOpenedTicketRef = useRef('');
+  const [deepLinkTab, setDeepLinkTab] = useState('');
+  const [deepLinkTicketId, setDeepLinkTicketId] = useState('');
   const [tab, setTab] = useState<Tab>('profile');
   const [loading, setLoading] = useState(true);
 
@@ -176,10 +183,32 @@ export default function ProfileView() {
 
   useEffect(() => {
     if (!supabaseClient) return;
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setDeepLinkTab(String(params.get('tab') || '').trim());
+      setDeepLinkTicketId(String(params.get('ticket') || '').trim());
+    }
     loadAll();
     // loadAll is intentionally triggered once on mount for profile bootstrap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (deepLinkTab === 'tickets' && tab !== 'tickets') {
+      setTab('tickets');
+    }
+
+    if (
+      deepLinkTicketId &&
+      tickets.some((ticket) => ticket.id === deepLinkTicketId) &&
+      autoOpenedTicketRef.current !== deepLinkTicketId
+    ) {
+      autoOpenedTicketRef.current = deepLinkTicketId;
+      void openTicket(deepLinkTicketId);
+    }
+    // openTicket is intentionally used as callback for deep-link tickets.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkTab, deepLinkTicketId, tickets, tab]);
 
   const saveProfile = async () => {
     setSavingProfile(true);
@@ -478,6 +507,9 @@ export default function ProfileView() {
                     <p className="font-semibold text-sm line-clamp-1">{ticket.subject}</p>
                     <p className="text-xs text-textMuted line-clamp-1">{ticket.last_message?.message || 'Sin mensajes'}</p>
                     <p className="text-xs text-primary mt-1">{ticket.status}</p>
+                    {isConciergeTicket(ticket) ? (
+                      <p className="text-[11px] text-primary mt-1">Canal verificado de encargo</p>
+                    ) : null}
                   </button>
                 ))}
               </div>
@@ -523,6 +555,9 @@ export default function ProfileView() {
                     <div>
                       <p className="font-semibold">{selectedTicket.subject}</p>
                       <p className="text-xs text-textMuted">Estado: {selectedTicket.status}</p>
+                      {isConciergeTicket(selectedTicket) ? (
+                        <p className="text-xs text-primary mt-1">Canal verificado comprador ↔ tienda</p>
+                      ) : null}
                     </div>
                   </div>
 

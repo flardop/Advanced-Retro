@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ConciergeRequestPanel from '@/components/sections/ConciergeRequestPanel';
 
 export default function ConciergeServicePage() {
   return (
@@ -71,6 +72,8 @@ export default function ConciergeServicePage() {
               Ver catalogo
             </Link>
           </div>
+
+          <ConciergeRequestPanel />
         </div>
       </div>
     </section>

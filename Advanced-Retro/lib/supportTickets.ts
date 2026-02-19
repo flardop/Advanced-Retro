@@ -2,6 +2,11 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 
+function isConciergeTicketSubject(subject: string): boolean {
+  const normalized = String(subject || '').trim().toLowerCase();
+  return normalized.includes('encargo');
+}
+
 export function sanitizeMessage(input: unknown): string {
   if (typeof input !== 'string') return '';
   const value = input.trim().replace(/\s+/g, ' ');
@@ -105,6 +110,16 @@ export async function createUserTicket(options: {
   });
 
   if (messageError) throw new Error(messageError.message);
+
+  if (isConciergeTicketSubject(safeSubject)) {
+    await supabaseAdmin.from('support_messages').insert({
+      ticket_id: ticket.id,
+      user_id: null,
+      is_admin: true,
+      message:
+        'Canal verificado de encargo activo. Este chat conecta comprador y tienda para seguimiento 1:1.',
+    });
+  }
 
   return ticket;
 }

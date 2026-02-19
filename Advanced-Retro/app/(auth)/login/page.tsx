@@ -5,6 +5,21 @@ import { supabaseClient } from '@/lib/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
+function resolveAbsolutePathUrl(path: string): string | undefined {
+  if (!path.startsWith('/')) return undefined;
+  const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || '';
+  const bases = [runtimeOrigin, configuredSiteUrl].filter(Boolean);
+  for (const base of bases) {
+    try {
+      return new URL(path, base).toString();
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
+}
+
 function resolveAuthCallbackUrl(nextPath?: string | null): string | undefined {
   const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
   const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || '';
@@ -38,8 +53,9 @@ function LoginForm() {
     const err = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     if (err === 'confirm') toast.error('El enlace de confirmación ha expirado o no es válido. Inicia sesión y te podemos reenviar el correo.');
-    if (err === 'missing_code') toast.error('Faltan datos en el enlace. Prueba de nuevo desde el correo.');
-    if (err === 'oauth_incomplete') toast.error('El login social no devolvió el código. Revisa Redirect URLs en Supabase e inténtalo de nuevo.');
+    if (err === 'missing_code' || err === 'oauth_incomplete') {
+      toast.error('Google no devolvió el código de acceso. Revisa Redirect URLs de Supabase y Google OAuth.');
+    }
     if (err === 'config') toast.error('Configuración de auth incompleta.');
     if (err === 'oauth_cancelled') toast.error('Has cancelado el acceso social. Puedes intentarlo de nuevo.');
     if (err === 'oauth_failed') {
@@ -130,7 +146,9 @@ function LoginForm() {
       toast.error('Configura Supabase en .env.local');
       return;
     }
-    const redirectTo = resolveAuthCallbackUrl(searchParams.get('next'));
+    const nextPath = searchParams.get('next');
+    const safeNextPath = typeof nextPath === 'string' && nextPath.startsWith('/') ? nextPath : '/perfil';
+    const redirectTo = resolveAbsolutePathUrl(safeNextPath) || resolveAuthCallbackUrl(safeNextPath);
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
