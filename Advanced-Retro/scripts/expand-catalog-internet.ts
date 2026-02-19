@@ -61,6 +61,14 @@ const PLATFORM_LABEL: Record<CatalogImagePlatform, string> = {
   gamecube: 'GameCube',
 };
 
+const PLATFORM_FALLBACK_IMAGE_BY_PLATFORM: Record<CatalogImagePlatform, string> = {
+  'game-boy': '/images/collections/game-boy.svg',
+  'game-boy-color': '/images/collections/game-boy-color.svg',
+  'game-boy-advance': '/images/collections/game-boy-advance.svg',
+  'super-nintendo': '/images/collections/super-nintendo.svg',
+  gamecube: '/images/collections/gamecube.svg',
+};
+
 const BASE_PRICE_BY_PLATFORM: Record<CatalogImagePlatform, number> = {
   'game-boy': 3299,
   'game-boy-color': 4499,
@@ -350,6 +358,12 @@ function uniqueUrls(list: string[]): string[] {
   return [...new Set(list.map((item) => item.trim()).filter(Boolean))];
 }
 
+function ensureImagesOrFallback(images: string[], platform: CatalogImagePlatform): string[] {
+  const cleaned = uniqueUrls(images).filter((url) => url && url !== '/placeholder.svg');
+  if (cleaned.length > 0) return cleaned;
+  return [PLATFORM_FALLBACK_IMAGE_BY_PLATFORM[platform] || '/logo.png'];
+}
+
 function roundTo50(cents: number): number {
   return Math.round(cents / 50) * 50;
 }
@@ -562,6 +576,7 @@ async function main() {
   let created = 0;
   let updated = 0;
   let skipped = 0;
+  let fallbackImagesUsed = 0;
 
   console.log(`Mode: ${force ? 'FORCE' : 'SAFE'} | Seeding juegos y consolas...`);
   console.log(`Juegos objetivo: ${GAME_SEEDS.length} | Consolas objetivo: ${CONSOLE_SEEDS.length}`);
@@ -573,12 +588,11 @@ async function main() {
       platform: detectImagePlatformFromProduct({ category: seed.category, name: seed.title }),
       preferSource: 'libretro',
     });
-    const imageUrls = uniqueUrls(images.map((item) => item.url)).filter(
-      (url) => url && url !== '/placeholder.svg'
-    );
-    if (imageUrls.length === 0) {
-      console.warn(`⚠️ Sin imagen para juego: ${seed.title}`);
-      continue;
+    const rawImageUrls = uniqueUrls(images.map((item) => item.url));
+    const imageUrls = ensureImagesOrFallback(rawImageUrls, seed.platform);
+    if (rawImageUrls.filter((url) => url && url !== '/placeholder.svg').length === 0) {
+      fallbackImagesUsed += 1;
+      console.warn(`⚠️ Sin imagen externa para juego: ${seed.title} | usando fallback`);
     }
 
     const bundle = buildGameBundle(seed, imageUrls);
@@ -592,12 +606,13 @@ async function main() {
 
   for (const seed of CONSOLE_SEEDS) {
     const wikiImage = await fetchWikipediaImage(seed.wikiTitle);
+    const consoleImage = wikiImage || PLATFORM_FALLBACK_IMAGE_BY_PLATFORM[seed.platform] || '/logo.png';
     if (!wikiImage) {
-      console.warn(`⚠️ Sin imagen Wikipedia para ${seed.label}`);
-      continue;
+      fallbackImagesUsed += 1;
+      console.warn(`⚠️ Sin imagen Wikipedia para ${seed.label} | usando fallback`);
     }
 
-    const bundle = buildConsoleBundle(seed, wikiImage);
+    const bundle = buildConsoleBundle(seed, consoleImage);
     for (const product of bundle) {
       const status = await upsertProduct(supabase, product);
       if (status === 'created') created += 1;
@@ -610,6 +625,7 @@ async function main() {
   console.log(`Created: ${created}`);
   console.log(`Updated: ${updated}`);
   console.log(`Skipped: ${skipped}`);
+  console.log(`Fallback images used: ${fallbackImagesUsed}`);
 }
 
 main().catch((error) => {
