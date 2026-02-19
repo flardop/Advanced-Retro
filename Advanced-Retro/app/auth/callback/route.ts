@@ -52,6 +52,8 @@ export async function GET(request: Request) {
   const { searchParams } = requestUrl;
   const code = searchParams.get('code');
   const tokenHash = searchParams.get('token_hash');
+  const accessToken = searchParams.get('access_token');
+  const refreshToken = searchParams.get('refresh_token');
   const otpTypeRaw = searchParams.get('type');
   const oauthError = searchParams.get('error');
   const oauthErrorDescription = searchParams.get('error_description');
@@ -89,6 +91,22 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}${redirectTo}`);
     }
 
+    if (
+      typeof accessToken === 'string' &&
+      accessToken.trim() &&
+      typeof refreshToken === 'string' &&
+      refreshToken.trim()
+    ) {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (!error) {
+        await syncUserProfile(supabase);
+        return NextResponse.redirect(`${origin}${redirectTo}`);
+      }
+    }
+
     const otpType = String(otpTypeRaw || '').trim() as EmailOtpType;
     if (typeof tokenHash === 'string' && tokenHash.trim() && ALLOWED_OTP_TYPES.has(otpType)) {
       const { error } = await supabase.auth.verifyOtp({
@@ -96,6 +114,14 @@ export async function GET(request: Request) {
         type: otpType,
       });
       if (error) throw error;
+      await syncUserProfile(supabase);
+      return NextResponse.redirect(`${origin}${redirectTo}`);
+    }
+
+    const {
+      data: { user: existingUser },
+    } = await supabase.auth.getUser();
+    if (existingUser) {
       await syncUserProfile(supabase);
       return NextResponse.redirect(`${origin}${redirectTo}`);
     }

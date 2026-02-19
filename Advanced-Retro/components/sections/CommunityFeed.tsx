@@ -39,6 +39,18 @@ function buildSellerInitial(name: string): string {
   return clean.slice(0, 2).toUpperCase();
 }
 
+function toRelativeDate(value: string): string {
+  const time = new Date(String(value || '')).getTime();
+  if (!Number.isFinite(time)) return 'Publicado hace poco';
+  const deltaMs = Date.now() - time;
+  const deltaHours = Math.floor(deltaMs / (1000 * 60 * 60));
+  if (deltaHours < 1) return 'Hace menos de 1h';
+  if (deltaHours < 24) return `Hace ${deltaHours}h`;
+  const deltaDays = Math.floor(deltaHours / 24);
+  if (deltaDays < 30) return `Hace ${deltaDays} día${deltaDays === 1 ? '' : 's'}`;
+  return new Date(time).toLocaleDateString('es-ES');
+}
+
 export default function CommunityFeed() {
   const [posts, setPosts] = useState<any[]>([]);
   const [marketListings, setMarketListings] = useState<CommunityListing[]>([]);
@@ -157,29 +169,30 @@ export default function CommunityFeed() {
   return (
     <section className="section" id="comunidad">
       <div className="container space-y-6">
-        <div className="rounded-3xl border border-emerald-200/70 bg-[#f3faf8] p-6 text-slate-900 shadow-[0_10px_30px_rgba(16,185,129,0.08)]">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 md:p-8 text-slate-900 shadow-[0_16px_35px_rgba(2,6,23,0.08)]">
+          <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-700">Marketplace Comunidad</p>
-              <h2 className="text-3xl font-black mt-2">Compra y venta entre coleccionistas</h2>
-              <p className="text-slate-600 mt-2">
-                Estilo mercado real: productos de usuarios verificados, revisión previa y seguimiento por chat.
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-700">Comunidad · Market</p>
+              <h2 className="text-3xl font-black mt-2">Compra y vende como en un marketplace real</h2>
+              <p className="text-slate-600 mt-2 max-w-3xl">
+                Anuncios de usuarios verificados, revisión de la tienda y seguimiento por chat antes y después de
+                la venta.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-800">
+            <div className="flex flex-wrap gap-2 xl:max-w-sm xl:justify-end">
+              <span className="rounded-full border border-cyan-300 bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-900">
                 {policyText}
               </span>
-              <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-700">
-                Avisos por email de revisión y entrega
+              <span className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-sm text-slate-700">
+                Entrega y estado notificados por email
               </span>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-[1.8fr,1fr,1fr]">
+          <div className="mt-6 grid gap-3 lg:grid-cols-[1.8fr,1fr,1fr,auto]">
             <input
               className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400"
-              placeholder="Buscar en la comunidad (Pokémon, Zelda, consola, etc.)"
+              placeholder="Buscar productos en comunidad (Pokémon, Zelda, consola...)"
               value={marketQuery}
               onChange={(e) => setMarketQuery(e.target.value)}
             />
@@ -203,15 +216,24 @@ export default function CommunityFeed() {
               <option value="shipped">Enviado</option>
               <option value="delivered">Entregado</option>
             </select>
+            <Link
+              href="/perfil"
+              className="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white hover:bg-cyan-700"
+            >
+              Publicar
+            </Link>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link href="/perfil" className="rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600">
-              Publicar en comunidad
-            </Link>
-            <Link href="/perfil" className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">
+            <Link
+              href="/perfil"
+              className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-100"
+            >
               Mis publicaciones
             </Link>
+            <span className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs text-slate-500">
+              Estilo compra rápida: abre anuncio, revisa estado y cierra por chat
+            </span>
           </div>
         </div>
 
@@ -226,9 +248,12 @@ export default function CommunityFeed() {
                 Array.isArray(listing.images) && listing.images.length > 0 ? String(listing.images[0]) : '/logo.png';
               const sellerName = String(listing.user?.name || 'Vendedor verificado');
               const sellerAvatar = String(listing.user?.avatar_url || '');
-                  return (
-                <article key={listing.id} className="rounded-2xl border border-slate-200 bg-white overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="relative h-44 bg-slate-100">
+              return (
+                <article
+                  key={listing.id}
+                  className="rounded-2xl border border-slate-200 bg-white overflow-hidden transition-shadow hover:shadow-[0_10px_28px_rgba(2,6,23,0.14)]"
+                >
+                  <div className="relative h-52 bg-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={image}
@@ -241,14 +266,22 @@ export default function CommunityFeed() {
                         target.src = '/logo.png';
                       }}
                     />
-                    <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2 py-1 text-xs font-semibold text-slate-800">
+                    <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2 py-1 text-xs font-semibold text-slate-800 shadow-sm">
                       {toDeliveryLabel(String(listing.delivery_status || 'pending'))}
                     </span>
+                    <button
+                      type="button"
+                      className="absolute top-3 right-3 h-8 w-8 rounded-full bg-white/95 text-base leading-none text-slate-500 shadow-sm"
+                      aria-label="Guardar en favoritos"
+                    >
+                      ♡
+                    </button>
                   </div>
                   <div className="p-4 text-slate-900">
-                    <p className="text-2xl font-black text-emerald-600">{toPrice(Number(listing.price || 0))}</p>
+                    <p className="text-2xl font-black text-cyan-700">{toPrice(Number(listing.price || 0))}</p>
                     <h3 className="mt-2 font-semibold leading-snug line-clamp-2">{listing.title}</h3>
                     <p className="mt-2 text-sm text-slate-600 line-clamp-2">{listing.description}</p>
+                    <p className="mt-2 text-xs text-slate-400">{toRelativeDate(String(listing.created_at || ''))}</p>
                     <div className="mt-3 flex items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-xs font-bold text-slate-700">
                         {sellerAvatar ? (
@@ -268,6 +301,12 @@ export default function CommunityFeed() {
                       </div>
                       <p className="text-xs text-slate-500">{sellerName}</p>
                     </div>
+                    <Link
+                      href="/perfil?tab=tickets"
+                      className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-900 hover:bg-cyan-100"
+                    >
+                      Abrir chat de compra
+                    </Link>
                   </div>
                 </article>
               );
@@ -276,50 +315,54 @@ export default function CommunityFeed() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr,1fr]">
-          <div className="glass p-6">
-            <h3 className="font-semibold">Blog de comunidad</h3>
-            <p className="text-textMuted text-sm mt-2">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6">
+            <h3 className="font-semibold text-slate-900">Publicar en el blog de comunidad</h3>
+            <p className="text-slate-500 text-sm mt-2">
               Publica restauraciones, curiosidades y experiencias con tus compras.
             </p>
             <div className="mt-4 space-y-3">
               <input
-                className="w-full bg-transparent border border-line px-3 py-2"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
                 placeholder="Título"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
               <textarea
-                className="w-full bg-transparent border border-line px-3 py-2 min-h-[120px]"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 min-h-[120px] text-slate-900"
                 placeholder="Comparte tu experiencia retro..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
               <textarea
-                className="w-full bg-transparent border border-line px-3 py-2 min-h-[70px]"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 min-h-[70px] text-slate-900"
                 placeholder="URLs de fotos (opcional, separadas por línea)"
                 value={imageUrls}
                 onChange={(e) => setImageUrls(e.target.value)}
               />
-              <button className="button-primary" onClick={publish} disabled={sending}>
+              <button
+                className="inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                onClick={publish}
+                disabled={sending}
+              >
                 {sending ? 'Publicando...' : 'Publicar'}
               </button>
             </div>
           </div>
 
-          <div className="glass p-6">
-            <h3 className="font-semibold mb-3">Últimas publicaciones</h3>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6">
+            <h3 className="font-semibold mb-3 text-slate-900">Últimas publicaciones</h3>
             <div className="space-y-3 max-h-[520px] overflow-auto pr-1">
               {posts.length === 0 ? (
-                <p className="text-textMuted text-sm">Aún no hay publicaciones.</p>
+                <p className="text-slate-500 text-sm">Aún no hay publicaciones.</p>
               ) : (
                 posts.map((post) => (
-                  <div key={post.id} className="border border-line p-3">
-                    <p className="font-semibold">{post.title}</p>
-                    <p className="text-xs text-textMuted mt-1">
+                  <div key={post.id} className="border border-slate-200 rounded-xl p-3 bg-slate-50/60">
+                    <p className="font-semibold text-slate-900">{post.title}</p>
+                    <p className="text-xs text-slate-500 mt-1">
                       {post.user?.name || post.user?.email || 'Usuario'} ·{' '}
                       {new Date(post.created_at).toLocaleDateString('es-ES')}
                     </p>
-                    <p className="text-sm text-textMuted mt-2 whitespace-pre-wrap">{post.content}</p>
+                    <p className="text-sm text-slate-600 mt-2 whitespace-pre-wrap">{post.content}</p>
                   </div>
                 ))
               )}

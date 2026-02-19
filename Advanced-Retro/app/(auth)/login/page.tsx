@@ -9,7 +9,7 @@ function resolveAbsolutePathUrl(path: string): string | undefined {
   if (!path.startsWith('/')) return undefined;
   const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
   const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || '';
-  const bases = [runtimeOrigin, configuredSiteUrl].filter(Boolean);
+  const bases = [configuredSiteUrl, runtimeOrigin].filter(Boolean);
   for (const base of bases) {
     try {
       return new URL(path, base).toString();
@@ -23,7 +23,7 @@ function resolveAbsolutePathUrl(path: string): string | undefined {
 function resolveAuthCallbackUrl(nextPath?: string | null): string | undefined {
   const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
   const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || '';
-  const candidates = [runtimeOrigin, configuredSiteUrl].filter(Boolean);
+  const candidates = [configuredSiteUrl, runtimeOrigin].filter(Boolean);
 
   for (const base of candidates) {
     try {
@@ -54,7 +54,7 @@ function LoginForm() {
     const errorDescription = searchParams.get('error_description');
     if (err === 'confirm') toast.error('El enlace de confirmación ha expirado o no es válido. Inicia sesión y te podemos reenviar el correo.');
     if (err === 'missing_code' || err === 'oauth_incomplete') {
-      toast.error('Google no devolvió el código de acceso. Revisa Redirect URLs de Supabase y Google OAuth.');
+      toast.error('Login social incompleto. Revisa Site URL y Redirect URLs en Supabase/Google.');
     }
     if (err === 'config') toast.error('Configuración de auth incompleta.');
     if (err === 'oauth_cancelled') toast.error('Has cancelado el acceso social. Puedes intentarlo de nuevo.');
@@ -148,7 +148,7 @@ function LoginForm() {
     }
     const nextPath = searchParams.get('next');
     const safeNextPath = typeof nextPath === 'string' && nextPath.startsWith('/') ? nextPath : '/perfil';
-    const redirectTo = resolveAbsolutePathUrl(safeNextPath) || resolveAuthCallbackUrl(safeNextPath);
+    const redirectTo = resolveAuthCallbackUrl(safeNextPath) || resolveAbsolutePathUrl(safeNextPath);
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
