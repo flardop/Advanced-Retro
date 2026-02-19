@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
-type AdminTab = 'products' | 'orders' | 'users' | 'chats' | 'listings';
+type AdminTab = 'products' | 'orders' | 'shipping' | 'users' | 'chats' | 'listings' | 'coupons' | 'mystery';
 
 type AdminTicket = {
   id: string;
@@ -27,6 +27,25 @@ type TicketMessage = {
   created_at: string;
 };
 
+type MysteryPrizeAdmin = {
+  id: string;
+  box_id: string;
+  label: string;
+  probability: number;
+  stock: number | null;
+  is_active: boolean;
+};
+
+type MysteryBoxAdmin = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  ticket_price: number;
+  is_active: boolean;
+  prizes: MysteryPrizeAdmin[];
+};
+
 const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const;
 
 export default function AdminPanel() {
@@ -39,6 +58,8 @@ export default function AdminPanel() {
   const [users, setUsers] = useState<any[]>([]);
   const [tickets, setTickets] = useState<AdminTicket[]>([]);
   const [listings, setListings] = useState<any[]>([]);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [mysteryBoxes, setMysteryBoxes] = useState<MysteryBoxAdmin[]>([]);
 
   const [form, setForm] = useState<any>({
     name: '',
@@ -47,6 +68,10 @@ export default function AdminPanel() {
     status: 'new',
     stock: 0,
     category: 'juegos-gameboy',
+    component_type: 'full_game',
+    edition: 'sin-especificar',
+    platform: 'game-boy',
+    collection_key: '',
     description: '',
     long_description: '',
     curiosities: [],
@@ -61,18 +86,27 @@ export default function AdminPanel() {
   const [ticketReplyStatus, setTicketReplyStatus] = useState<'open' | 'in_progress' | 'resolved' | 'closed'>('in_progress');
 
   const [listingNotesById, setListingNotesById] = useState<Record<string, string>>({});
+  const [dedupeSummary, setDedupeSummary] = useState<any | null>(null);
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    type: 'percent',
+    value: 10,
+    max_uses: 1,
+  });
 
   const load = async () => {
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const [pRes, oRes, uRes, tRes, lRes] = await Promise.all([
+      const [pRes, oRes, uRes, tRes, lRes, cRes, mRes] = await Promise.all([
         fetch('/api/admin/products'),
         fetch('/api/admin/orders'),
         fetch('/api/admin/users'),
         fetch('/api/admin/chats/tickets'),
         fetch('/api/admin/listings'),
+        fetch('/api/admin/coupons'),
+        fetch('/api/admin/mystery'),
       ]);
 
       if (!pRes.ok || !oRes.ok || !uRes.ok) {
@@ -103,6 +137,20 @@ export default function AdminPanel() {
       } else {
         setListings([]);
       }
+
+      if (cRes.ok) {
+        const c = await cRes.json().catch(() => null);
+        setCoupons(Array.isArray(c?.coupons) ? c.coupons : []);
+      } else {
+        setCoupons([]);
+      }
+
+      if (mRes.ok) {
+        const m = await mRes.json().catch(() => null);
+        setMysteryBoxes(Array.isArray(m?.boxes) ? m.boxes : []);
+      } else {
+        setMysteryBoxes([]);
+      }
     } catch {
       setErrorMessage('No se pudo cargar el panel de administración.');
     } finally {
@@ -128,6 +176,28 @@ export default function AdminPanel() {
     load();
   };
 
+  const runProductDeduplication = async (apply: boolean) => {
+    const res = await fetch('/api/admin/products/deduplicate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apply, maxGroups: 300 }),
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo ejecutar la deduplicación');
+      return;
+    }
+
+    setDedupeSummary(data);
+    if (apply) {
+      toast.success(`Deduplicación aplicada. Eliminados: ${Number(data?.productsRemoved || 0)}`);
+      await load();
+    } else {
+      toast.success(`Preview generado. Grupos detectados: ${Number(data?.groupsFound || 0)}`);
+    }
+  };
+
   const deleteProduct = async (id: string) => {
     const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
     if (!res.ok) toast.error('Error al eliminar');
@@ -149,6 +219,44 @@ export default function AdminPanel() {
     load();
   };
 
+  const updateOrderTracking = async (id: string, shippingTrackingCode: string) => {
+    const res = await fetch(`/api/admin/orders/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shipping_tracking_code: shippingTrackingCode }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo guardar tracking');
+      return;
+    }
+    toast.success('Tracking guardado');
+    load();
+  };
+
+  const downloadShippingLabel = async (orderId: string) => {
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/shipping-label`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'No se pudo generar PDF');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shipping-label-${orderId.slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Etiqueta PDF descargada');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo descargar PDF');
+    }
+  };
+
   const updateUser = async (userId: string, payload: Record<string, unknown>) => {
     const res = await fetch(`/api/admin/users/${userId}`, {
       method: 'PUT',
@@ -162,6 +270,105 @@ export default function AdminPanel() {
     }
     toast.success('Usuario actualizado');
     setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, ...data.user } : user)));
+  };
+
+  const createCoupon = async () => {
+    const payload = {
+      code: couponForm.code.trim() || undefined,
+      type: couponForm.type,
+      value: Number(couponForm.value || 0),
+      max_uses: Number(couponForm.max_uses || 1),
+      active: true,
+    };
+
+    const res = await fetch('/api/admin/coupons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo crear cupón');
+      return;
+    }
+
+    setCoupons((prev) => [data.coupon, ...prev]);
+    setCouponForm((prev) => ({ ...prev, code: '' }));
+    toast.success('Cupón creado');
+  };
+
+  const toggleCouponActive = async (couponId: string, nextActive: boolean) => {
+    const res = await fetch(`/api/admin/coupons/${couponId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: nextActive }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo actualizar cupón');
+      return;
+    }
+
+    setCoupons((prev) => prev.map((coupon) => (coupon.id === couponId ? data.coupon : coupon)));
+  };
+
+  const toggleMysteryBoxActive = async (boxId: string, nextActive: boolean) => {
+    const res = await fetch(`/api/admin/mystery/boxes/${boxId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: nextActive }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo actualizar la caja');
+      return;
+    }
+
+    setMysteryBoxes((prev) =>
+      prev.map((box) => (box.id === boxId ? { ...box, is_active: Boolean(data?.box?.is_active) } : box))
+    );
+  };
+
+  const toggleMysteryPrizeActive = async (prizeId: string, nextActive: boolean) => {
+    const res = await fetch(`/api/admin/mystery/prizes/${prizeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: nextActive }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo actualizar el premio');
+      return;
+    }
+
+    const updatedPrizeId = String(data?.prize?.id || '');
+    const updatedPrizeActive = Boolean(data?.prize?.is_active);
+    setMysteryBoxes((prev) =>
+      prev.map((box) => ({
+        ...box,
+        prizes: Array.isArray(box.prizes)
+          ? box.prizes.map((prize) =>
+              prize.id === updatedPrizeId ? { ...prize, is_active: updatedPrizeActive } : prize
+            )
+          : [],
+      }))
+    );
+  };
+
+  const setAllMysteryBoxesActive = async (nextActive: boolean) => {
+    const res = await fetch('/api/admin/mystery', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active: nextActive }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo actualizar la ruleta');
+      return;
+    }
+
+    setMysteryBoxes((prev) => prev.map((box) => ({ ...box, is_active: nextActive })));
+    toast.success(nextActive ? 'Ruleta activada' : 'Ruleta apagada');
   };
 
   const openTicket = async (ticketId: string) => {
@@ -273,7 +480,7 @@ export default function AdminPanel() {
         )}
 
         <div className="flex flex-wrap gap-3 mb-6">
-          {(['products', 'orders', 'users', 'chats', 'listings'] as const).map((t) => (
+          {(['products', 'orders', 'shipping', 'users', 'chats', 'listings', 'coupons', 'mystery'] as const).map((t) => (
             <button
               key={t}
               className={`chip ${tab === t ? 'text-primary border-primary' : ''}`}
@@ -324,8 +531,14 @@ export default function AdminPanel() {
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
                   >
                     <option value="juegos-gameboy">Juegos Game Boy</option>
+                    <option value="juegos-gameboy-color">Juegos Game Boy Color</option>
+                    <option value="juegos-gameboy-advance">Juegos Game Boy Advance</option>
+                    <option value="juegos-super-nintendo">Juegos Super Nintendo</option>
+                    <option value="juegos-gamecube">Juegos GameCube</option>
                     <option value="cajas-gameboy">Cajas Game Boy</option>
+                    <option value="manuales">Manuales</option>
                     <option value="accesorios">Accesorios</option>
+                    <option value="consolas-retro">Consolas Retro</option>
                     <option value="cajas-misteriosas">Cajas Misteriosas</option>
                   </select>
                   <select
@@ -337,6 +550,41 @@ export default function AdminPanel() {
                     <option value="used">Usado</option>
                     <option value="special">Edición especial</option>
                   </select>
+                  <select
+                    className="w-full bg-transparent border border-line px-4 py-3"
+                    value={form.component_type}
+                    onChange={(e) => setForm({ ...form, component_type: e.target.value })}
+                  >
+                    <option value="full_game">Juego completo / principal</option>
+                    <option value="cartucho">Cartucho</option>
+                    <option value="caja">Caja</option>
+                    <option value="manual">Manual</option>
+                    <option value="insert">Insert/Inlay interior</option>
+                    <option value="protector_juego">Protector de juego</option>
+                    <option value="protector_caja">Protector de caja</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                  <select
+                    className="w-full bg-transparent border border-line px-4 py-3"
+                    value={form.edition}
+                    onChange={(e) => setForm({ ...form, edition: e.target.value })}
+                  >
+                    <option value="sin-especificar">Sin especificar</option>
+                    <option value="original">Original</option>
+                    <option value="repro">Repro 1:1</option>
+                  </select>
+                  <input
+                    className="w-full bg-transparent border border-line px-4 py-3"
+                    placeholder="Plataforma (game-boy, gamecube, etc.)"
+                    value={form.platform}
+                    onChange={(e) => setForm({ ...form, platform: e.target.value })}
+                  />
+                  <input
+                    className="w-full bg-transparent border border-line px-4 py-3"
+                    placeholder="Collection key (ej: pokemon-amarillo)"
+                    value={form.collection_key}
+                    onChange={(e) => setForm({ ...form, collection_key: e.target.value })}
+                  />
                 </div>
 
                 <textarea
@@ -358,7 +606,25 @@ export default function AdminPanel() {
             </div>
 
             <div className="glass p-6">
-              <h2 className="font-semibold mb-4">Productos ({products.length})</h2>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                <h2 className="font-semibold">Productos ({products.length})</h2>
+                <div className="flex gap-2">
+                  <button className="chip" onClick={() => runProductDeduplication(false)}>
+                    Preview duplicados
+                  </button>
+                  <button className="chip" onClick={() => runProductDeduplication(true)}>
+                    Limpiar duplicados
+                  </button>
+                </div>
+              </div>
+
+              {dedupeSummary ? (
+                <div className="border border-line p-3 mb-4 text-xs text-textMuted">
+                  Grupos: {Number(dedupeSummary.groupsFound || 0)} · Aplicados: {Number(dedupeSummary.groupsApplied || 0)} ·
+                  Eliminados: {Number(dedupeSummary.productsRemoved || 0)}
+                </div>
+              ) : null}
+
               <div className="space-y-3 max-h-[720px] overflow-auto pr-1">
                 {products.map((p) => (
                   <div key={p.id} className="flex justify-between items-center border-b border-line pb-3">
@@ -381,27 +647,124 @@ export default function AdminPanel() {
           <div className="glass p-6">
             <h2 className="font-semibold mb-4">Pedidos ({orders.length})</h2>
             <div className="space-y-4">
-              {orders.map((order) => (
-                <div key={order.id} className="border border-line p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-primary font-mono text-xs">#{order.id}</p>
-                    <select
-                      className="bg-transparent border border-line px-3 py-2 text-sm"
-                      value={order.status}
-                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                    >
-                      <option value="pending">pending</option>
-                      <option value="processing">processing</option>
-                      <option value="paid">paid</option>
-                      <option value="shipped">shipped</option>
-                      <option value="delivered">delivered</option>
-                      <option value="cancelled">cancelled</option>
-                    </select>
+              {orders.map((order) => {
+                const address =
+                  order?.shipping_address && typeof order.shipping_address === 'object'
+                    ? order.shipping_address
+                    : null;
+
+                return (
+                  <div key={order.id} className="border border-line p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-primary font-mono text-xs">#{order.id}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {order.needs_shipping ? (
+                          <span className="chip text-primary border-primary">Pendiente de envío</span>
+                        ) : null}
+                        <select
+                          className="bg-transparent border border-line px-3 py-2 text-sm"
+                          value={order.status}
+                          onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                        >
+                          <option value="pending">pending</option>
+                          <option value="processing">processing</option>
+                          <option value="paid">paid</option>
+                          <option value="shipped">shipped</option>
+                          <option value="delivered">delivered</option>
+                          <option value="cancelled">cancelled</option>
+                        </select>
+                      </div>
+                    </div>
+                    <p className="text-textMuted text-sm mt-2">
+                      Usuario: {order.user?.email || order.user_id}
+                    </p>
+                    <p className="text-textMuted text-sm">
+                      Total: {(Number(order.total || 0) / 100).toFixed(2)} €
+                    </p>
+
+                    {address ? (
+                      <div className="mt-3 border border-line p-3 text-sm">
+                        <p className="font-semibold">Dirección de envío</p>
+                        <p className="text-textMuted">{address.full_name || '-'}</p>
+                        <p className="text-textMuted">{address.line1 || '-'}</p>
+                        {address.line2 ? <p className="text-textMuted">{address.line2}</p> : null}
+                        <p className="text-textMuted">
+                          {address.postal_code || '-'} · {address.city || '-'} · {address.country || '-'}
+                        </p>
+                        {address.phone ? <p className="text-textMuted">Tel: {address.phone}</p> : null}
+                      </div>
+                    ) : null}
+
+                    <div className="mt-3 flex flex-wrap gap-2 items-center">
+                      <input
+                        className="bg-transparent border border-line px-3 py-2 text-sm min-w-[220px]"
+                        defaultValue={order.shipping_tracking_code || ''}
+                        placeholder="Código de tracking"
+                        onBlur={(e) => {
+                          const next = e.target.value.trim();
+                          if (next === String(order.shipping_tracking_code || '').trim()) return;
+                          updateOrderTracking(order.id, next);
+                        }}
+                      />
+                      <button className="chip" onClick={() => downloadShippingLabel(order.id)}>
+                        Descargar etiqueta PDF
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-textMuted text-sm mt-2">Usuario: {order.user_id}</p>
-                  <p className="text-textMuted text-sm">Total: {(Number(order.total || 0) / 100).toFixed(2)} €</p>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {tab === 'shipping' && (
+          <div className="glass p-6">
+            <h2 className="font-semibold mb-4">Productos a enviar</h2>
+            <div className="space-y-4">
+              {orders
+                .filter((order) => Boolean(order.needs_shipping))
+                .map((order) => {
+                  const address =
+                    order?.shipping_address && typeof order.shipping_address === 'object'
+                      ? order.shipping_address
+                      : null;
+
+                  return (
+                    <div key={order.id} className="border border-line p-4">
+                      <p className="text-primary font-mono text-xs">#{order.id}</p>
+                      <p className="text-sm text-textMuted mt-1">
+                        Cliente: {order.user?.email || order.user_id}
+                      </p>
+                      <p className="text-sm text-textMuted">
+                        Total: {(Number(order.total || 0) / 100).toFixed(2)} €
+                      </p>
+
+                      {address ? (
+                        <div className="mt-2 text-sm text-textMuted">
+                          <p>{address.full_name || '-'}</p>
+                          <p>{address.line1 || '-'}</p>
+                          {address.line2 ? <p>{address.line2}</p> : null}
+                          <p>{address.postal_code || '-'} · {address.city || '-'} · {address.country || '-'}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-red-400 mt-2">Pedido sin dirección de envío.</p>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button className="chip" onClick={() => downloadShippingLabel(order.id)}>
+                          Generar PDF envío
+                        </button>
+                        <button className="chip" onClick={() => updateOrderStatus(order.id, 'shipped')}>
+                          Marcar como enviado
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {orders.filter((order) => Boolean(order.needs_shipping)).length === 0 ? (
+                <p className="text-textMuted text-sm">No hay pedidos pendientes de envío.</p>
+              ) : null}
             </div>
           </div>
         )}
@@ -579,6 +942,137 @@ export default function AdminPanel() {
                   />
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {tab === 'coupons' && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="glass p-6 space-y-3">
+              <h2 className="font-semibold">Crear cupón</h2>
+              <input
+                className="bg-transparent border border-line px-3 py-2"
+                placeholder="Código (opcional, se genera automático)"
+                value={couponForm.code}
+                onChange={(e) => setCouponForm((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
+              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select
+                  className="bg-transparent border border-line px-3 py-2"
+                  value={couponForm.type}
+                  onChange={(e) => setCouponForm((prev) => ({ ...prev, type: e.target.value }))}
+                >
+                  <option value="percent">Porcentaje</option>
+                  <option value="fixed">Importe fijo (céntimos)</option>
+                  <option value="free_order">Pedido gratis</option>
+                </select>
+                <input
+                  className="bg-transparent border border-line px-3 py-2"
+                  type="number"
+                  min={0}
+                  value={couponForm.value}
+                  onChange={(e) => setCouponForm((prev) => ({ ...prev, value: Number(e.target.value) }))}
+                />
+                <input
+                  className="bg-transparent border border-line px-3 py-2"
+                  type="number"
+                  min={1}
+                  value={couponForm.max_uses}
+                  onChange={(e) => setCouponForm((prev) => ({ ...prev, max_uses: Number(e.target.value) }))}
+                />
+              </div>
+              <button className="button-primary" onClick={createCoupon}>
+                Crear cupón
+              </button>
+            </div>
+
+            <div className="glass p-6">
+              <h2 className="font-semibold mb-3">Cupones ({coupons.length})</h2>
+              <div className="space-y-2 max-h-[680px] overflow-auto pr-1">
+                {coupons.map((coupon) => (
+                  <div key={coupon.id} className="border border-line p-3">
+                    <p className="font-mono text-sm text-primary">{coupon.code}</p>
+                    <p className="text-xs text-textMuted">
+                      Tipo: {coupon.type} · Valor: {coupon.value} · Uso: {coupon.used_count}/{coupon.max_uses}
+                    </p>
+                    <div className="mt-2">
+                      <button
+                        className={`chip ${coupon.active ? 'text-primary border-primary' : ''}`}
+                        onClick={() => toggleCouponActive(coupon.id, !coupon.active)}
+                      >
+                        {coupon.active ? 'Desactivar' : 'Activar'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'mystery' && (
+          <div className="glass p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h2 className="font-semibold">Ruleta y Mystery Boxes ({mysteryBoxes.length})</h2>
+              <div className="flex flex-wrap gap-2">
+                <button className="chip" onClick={() => setAllMysteryBoxesActive(true)}>
+                  Activar ruleta
+                </button>
+                <button className="chip" onClick={() => setAllMysteryBoxesActive(false)}>
+                  Apagar ruleta
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {mysteryBoxes.map((box) => (
+                <div key={box.id} className="border border-line p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">{box.name}</p>
+                      <p className="text-xs text-textMuted">
+                        {box.slug} · {(Number(box.ticket_price || 0) / 100).toFixed(2)} € por ticket
+                      </p>
+                      <p className="text-xs text-textMuted mt-1">{box.description}</p>
+                    </div>
+                    <button
+                      className={`chip ${box.is_active ? 'text-primary border-primary' : ''}`}
+                      onClick={() => toggleMysteryBoxActive(box.id, !box.is_active)}
+                    >
+                      {box.is_active ? 'Desactivar caja' : 'Activar caja'}
+                    </button>
+                  </div>
+
+                  <div className="mt-3 border border-line p-3 space-y-2">
+                    <p className="text-sm font-medium">Premios ({Array.isArray(box.prizes) ? box.prizes.length : 0})</p>
+                    {Array.isArray(box.prizes) && box.prizes.length > 0 ? (
+                      box.prizes.map((prize) => (
+                        <div key={prize.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
+                          <div>
+                            <p className="text-sm">{prize.label}</p>
+                            <p className="text-xs text-textMuted">
+                              Prob: {Number(prize.probability || 0).toFixed(4)}
+                              {prize.stock == null ? ' · Stock ilimitado' : ` · Stock ${prize.stock}`}
+                            </p>
+                          </div>
+                          <button
+                            className={`chip ${prize.is_active ? 'text-primary border-primary' : ''}`}
+                            onClick={() => toggleMysteryPrizeActive(prize.id, !prize.is_active)}
+                          >
+                            {prize.is_active ? 'Desactivar premio' : 'Activar premio'}
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-textMuted">Sin premios configurados.</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {mysteryBoxes.length === 0 ? (
+                <p className="text-sm text-textMuted">No hay mystery boxes configuradas.</p>
+              ) : null}
             </div>
           </div>
         )}

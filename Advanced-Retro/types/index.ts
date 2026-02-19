@@ -36,6 +36,6 @@ export interface Order {
   id: string;
   user_id: string;
   total: number;
-  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'processing' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
   created_at: string;
 }

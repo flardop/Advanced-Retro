@@ -1,407 +1,738 @@
 /**
- * Utilidad para buscar imágenes de juegos retro desde múltiples fuentes
+ * Utilidad para buscar imágenes de juegos retro desde múltiples fuentes.
  * Soporta: LibRetro CDN, IGDB API, Splash! Games Directory
  */
 
+import type { CatalogImagePlatform } from './catalogPlatform';
+
+type SupportedPlatform = CatalogImagePlatform;
+type ImageSource = 'libretro' | 'igdb' | 'splash' | 'fallback';
+type LibretroAssetFolder = 'Named_Boxarts' | 'Named_Titles' | 'Named_Snaps';
+type IGDBGame = { id: number; name: string; cover?: number };
+type IGDBCover = { image_id?: string };
+
+const LIBRETRO_BASE_URL = 'https://thumbnails.libretro.com';
+const SPLASH_BASE_URL = 'https://splash.games.directory/covers';
+const PLACEHOLDER_IMAGE = '/placeholder.svg';
+
+const LIBRETRO_PLATFORM_PATH: Record<SupportedPlatform, string> = {
+  'game-boy': 'Nintendo - Game Boy',
+  'game-boy-color': 'Nintendo - Game Boy Color',
+  'game-boy-advance': 'Nintendo - Game Boy Advance',
+  'super-nintendo': 'Nintendo - Super Nintendo Entertainment System',
+  gamecube: 'Nintendo - GameCube',
+};
+
+const PLATFORM_FALLBACK_ORDER: SupportedPlatform[] = [
+  'game-boy',
+  'game-boy-color',
+  'game-boy-advance',
+  'super-nintendo',
+  'gamecube',
+];
+
+const NON_GAME_PREFIX_RE = new RegExp(
+  [
+    '^manual\\s+',
+    '^caja(?:\\s+repro|\\s+original)?\\s+',
+    '^insert(?:\\s+interior)?\\s+',
+    '^pegatina\\s+',
+    '^sticker\\s+',
+    '^funda\\s+',
+    '^protector(?:\\s+pantalla)?\\s+',
+    '^estuche\\s+',
+    '^cable\\s+link\\s+',
+    '^lupa(?:\\s+light)?\\s+',
+    '^bater(?:i|í)as?(?:\\s+recargables)?\\s+',
+  ].join('|'),
+  'i'
+);
+
+const NON_GAME_SUFFIX_RE = new RegExp(
+  [
+    '\\s+caja\\s+game\\s+boy$',
+    '\\s+game\\s+boy\\s+caja$',
+    '\\s+para\\s+game\\s+boy$',
+    '\\s+for\\s+game\\s+boy$',
+    '\\s+game\\s+boy$',
+  ].join('|'),
+  'i'
+);
+
+const GENERIC_NON_GAME_TOKENS = new Set([
+  'game',
+  'boy',
+  'color',
+  'advance',
+  'universal',
+  'original',
+  'premium',
+  'deluxe',
+  'estandar',
+  'retro',
+]);
+
+const LIBRETRO_REGION_BONUS: Array<{ regex: RegExp; score: number }> = [
+  { regex: /\(usa,\s*europe\)/i, score: 12 },
+  { regex: /\(world\)/i, score: 10 },
+  { regex: /\(usa\)/i, score: 8 },
+  { regex: /\(europe\)/i, score: 7 },
+  { regex: /\(japan\)/i, score: 5 },
+];
+
+const libretroIndexCache = new Map<string, string[]>();
+let igdbTokenCache: { token: string; expiresAtMs: number } | null = null;
+
 export interface GameImageResult {
   url: string;
-  source: 'libretro' | 'igdb' | 'splash' | 'rawg' | 'fallback';
+  source: ImageSource;
   type: 'cover' | 'screenshot' | 'boxart';
+  platform?: SupportedPlatform;
+  fileName?: string;
 }
 
 export interface GameImageSearchOptions {
   gameName: string;
-  platform?: 'game-boy' | 'game-boy-color' | 'game-boy-advance';
-  preferSource?: 'libretro' | 'igdb' | 'splash' | 'rawg';
+  platform?: SupportedPlatform;
+  preferSource?: Exclude<ImageSource, 'fallback'>;
 }
 
-// Simple in-memory cache for runtime to avoid duplicate network requests
-const imageCache = new Map<string, GameImageResult | null>();
-
-// Helper: normalize game name (remove diacritics, trim, normalize spaces)
-function normalizeName(name: string) {
-  return name
+function normalizeText(value: string): string {
+  return value
     .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[’']/g, "'")
+    .replace(/[^a-z0-9\s:'-]/g, ' ')
     .replace(/\s+/g, ' ')
-    .replace(/[:\\/\\?"'<>|]/g, '')
     .trim();
 }
 
-// Helper: slugify for splash
-function slugify(name: string) {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+function normalizeForMatching(value: string): string {
+  return normalizeText(value)
+    .replace(/:\s*/g, ' - ')
+    .replace(/\s+-\s+/g, ' - ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-// Helper: HEAD request with retries and timeout
-async function headExists(url: string, timeout = 3000, retries = 2): Promise<boolean> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), timeout);
-      const res = await fetch(url, { method: 'HEAD', signal: controller.signal });
-      clearTimeout(id);
-      if (res.ok) return true;
-      // If 404, no need to retry
-      if (res.status === 404) return false;
-      // Otherwise try again
-    } catch (err: any) {
-      if (attempt === retries) return false;
-      // backoff
-      await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
-      continue;
+function stripFileExtension(fileName: string): string {
+  return fileName.replace(/\.[a-z0-9]+$/i, '');
+}
+
+function stripMetadataTags(value: string): string {
+  return value
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\s*\[[^\]]*\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function reorderTrailingThe(value: string): string {
+  return value.replace(/,\s*the\b/i, '');
+}
+
+function removeCatalogWords(gameName: string): string {
+  const cleaned = gameName
+    .trim()
+    .replace(NON_GAME_PREFIX_RE, '')
+    .replace(NON_GAME_SUFFIX_RE, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleaned) return '';
+
+  const normalizedTokens = normalizeText(cleaned).split(/\s+/).filter(Boolean);
+  if (
+    normalizedTokens.length > 0 &&
+    normalizedTokens.every((token) => GENERIC_NON_GAME_TOKENS.has(token))
+  ) {
+    return '';
+  }
+
+  return cleaned;
+}
+
+function withPokemonVariants(name: string): string[] {
+  const normalized = normalizeText(name);
+  const variants = new Set<string>();
+  variants.add(name);
+
+  const pokemonMap: Array<{ test: RegExp; value: string }> = [
+    { test: /pokemon\s+rojo|pokemon\s+red/, value: 'Pokemon - Red Version' },
+    { test: /pokemon\s+azul|pokemon\s+blue/, value: 'Pokemon - Blue Version' },
+    {
+      test: /pokemon\s+amarillo|pokemon\s+yellow/,
+      value: 'Pokemon - Yellow Version - Special Pikachu Edition',
+    },
+    { test: /pokemon\s+verde|pokemon\s+green/, value: 'Pokemon - Green Version' },
+  ];
+
+  for (const entry of pokemonMap) {
+    if (entry.test.test(normalized)) {
+      variants.add(entry.value);
     }
   }
-  return false;
+
+  return [...variants];
 }
 
-/**
- * Busca imágenes de juegos desde LibRetro CDN (gratis, sin API key)
- * Formato: https://thumbnails.libretro.com/Nintendo%20-%20Game%20Boy%20Color/Named_Boxarts/[Game Title].png
- */
-async function searchLibRetro(
-  gameName: string,
-  platform: string = 'game-boy-color'
-): Promise<GameImageResult | null> {
+function withKnownAliases(name: string): string[] {
+  const aliases = new Set<string>();
+  aliases.add(name);
+
+  const normalized = normalizeText(name);
+
+  if (normalized.includes('legend of zelda') && normalized.includes('awakening')) {
+    aliases.add("Legend of Zelda, The - Link's Awakening");
+    aliases.add("The Legend of Zelda - Link's Awakening");
+    aliases.add("The Legend of Zelda: Link's Awakening");
+  }
+
+  if (normalized.includes('legend of zelda') && normalized.includes('oracle') && normalized.includes('ages')) {
+    aliases.add('Legend of Zelda, The - Oracle of Ages');
+  }
+
+  if (normalized.includes('legend of zelda') && normalized.includes('oracle') && normalized.includes('seasons')) {
+    aliases.add('Legend of Zelda, The - Oracle of Seasons');
+  }
+
+  if (normalized.includes('legend of zelda') && normalized.includes('minish')) {
+    aliases.add('Legend of Zelda, The - The Minish Cap');
+  }
+
+  if (normalized.includes('legend of zelda') && normalized.includes('wind') && normalized.includes('waker')) {
+    aliases.add('Legend of Zelda, The - The Wind Waker');
+  }
+
+  if (normalized.includes('legend of zelda') && normalized.includes('link') && normalized.includes('past')) {
+    aliases.add('Legend of Zelda, The - A Link to the Past');
+  }
+
+  if (normalized.includes('castlevania') && normalized.includes('adventure')) {
+    aliases.add('Castlevania - The Adventure');
+  }
+
+  if (normalized === 'metroid ii' || normalized.includes('metroid ii')) {
+    aliases.add('Metroid II - Return of Samus');
+  }
+
+  if (normalized.includes('super mario land 2')) {
+    aliases.add('Super Mario Land 2 - 6 Golden Coins');
+  }
+
+  return [...aliases];
+}
+
+function buildNameVariants(gameName: string): string[] {
+  const baseName = removeCatalogWords(gameName);
+  if (!baseName) return [];
+
+  const candidates = new Set<string>();
+  const seeds = new Set<string>([baseName]);
+
+  if (normalizeText(baseName) === normalizeText(gameName)) {
+    seeds.add(gameName);
+  }
+
+  for (const raw of seeds) {
+    if (!raw) continue;
+
+    const pokemonVariants = withPokemonVariants(raw);
+    for (const pokemonVariant of pokemonVariants) {
+      for (const alias of withKnownAliases(pokemonVariant)) {
+        const compact = alias.replace(/[^a-zA-Z0-9\s:'-]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (compact) candidates.add(compact);
+      }
+    }
+  }
+
+  return [...candidates];
+}
+
+function buildPlatformTryOrder(platform: SupportedPlatform): SupportedPlatform[] {
+  // Evita mezclas entre consolas distintas; preferimos "no imagen" antes que portada incorrecta.
+  return [platform];
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function calcTokenOverlapScore(a: string, b: string): number {
+  const aTokens = new Set(a.split(/\s+/).filter((token) => token.length >= 3));
+  const bTokens = new Set(b.split(/\s+/).filter((token) => token.length >= 3));
+  if (aTokens.size === 0 || bTokens.size === 0) {
+    return 0;
+  }
+
+  let overlap = 0;
+  for (const token of aTokens) {
+    if (bTokens.has(token)) overlap++;
+  }
+
+  if (overlap < 2) return 0;
+  return overlap / Math.max(aTokens.size, bTokens.size);
+}
+
+function extractNumberTokens(value: string): string[] {
+  const matches = value.match(/\b\d+\b/g);
+  return matches ? [...new Set(matches)] : [];
+}
+
+function scoreLibRetroCandidate(fileName: string, queryVariants: string[]): number {
+  const baseTitle = stripMetadataTags(stripFileExtension(fileName));
+  const normalizedTitle = normalizeForMatching(reorderTrailingThe(baseTitle));
+  if (!normalizedTitle) return 0;
+
+  let best = 0;
+
+  for (const query of queryVariants) {
+    const normalizedQuery = normalizeForMatching(query);
+    if (!normalizedQuery) continue;
+
+    let score = 0;
+    if (normalizedTitle === normalizedQuery) {
+      score = 100;
+    } else if (normalizedTitle.startsWith(`${normalizedQuery} -`) || normalizedTitle.startsWith(`${normalizedQuery} `)) {
+      score = 92;
+    } else if (
+      normalizedQuery.length >= 5 &&
+      new RegExp(`\\b${escapeRegex(normalizedQuery)}\\b`).test(normalizedTitle)
+    ) {
+      score = 84;
+    } else if (
+      normalizedQuery.length >= 5 &&
+      normalizedTitle.length >= 5 &&
+      normalizedTitle.includes(normalizedQuery)
+    ) {
+      score = 74;
+    } else {
+      const overlap = calcTokenOverlapScore(normalizedTitle, normalizedQuery);
+      if (overlap >= 0.8) score = 70;
+      else if (overlap >= 0.6) score = 62;
+      else if (overlap >= 0.4) score = 54;
+    }
+
+    if (score > best) best = score;
+  }
+
+  if (best === 0) return 0;
+
+  // Evita mismatches tipo "2" vs "3" en sagas.
+  for (const query of queryVariants) {
+    const normalizedQuery = normalizeForMatching(query);
+    if (!normalizedQuery) continue;
+
+    const queryNumbers = extractNumberTokens(normalizedQuery);
+    if (queryNumbers.length === 0) continue;
+
+    const candidateNumbers = extractNumberTokens(normalizedTitle);
+    let penalty = 0;
+    for (const num of queryNumbers) {
+      if (!candidateNumbers.includes(num)) penalty += 24;
+    }
+    for (const num of candidateNumbers) {
+      if (!queryNumbers.includes(num)) penalty += 10;
+    }
+    best -= penalty;
+  }
+
+  for (const region of LIBRETRO_REGION_BONUS) {
+    if (region.regex.test(fileName)) {
+      best += region.score;
+      break;
+    }
+  }
+
+  if (/\b(proto|prototype|demo|beta|sample)\b/i.test(fileName)) {
+    best -= 25;
+  }
+  if (/\b(hack|romhack)\b/i.test(fileName)) {
+    best -= 30;
+  }
+  if (/\bdx\b/i.test(fileName)) {
+    best -= 18;
+  }
+
+  return best;
+}
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    // Mapeo de plataformas a rutas LibRetro
-    const platformMap: Record<string, string> = {
-      'game-boy': 'Nintendo%20-%20Game%20Boy',
-      'game-boy-color': 'Nintendo%20-%20Game%20Boy%20Color',
-      'game-boy-advance': 'Nintendo%20-%20Game%20Boy%20Advance',
-    };
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
-    const platformPath = platformMap[platform] || platformMap['game-boy-color'];
-    
-    // Normalizar nombre del juego - mantener caracteres especiales comunes
-    const cleanName = normalizeName(gameName);
+async function loadLibRetroIndex(
+  platform: SupportedPlatform,
+  folder: LibretroAssetFolder = 'Named_Boxarts'
+): Promise<string[]> {
+  const cacheKey = `${platform}|${folder}`;
+  const cached = libretroIndexCache.get(cacheKey);
+  if (cached) return cached;
 
-    // Generar múltiples variantes del nombre
-    const nameVariants = [
-      cleanName,
-      cleanName.replace(/[^a-zA-Z0-9\s]/g, ''),
-      cleanName.replace(/Pokemon/g, 'Pokémon'),
-      cleanName.replace(/Pokémon/g, 'Pokemon'),
-      cleanName.toLowerCase(),
-      cleanName.replace(/\s+/g, ' ').trim(),
-    ];
+  const platformPath = LIBRETRO_PLATFORM_PATH[platform];
+  const url = `${LIBRETRO_BASE_URL}/${encodeURIComponent(platformPath)}/${folder}/`;
 
-    // Regiones comunes
-    const regions = ['(USA)', '(Europe)', '(USA, Europe)', '(Japan)', '(World)', ''];
-    
-    const baseUrl = 'https://thumbnails.libretro.com';
-    const boxartPath = `${platformPath}/Named_Boxarts`;
+  try {
+    const response = await fetchWithTimeout(url, 12000);
+    if (!response.ok) {
+      return [];
+    }
 
-    // Intentar todas las combinaciones
-    for (const nameVariant of nameVariants) {
-      const encodedName = encodeURIComponent(nameVariant);
+    const html = await response.text();
+    const matches = [...html.matchAll(/href="([^"]+\.png)"/gi)];
+    const fileNames: string[] = [];
 
-      for (const region of regions) {
-        const fileName = region
-          ? `${encodedName}%20${encodeURIComponent(region)}.png`
-          : `${encodedName}.png`;
-
-        const url = `${baseUrl}/${boxartPath}/${fileName}`;
-
-        // Check cache first
-        const cacheKey = `libretro:${platform}:${url}`;
-        if (imageCache.has(cacheKey)) {
-          const cached = imageCache.get(cacheKey);
-          if (cached) return cached;
-          continue;
-        }
-
-        const exists = await headExists(url, 3000, 2);
-        if (exists) {
-          const result = { url, source: 'libretro' as const, type: 'boxart' as const };
-          imageCache.set(cacheKey, result);
-          return result;
-        }
-        imageCache.set(cacheKey, null);
+    for (const match of matches) {
+      const encoded = match[1];
+      if (!encoded || encoded.startsWith('?')) continue;
+      try {
+        fileNames.push(decodeURIComponent(encoded));
+      } catch {
+        fileNames.push(encoded);
       }
     }
 
-    return null;
+    libretroIndexCache.set(cacheKey, fileNames);
+    return fileNames;
+  } catch (error) {
+    console.warn(`Error loading LibRetro index for ${platform}/${folder}:`, error);
+    return [];
+  }
+}
+
+function buildLibRetroFileUrl(
+  platform: SupportedPlatform,
+  fileName: string,
+  folder: LibretroAssetFolder = 'Named_Boxarts'
+): string {
+  const platformPath = LIBRETRO_PLATFORM_PATH[platform];
+  return `${LIBRETRO_BASE_URL}/${encodeURIComponent(platformPath)}/${folder}/${encodeURIComponent(fileName)}`;
+}
+
+/**
+ * Busca imágenes desde LibRetro CDN (gratis, sin API key).
+ * Usa matching por índice para soportar variaciones reales de nombres.
+ */
+async function searchLibRetro(
+  gameName: string,
+  platform: SupportedPlatform = 'game-boy'
+): Promise<GameImageResult | null> {
+  try {
+    const queryVariants = buildNameVariants(gameName);
+    if (queryVariants.length === 0) return null;
+
+    let best: { score: number; platform: SupportedPlatform; fileName: string } | null = null;
+    const platforms = buildPlatformTryOrder(platform);
+
+    for (const candidatePlatform of platforms) {
+      const fileNames = await loadLibRetroIndex(candidatePlatform);
+      if (fileNames.length === 0) continue;
+
+      for (const fileName of fileNames) {
+        const score = scoreLibRetroCandidate(fileName, queryVariants);
+        if (!best || score > best.score) {
+          best = { score, platform: candidatePlatform, fileName };
+        }
+      }
+
+      // 95+ suele ser match prácticamente exacto: no hace falta seguir buscando.
+      if (best && best.score >= 95) {
+        break;
+      }
+    }
+
+    if (!best || best.score < 60) {
+      return null;
+    }
+
+    return {
+      url: buildLibRetroFileUrl(best.platform, best.fileName, 'Named_Boxarts'),
+      source: 'libretro',
+      type: 'boxart',
+      platform: best.platform,
+      fileName: best.fileName,
+    };
   } catch (error) {
     console.error('Error searching LibRetro:', error);
     return null;
   }
 }
 
-/**
- * Busca imágenes desde IGDB API (requiere API key)
- * Formato: https://images.igdb.com/igdb/image/upload/t_cover_big/[image_id].jpg
- */
-async function searchIGDB(
-  gameName: string,
-  platform: string = 'game-boy-color'
-): Promise<GameImageResult | null> {
+async function getIGDBAccessToken(): Promise<string | null> {
   const clientId = process.env.IGDB_CLIENT_ID;
   const clientSecret = process.env.IGDB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return null; // No hay credenciales configuradas
+    return null;
   }
-  // token cache
-  let token: { access_token: string; expires_at: number } | null = (searchIGDB as any)._token || null;
-  try {
-    if (!token || Date.now() > token.expires_at) {
-      const tokenResponse = await fetch('https://id.twitch.tv/oauth2/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: 'client_credentials',
-        }),
-      });
 
-      if (!tokenResponse.ok) return null;
-      const tokenJson = await tokenResponse.json();
-      token = { access_token: tokenJson.access_token, expires_at: Date.now() + (tokenJson.expires_in || 3600) * 1000 - 5000 };
-      (searchIGDB as any)._token = token;
+  const now = Date.now();
+  if (igdbTokenCache && igdbTokenCache.expiresAtMs > now + 30_000) {
+    return igdbTokenCache.token;
+  }
+
+  try {
+    const tokenResponse = await fetch('https://id.twitch.tv/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: 'client_credentials',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      return null;
     }
 
-    const platformMap: Record<string, number> = {
-      'game-boy': 33,
-      'game-boy-color': 22,
-      'game-boy-advance': 24,
+    const payload = (await tokenResponse.json()) as {
+      access_token?: string;
+      expires_in?: number;
     };
 
-    const platformId = platformMap[platform] || platformMap['game-boy-color'];
+    if (!payload.access_token) {
+      return null;
+    }
 
-    const cacheKey = `igdb:${platform}:${normalizeName(gameName)}`;
-    if (imageCache.has(cacheKey)) return imageCache.get(cacheKey) || null;
+    igdbTokenCache = {
+      token: payload.access_token,
+      expiresAtMs: now + (payload.expires_in || 3600) * 1000,
+    };
 
-    const searchResponse = await fetch('https://api.igdb.com/v4/games', {
+    return payload.access_token;
+  } catch (error) {
+    console.warn('Error fetching IGDB token:', error);
+    return null;
+  }
+}
+
+async function fetchIGDBQuery<T>(
+  endpoint: 'games' | 'covers',
+  query: string
+): Promise<T[] | null> {
+  const clientId = process.env.IGDB_CLIENT_ID;
+  const token = await getIGDBAccessToken();
+
+  if (!clientId || !token) return null;
+
+  try {
+    const response = await fetch(`https://api.igdb.com/v4/${endpoint}`, {
       method: 'POST',
       headers: {
         'Client-ID': clientId,
-        Authorization: `Bearer ${token.access_token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'text/plain',
       },
-      body: `search \"${gameName.replace(/\\\"/g, '\\\\"')}\"; fields name,cover; where platforms = ${platformId}; limit 1;`,
+      body: query,
     });
 
-    if (!searchResponse.ok) {
+    if (!response.ok) {
       return null;
     }
 
-    const games = await searchResponse.json();
-    if (!games || games.length === 0 || !games[0].cover) {
-      imageCache.set(cacheKey, null);
-      return null;
-    }
-
-    const coverId = games[0].cover;
-    const coverUrl = `https://images.igdb.com/igdb/image/upload/t_cover_big/${coverId}.jpg`;
-    const result = { url: coverUrl, source: 'igdb' as const, type: 'cover' as const };
-    imageCache.set(cacheKey, result);
-    return result;
+    return (await response.json()) as T[];
   } catch (error) {
-    console.error('Error searching IGDB:', error);
+    console.warn(`Error querying IGDB ${endpoint}:`, error);
     return null;
   }
 }
 
 /**
- * Busca imágenes desde Splash! Games Directory
+ * Busca imágenes desde IGDB API (requiere API key).
+ * Formato: https://images.igdb.com/igdb/image/upload/t_cover_big/[image_id].jpg
+ */
+async function searchIGDB(
+  gameName: string,
+  platform: SupportedPlatform = 'game-boy'
+): Promise<GameImageResult | null> {
+  const platformMap: Record<SupportedPlatform, number> = {
+    'game-boy': 33,
+    'game-boy-color': 22,
+    'game-boy-advance': 24,
+    'super-nintendo': 19,
+    gamecube: 21,
+  };
+
+  const platformId = platformMap[platform];
+  const queryVariants = buildNameVariants(gameName).slice(0, 3);
+
+  for (const candidate of queryVariants) {
+    const escapedName = candidate.replace(/"/g, '\\"');
+    const gamesQuery = [
+      `search "${escapedName}";`,
+      'fields name,cover;',
+      `where platforms = (${platformId}) & cover != null;`,
+      'limit 3;',
+    ].join('\n');
+
+    const games = await fetchIGDBQuery<IGDBGame>('games', gamesQuery);
+
+    const game = games?.find((item) => typeof item.cover === 'number');
+    if (!game?.cover) {
+      continue;
+    }
+
+    const coversQuery = [`fields image_id;`, `where id = (${game.cover});`, 'limit 1;'].join('\n');
+    const covers = await fetchIGDBQuery<IGDBCover>('covers', coversQuery);
+    const imageId = covers?.[0]?.image_id;
+
+    if (imageId) {
+      return {
+        url: `https://images.igdb.com/igdb/image/upload/t_cover_big/${imageId}.jpg`,
+        source: 'igdb',
+        type: 'cover',
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Busca imágenes desde Splash! Games Directory.
  * Formato: https://splash.games.directory/covers/game-boy/[game-slug].png
  */
 async function searchSplash(
   gameName: string,
-  platform: string = 'game-boy'
+  platform: SupportedPlatform = 'game-boy'
 ): Promise<GameImageResult | null> {
   try {
-    // Generar múltiples slugs posibles
-    const base = normalizeName(gameName).toLowerCase();
-    const slugVariants = [
-      slugify(base),
-      slugify(base.replace(/\b(the|a|an)\b/g, '')),
-      slugify(base.replace(/[:;,.()\[\]]/g, '')),
-    ];
+    const variants = buildNameVariants(gameName);
+    const platformSlug = platform;
+    const slugs = new Set<string>();
 
-    const platformMap: Record<string, string> = {
-      'game-boy': 'game-boy',
-      'game-boy-color': 'game-boy-color',
-      'game-boy-advance': 'game-boy-advance',
-    };
-
-    const platformSlug = platformMap[platform] || 'game-boy';
-
-    for (const slug of slugVariants) {
-      if (!slug) continue;
-
-      const url = `https://splash.games.directory/covers/${platformSlug}/${slug}.png`;
-      const cacheKey = `splash:${platform}:${url}`;
-      if (imageCache.has(cacheKey)) {
-        const cached = imageCache.get(cacheKey);
-        if (cached) return cached;
-        continue;
-      }
-
-      const exists = await headExists(url, 2500, 1);
-      if (exists) {
-        const result = { url, source: 'splash' as const, type: 'cover' as const };
-        imageCache.set(cacheKey, result);
-        return result;
-      }
-      imageCache.set(cacheKey, null);
+    for (const value of variants) {
+      const slug = normalizeText(value)
+        .replace(/[:']/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      if (slug) slugs.add(slug);
     }
 
+    for (const slug of slugs) {
+      const url = `${SPLASH_BASE_URL}/${platformSlug}/${slug}.png`;
+      try {
+        const response = await fetchWithTimeout(url, 3500);
+        if (response.ok) {
+          return {
+            url,
+            source: 'splash',
+            type: 'cover',
+          };
+        }
+      } catch {
+        continue;
+      }
+    }
     return null;
   } catch (error) {
-    console.warn('Error searching Splash! (service may be down):', error);
+    console.warn('Error searching Splash!:', error);
     return null;
   }
 }
 
 /**
- * Busca imágenes desde RAWG API (gratuito, sin API key requerido)
- * Formato: https://rawg.io/api/games?search=[game]&page_size=1
- * Retorna cover_image si está disponible
+ * Función principal para buscar imágenes de juegos.
+ * Intenta múltiples fuentes según preferencia.
  */
-async function searchRAWG(
-  gameName: string,
-  platform: string = 'game-boy-color'
-): Promise<GameImageResult | null> {
-  try {
-    const normalizedName = normalizeName(gameName);
-    const cacheKey = `rawg:${platform}:${normalizedName}`;
-
-    if (imageCache.has(cacheKey)) {
-      return imageCache.get(cacheKey) || null;
-    }
-
-    // Hacer búsqueda en RAWG
-    const searchResponse = await fetch(
-      `https://api.rawg.io/api/games?search=${encodeURIComponent(normalizedName)}&page_size=1`,
-      { signal: AbortSignal.timeout(5000) }
-    );
-
-    if (!searchResponse.ok) {
-      imageCache.set(cacheKey, null);
-      return null;
-    }
-
-    const data = (await searchResponse.json()) as any;
-    const games = data.results || [];
-
-    if (games.length === 0) {
-      imageCache.set(cacheKey, null);
-      return null;
-    }
-
-    const game = games[0];
-    // RAWG retorna background_image (poster/cover)
-    const imageUrl = game.background_image;
-
-    if (!imageUrl) {
-      imageCache.set(cacheKey, null);
-      return null;
-    }
-
-    const result: GameImageResult = {
-      url: imageUrl,
-      source: 'rawg' as const,
-      type: 'cover' as const,
-    };
-
-    imageCache.set(cacheKey, result);
-    return result;
-  } catch (error) {
-    console.error('Error searching RAWG:', error);
-    return null;
-  }
-}
 export async function searchGameImages(
   options: GameImageSearchOptions
 ): Promise<GameImageResult[]> {
-  // Cambiar preferencia por defecto a 'libretro' ya que Splash! está dando errores
-  const { gameName, platform = 'game-boy-color', preferSource = 'libretro' } = options;
+  const { gameName, platform = 'game-boy', preferSource = 'libretro' } = options;
 
   if (!gameName || !gameName.trim()) {
-    return [
-      {
-        url: '/placeholder.svg',
-        source: 'fallback',
-        type: 'cover',
-      },
-    ];
+    return [{ url: PLACEHOLDER_IMAGE, source: 'fallback', type: 'cover' }];
   }
+
+  const sources: Exclude<ImageSource, 'fallback'>[] = ['libretro', 'splash', 'igdb'];
+  const orderedSources: Exclude<ImageSource, 'fallback'>[] = [
+    preferSource,
+    ...sources.filter((source) => source !== preferSource),
+  ];
 
   const results: GameImageResult[] = [];
-  // Orden: LibRetro (más confiable), IGDB, Splash, RAWG como fallback
-  const sources = ['libretro', 'igdb', 'splash', 'rawg'] as const;
+  const seen = new Set<string>();
 
-  // Ordenar fuentes según preferencia, pero siempre intentar todas
-  const orderedSources = [
-    preferSource,
-    ...sources.filter((s) => s !== preferSource),
-  ];
+  const pushUnique = (result: GameImageResult | null) => {
+    if (!result || !result.url || result.url === PLACEHOLDER_IMAGE) return;
+    if (seen.has(result.url)) return;
+    seen.add(result.url);
+    results.push(result);
+  };
 
-  // Intentar todas las fuentes en paralelo para mayor velocidad
-  const searchPromises = orderedSources.map(async (source) => {
+  const addLibRetroVariants = async (primary: GameImageResult) => {
+    if (primary.source !== 'libretro' || !primary.platform || !primary.fileName) return;
+
+    const titleIndex = await loadLibRetroIndex(primary.platform, 'Named_Titles');
+    if (titleIndex.includes(primary.fileName)) {
+      pushUnique({
+        url: buildLibRetroFileUrl(primary.platform, primary.fileName, 'Named_Titles'),
+        source: 'libretro',
+        type: 'cover',
+        platform: primary.platform,
+        fileName: primary.fileName,
+      });
+    }
+
+    const snapsIndex = await loadLibRetroIndex(primary.platform, 'Named_Snaps');
+    if (snapsIndex.includes(primary.fileName)) {
+      pushUnique({
+        url: buildLibRetroFileUrl(primary.platform, primary.fileName, 'Named_Snaps'),
+        source: 'libretro',
+        type: 'screenshot',
+        platform: primary.platform,
+        fileName: primary.fileName,
+      });
+    }
+  };
+
+  for (const source of orderedSources) {
     try {
+      let found: GameImageResult | null = null;
       switch (source) {
         case 'libretro':
-          return await searchLibRetro(gameName, platform);
-        case 'igdb':
-          return await searchIGDB(gameName, platform);
+          found = await searchLibRetro(gameName, platform);
+          break;
         case 'splash':
-          return await searchSplash(gameName, platform);
-        case 'rawg':
-          return await searchRAWG(gameName, platform);
+          found = await searchSplash(gameName, platform);
+          break;
+        case 'igdb':
+          found = await searchIGDB(gameName, platform);
+          break;
         default:
-          return null;
+          found = null;
+      }
+
+      pushUnique(found);
+      if (found?.source === 'libretro') {
+        await addLibRetroVariants(found);
       }
     } catch (error) {
-      console.error(`Error searching ${source}:`, error);
-      return null;
-    }
-  });
-
-  const searchResults = await Promise.all(searchPromises);
-
-  // Filtrar resultados nulos y agregar a la lista
-  for (const result of searchResults) {
-    if (result && result.url !== '/placeholder.svg') {
-      results.push(result);
+      console.warn(`Error searching ${source}:`, error);
     }
   }
 
-  // Si encontramos resultados, retornarlos (priorizar según orden)
   if (results.length > 0) {
-    // Ordenar: preferSource primero, luego otros (fallback al final)
-    return results.sort((a, b) => {
-      const aIdx = a.source === 'fallback' ? 999 : orderedSources.indexOf(a.source);
-      const bIdx = b.source === 'fallback' ? 999 : orderedSources.indexOf(b.source);
-      return aIdx - bIdx;
-    });
+    return results;
   }
 
-  // Si no encontramos nada, retornar placeholder
-  return [
-    {
-      url: '/placeholder.svg',
-      source: 'fallback',
-      type: 'cover',
-    },
-  ];
+  return [{ url: PLACEHOLDER_IMAGE, source: 'fallback', type: 'cover' }];
 }
 
 /**
- * Función helper para obtener la mejor imagen disponible
+ * Helper para obtener la mejor imagen disponible.
  */
-export async function getBestGameImage(
-  gameName: string,
-  platform?: 'game-boy' | 'game-boy-color' | 'game-boy-advance'
-): Promise<string> {
+export async function getBestGameImage(gameName: string, platform?: SupportedPlatform): Promise<string> {
   const results = await searchGameImages({ gameName, platform });
-  return results[0]?.url || '/placeholder.svg';
+  return results[0]?.url || PLACEHOLDER_IMAGE;
 }

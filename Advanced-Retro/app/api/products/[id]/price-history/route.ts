@@ -1,16 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { toPriceChartingConsoleName, stripProductNameForExternalSearch } from '@/lib/catalogPlatform';
+import { fetchPriceChartingSnapshotByQuery } from '@/lib/priceCharting';
 
 export const dynamic = 'force-dynamic';
 
 type PricePoint = {
   date: string;
-  price: number; // cents
+  price: number;
 };
-
-function isValidDate(value: unknown): value is string {
-  return typeof value === 'string' && !Number.isNaN(new Date(value).getTime());
-}
 
 function toSafePrice(value: unknown): number | null {
   const num = Number(value);
@@ -18,60 +16,37 @@ function toSafePrice(value: unknown): number | null {
   return Math.round(num);
 }
 
-function pickProductId(item: Record<string, unknown>): string {
-  const raw = item.product_id ?? item.productId ?? item.id;
-  return typeof raw === 'string' ? raw : '';
+function sortByDate(points: PricePoint[]): PricePoint[] {
+  return [...points].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
-function pickItemPrice(item: Record<string, unknown>): number | null {
-  return (
-    toSafePrice(item.unit_price) ??
-    toSafePrice(item.unitPrice) ??
-    toSafePrice(item.price) ??
-    toSafePrice(item.amount)
-  );
+function compactPoints(points: PricePoint[], max = 80): PricePoint[] {
+  if (points.length <= max) return points;
+  return points.slice(points.length - max);
 }
 
-function aggregateByMonth(points: PricePoint[], maxPoints = 24): PricePoint[] {
-  if (points.length <= 1) return points;
-
-  const buckets = new Map<string, { total: number; count: number; date: string }>();
-  for (const point of points) {
-    const date = new Date(point.date);
-    const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
-    const bucket = buckets.get(key) || { total: 0, count: 0, date: point.date };
-    bucket.total += point.price;
-    bucket.count += 1;
-    bucket.date = point.date;
-    buckets.set(key, bucket);
-  }
-
-  const monthly = [...buckets.values()]
-    .map((bucket) => ({
-      date: bucket.date,
-      price: Math.round(bucket.total / Math.max(1, bucket.count)),
-    }))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  if (monthly.length <= maxPoints) return monthly;
-  return monthly.slice(monthly.length - maxPoints);
-}
-
-function extractFromOrdersItems(productId: string, orders: any[]): PricePoint[] {
+function parseLegacyOrderItems(productId: string, orders: any[]): PricePoint[] {
   const points: PricePoint[] = [];
 
   for (const order of orders || []) {
-    if (!isValidDate(order?.created_at)) continue;
+    const date = typeof order?.created_at === 'string' ? order.created_at : '';
+    const status = String(order?.status || '').toLowerCase();
+    if (!date || ['pending', 'cancelled'].includes(status)) continue;
+
     const rawItems = Array.isArray(order?.items) ? order.items : [];
+    for (const item of rawItems) {
+      if (!item || typeof item !== 'object') continue;
+      const rawProductId = (item as any).product_id ?? (item as any).productId ?? (item as any).id;
+      if (String(rawProductId || '') !== productId) continue;
 
-    for (const rawItem of rawItems) {
-      if (!rawItem || typeof rawItem !== 'object') continue;
-      const item = rawItem as Record<string, unknown>;
-      if (pickProductId(item) !== productId) continue;
+      const price =
+        toSafePrice((item as any).unit_price) ??
+        toSafePrice((item as any).unitPrice) ??
+        toSafePrice((item as any).price) ??
+        toSafePrice((item as any).amount);
 
-      const price = pickItemPrice(item);
       if (price) {
-        points.push({ date: order.created_at, price });
+        points.push({ date, price });
       }
     }
   }
@@ -79,32 +54,7 @@ function extractFromOrdersItems(productId: string, orders: any[]): PricePoint[] 
   return points;
 }
 
-function extractFromOrderItemsRelation(rows: any[]): PricePoint[] {
-  const points: PricePoint[] = [];
-
-  for (const row of rows || []) {
-    const orderRelation = Array.isArray(row?.orders) ? row.orders[0] : row?.orders;
-    if (!orderRelation || typeof orderRelation !== 'object') continue;
-
-    const date = (orderRelation as any).created_at;
-    if (!isValidDate(date)) continue;
-
-    const status = String((orderRelation as any).status || '').toLowerCase();
-    if (status && ['cancelled', 'pending'].includes(status)) continue;
-
-    const price = toSafePrice(row?.unit_price);
-    if (!price) continue;
-
-    points.push({ date, price });
-  }
-
-  return points;
-}
-
-export async function GET(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_req: Request, { params }: { params: { id: string } }) {
   try {
     const productId = String(params?.id || '').trim();
     if (!productId) {
@@ -117,51 +67,81 @@ export async function GET(
 
     const { data: product, error: productError } = await supabaseAdmin
       .from('products')
-      .select('id,price')
+      .select('id,name,category,price')
       .eq('id', productId)
       .maybeSingle();
 
     if (productError) {
       return NextResponse.json({ error: productError.message }, { status: 500 });
     }
-
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
     let points: PricePoint[] = [];
 
-    const { data: ordersWithItems, error: ordersError } = await supabaseAdmin
-      .from('orders')
-      .select('created_at,status,items')
-      .in('status', ['paid', 'shipped', 'delivered'])
-      .order('created_at', { ascending: true })
-      .limit(1800);
+    const orderItemsProbe = await supabaseAdmin
+      .from('order_items')
+      .select('unit_price,orders!inner(created_at,status)')
+      .eq('product_id', productId)
+      .order('created_at', {
+        ascending: true,
+        referencedTable: 'orders',
+      })
+      .limit(3000);
 
-    if (!ordersError) {
-      points = extractFromOrdersItems(productId, ordersWithItems || []);
-    }
+    if (!orderItemsProbe.error) {
+      for (const row of orderItemsProbe.data || []) {
+        const orderRel = Array.isArray((row as any).orders)
+          ? (row as any).orders[0]
+          : (row as any).orders;
 
-    if (points.length === 0) {
-      const { data: orderItems, error: orderItemsError } = await supabaseAdmin
-        .from('order_items')
-        .select('product_id,unit_price,orders(created_at,status)')
-        .eq('product_id', productId)
-        .limit(1800);
+        if (!orderRel) continue;
+        const status = String(orderRel.status || '').toLowerCase();
+        if (['pending', 'cancelled'].includes(status)) continue;
 
-      if (!orderItemsError) {
-        points = extractFromOrderItemsRelation(orderItems || []);
+        const price = toSafePrice((row as any).unit_price);
+        if (!price) continue;
+
+        const date = String(orderRel.created_at || '');
+        if (!date) continue;
+
+        points.push({
+          date,
+          price,
+        });
       }
     }
 
-    points = points.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const aggregated = aggregateByMonth(points, 24);
+    if (points.length === 0) {
+      const { data: legacyOrders, error: legacyError } = await supabaseAdmin
+        .from('orders')
+        .select('created_at,status,items')
+        .order('created_at', { ascending: true })
+        .limit(3000);
 
-    if (aggregated.length > 0) {
+      if (!legacyError) {
+        points = parseLegacyOrderItems(productId, legacyOrders || []);
+      }
+    }
+
+    const sorted = compactPoints(sortByDate(points), 80);
+
+    const externalName = stripProductNameForExternalSearch(String(product.name || '')) || String(product.name || '');
+    const externalConsole = toPriceChartingConsoleName({
+      category: String((product as any).category || ''),
+      name: String(product.name || ''),
+    });
+    const priceChartingQuery = `${externalName} ${externalConsole}`.trim();
+    const marketGuide = await fetchPriceChartingSnapshotByQuery(priceChartingQuery);
+
+    if (sorted.length > 0) {
       return NextResponse.json({
         success: true,
         source: 'orders',
-        points: aggregated,
+        salesCount: sorted.length,
+        points: sorted,
+        marketGuide,
       });
     }
 
@@ -170,14 +150,18 @@ export async function GET(
       return NextResponse.json({
         success: true,
         source: 'current',
+        salesCount: 0,
         points: [{ date: new Date().toISOString(), price: currentPrice }],
+        marketGuide,
       });
     }
 
     return NextResponse.json({
       success: true,
       source: 'none',
+      salesCount: 0,
       points: [],
+      marketGuide,
     });
   } catch (error: any) {
     return NextResponse.json(

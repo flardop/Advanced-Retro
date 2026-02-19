@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { getBestGameImage } from '@/lib/gameImages';
+import { searchGameImages } from '@/lib/gameImages';
+import { detectImagePlatformFromProduct, stripProductNameForExternalSearch } from '@/lib/catalogPlatform';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,11 +39,21 @@ export async function POST(req: NextRequest) {
 
     const { forceUpdate } = await req.json().catch(() => ({}));
 
-    // Obtener todos los productos
-    const { data: products, error: fetchError } = await supabaseAdmin
+    let usesCategoryId = true;
+    let productsQuery: any = await supabaseAdmin
       .from('products')
-      .select('*')
+      .select('id, name, images, category_id')
       .order('name');
+
+    if (productsQuery.error && productsQuery.error.message.includes('category_id')) {
+      usesCategoryId = false;
+      productsQuery = await supabaseAdmin
+        .from('products')
+        .select('id, name, images, category')
+        .order('name');
+    }
+
+    const { data: products, error: fetchError } = productsQuery;
 
     if (fetchError) {
       return NextResponse.json(
@@ -61,14 +72,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Obtener categorías para determinar plataforma
-    const { data: categories } = await supabaseAdmin
-      .from('categories')
-      .select('id, slug');
+    let categoryMap = new Map<string, string>();
+    if (usesCategoryId) {
+      const { data: categories } = await supabaseAdmin
+        .from('categories')
+        .select('id, slug');
 
-    const categoryMap = new Map(
-      categories?.map((cat) => [cat.id, cat.slug]) || []
-    );
+      categoryMap = new Map(categories?.map((cat) => [cat.id, cat.slug]) || []);
+    }
 
     const results = {
       updated: 0,
@@ -78,14 +89,10 @@ export async function POST(req: NextRequest) {
     };
 
     // Procesar productos en lotes para no sobrecargar
-    for (const product of products) {
-      const categorySlug = categoryMap.get(product.category_id ?? product.category);
-      
-      // Determinar plataforma según categoría
-      let platform: 'game-boy' | 'game-boy-color' | 'game-boy-advance' = 'game-boy-color';
-      if (categorySlug?.includes('game-boy')) {
-        platform = 'game-boy-color';
-      }
+    for (const product of products as any[]) {
+      const categorySlug = usesCategoryId
+        ? categoryMap.get(product.category_id)
+        : product.category;
 
       // Verificar si ya tiene imágenes válidas (a menos que forceUpdate esté activado)
       if (!forceUpdate) {
@@ -106,25 +113,32 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        // Normalizar nombre del juego para búsqueda
-        // Intentar diferentes variantes del nombre
+        // Intentar variantes del nombre para mejorar matching
         const nameVariants = [
-          product.name, // Nombre original
-          product.name.replace(/Pokémon/g, 'Pokemon'), // Sin acentos
-          product.name.replace(/Pokemon/g, 'Pokémon'), // Con acentos
-          product.name.replace(/[^a-zA-Z0-9\s]/g, ''), // Sin caracteres especiales
+          product.name,
+          stripProductNameForExternalSearch(product.name),
+          product.name.replace(/Pokémon/g, 'Pokemon'),
+          product.name.replace(/Pokemon/g, 'Pokémon'),
+          product.name.replace(/[^a-zA-Z0-9\s]/g, ''),
         ];
 
-        let imageUrl: string | null = null;
+        let imageUrls: string[] = [];
 
-        // Intentar con cada variante del nombre
+        const platform = detectImagePlatformFromProduct({ category: categorySlug, name: product.name });
         for (const variant of nameVariants) {
-          imageUrl = await getBestGameImage(variant, platform);
-          if (imageUrl && imageUrl !== '/placeholder.svg') {
+          if (!variant || !variant.trim()) continue;
+          const found = await searchGameImages({
+            gameName: variant,
+            platform,
+            preferSource: 'libretro',
+          });
+          imageUrls = [...new Set(found.map((item) => item.url).filter(Boolean))].slice(0, 6);
+          if (imageUrls.length > 0 && imageUrls[0] !== '/placeholder.svg') {
             break;
           }
         }
 
+        const imageUrl = imageUrls[0] || '';
         if (!imageUrl || imageUrl === '/placeholder.svg') {
           results.skipped++;
           results.details.push({
@@ -138,7 +152,8 @@ export async function POST(req: NextRequest) {
         const { error: updateError } = await supabaseAdmin
           .from('products')
           .update({
-            images: [imageUrl],
+            image: imageUrl,
+            images: imageUrls,
           })
           .eq('id', product.id);
 

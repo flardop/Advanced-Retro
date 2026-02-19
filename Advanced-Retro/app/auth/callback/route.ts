@@ -4,11 +4,12 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+  const requestUrl = new URL(request.url);
+  const { searchParams } = requestUrl;
   const code = searchParams.get('code');
   const oauthError = searchParams.get('error');
   const oauthErrorDescription = searchParams.get('error_description');
-  const origin = new URL(request.url).origin;
+  const origin = requestUrl.origin;
   const redirectTo = (searchParams.get('next') || '/perfil').startsWith('/')
     ? searchParams.get('next')!
     : '/perfil';

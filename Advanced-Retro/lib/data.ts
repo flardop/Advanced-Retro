@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { sampleCategories, sampleProducts } from '@/lib/sampleData';
+import { buildCategoriesFromProducts } from '@/lib/productCategories';
 
 export async function getFeaturedProducts(limit = 8) {
   if (!supabaseAdmin) {
@@ -74,11 +75,42 @@ export async function getCategories() {
       .order('name');
     if (error) {
       console.warn('Error fetching categories:', error);
+      const { data: products, error: productsError } = await supabaseAdmin
+        .from('products')
+        .select('category');
+      if (productsError) {
+        console.warn('Error fetching products for categories fallback:', productsError);
+        return sampleCategories;
+      }
+      const derived = buildCategoriesFromProducts(products || []);
+      return derived.length > 0 ? derived : sampleCategories;
+    }
+    if (data && data.length > 0) return data;
+
+    const { data: products, error: productsError } = await supabaseAdmin
+      .from('products')
+      .select('category');
+    if (productsError) {
+      console.warn('Error fetching products for categories fallback:', productsError);
       return sampleCategories;
     }
-    return data && data.length > 0 ? data : sampleCategories;
+    const derived = buildCategoriesFromProducts(products || []);
+    return derived.length > 0 ? derived : sampleCategories;
   } catch (error) {
     console.warn('Exception fetching categories:', error);
-    return sampleCategories;
+    try {
+      const { data: products, error: productsError } = await supabaseAdmin
+        .from('products')
+        .select('category');
+      if (productsError) {
+        console.warn('Error fetching products for categories fallback:', productsError);
+        return sampleCategories;
+      }
+      const derived = buildCategoriesFromProducts(products || []);
+      return derived.length > 0 ? derived : sampleCategories;
+    } catch (fallbackError) {
+      console.warn('Exception in categories fallback:', fallbackError);
+      return sampleCategories;
+    }
   }
 }

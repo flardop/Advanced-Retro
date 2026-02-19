@@ -4,10 +4,25 @@ import Collections from '@/components/sections/Collections';
 import Benefits from '@/components/sections/Benefits';
 import RetroStory from '@/components/sections/RetroStory';
 import FinalCTA from '@/components/sections/FinalCTA';
+import CommunityFeed from '@/components/sections/CommunityFeed';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default function HomePage() {
+type HomePageProps = {
+  searchParams?: Record<string, string | string[] | undefined>;
+};
+
+export default function HomePage({ searchParams }: HomePageProps) {
+  const hasAdminFlag =
+    typeof searchParams === 'object' &&
+    searchParams !== null &&
+    Object.prototype.hasOwnProperty.call(searchParams, 'admin');
+
+  if (hasAdminFlag) {
+    redirect('/admin');
+  }
+
   return (
     <>
       <Hero />
@@ -15,6 +30,7 @@ export default function HomePage() {
       <Collections />
       <Benefits />
       <RetroStory />
+      <CommunityFeed />
       <FinalCTA />
     </>
   );

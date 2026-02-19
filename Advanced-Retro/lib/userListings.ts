@@ -15,8 +15,14 @@ export type CreateListingInput = {
 
 const ALLOWED_CATEGORIES = new Set([
   'juegos-gameboy',
+  'juegos-gameboy-color',
+  'juegos-gameboy-advance',
+  'juegos-super-nintendo',
+  'juegos-gamecube',
   'cajas-gameboy',
+  'manuales',
   'accesorios',
+  'consolas-retro',
   'cajas-misteriosas',
 ]);
 

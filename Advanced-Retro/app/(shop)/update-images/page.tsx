@@ -176,7 +176,7 @@ export default function UpdateImagesPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-3">💡 Tips</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>
-                • Los productos con imágenes válidas se saltan automáticamente (a menos que actives "Forzar actualización")
+                • Los productos con imágenes válidas se saltan automáticamente (a menos que actives la opción Forzar actualización)
               </li>
               <li>
                 • Si un producto no encuentra imagen, puedes buscarla manualmente en{' '}

@@ -7,6 +7,8 @@
  * Requiere en .env.local:
  *   NEXT_PUBLIC_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
+ *   ADMIN_EMAIL
+ *   ADMIN_PASSWORD
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -36,14 +38,18 @@ function loadEnvLocal() {
 }
 loadEnvLocal();
 
-const ADMIN_EMAIL = 'joel@admin.com';
-const ADMIN_PASSWORD = 'Polo4455@4455';
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const adminEmail = process.env.ADMIN_EMAIL;
+const adminPassword = process.env.ADMIN_PASSWORD;
 
 if (!supabaseUrl || !serviceRoleKey) {
   console.error('❌ Faltan variables: NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en .env.local');
+  process.exit(1);
+}
+
+if (!adminEmail || !adminPassword) {
+  console.error('❌ Faltan variables: ADMIN_EMAIL y ADMIN_PASSWORD en .env.local');
   process.exit(1);
 }
 
@@ -55,8 +61,8 @@ async function createAdminUser() {
   console.log('🔐 Creando usuario administrador...');
 
   const { data: userData, error: createError } = await supabase.auth.admin.createUser({
-    email: ADMIN_EMAIL,
-    password: ADMIN_PASSWORD,
+    email: adminEmail,
+    password: adminPassword,
     email_confirm: true,
   });
 
@@ -74,16 +80,16 @@ async function createAdminUser() {
   const { error: updateError } = await supabase
     .from('users')
     .update({ role: 'admin' })
-    .eq('email', ADMIN_EMAIL);
+    .eq('email', adminEmail);
 
   if (updateError) {
     console.error('❌ Error actualizando rol:', updateError.message);
     process.exit(1);
   }
 
-  console.log('✅ Rol "admin" asignado a', ADMIN_EMAIL);
-  console.log('\n📧 Email:', ADMIN_EMAIL);
-  console.log('🔑 Contraseña:', ADMIN_PASSWORD);
+  console.log('✅ Rol "admin" asignado a', adminEmail);
+  console.log('\n📧 Email:', adminEmail);
+  console.log('🔒 Contraseña: tomada desde ADMIN_PASSWORD (.env.local)');
   console.log('\nYa puedes iniciar sesión en la web con este usuario.');
 }
 

@@ -10,6 +10,7 @@ El sistema busca imágenes desde múltiples fuentes:
    - ✅ Gratis, sin API key
    - ✅ Alta calidad
    - ✅ CDN rápido
+   - ✅ Matching avanzado por índice real (detecta variantes como `Manual`, `Caja`, `Insert`)
    - URL: `https://thumbnails.libretro.com/`
 
 2. **IGDB API** (Opcional)
@@ -98,12 +99,12 @@ Busca imágenes para un juego específico.
 
 **Parámetros:**
 - `gameName` (requerido): Nombre del juego
-- `platform` (opcional): `game-boy` | `game-boy-color` | `game-boy-advance` (default: `game-boy-color`)
+- `platform` (opcional): `game-boy` | `game-boy-color` | `game-boy-advance` | `super-nintendo` | `gamecube` (default: `game-boy`)
 - `preferSource` (opcional): `libretro` | `igdb` | `splash` (default: `libretro`)
 
 **Ejemplo:**
 ```bash
-curl "http://localhost:3020/api/games/images?gameName=Pokemon%20Red&platform=game-boy-color"
+curl "http://localhost:3020/api/games/images?gameName=Pokemon%20Red&platform=game-boy"
 ```
 
 **Respuesta:**
@@ -111,7 +112,7 @@ curl "http://localhost:3020/api/games/images?gameName=Pokemon%20Red&platform=gam
 {
   "success": true,
   "gameName": "Pokemon Red",
-  "platform": "game-boy-color",
+  "platform": "game-boy",
   "images": [
     {
       "url": "https://thumbnails.libretro.com/...",
@@ -164,6 +165,8 @@ async function createProductWithImage(name: string, ...otherFields) {
 - `game-boy`: Game Boy original (monocromo)
 - `game-boy-color`: Game Boy Color (recomendado)
 - `game-boy-advance`: Game Boy Advance
+- `super-nintendo`: Super Nintendo / SNES
+- `gamecube`: Nintendo GameCube
 
 ## 💡 Tips
 

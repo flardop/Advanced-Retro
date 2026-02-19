@@ -29,6 +29,56 @@ const KNOWN_CATEGORY_META: Record<
     description: 'Sorpresas retro para coleccionistas.',
     sortOrder: 4,
   },
+  manuales: {
+    name: 'Manuales',
+    description: 'Manuales originales o repro para completar juegos.',
+    sortOrder: 5,
+  },
+  'juegos-gameboy-color': {
+    name: 'Juegos Game Boy Color',
+    description: 'Catálogo dedicado a títulos de Game Boy Color.',
+    sortOrder: 6,
+  },
+  'cajas-gameboy-color': {
+    name: 'Cajas Game Boy Color',
+    description: 'Cajas y carátulas para títulos de Game Boy Color.',
+    sortOrder: 7,
+  },
+  'juegos-gameboy-advance': {
+    name: 'Juegos Game Boy Advance',
+    description: 'Colección de juegos Game Boy Advance.',
+    sortOrder: 8,
+  },
+  'cajas-gameboy-advance': {
+    name: 'Cajas Game Boy Advance',
+    description: 'Cajas y carátulas para títulos de Game Boy Advance.',
+    sortOrder: 9,
+  },
+  'juegos-super-nintendo': {
+    name: 'Juegos Super Nintendo',
+    description: 'Selección de títulos clásicos de SNES.',
+    sortOrder: 10,
+  },
+  'cajas-super-nintendo': {
+    name: 'Cajas Super Nintendo',
+    description: 'Cajas para juegos de Super Nintendo.',
+    sortOrder: 11,
+  },
+  'juegos-gamecube': {
+    name: 'Juegos GameCube',
+    description: 'Colección de títulos para Nintendo GameCube.',
+    sortOrder: 12,
+  },
+  'cajas-gamecube': {
+    name: 'Cajas GameCube',
+    description: 'Cajas para juegos de Nintendo GameCube.',
+    sortOrder: 13,
+  },
+  'consolas-retro': {
+    name: 'Consolas Retro',
+    description: 'Consolas completas, cajas y accesorios de sistema.',
+    sortOrder: 14,
+  },
 };
 
 function toSafeSlug(input: string): string {
@@ -83,4 +133,3 @@ export function buildCategoriesFromProducts(products: any[]): ProductCategory[] 
 
   return categories;
 }
-

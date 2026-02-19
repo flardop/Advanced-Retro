@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 export default function TestImagesPage() {
   const [gameName, setGameName] = useState('Pokemon Red');
-  const [platform, setPlatform] = useState<'game-boy' | 'game-boy-color' | 'game-boy-advance'>('game-boy-color');
+  const [platform, setPlatform] = useState<'game-boy' | 'game-boy-color' | 'game-boy-advance'>('game-boy');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);

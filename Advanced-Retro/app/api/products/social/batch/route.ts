@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import {
   getProductSocialSummary,
   normalizeVisitorId,
@@ -11,7 +13,15 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
     const rawIds = Array.isArray(body?.productIds) ? body.productIds : [];
-    const visitorId = normalizeVisitorId(body?.visitorId);
+
+    const supabase = createRouteHandlerClient({ cookies });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const visitorId = user?.id
+      ? `auth-${user.id}`
+      : normalizeVisitorId(body?.visitorId);
 
     const productIds = rawIds
       .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)

@@ -27,7 +27,18 @@ export default function CookiesPage() {
 
         <div>
           <h2 className="text-xl font-semibold">3. Contacto</h2>
-          <p className="text-textMuted mt-2">Para dudas sobre cookies y privacidad, contacta a soporte desde la página de contacto.</p>
+          <p className="text-textMuted mt-2">
+            Para dudas sobre cookies y privacidad: admin@advancedretro.es y
+            atencionalcliente@advancedretro.es.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold">4. Base legal y consentimiento</h2>
+          <p className="text-textMuted mt-2">
+            Las cookies técnicas se usan por interés legítimo para operar la tienda.
+            Las cookies no técnicas solo deben activarse con consentimiento del usuario.
+          </p>
         </div>
       </div>
     </section>

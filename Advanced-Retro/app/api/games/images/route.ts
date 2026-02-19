@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchGameImages, getBestGameImage } from '@/lib/gameImages';
+import { searchGameImages } from '@/lib/gameImages';
+import type { CatalogImagePlatform } from '@/lib/catalogPlatform';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const gameName = searchParams.get('gameName');
-    const platform = searchParams.get('platform') as
-      | 'game-boy'
-      | 'game-boy-color'
-      | 'game-boy-advance'
-      | null;
+    const platform = searchParams.get('platform') as CatalogImagePlatform | null;
     const preferSource = searchParams.get('preferSource') as
       | 'libretro'
       | 'igdb'
@@ -34,23 +31,23 @@ export async function GET(request: NextRequest) {
 
     const results = await searchGameImages({
       gameName,
-      platform: platform || 'game-boy-color',
+      platform: platform || 'game-boy',
       preferSource: preferSource || 'libretro',
     });
 
     // Log para debugging
-    console.log(`Searching images for: "${gameName}" on ${platform || 'game-boy-color'}`);
+    console.log(`Searching images for: "${gameName}" on ${platform || 'game-boy'}`);
     console.log(`Found ${results.length} result(s):`, results.map(r => ({ source: r.source, url: r.url })));
 
     return NextResponse.json({
       success: true,
       gameName,
-      platform: platform || 'game-boy-color',
+      platform: platform || 'game-boy',
       images: results,
       count: results.length,
       debug: {
         searchedName: gameName,
-        platform: platform || 'game-boy-color',
+        platform: platform || 'game-boy',
         sourcesTried: ['libretro', 'splash', 'igdb'],
       },
     });

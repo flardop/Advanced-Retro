@@ -12,7 +12,8 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { getBestGameImage } from '../lib/gameImages';
+import { searchGameImages } from '../lib/gameImages';
+import { detectImagePlatformFromProduct, stripProductNameForExternalSearch } from '../lib/catalogPlatform';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -23,18 +24,28 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-const dryRun = process.argv.includes('--dry-run');
 const forceUpdate = process.argv.includes('--force');
 
 async function updateProductImages() {
   console.log('🔍 Obteniendo productos de la base de datos...');
+  console.log(`⚙️  Modo: ${forceUpdate ? 'FORCE (reescribe imágenes existentes)' : 'NORMAL (solo faltantes)'}`);
 
-  // Obtener todos los productos
-  const { data: products, error: fetchError } = await supabase
+  let usesCategoryId = true;
+  let productsQuery: any = await supabase
     .from('products')
-    .select('*')
+    .select('id, name, images, category_id')
     .order('name');
+
+  // Compatibilidad con esquema antiguo (products.category en texto)
+  if (productsQuery.error && productsQuery.error.message.includes('category_id')) {
+    usesCategoryId = false;
+    productsQuery = await supabase
+      .from('products')
+      .select('id, name, images, category')
+      .order('name');
+  }
+
+  const { data: products, error: fetchError } = productsQuery;
 
   if (fetchError) {
     console.error('❌ Error obteniendo productos:', fetchError);
@@ -48,27 +59,20 @@ async function updateProductImages() {
 
   console.log(`📦 Encontrados ${products.length} productos\n`);
 
-  // Obtener categorías para determinar plataforma
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('id, slug');
-
-  const categoryMap = new Map(
-    categories?.map((cat) => [cat.id, cat.slug]) || []
-  );
+  let categoryMap = new Map<string, string>();
+  if (usesCategoryId) {
+    const { data: categories } = await supabase.from('categories').select('id, slug');
+    categoryMap = new Map(categories?.map((cat) => [cat.id, cat.slug]) || []);
+  }
 
   let updated = 0;
   let skipped = 0;
   let errors = 0;
 
-  for (const product of products) {
-    const categorySlug = categoryMap.get(product.category_id ?? product.category);
-    
-    // Determinar plataforma según categoría
-    let platform: 'game-boy' | 'game-boy-color' | 'game-boy-advance' = 'game-boy-color';
-    if (categorySlug?.includes('game-boy')) {
-      platform = 'game-boy-color';
-    }
+  for (const product of products as any[]) {
+    const categorySlug = usesCategoryId
+      ? categoryMap.get(product.category_id)
+      : product.category;
 
     // Si ya tiene imágenes válidas, podemos saltarlo (opcional)
     const hasValidImages =
@@ -86,7 +90,15 @@ async function updateProductImages() {
     try {
       console.log(`🔍 Buscando imagen para: "${product.name}"...`);
 
-      const imageUrl = await getBestGameImage(product.name, platform);
+      const searchTerm = stripProductNameForExternalSearch(product.name) || product.name;
+      const imageResults = await searchGameImages({
+        gameName: searchTerm,
+        platform: detectImagePlatformFromProduct({ category: categorySlug, name: product.name }),
+        preferSource: 'libretro',
+      });
+
+      const imageUrls = [...new Set(imageResults.map((item) => item.url).filter(Boolean))].slice(0, 6);
+      const imageUrl = imageUrls[0] || '';
 
       if (!imageUrl || imageUrl === '/placeholder.svg') {
         console.log(`⚠️  No se encontró imagen para "${product.name}"`);
@@ -94,25 +106,21 @@ async function updateProductImages() {
         continue;
       }
 
-      // Actualizar producto con nueva imagen (o simular si dry-run)
-      if (dryRun) {
-        console.log(`(dry-run) ✅ Simulado actualizar "${product.name}" → ${imageUrl}`);
-        updated++;
-      } else {
-        const { error: updateError } = await supabase
-          .from('products')
-          .update({
-            images: [imageUrl],
-          })
-          .eq('id', product.id);
+      // Actualizar producto con nueva imagen
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({
+          image: imageUrl,
+          images: imageUrls,
+        })
+        .eq('id', product.id);
 
-        if (updateError) {
-          console.error(`❌ Error actualizando "${product.name}":`, updateError);
-          errors++;
-        } else {
-          console.log(`✅ Actualizado "${product.name}" → ${imageUrl}`);
-          updated++;
-        }
+      if (updateError) {
+        console.error(`❌ Error actualizando "${product.name}":`, updateError);
+        errors++;
+      } else {
+        console.log(`✅ Actualizado "${product.name}" → ${imageUrl}`);
+        updated++;
       }
 
       // Pequeña pausa para no sobrecargar las APIs

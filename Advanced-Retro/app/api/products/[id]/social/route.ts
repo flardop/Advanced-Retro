@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import {
   addReview,
   getProductSocialSummary,
@@ -9,6 +11,7 @@ import {
   uploadReviewPhotoDataUrls,
   writeProductSocialState,
 } from '@/lib/productSocialStorage';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,22 +19,85 @@ function badRequest(message: string) {
   return NextResponse.json({ error: message }, { status: 400 });
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+async function getOptionalAuthUser() {
+  const supabase = createRouteHandlerClient({ cookies });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
+
+function resolveVisitorId(raw: unknown, authUserId?: string): string | null {
+  if (authUserId) {
+    return `auth-${authUserId}`;
+  }
+  return normalizeVisitorId(raw);
+}
+
+async function hasPurchasedProduct(userId: string, productId: string): Promise<boolean> {
+  if (!supabaseAdmin) return false;
+
+  const { data: orders, error } = await supabaseAdmin
+    .from('orders')
+    .select('id,status,order_items(product_id)')
+    .eq('user_id', userId)
+    .in('status', ['paid', 'shipped', 'delivered'])
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (error) return false;
+
+  for (const order of orders || []) {
+    const items = Array.isArray((order as any).order_items) ? (order as any).order_items : [];
+    if (items.some((item: any) => String(item?.product_id || '') === productId)) {
+      return true;
+    }
+  }
+
+  const { data: legacyOrders, error: legacyError } = await supabaseAdmin
+    .from('orders')
+    .select('status,items')
+    .eq('user_id', userId)
+    .in('status', ['paid', 'shipped', 'delivered'])
+    .limit(500);
+
+  if (!legacyError) {
+    for (const order of legacyOrders || []) {
+      const items = Array.isArray((order as any).items) ? (order as any).items : [];
+      if (
+        items.some((item: any) =>
+          String(item?.product_id || item?.productId || item?.id || '') === productId
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const productId = params.id;
     if (!productId) return badRequest('Product id is required');
 
-    const visitorId = normalizeVisitorId(req.nextUrl.searchParams.get('visitorId'));
+    const user = await getOptionalAuthUser();
+    const visitorId = resolveVisitorId(req.nextUrl.searchParams.get('visitorId'), user?.id);
     const state = await readProductSocialState(productId);
     const summary = getProductSocialSummary(state, visitorId);
+
+    let canReview = false;
+    if (user?.id) {
+      canReview = await hasPurchasedProduct(user.id, productId);
+    }
 
     return NextResponse.json({
       success: true,
       productId,
       summary,
+      canReview,
+      requiresPurchaseForReview: true,
       reviews: state.reviews,
       updatedAt: state.updatedAt,
     });
@@ -43,10 +109,7 @@ export async function GET(
   }
 }
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const productId = params.id;
     if (!productId) return badRequest('Product id is required');
@@ -57,7 +120,8 @@ export async function POST(
     const action = String((body as any).action || '').trim();
     if (!action) return badRequest('action is required');
 
-    const visitorId = normalizeVisitorId((body as any).visitorId);
+    const user = await getOptionalAuthUser();
+    const visitorId = resolveVisitorId((body as any).visitorId, user?.id);
     const state = await readProductSocialState(productId);
 
     if (action === 'visit') {
@@ -83,7 +147,25 @@ export async function POST(
     }
 
     if (action === 'add_review') {
-      if (!visitorId) return badRequest('visitorId is required');
+      if (!user?.id) {
+        return NextResponse.json(
+          { error: 'Debes iniciar sesión para valorar productos' },
+          { status: 401 }
+        );
+      }
+
+      if (!visitorId) {
+        return NextResponse.json({ error: 'No se pudo validar tu sesión' }, { status: 401 });
+      }
+
+      const purchased = await hasPurchasedProduct(user.id, productId);
+      if (!purchased) {
+        return NextResponse.json(
+          { error: 'Solo pueden valorar usuarios que compraron este producto' },
+          { status: 403 }
+        );
+      }
+
       trackVisit(state, visitorId);
 
       const rating = Number((body as any).rating);

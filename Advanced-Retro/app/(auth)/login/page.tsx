@@ -5,6 +5,26 @@ import { supabaseClient } from '@/lib/supabaseClient';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
+function resolveAuthCallbackUrl(nextPath?: string | null): string | undefined {
+  const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || '';
+  const candidates = [runtimeOrigin, configuredSiteUrl].filter(Boolean);
+
+  for (const base of candidates) {
+    try {
+      const url = new URL('/auth/callback', base);
+      if (typeof nextPath === 'string' && nextPath.startsWith('/')) {
+        url.searchParams.set('next', nextPath);
+      }
+      return url.toString();
+    } catch {
+      continue;
+    }
+  }
+
+  return undefined;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -16,6 +36,7 @@ function LoginForm() {
 
   useEffect(() => {
     const err = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
     if (err === 'confirm') toast.error('El enlace de confirmación ha expirado o no es válido. Inicia sesión y te podemos reenviar el correo.');
     if (err === 'missing_code') toast.error('Faltan datos en el enlace. Prueba de nuevo desde el correo.');
     if (err === 'config') toast.error('Configuración de auth incompleta.');
@@ -23,6 +44,11 @@ function LoginForm() {
     if (err === 'oauth_failed') {
       const reason = searchParams.get('reason');
       toast.error(reason ? decodeURIComponent(reason) : 'No se pudo completar el acceso con proveedor social.');
+      return;
+    }
+    if (err && !['confirm', 'missing_code', 'config', 'oauth_cancelled', 'oauth_failed'].includes(err)) {
+      const readable = errorDescription ? decodeURIComponent(errorDescription) : err;
+      toast.error(`Error OAuth: ${readable}`);
     }
   }, [searchParams]);
 
@@ -33,10 +59,11 @@ function LoginForm() {
         throw new Error('Configura Supabase en .env.local');
       }
       if (mode === 'register') {
+        const callbackUrl = resolveAuthCallbackUrl('/perfil');
         const { data, error } = await supabaseClient.auth.signUp({
           email,
           password,
-          options: { data: { name }, emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined },
+          options: { data: { name }, emailRedirectTo: callbackUrl },
         });
         if (error) throw error;
         if (data?.user && !data.user.identities?.length) {
@@ -86,7 +113,7 @@ function LoginForm() {
       const { error } = await supabaseClient.auth.resend({
         type: 'signup',
         email: email.trim(),
-        options: { emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined },
+        options: { emailRedirectTo: resolveAuthCallbackUrl('/perfil') },
       });
       if (error) throw error;
       toast.success('Te hemos enviado de nuevo el correo de confirmación. Revisa tu bandeja y spam.');
@@ -102,7 +129,7 @@ function LoginForm() {
       toast.error('Configura Supabase en .env.local');
       return;
     }
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined;
+    const redirectTo = resolveAuthCallbackUrl(searchParams.get('next'));
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider,
       options: { redirectTo },

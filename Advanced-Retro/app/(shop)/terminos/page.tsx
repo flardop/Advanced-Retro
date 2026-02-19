@@ -45,6 +45,22 @@ export default function TermsPage() {
             La vía oficial de soporte es el sistema de tickets dentro de la cuenta del usuario.
           </p>
         </div>
+
+        <div>
+          <h2 className="text-xl font-semibold">6. Envíos y seguimiento</h2>
+          <p className="text-textMuted mt-2">
+            Los pedidos enviados incluyen código de seguimiento cuando esté disponible.
+            El estado de envío se actualiza en la cuenta del cliente.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold">7. Devoluciones e incidencias</h2>
+          <p className="text-textMuted mt-2">
+            Cualquier incidencia debe comunicarse por ticket de soporte para su revisión.
+            Se gestionará devolución o solución conforme a la normativa aplicable.
+          </p>
+        </div>
       </div>
     </section>
   );

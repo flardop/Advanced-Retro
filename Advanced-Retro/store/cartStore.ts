@@ -7,7 +7,14 @@ type CartItem = {
   price: number;
   image?: string;
   quantity: number;
-  optionType?: 'cartucho' | 'caja' | 'manual' | 'insert' | 'protector';
+  optionType?:
+    | 'cartucho'
+    | 'caja'
+    | 'manual'
+    | 'insert'
+    | 'protector'
+    | 'protector_juego'
+    | 'protector_caja';
   bundleParentId?: string;
 };
 

@@ -397,7 +397,6 @@ export default function ProfileView() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {profile.role === 'admin' ? <Link href="/admin" className="button-secondary">Panel admin</Link> : null}
             <button className="button-secondary" onClick={() => supabaseClient?.auth.signOut()}>
               Cerrar sesión
             </button>
@@ -446,6 +445,9 @@ export default function ProfileView() {
                     <p className="text-primary font-mono text-xs">#{order.id}</p>
                     <p className="text-textMuted text-sm">Estado: {order.status}</p>
                     <p className="text-textMuted text-sm">Total: {(Number(order.total || 0) / 100).toFixed(2)} €</p>
+                    {order.shipping_tracking_code ? (
+                      <p className="text-xs text-primary mt-1">Tracking: {order.shipping_tracking_code}</p>
+                    ) : null}
                     <button className="chip mt-3" onClick={() => createTicketFromOrder(order.id)}>
                       Abrir ticket sobre este pedido
                     </button>
@@ -573,8 +575,14 @@ export default function ProfileView() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <select className="bg-transparent border border-line px-3 py-2" value={listingCategory} onChange={(e) => setListingCategory(e.target.value)}>
                         <option value="juegos-gameboy">Juegos Game Boy</option>
+                        <option value="juegos-gameboy-color">Juegos Game Boy Color</option>
+                        <option value="juegos-gameboy-advance">Juegos Game Boy Advance</option>
+                        <option value="juegos-super-nintendo">Juegos Super Nintendo</option>
+                        <option value="juegos-gamecube">Juegos GameCube</option>
                         <option value="cajas-gameboy">Cajas Game Boy</option>
+                        <option value="manuales">Manuales</option>
                         <option value="accesorios">Accesorios</option>
+                        <option value="consolas-retro">Consolas Retro</option>
                         <option value="cajas-misteriosas">Cajas Misteriosas</option>
                       </select>
 

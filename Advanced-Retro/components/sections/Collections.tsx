@@ -2,9 +2,12 @@ import Link from 'next/link';
 
 export default function Collections() {
   const collections = [
-    { title: 'Juegos', subtitle: 'Cartuchos y títulos principales', href: '/tienda?category=juegos-gameboy' },
-    { title: 'Cajas', subtitle: 'Cajas para completar tu colección', href: '/tienda?category=cajas-gameboy' },
-    { title: 'Juego Completo', subtitle: 'Opciones con caja + manual disponibles', href: '/tienda?category=juego-completo' },
+    { title: 'Game Boy', subtitle: 'Clásicos originales y edición coleccionista', href: '/tienda?category=platform:game-boy' },
+    { title: 'Game Boy Color', subtitle: 'Catálogo dedicado para GBC', href: '/tienda?category=platform:game-boy-color' },
+    { title: 'Game Boy Advance', subtitle: 'Juegos y variantes de GBA', href: '/tienda?category=platform:game-boy-advance' },
+    { title: 'Super Nintendo', subtitle: 'Selección SNES para coleccionismo', href: '/tienda?category=platform:super-nintendo' },
+    { title: 'GameCube', subtitle: 'Catálogo GameCube en expansión', href: '/tienda?category=platform:gamecube' },
+    { title: 'Consolas', subtitle: 'Consolas completas y cajas de consola', href: '/tienda?category=platform:consolas' },
   ];
 
   return (

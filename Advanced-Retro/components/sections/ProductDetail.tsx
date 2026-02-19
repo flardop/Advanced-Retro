@@ -10,7 +10,14 @@ import { useCartStore } from '@/store/cartStore';
 import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
 import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
 
-type BundleOptionType = 'cartucho' | 'caja' | 'manual' | 'insert' | 'protector';
+type BundleOptionType =
+  | 'cartucho'
+  | 'caja'
+  | 'manual'
+  | 'insert'
+  | 'protector_juego'
+  | 'protector_caja'
+  | 'protector';
 type EditionKind = 'original' | 'repro' | 'sin-especificar';
 
 type BundleOption = {
@@ -22,6 +29,7 @@ type BundleOption = {
   stock: number;
   type: BundleOptionType;
   defaultSelected: boolean;
+  isVirtual?: boolean;
 };
 
 type EditionOption = {
@@ -52,6 +60,23 @@ type ProductSocialSummary = {
   likedByCurrentVisitor: boolean;
 };
 
+type MarketGuide = {
+  available: boolean;
+  provider: 'pricecharting';
+  note?: string;
+  query?: string;
+  productId: string | null;
+  productName: string | null;
+  consoleName: string | null;
+  releaseDate: string | null;
+  loosePrice: number | null;
+  cibPrice: number | null;
+  newPrice: number | null;
+  boxOnlyPrice: number | null;
+  manualOnlyPrice: number | null;
+  gradedPrice: number | null;
+};
+
 const EMPTY_SUMMARY: ProductSocialSummary = {
   visits: 0,
   likes: 0,
@@ -65,6 +90,8 @@ const BUNDLE_TYPE_LABEL: Record<BundleOptionType, string> = {
   caja: 'Caja',
   manual: 'Manual',
   insert: 'Insert',
+  protector_juego: 'Protector de juego',
+  protector_caja: 'Protector de caja',
   protector: 'Protector',
 };
 
@@ -97,6 +124,12 @@ function cleanBaseTitle(name: string): string {
     .trim();
 }
 
+function getCollectionKey(product: any): string {
+  const explicit = normalizeText(String(product?.collection_key || ''));
+  if (explicit) return explicit;
+  return cleanBaseTitle(String(product?.name || ''));
+}
+
 function scoreByTokens(base: string, candidate: string): number {
   const baseTokens = new Set(base.split(' ').filter((token) => token.length >= 3));
   const candidateTokens = new Set(candidate.split(' ').filter((token) => token.length >= 3));
@@ -111,20 +144,39 @@ function scoreByTokens(base: string, candidate: string): number {
 }
 
 function isGameCategory(category: unknown): boolean {
-  return String(category || '').trim() === 'juegos-gameboy';
+  const key = String(category || '').trim().toLowerCase();
+  if (!key) return false;
+  if (key.startsWith('juegos-')) return true;
+  return key === 'consolas-retro';
 }
 
 function detectOptionType(product: any): BundleOptionType | null {
+  const component = normalizeText(String(product?.component_type || ''));
+  if (component === 'manual') return 'manual';
+  if (component === 'insert') return 'insert';
+  if (component === 'caja') return 'caja';
+  if (component === 'protector juego' || component === 'protector_juego') return 'protector_juego';
+  if (component === 'protector caja' || component === 'protector_caja') return 'protector_caja';
+
   const n = normalizeText(String(product?.name || ''));
   if (!n) return null;
   if (n.includes('manual')) return 'manual';
   if (n.includes('insert') || n.includes('inlay') || n.includes('interior')) return 'insert';
-  if (n.includes('protector')) return 'protector';
-  if (n.includes('caja') || String(product?.category || '').trim() === 'cajas-gameboy') return 'caja';
+  if (n.includes('protector')) {
+    if (n.includes('caja') || n.includes('box')) return 'protector_caja';
+    if (n.includes('juego') || n.includes('cartucho') || n.includes('game')) return 'protector_juego';
+    return 'protector';
+  }
+  const category = String(product?.category || '').trim().toLowerCase();
+  if (n.includes('caja') || category.includes('cajas')) return 'caja';
   return null;
 }
 
 function detectEditionKind(product: any): EditionKind {
+  const explicit = normalizeText(String(product?.edition || ''));
+  if (explicit === 'original') return 'original';
+  if (explicit === 'repro') return 'repro';
+
   const source = normalizeText(`${String(product?.name || '')} ${String(product?.description || '')}`);
   if (
     /\b(repro|replica|reproduccion|1 1|1x1|copy|copia|fanmade|replacement)\b/.test(source)
@@ -166,7 +218,10 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
   }
 
   const baseTitle = cleanBaseTitle(String(baseProduct.name || ''));
-  const matchesByType: Partial<Record<BundleOptionType, { product: any; score: number }>> = {};
+  const baseCollectionKey = getCollectionKey(baseProduct);
+  const matchesByTypeEdition: Partial<
+    Record<BundleOptionType, Partial<Record<EditionKind, { product: any; score: number }>>>
+  > = {};
 
   for (const product of allProducts) {
     if (!product || String(product.id) === String(baseProduct.id)) continue;
@@ -177,31 +232,67 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
     if (!type) continue;
 
     const candidateTitle = cleanBaseTitle(String(product.name || ''));
-    const score = scoreByTokens(baseTitle, candidateTitle);
+    const candidateCollectionKey = getCollectionKey(product);
+    const score =
+      baseCollectionKey && candidateCollectionKey === baseCollectionKey
+        ? 1
+        : scoreByTokens(baseTitle, candidateTitle);
     if (score < 0.45) continue;
 
-    const current = matchesByType[type];
+    const edition = detectEditionKind(product);
+    const byEdition = matchesByTypeEdition[type] || {};
+    const current = byEdition[edition];
     if (!current || score > current.score) {
-      matchesByType[type] = { product, score };
+      byEdition[edition] = { product, score };
+      matchesByTypeEdition[type] = byEdition;
     }
   }
 
-  const extras: BundleOption[] = (['caja', 'manual', 'insert', 'protector'] as BundleOptionType[])
-    .map((type) => {
-      const found = matchesByType[type];
-      if (!found) return null;
-      return {
+  const requiredTypes: BundleOptionType[] = [
+    'caja',
+    'manual',
+    'insert',
+    'protector_juego',
+    'protector_caja',
+  ];
+
+  const extras: BundleOption[] = [];
+  for (const type of requiredTypes) {
+    const byEdition = matchesByTypeEdition[type] || {};
+    const variants = EDITION_ORDER.map((edition) => byEdition[edition]).filter(
+      (item): item is { product: any; score: number } => Boolean(item)
+    );
+
+    if (variants.length === 0) {
+      extras.push({
+        id: `virtual-${base.id}-${type}`,
+        name: `${BUNDLE_TYPE_LABEL[type]} (no disponible)`,
+        price: 0,
+        image: PLACEHOLDER,
+        images: [PLACEHOLDER],
+        stock: 0,
+        type,
+        defaultSelected: false,
+        isVirtual: true,
+      });
+      continue;
+    }
+
+    for (const found of variants) {
+      const edition = detectEditionKind(found.product);
+      const editionLabel = EDITION_LABEL[edition];
+      extras.push({
         id: String(found.product.id),
-        name: String(found.product.name || BUNDLE_TYPE_LABEL[type]),
+        name: `${String(found.product.name || BUNDLE_TYPE_LABEL[type])} · ${editionLabel}`,
         price: Number(found.product.price || 0),
         image: getProductImageUrl(found.product),
         images: getProductImageUrls(found.product),
         stock: Number(found.product.stock || 0),
         type,
         defaultSelected: false,
-      } as BundleOption;
-    })
-    .filter((item): item is BundleOption => Boolean(item));
+      });
+    }
+  }
 
   return [base, ...extras];
 }
@@ -211,6 +302,7 @@ function buildEditionOptions(baseProduct: any, allProducts: any[]): EditionOptio
   const baseEdition = detectEditionKind(baseProduct);
   const baseCategory = normalizeText(String(baseProduct?.category || ''));
   const baseTitle = cleanBaseTitle(String(baseProduct?.name || ''));
+  const baseCollectionKey = getCollectionKey(baseProduct);
 
   byEdition.set(baseEdition, {
     id: String(baseProduct.id),
@@ -229,7 +321,11 @@ function buildEditionOptions(baseProduct: any, allProducts: any[]): EditionOptio
     if (baseCategory && productCategory !== baseCategory) continue;
 
     const candidateTitle = cleanBaseTitle(String(product.name || ''));
-    const score = scoreByTokens(baseTitle, candidateTitle);
+    const candidateCollectionKey = getCollectionKey(product);
+    const score =
+      baseCollectionKey && candidateCollectionKey === baseCollectionKey
+        ? 1
+        : scoreByTokens(baseTitle, candidateTitle);
     if (score < 0.5) continue;
 
     const edition = detectEditionKind(product);
@@ -314,6 +410,8 @@ export default function ProductDetail({
   const [socialSummary, setSocialSummary] = useState<ProductSocialSummary>(EMPTY_SUMMARY);
   const [reviews, setReviews] = useState<ProductSocialReview[]>([]);
   const [socialLoading, setSocialLoading] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [requiresPurchaseForReview, setRequiresPurchaseForReview] = useState(true);
 
   const [reviewName, setReviewName] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
@@ -323,6 +421,7 @@ export default function ProductDetail({
 
   const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
   const [priceSource, setPriceSource] = useState<'orders' | 'current' | 'none'>('none');
+  const [marketGuide, setMarketGuide] = useState<MarketGuide | null>(null);
   const [loadingPriceHistory, setLoadingPriceHistory] = useState(false);
   const [priceHistoryError, setPriceHistoryError] = useState('');
 
@@ -351,11 +450,23 @@ export default function ProductDetail({
 
       if (!data) return;
 
-      const { data: candidates } = await supabaseClient
+      let candidates: any[] | null = null;
+      const modernQuery = await supabaseClient
         .from('products')
-        .select('id,name,price,image,images,stock,category,description')
+        .select('id,name,price,image,images,stock,category,description,component_type,edition,collection_key')
         .order('created_at', { ascending: false })
         .limit(1200);
+
+      if (!modernQuery.error && Array.isArray(modernQuery.data)) {
+        candidates = modernQuery.data;
+      } else {
+        const legacyQuery = await supabaseClient
+          .from('products')
+          .select('id,name,price,image,images,stock,category,description')
+          .order('created_at', { ascending: false })
+          .limit(1200);
+        candidates = Array.isArray(legacyQuery.data) ? legacyQuery.data : null;
+      }
 
       const pool = candidates && candidates.length > 0 ? candidates : [data];
       setBundleOptions(buildBundleOptions(data, pool));
@@ -369,10 +480,31 @@ export default function ProductDetail({
     const initialSelection: Record<string, boolean> = {};
     for (const option of bundleOptions) {
       initialSelection[option.id] = option.defaultSelected;
-      if (prefillComplete && option.stock > 0) {
-        initialSelection[option.id] = true;
+    }
+
+    if (prefillComplete) {
+      const byType = new Map<BundleOptionType, BundleOption[]>();
+      for (const option of bundleOptions) {
+        const list = byType.get(option.type) || [];
+        list.push(option);
+        byType.set(option.type, list);
+      }
+
+      for (const [type, options] of byType.entries()) {
+        const selectable = options.filter((option) => option.stock > 0 && !option.isVirtual);
+        if (selectable.length === 0) continue;
+
+        const preferred = selectable[0];
+        for (const option of options) {
+          initialSelection[option.id] = String(option.id) === String(preferred.id);
+        }
+
+        if (type === 'cartucho') {
+          initialSelection[preferred.id] = true;
+        }
       }
     }
+
     setSelectedBundleIds(initialSelection);
     setShowCompleteGameOptions(prefillComplete);
   }, [bundleOptions, prefillComplete]);
@@ -408,6 +540,8 @@ export default function ProductDetail({
 
       setSocialSummary(data.summary || EMPTY_SUMMARY);
       setReviews(Array.isArray(data.reviews) ? data.reviews : []);
+      setCanReview(Boolean(data?.canReview));
+      setRequiresPurchaseForReview(Boolean(data?.requiresPurchaseForReview ?? true));
     } catch (error: any) {
       console.warn('Error loading social data:', error?.message || error);
     } finally {
@@ -440,6 +574,12 @@ export default function ProductDetail({
       const res = await fetch(`/api/products/${encodeURIComponent(productId)}/price-history`);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar el historico de precios');
+
+      if (data?.marketGuide && typeof data.marketGuide === 'object') {
+        setMarketGuide(data.marketGuide as MarketGuide);
+      } else {
+        setMarketGuide(null);
+      }
 
       const nextPoints = Array.isArray(data?.points)
         ? data.points
@@ -536,6 +676,10 @@ export default function ProductDetail({
 
   const submitReview = async () => {
     if (!visitorId) return;
+    if (requiresPurchaseForReview && !canReview) {
+      toast.error('Solo pueden valorar usuarios que hayan comprado este producto');
+      return;
+    }
     if (reviewComment.trim().length < 2) {
       toast.error('Escribe al menos 2 caracteres en la reseña');
       return;
@@ -578,13 +722,23 @@ export default function ProductDetail({
 
   const applyCompletePack = () => {
     setShowCompleteGameOptions(true);
-    setSelectedBundleIds((prev) => {
-      const next = { ...prev };
+    setSelectedBundleIds(() => {
+      const next: Record<string, boolean> = {};
+      const byType = new Map<BundleOptionType, BundleOption[]>();
+
       for (const option of bundleOptions) {
-        if (option.stock > 0) {
-          next[option.id] = true;
-        }
+        const list = byType.get(option.type) || [];
+        list.push(option);
+        byType.set(option.type, list);
+        next[option.id] = false;
       }
+
+      for (const options of byType.values()) {
+        const selectable = options.filter((option) => option.stock > 0 && !option.isVirtual);
+        if (selectable.length === 0) continue;
+        next[selectable[0].id] = true;
+      }
+
       return next;
     });
     toast.success('Pack completo seleccionado');
@@ -592,7 +746,7 @@ export default function ProductDetail({
 
   const addSelectedToCart = () => {
     const safeQty = Number.isFinite(qty) ? Math.max(1, Math.floor(qty)) : 1;
-    const picked = selectedBundleOptions.filter((option) => option.stock > 0);
+    const picked = selectedBundleOptions.filter((option) => option.stock > 0 && !option.isVirtual);
 
     if (picked.length === 0) {
       toast.error('Selecciona al menos una opcion');
@@ -746,6 +900,7 @@ export default function ProductDetail({
             <div className="space-y-2">
               {displayedBundleOptions.map((option) => {
                 const isCurrentProduct = String(option.id) === String(product.id);
+                const canOpenProduct = !option.isVirtual && !isCurrentProduct;
 
                 return (
                   <div key={option.id} className="flex items-center justify-between gap-3 border border-line px-3 py-2">
@@ -754,10 +909,17 @@ export default function ProductDetail({
                         type="checkbox"
                         checked={Boolean(selectedBundleIds[option.id])}
                         onChange={(e) =>
-                          setSelectedBundleIds((prev) => ({
-                            ...prev,
-                            [option.id]: e.target.checked,
-                          }))
+                          setSelectedBundleIds((prev) => {
+                            const next = { ...prev, [option.id]: e.target.checked };
+                            if (e.target.checked) {
+                              for (const candidate of displayedBundleOptions) {
+                                if (candidate.type !== option.type) continue;
+                                if (candidate.id === option.id) continue;
+                                next[candidate.id] = false;
+                              }
+                            }
+                            return next;
+                          })
                         }
                         disabled={option.stock <= 0}
                       />
@@ -766,16 +928,21 @@ export default function ProductDetail({
                           <span className="text-textMuted">{BUNDLE_TYPE_LABEL[option.type]}:</span>{' '}
                           {isCurrentProduct ? (
                             <span className="font-semibold">{option.name}</span>
-                          ) : (
+                          ) : canOpenProduct ? (
                             <Link href={buildProductHref(option.id)} className="text-primary hover:underline">
                               {option.name}
                             </Link>
+                          ) : (
+                            <span className="font-semibold text-textMuted">{option.name}</span>
                           )}
                         </p>
-                        {!isCurrentProduct ? (
+                        {canOpenProduct ? (
                           <Link href={buildProductHref(option.id)} className="text-xs text-textMuted hover:text-primary">
                             Abrir producto
                           </Link>
+                        ) : null}
+                        {option.isVirtual ? (
+                          <p className="text-xs text-textMuted mt-1">No disponible todavía para este juego.</p>
                         ) : null}
                       </div>
                     </div>
@@ -832,6 +999,39 @@ export default function ProductDetail({
             </p>
             {priceHistoryError ? <p className="text-xs text-red-400 mt-1">{priceHistoryError}</p> : null}
           </div>
+
+          <div className="mt-6 border-t border-line pt-6">
+            <p className="font-semibold mb-2">Comparativa de mercado (PriceCharting)</p>
+            {!marketGuide ? (
+              <p className="text-sm text-textMuted">Sin datos de mercado por ahora.</p>
+            ) : (
+              <div className="space-y-2 text-sm">
+                {marketGuide.available ? (
+                  <>
+                    <p className="text-textMuted">
+                      {marketGuide.productName || product.name}
+                      {marketGuide.consoleName ? ` · ${marketGuide.consoleName}` : ''}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                      <p className="chip">Loose: {marketGuide.loosePrice ? `${(marketGuide.loosePrice / 100).toFixed(2)} €` : '—'}</p>
+                      <p className="chip">CIB: {marketGuide.cibPrice ? `${(marketGuide.cibPrice / 100).toFixed(2)} €` : '—'}</p>
+                      <p className="chip">Nuevo: {marketGuide.newPrice ? `${(marketGuide.newPrice / 100).toFixed(2)} €` : '—'}</p>
+                      <p className="chip">Solo caja: {marketGuide.boxOnlyPrice ? `${(marketGuide.boxOnlyPrice / 100).toFixed(2)} €` : '—'}</p>
+                      <p className="chip">Solo manual: {marketGuide.manualOnlyPrice ? `${(marketGuide.manualOnlyPrice / 100).toFixed(2)} €` : '—'}</p>
+                      <p className="chip">Graded: {marketGuide.gradedPrice ? `${(marketGuide.gradedPrice / 100).toFixed(2)} €` : '—'}</p>
+                    </div>
+                    <p className="text-xs text-textMuted">
+                      PriceCharting no ofrece histórico de ventas por API; esta sección muestra valores actuales de mercado.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-textMuted">
+                    No se pudo consultar PriceCharting{marketGuide.note ? `: ${marketGuide.note}` : '.'}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -846,12 +1046,18 @@ export default function ProductDetail({
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-3">
+              {requiresPurchaseForReview && !canReview ? (
+                <div className="border border-line p-3 text-sm text-textMuted">
+                  Para publicar valoración debes haber comprado este producto con tu cuenta.
+                </div>
+              ) : null}
               <label className="block text-sm text-textMuted">Tu nombre (opcional)</label>
               <input
                 className="w-full bg-transparent border border-line px-3 py-2"
                 value={reviewName}
                 onChange={(e) => setReviewName(e.target.value)}
                 placeholder="Coleccionista"
+                disabled={requiresPurchaseForReview && !canReview}
               />
 
               <label className="block text-sm text-textMuted">Tu valoracion</label>
@@ -862,6 +1068,7 @@ export default function ProductDetail({
                     key={value}
                     className={`chip ${reviewRating >= value ? 'text-primary border-primary' : ''}`}
                     onClick={() => setReviewRating(value)}
+                    disabled={requiresPurchaseForReview && !canReview}
                   >
                     {value}
                   </button>
@@ -874,6 +1081,7 @@ export default function ProductDetail({
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
                 placeholder="Comparte tu experiencia con este producto..."
+                disabled={requiresPurchaseForReview && !canReview}
               />
 
               <label className="block text-sm text-textMuted">Fotos (max. 3)</label>
@@ -881,6 +1089,7 @@ export default function ProductDetail({
                 type="file"
                 accept="image/*"
                 multiple
+                disabled={requiresPurchaseForReview && !canReview}
                 onChange={async (e) => {
                   const files = Array.from(e.target.files || []).slice(0, 3);
                   try {
@@ -902,7 +1111,11 @@ export default function ProductDetail({
                 </div>
               ) : null}
 
-              <button className="button-primary" onClick={submitReview} disabled={submittingReview}>
+              <button
+                className="button-primary"
+                onClick={submitReview}
+                disabled={submittingReview || (requiresPurchaseForReview && !canReview)}
+              >
                 {submittingReview ? 'Publicando...' : 'Publicar valoracion'}
               </button>
             </div>

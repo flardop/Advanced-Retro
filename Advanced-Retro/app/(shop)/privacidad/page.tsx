@@ -40,6 +40,22 @@ export default function PrivacyPage() {
             escribiendo a soporte. Responderemos en el plazo legal aplicable.
           </p>
         </div>
+
+        <div>
+          <h2 className="text-xl font-semibold">5. Responsable y contacto</h2>
+          <p className="text-textMuted mt-2">
+            Responsable: ADVANCED RETRO. Contacto de privacidad: admin@advancedretro.es y
+            atencionalcliente@advancedretro.es.
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold">6. Encargados del tratamiento</h2>
+          <p className="text-textMuted mt-2">
+            Utilizamos proveedores técnicos para operar la tienda (hosting, base de datos, pagos y correo).
+            Solo tratamos datos necesarios para prestar el servicio.
+          </p>
+        </div>
       </div>
     </section>
   );

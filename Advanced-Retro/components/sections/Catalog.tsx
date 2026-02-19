@@ -4,9 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import Image from 'next/image';
-import { sampleCategories, sampleProducts } from '@/lib/sampleData';
+import { sampleProducts } from '@/lib/sampleData';
 import { getProductImageUrl } from '@/lib/imageUrl';
-import { buildCategoriesFromProducts } from '@/lib/productCategories';
 import {
   isBoxProduct,
   isCompleteGameProduct,
@@ -16,46 +15,149 @@ import {
 
 const MANUALS_CATEGORY = 'manuales';
 const COMPLETE_GAMES_CATEGORY = 'juego-completo';
+const GAMES_FILTER = 'juegos';
+const BOXES_FILTER = 'cajas';
+const MYSTERY_FILTER = 'cajas-misteriosas';
+const PLATFORM_PREFIX = 'platform:';
 const QUICK_FILTERS = [
   { id: 'all', label: 'Todos' },
-  { id: 'juegos-gameboy', label: 'Juegos' },
-  { id: 'cajas-gameboy', label: 'Cajas' },
-  { id: MANUALS_CATEGORY, label: 'Manuales' },
-  { id: COMPLETE_GAMES_CATEGORY, label: 'Juego completo' },
+  { id: MYSTERY_FILTER, label: 'Mystery Box' },
+];
+const PLATFORM_FILTERS = [
+  { id: `${PLATFORM_PREFIX}game-boy`, label: 'Game Boy' },
+  { id: `${PLATFORM_PREFIX}game-boy-color`, label: 'Game Boy Color' },
+  { id: `${PLATFORM_PREFIX}game-boy-advance`, label: 'Game Boy Advance' },
+  { id: `${PLATFORM_PREFIX}super-nintendo`, label: 'Super Nintendo' },
+  { id: `${PLATFORM_PREFIX}gamecube`, label: 'GameCube' },
+  { id: `${PLATFORM_PREFIX}consolas`, label: 'Consolas' },
 ];
 
-function getCategoryKey(category: any): string {
-  return String(category?.id ?? category?.slug ?? category?.name ?? '');
-}
+const SORT_OPTIONS = [
+  { id: 'newest', label: 'Novedades' },
+  { id: 'name_asc', label: 'A-Z' },
+  { id: 'name_desc', label: 'Z-A' },
+  { id: 'price_asc', label: 'Precio: menor a mayor' },
+  { id: 'price_desc', label: 'Precio: mayor a menor' },
+  { id: 'likes_desc', label: 'Más me gusta' },
+  { id: 'visits_desc', label: 'Más visitas' },
+  { id: 'stock_desc', label: 'Más stock' },
+];
+
+type ProductMetric = {
+  visits: number;
+  likes: number;
+  likedByCurrentVisitor: boolean;
+};
 
 function getProductCategoryKey(product: any): string {
   return String(product?.category_id ?? product?.category ?? product?.category?.id ?? '');
 }
 
-const QUICK_FILTER_IDS = new Set(QUICK_FILTERS.map((filter) => filter.id));
+function normalizeText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getOrCreateVisitorId(): string {
+  if (typeof window === 'undefined') return '';
+  const key = 'advanced-retro-visitor-id';
+  const existing = window.localStorage.getItem(key);
+  if (existing) return existing;
+
+  const nextId =
+    typeof window.crypto?.randomUUID === 'function'
+      ? window.crypto.randomUUID()
+      : `visitor-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+
+  window.localStorage.setItem(key, nextId);
+  return nextId;
+}
+
+function matchPlatform(product: any, filterId: string): boolean {
+  const source = normalizeText(
+    `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.category || '')}`
+  );
+
+  if (filterId === 'consolas') {
+    return source.includes('consola');
+  }
+  if (filterId === 'game-boy-color') {
+    return source.includes('game boy color') || source.includes('gameboy color');
+  }
+  if (filterId === 'game-boy-advance') {
+    return source.includes('game boy advance') || source.includes('gameboy advance');
+  }
+  if (filterId === 'super-nintendo') {
+    return source.includes('super nintendo') || source.includes('snes');
+  }
+  if (filterId === 'gamecube') {
+    return source.includes('gamecube') || source.includes('game cube');
+  }
+  if (filterId === 'game-boy') {
+    const isOtherSpecific =
+      source.includes('game boy color') ||
+      source.includes('gameboy color') ||
+      source.includes('game boy advance') ||
+      source.includes('gameboy advance');
+    if (isOtherSpecific) return false;
+    return source.includes('game boy') || source.includes('gameboy');
+  }
+  return false;
+}
+
+function isMysteryBoxProduct(product: any): boolean {
+  const category = String(product?.category || product?.category_id || '').toLowerCase();
+  if (category === 'cajas-misteriosas') return true;
+  return Boolean(product?.is_mystery_box);
+}
+
+function isConsoleBaseProduct(product: any): boolean {
+  const name = normalizeText(String(product?.name || ''));
+  return name.startsWith('consola ');
+}
+
+function isPrimaryStoreProduct(product: any): boolean {
+  return isMainGameProduct(product) || isMysteryBoxProduct(product) || isConsoleBaseProduct(product);
+}
 
 export default function Catalog() {
   const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
   const [active, setActive] = useState<string>('all');
-  const [metrics, setMetrics] = useState<Record<string, { visits: number; likes: number }>>({});
+  const [metrics, setMetrics] = useState<Record<string, ProductMetric>>({});
+  const [visitorId, setVisitorId] = useState('');
 
-  const loadMetrics = async (productIds: string[]) => {
+  const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [stockOnly, setStockOnly] = useState(false);
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+
+  const loadMetrics = async (productIds: string[], currentVisitorId: string) => {
     if (productIds.length === 0) return;
     try {
       const res = await fetch('/api/products/social/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productIds }),
+        body: JSON.stringify({
+          productIds,
+          visitorId: currentVisitorId || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) return;
 
-      const next: Record<string, { visits: number; likes: number }> = {};
+      const next: Record<string, ProductMetric> = {};
       for (const [id, summary] of Object.entries<any>(data?.metrics || {})) {
         next[id] = {
           visits: Number(summary?.visits || 0),
           likes: Number(summary?.likes || 0),
+          likedByCurrentVisitor: Boolean(summary?.likedByCurrentVisitor),
         };
       }
       setMetrics(next);
@@ -65,71 +167,34 @@ export default function Catalog() {
   };
 
   useEffect(() => {
+    setVisitorId(getOrCreateVisitorId());
+  }, []);
+
+  useEffect(() => {
     const load = async () => {
       if (!supabaseClient) {
-        setCategories(sampleCategories);
         setProducts(sampleProducts);
-        loadMetrics(sampleProducts.map((product) => String(product.id)));
+        loadMetrics(sampleProducts.map((product) => String(product.id)), visitorId);
         return;
       }
       const { data: prods } = await supabaseClient.from('products').select('*').order('created_at', { ascending: false });
       const safeProducts = prods || [];
-      const { data: cats } = await supabaseClient.from('categories').select('*').order('name');
-
-      const derivedCategories = buildCategoriesFromProducts(safeProducts);
-      const safeCategories = cats && cats.length > 0 ? cats : derivedCategories;
 
       setProducts(safeProducts);
-      setCategories(safeCategories.length > 0 ? safeCategories : sampleCategories);
-      loadMetrics(safeProducts.map((product) => String(product.id)));
+      loadMetrics(safeProducts.map((product) => String(product.id)), visitorId);
     };
     load();
-  }, []);
+  }, [visitorId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
     const categoryParam = String(params.get('category') || '').trim();
-    if (!categoryParam) return;
-    setActive(categoryParam);
+    if (categoryParam) setActive(categoryParam);
+
+    const q = String(params.get('q') || '').trim();
+    if (q) setSearch(q);
   }, []);
-
-  const catalogCategories = useMemo(() => {
-    const hasManuals = products.some((product) => isManualProduct(product));
-    const hasComplete = products.some((product) => isCompleteGameProduct(product, products));
-
-    let next = [...categories];
-
-    const hasManualCategory = next.some(
-      (category) => getCategoryKey(category).toLowerCase() === MANUALS_CATEGORY
-    );
-    if (hasManuals && !hasManualCategory) {
-      next = [
-        ...next,
-        {
-          id: MANUALS_CATEGORY,
-          slug: MANUALS_CATEGORY,
-          name: 'Manuales',
-        },
-      ];
-    }
-
-    const hasCompleteCategory = next.some(
-      (category) => getCategoryKey(category).toLowerCase() === COMPLETE_GAMES_CATEGORY
-    );
-    if (hasComplete && !hasCompleteCategory) {
-      next = [
-        ...next,
-        {
-          id: COMPLETE_GAMES_CATEGORY,
-          slug: COMPLETE_GAMES_CATEGORY,
-          name: 'Juego completo',
-        },
-      ];
-    }
-
-    return next;
-  }, [categories, products]);
 
   const completeProductIds = useMemo(() => {
     const set = new Set<string>();
@@ -142,32 +207,112 @@ export default function Catalog() {
   }, [products]);
 
   const filtered = useMemo(() => {
+    let list = products;
+
     if (active === 'all') {
-      return products.filter((product) => !isManualProduct(product));
+      list = list.filter((product) => isPrimaryStoreProduct(product));
+    } else if (String(active).toLowerCase() === MYSTERY_FILTER) {
+      list = list.filter((product) => isMysteryBoxProduct(product));
+    } else if (String(active).toLowerCase() === MANUALS_CATEGORY) {
+      list = list.filter((product) => isManualProduct(product));
+    } else if (String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY) {
+      list = list.filter((product) => completeProductIds.has(String(product.id)));
+    } else if (String(active).toLowerCase() === GAMES_FILTER) {
+      list = list.filter((product) => isMainGameProduct(product));
+    } else if (String(active).toLowerCase() === BOXES_FILTER) {
+      list = list.filter((product) => isBoxProduct(product));
+    } else if (String(active).toLowerCase().startsWith(PLATFORM_PREFIX)) {
+      const key = String(active).toLowerCase().slice(PLATFORM_PREFIX.length);
+      list = list.filter((product) => matchPlatform(product, key) && isPrimaryStoreProduct(product));
+    } else {
+      list = list.filter((product) => {
+        const isCategoryMatch = getProductCategoryKey(product) === String(active);
+        if (!isCategoryMatch) return false;
+        return !isManualProduct(product);
+      });
     }
 
-    if (String(active).toLowerCase() === MANUALS_CATEGORY) {
-      return products.filter((product) => isManualProduct(product));
+    const searchQuery = normalizeText(search);
+    if (searchQuery) {
+      list = list.filter((product) => {
+        const haystack = normalizeText(
+          `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')}`
+        );
+        return haystack.includes(searchQuery);
+      });
     }
 
-    if (String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY) {
-      return products.filter((product) => completeProductIds.has(String(product.id)));
+    if (favoritesOnly) {
+      list = list.filter((product) => Boolean(metrics[String(product.id)]?.likedByCurrentVisitor));
     }
 
-    if (String(active).toLowerCase() === 'juegos-gameboy') {
-      return products.filter((product) => isMainGameProduct(product));
+    if (stockOnly) {
+      list = list.filter((product) => Number(product?.stock || 0) > 0);
     }
 
-    if (String(active).toLowerCase() === 'cajas-gameboy') {
-      return products.filter((product) => isBoxProduct(product));
+    const minCents = minPrice.trim() ? Math.max(0, Math.round(Number(minPrice) * 100)) : 0;
+    const maxCents = maxPrice.trim() ? Math.max(0, Math.round(Number(maxPrice) * 100)) : 0;
+
+    if (minCents > 0) {
+      list = list.filter((product) => Number(product?.price || 0) >= minCents);
     }
 
-    return products.filter((product) => {
-      const isCategoryMatch = getProductCategoryKey(product) === String(active);
-      if (!isCategoryMatch) return false;
-      return !isManualProduct(product);
-    });
-  }, [products, active, completeProductIds]);
+    if (maxCents > 0) {
+      list = list.filter((product) => Number(product?.price || 0) <= maxCents);
+    }
+
+    return list;
+  }, [
+    products,
+    active,
+    completeProductIds,
+    search,
+    favoritesOnly,
+    stockOnly,
+    minPrice,
+    maxPrice,
+    metrics,
+  ]);
+
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+
+    const sortByName = (a: any, b: any) => String(a?.name || '').localeCompare(String(b?.name || ''), 'es', { sensitivity: 'base' });
+    const sortByPrice = (a: any, b: any) => Number(a?.price || 0) - Number(b?.price || 0);
+
+    switch (sortBy) {
+      case 'name_asc':
+        list.sort(sortByName);
+        break;
+      case 'name_desc':
+        list.sort((a, b) => sortByName(b, a));
+        break;
+      case 'price_asc':
+        list.sort(sortByPrice);
+        break;
+      case 'price_desc':
+        list.sort((a, b) => sortByPrice(b, a));
+        break;
+      case 'likes_desc':
+        list.sort((a, b) => Number(metrics[String(b.id)]?.likes || 0) - Number(metrics[String(a.id)]?.likes || 0));
+        break;
+      case 'visits_desc':
+        list.sort((a, b) => Number(metrics[String(b.id)]?.visits || 0) - Number(metrics[String(a.id)]?.visits || 0));
+        break;
+      case 'stock_desc':
+        list.sort((a, b) => Number(b?.stock || 0) - Number(a?.stock || 0));
+        break;
+      case 'newest':
+      default:
+        list.sort(
+          (a, b) =>
+            new Date(String(b?.created_at || 0)).getTime() - new Date(String(a?.created_at || 0)).getTime()
+        );
+        break;
+    }
+
+    return list;
+  }, [filtered, sortBy, metrics]);
 
   return (
     <section className="section">
@@ -190,57 +335,99 @@ export default function Catalog() {
               ))}
             </div>
             <div className="flex flex-wrap gap-2">
-            {catalogCategories
-              .filter((category) => !QUICK_FILTER_IDS.has(getCategoryKey(category)))
-              .map((c) => (
-              <button
-                key={getCategoryKey(c)}
-                className={`chip ${String(active) === getCategoryKey(c) ? 'text-primary' : ''}`}
-                onClick={() => setActive(getCategoryKey(c))}
-              >
-                {c.name}
-              </button>
-            ))}
+              {PLATFORM_FILTERS.map((filter) => (
+                <button
+                  key={filter.id}
+                  className={`chip ${active === filter.id ? 'text-primary border-primary' : ''}`}
+                  onClick={() => setActive(filter.id)}
+                >
+                  {filter.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
+        <div className="glass p-4 mb-6 grid gap-3 lg:grid-cols-[1.5fr,1fr,1fr,1fr,1fr]">
+          <input
+            className="w-full bg-transparent border border-line px-3 py-2"
+            placeholder="Buscar por nombre o descripción"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            className="w-full bg-transparent border border-line px-3 py-2"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              className="w-full bg-transparent border border-line px-3 py-2"
+              placeholder="Min €"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+            />
+            <input
+              className="w-full bg-transparent border border-line px-3 py-2"
+              placeholder="Max €"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+            />
+          </div>
+
+          <button
+            className={`chip ${favoritesOnly ? 'text-primary border-primary' : ''}`}
+            onClick={() => setFavoritesOnly((prev) => !prev)}
+          >
+            Solo favoritos
+          </button>
+
+          <button
+            className={`chip ${stockOnly ? 'text-primary border-primary' : ''}`}
+            onClick={() => setStockOnly((prev) => !prev)}
+          >
+            Solo con stock
+          </button>
+        </div>
+
+        <p className="text-sm text-textMuted mb-4">Resultados: {sorted.length}</p>
+
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((product) => {
+          {sorted.map((product) => {
             const productId = String(product.id);
             const isComplete = completeProductIds.has(productId);
             const isCompleteView = String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY;
             const href = isCompleteView ? `/producto/${productId}?complete=1` : `/producto/${productId}`;
+            const productMetrics = metrics[productId];
 
             return (
-            <Link key={product.id} href={href} className="glass p-4 hover:shadow-glow transition-shadow">
-              <div className="relative w-full h-56 bg-surface border border-line overflow-hidden">
-                <Image
-                  src={getProductImageUrl(product)}
-                  alt={product.name}
-                  fill
-                  className="object-contain p-2"
-                />
-                <span className="absolute top-3 left-3 chip text-xs">{product.status}</span>
-              </div>
-              <div className="mt-4">
-                <h3 className="font-semibold text-text">{product.name}</h3>
-                <p className="text-textMuted text-sm line-clamp-2">{product.description}</p>
-                <p className="text-primary font-semibold mt-2">
-                  {(product.price / 100).toFixed(2)} €
-                </p>
-                <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
-                <p className="text-xs text-textMuted mt-1">
-                  Visitas: {metrics[product.id]?.visits ?? 0} · Me gusta: {metrics[product.id]?.likes ?? 0}
-                </p>
-                {isComplete ? (
-                  <p className="text-xs text-primary mt-1">
-                    Pack completo disponible
+              <Link key={product.id} href={href} className="glass p-4 hover:shadow-glow transition-shadow">
+                <div className="relative w-full h-56 bg-surface border border-line overflow-hidden">
+                  <Image src={getProductImageUrl(product)} alt={product.name} fill className="object-contain p-2" />
+                  <span className="absolute top-3 left-3 chip text-xs">{product.status}</span>
+                </div>
+                <div className="mt-4">
+                  <h3 className="font-semibold text-text">{product.name}</h3>
+                  <p className="text-textMuted text-sm line-clamp-2">{product.description}</p>
+                  <p className="text-primary font-semibold mt-2">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
+                  <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
+                  <p className="text-xs text-textMuted mt-1">
+                    Visitas: {productMetrics?.visits ?? 0} · Me gusta: {productMetrics?.likes ?? 0}
+                    {productMetrics?.likedByCurrentVisitor ? ' · Favorito' : ''}
                   </p>
-                ) : null}
-              </div>
-            </Link>
-          )})}
+                  {isComplete ? <p className="text-xs text-primary mt-1">Pack completo disponible</p> : null}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
