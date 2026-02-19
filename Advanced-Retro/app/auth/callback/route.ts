@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import type { EmailOtpType } from '@supabase/supabase-js';
+import { syncAuthUserProfileRow } from '@/lib/serverAuth';
 
 const ALLOWED_OTP_TYPES = new Set<EmailOtpType>([
   'signup',
@@ -13,55 +14,13 @@ const ALLOWED_OTP_TYPES = new Set<EmailOtpType>([
   'email_change',
 ]);
 
-function userNameFromAuth(user: any): string {
-  const metadataName =
-    user?.user_metadata?.name ||
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.user_name;
-
-  if (typeof metadataName === 'string' && metadataName.trim()) {
-    return metadataName.trim().slice(0, 80);
-  }
-
-  const email = typeof user?.email === 'string' ? user.email : '';
-  if (email.includes('@')) {
-    return email.split('@')[0].slice(0, 80);
-  }
-
-  return 'Coleccionista';
-}
-
 async function syncUserProfile(supabase: ReturnType<typeof createRouteHandlerClient>) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (user && supabaseAdmin) {
-    const safeName = userNameFromAuth(user);
-
-    await supabaseAdmin.from('users').upsert(
-      {
-        id: user.id,
-        email: user.email || `${user.id}@local.invalid`,
-        role: 'user',
-        name: safeName,
-      },
-      { onConflict: 'id' }
-    );
-
-    await supabaseAdmin
-      .from('users')
-      .update({
-        name: safeName,
-        avatar_url:
-          typeof user.user_metadata?.avatar_url === 'string'
-            ? user.user_metadata.avatar_url
-            : typeof user.user_metadata?.picture === 'string'
-              ? user.user_metadata.picture
-              : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
+    await syncAuthUserProfileRow(user);
   }
 }
 

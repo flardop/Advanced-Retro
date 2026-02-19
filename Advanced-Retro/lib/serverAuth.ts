@@ -41,6 +41,80 @@ function userNameFromAuth(user: User): string {
   return 'Coleccionista';
 }
 
+function userAvatarFromAuth(user: User): string | null {
+  if (typeof user.user_metadata?.avatar_url === 'string') {
+    return user.user_metadata.avatar_url;
+  }
+  if (typeof user.user_metadata?.picture === 'string') {
+    return user.user_metadata.picture;
+  }
+  return null;
+}
+
+function requiresLegacyPasswordHash(error: any): boolean {
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    message.includes('password_hash') &&
+    message.includes('null value') &&
+    message.includes('not-null')
+  );
+}
+
+export async function syncAuthUserProfileRow(user: User): Promise<{
+  safeEmail: string;
+  safeName: string;
+  safeAvatar: string | null;
+}> {
+  if (!supabaseAdmin) throw new ApiError(503, 'Supabase not configured');
+
+  const nowIso = new Date().toISOString();
+  const safeEmail = user.email || `${user.id}@local.invalid`;
+  const safeName = userNameFromAuth(user);
+  const safeAvatar = userAvatarFromAuth(user);
+
+  const basePayload = {
+    id: user.id,
+    email: safeEmail,
+    role: 'user',
+    name: safeName,
+  };
+
+  let { error: upsertError } = await supabaseAdmin
+    .from('users')
+    .upsert(basePayload, { onConflict: 'id' });
+
+  if (upsertError && requiresLegacyPasswordHash(upsertError)) {
+    const legacyPayload = {
+      ...basePayload,
+      password_hash: `supabase-auth:${user.id}`,
+    };
+    const legacyAttempt = await supabaseAdmin
+      .from('users')
+      .upsert(legacyPayload, { onConflict: 'id' });
+    upsertError = legacyAttempt.error;
+  }
+
+  if (upsertError) {
+    throw new ApiError(500, `Unable to sync profile: ${upsertError.message}`);
+  }
+
+  // Optional columns can be missing on legacy schemas. Ignore these update errors.
+  await supabaseAdmin
+    .from('users')
+    .update({
+      name: safeName,
+      avatar_url: safeAvatar,
+      updated_at: nowIso,
+    })
+    .eq('id', user.id);
+
+  return {
+    safeEmail,
+    safeName,
+    safeAvatar,
+  };
+}
+
 export async function requireAuthUser(): Promise<User> {
   const supabase = supabaseServer();
   const {
@@ -57,41 +131,7 @@ export async function requireAuthUser(): Promise<User> {
 
 export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
   if (!supabaseAdmin) throw new ApiError(503, 'Supabase not configured');
-
-  const nowIso = new Date().toISOString();
-  const safeEmail = user.email || `${user.id}@local.invalid`;
-  const safeName = userNameFromAuth(user);
-  const safeAvatar =
-    typeof user.user_metadata?.avatar_url === 'string'
-      ? user.user_metadata.avatar_url
-      : typeof user.user_metadata?.picture === 'string'
-        ? user.user_metadata.picture
-        : null;
-
-  const upsertPayload = {
-    id: user.id,
-    email: safeEmail,
-    role: 'user',
-    name: safeName,
-  };
-
-  const { error: upsertError } = await supabaseAdmin
-    .from('users')
-    .upsert(upsertPayload, { onConflict: 'id' });
-
-  if (upsertError) {
-    throw new ApiError(500, `Unable to sync profile: ${upsertError.message}`);
-  }
-
-  // Optional columns can be missing on legacy schemas. Ignore these update errors.
-  await supabaseAdmin
-    .from('users')
-    .update({
-      name: safeName,
-      avatar_url: safeAvatar,
-      updated_at: nowIso,
-    })
-    .eq('id', user.id);
+  const { safeEmail, safeName, safeAvatar } = await syncAuthUserProfileRow(user);
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('users')
