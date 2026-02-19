@@ -63,6 +63,13 @@ export default function Navbar() {
           </div>
         </div>
       )}
+      <div className="border-t border-line/60 hidden md:block">
+        <div className="container py-2 text-xs text-textMuted flex flex-wrap items-center gap-6">
+          <span><strong className="text-primary">Mystery:</strong> compras tirada</span>
+          <span><strong className="text-primary">Ruleta:</strong> giras y ganas premio</span>
+          <span><strong className="text-primary">Encargos:</strong> compra asistida 1 a 1</span>
+        </div>
+      </div>
     </header>
   );
 }

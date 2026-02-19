@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { sampleProducts } from '@/lib/sampleData';
 import { getProductImageUrl } from '@/lib/imageUrl';
 import {
+  buildBaseGameTitle,
   isBoxProduct,
   isCompleteGameProduct,
   isMainGameProduct,
@@ -125,6 +126,67 @@ function isPrimaryStoreProduct(product: any): boolean {
   return isMainGameProduct(product) || isMysteryBoxProduct(product) || isConsoleBaseProduct(product);
 }
 
+function isUuidLike(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function isLikelyComponentProduct(product: any): boolean {
+  const componentType = String(product?.component_type || '').toLowerCase();
+  if (componentType && componentType !== 'full_game' && componentType !== 'cartucho') return true;
+
+  const source = normalizeText(
+    `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')}`
+  );
+
+  return (
+    source.includes('manual') ||
+    source.includes('insert') ||
+    source.includes('inlay') ||
+    source.includes('protector') ||
+    source.includes('pegatina')
+  );
+}
+
+function sortProducts(input: any[], sortBy: string, metrics: Record<string, ProductMetric>): any[] {
+  const list = [...input];
+  const sortByName = (a: any, b: any) =>
+    String(a?.name || '').localeCompare(String(b?.name || ''), 'es', { sensitivity: 'base' });
+  const sortByPrice = (a: any, b: any) => Number(a?.price || 0) - Number(b?.price || 0);
+
+  switch (sortBy) {
+    case 'name_asc':
+      list.sort(sortByName);
+      break;
+    case 'name_desc':
+      list.sort((a, b) => sortByName(b, a));
+      break;
+    case 'price_asc':
+      list.sort(sortByPrice);
+      break;
+    case 'price_desc':
+      list.sort((a, b) => sortByPrice(b, a));
+      break;
+    case 'likes_desc':
+      list.sort((a, b) => Number(metrics[String(b.id)]?.likes || 0) - Number(metrics[String(a.id)]?.likes || 0));
+      break;
+    case 'visits_desc':
+      list.sort((a, b) => Number(metrics[String(b.id)]?.visits || 0) - Number(metrics[String(a.id)]?.visits || 0));
+      break;
+    case 'stock_desc':
+      list.sort((a, b) => Number(b?.stock || 0) - Number(a?.stock || 0));
+      break;
+    case 'newest':
+    default:
+      list.sort(
+        (a, b) =>
+          new Date(String(b?.created_at || 0)).getTime() - new Date(String(a?.created_at || 0)).getTime()
+      );
+      break;
+  }
+
+  return list;
+}
+
 export default function Catalog() {
   const [products, setProducts] = useState<any[]>([]);
   const [active, setActive] = useState<string>('all');
@@ -177,11 +239,17 @@ export default function Catalog() {
         loadMetrics(sampleProducts.map((product) => String(product.id)), visitorId);
         return;
       }
-      const { data: prods } = await supabaseClient.from('products').select('*').order('created_at', { ascending: false });
+      const { data: prods } = await supabaseClient
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
       const safeProducts = prods || [];
 
       setProducts(safeProducts);
-      loadMetrics(safeProducts.map((product) => String(product.id)), visitorId);
+      loadMetrics(
+        safeProducts.map((product) => String(product.id)),
+        visitorId
+      );
     };
     load();
   }, [visitorId]);
@@ -275,52 +343,98 @@ export default function Catalog() {
   ]);
 
   const sorted = useMemo(() => {
-    const list = [...filtered];
+    const sortedPrimary = sortProducts(filtered, sortBy, metrics);
+    if (sortedPrimary.length > 0) return sortedPrimary;
 
-    const sortByName = (a: any, b: any) => String(a?.name || '').localeCompare(String(b?.name || ''), 'es', { sensitivity: 'base' });
-    const sortByPrice = (a: any, b: any) => Number(a?.price || 0) - Number(b?.price || 0);
+    const fallbackPool = products.filter((product) => {
+      if (isMysteryBoxProduct(product)) return true;
+      if (isPrimaryStoreProduct(product)) return true;
+      if (isLikelyComponentProduct(product)) return false;
+      const category = String(product?.category || product?.category_id || '').toLowerCase();
+      if (category && !isUuidLike(category) && category.includes('manual')) return false;
+      return buildBaseGameTitle(String(product?.name || '')).length >= 2;
+    });
 
-    switch (sortBy) {
-      case 'name_asc':
-        list.sort(sortByName);
-        break;
-      case 'name_desc':
-        list.sort((a, b) => sortByName(b, a));
-        break;
-      case 'price_asc':
-        list.sort(sortByPrice);
-        break;
-      case 'price_desc':
-        list.sort((a, b) => sortByPrice(b, a));
-        break;
-      case 'likes_desc':
-        list.sort((a, b) => Number(metrics[String(b.id)]?.likes || 0) - Number(metrics[String(a.id)]?.likes || 0));
-        break;
-      case 'visits_desc':
-        list.sort((a, b) => Number(metrics[String(b.id)]?.visits || 0) - Number(metrics[String(a.id)]?.visits || 0));
-        break;
-      case 'stock_desc':
-        list.sort((a, b) => Number(b?.stock || 0) - Number(a?.stock || 0));
-        break;
-      case 'newest':
-      default:
-        list.sort(
+    return sortProducts(fallbackPool, sortBy, metrics);
+  }, [filtered, products, sortBy, metrics]);
+
+  const usingFallbackCatalog = filtered.length === 0 && sorted.length > 0;
+  const hasNoProducts = sorted.length === 0;
+
+  const featuredTrending = useMemo(
+    () =>
+      [...sorted]
+        .sort(
+          (a, b) =>
+            Number(metrics[String(b.id)]?.visits || 0) +
+            Number(metrics[String(b.id)]?.likes || 0) -
+            (Number(metrics[String(a.id)]?.visits || 0) + Number(metrics[String(a.id)]?.likes || 0))
+        )
+        .slice(0, 3),
+    [sorted, metrics]
+  );
+
+  const featuredBestRated = useMemo(
+    () =>
+      [...sorted]
+        .sort((a, b) => Number(metrics[String(b.id)]?.likes || 0) - Number(metrics[String(a.id)]?.likes || 0))
+        .slice(0, 3),
+    [sorted, metrics]
+  );
+
+  const featuredLatest = useMemo(
+    () =>
+      [...sorted]
+        .sort(
           (a, b) =>
             new Date(String(b?.created_at || 0)).getTime() - new Date(String(a?.created_at || 0)).getTime()
-        );
-        break;
-    }
+        )
+        .slice(0, 3),
+    [sorted]
+  );
 
-    return list;
-  }, [filtered, sortBy, metrics]);
+  const renderMiniProduct = (product: any, label: string) => {
+    const productId = String(product.id);
+    return (
+      <Link key={`${label}-${productId}`} href={`/producto/${productId}`} className="glass p-3 hover:shadow-glow transition-shadow">
+        <div className="relative w-full h-36 bg-surface border border-line overflow-hidden">
+          <Image src={getProductImageUrl(product)} alt={product.name} fill className="object-contain p-2" />
+        </div>
+        <p className="text-xs text-primary mt-3">{label}</p>
+        <h3 className="font-semibold text-sm line-clamp-2 mt-1">{product.name}</h3>
+        <p className="text-xs text-textMuted mt-1">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
+      </Link>
+    );
+  };
 
   return (
     <section className="section">
       <div className="container">
+        <div className="glass p-4 mb-6 grid gap-3 md:grid-cols-3">
+          <div>
+            <p className="text-primary text-sm font-semibold">Envíos desde España</p>
+            <p className="text-xs text-textMuted mt-1">Preparación y salida en 24-48h laborables.</p>
+          </div>
+          <div>
+            <p className="text-primary text-sm font-semibold">Revisado y testado</p>
+            <p className="text-xs text-textMuted mt-1">Cada pieza se comprueba antes de publicarse.</p>
+          </div>
+          <div>
+            <p className="text-primary text-sm font-semibold">Garantía coleccionista</p>
+            <p className="text-xs text-textMuted mt-1">Soporte por ticket y seguimiento real del pedido.</p>
+          </div>
+        </div>
+
+        <div className="glass p-4 mb-8">
+          <p className="text-sm text-textMuted">
+            Cada cartucho tiene historia. Mystery Box es azar con tiradas y premios; Ruleta es el panel de giro; Encargos es compra asistida 1 a 1.
+          </p>
+        </div>
+
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <div>
             <h1 className="title-display text-3xl">Catálogo</h1>
-            <p className="text-textMuted">Explora colecciones completas.</p>
+            <p className="text-textMuted">Retro revisado por coleccionistas y listo para tu vitrina.</p>
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap gap-2">
@@ -347,6 +461,23 @@ export default function Catalog() {
             </div>
           </div>
         </div>
+
+        {!hasNoProducts ? (
+          <div className="grid gap-4 md:grid-cols-3 mb-8">
+            <div>
+              <h2 className="font-semibold mb-2">Trending retro</h2>
+              <div className="grid gap-3">{featuredTrending.map((product) => renderMiniProduct(product, 'Trending'))}</div>
+            </div>
+            <div>
+              <h2 className="font-semibold mb-2">Más valorados</h2>
+              <div className="grid gap-3">{featuredBestRated.map((product) => renderMiniProduct(product, 'Top'))}</div>
+            </div>
+            <div>
+              <h2 className="font-semibold mb-2">Últimas entradas</h2>
+              <div className="grid gap-3">{featuredLatest.map((product) => renderMiniProduct(product, 'Nuevo'))}</div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="glass p-4 mb-6 grid gap-3 lg:grid-cols-[1.5fr,1fr,1fr,1fr,1fr]">
           <input
@@ -398,37 +529,53 @@ export default function Catalog() {
           </button>
         </div>
 
-        <p className="text-sm text-textMuted mb-4">Resultados: {sorted.length}</p>
+        <p className="text-sm text-textMuted mb-4">
+          Resultados: {sorted.length}
+          {usingFallbackCatalog ? ' · Mostrando selección recomendada mientras ajustas filtros/categorías.' : ''}
+        </p>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {sorted.map((product) => {
-            const productId = String(product.id);
-            const isComplete = completeProductIds.has(productId);
-            const isCompleteView = String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY;
-            const href = isCompleteView ? `/producto/${productId}?complete=1` : `/producto/${productId}`;
-            const productMetrics = metrics[productId];
+        {hasNoProducts ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={`placeholder-${index}`} className="glass p-4">
+                <div className="w-full h-56 bg-surface border border-line animate-pulse" />
+                <div className="mt-4 h-4 bg-surface animate-pulse" />
+                <div className="mt-2 h-4 bg-surface animate-pulse w-2/3" />
+                <p className="text-xs text-textMuted mt-4">Próximas entradas retro</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {sorted.map((product) => {
+              const productId = String(product.id);
+              const isComplete = completeProductIds.has(productId);
+              const isCompleteView = String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY;
+              const href = isCompleteView ? `/producto/${productId}?complete=1` : `/producto/${productId}`;
+              const productMetrics = metrics[productId];
 
-            return (
-              <Link key={product.id} href={href} className="glass p-4 hover:shadow-glow transition-shadow">
-                <div className="relative w-full h-56 bg-surface border border-line overflow-hidden">
-                  <Image src={getProductImageUrl(product)} alt={product.name} fill className="object-contain p-2" />
-                  <span className="absolute top-3 left-3 chip text-xs">{product.status}</span>
-                </div>
-                <div className="mt-4">
-                  <h3 className="font-semibold text-text">{product.name}</h3>
-                  <p className="text-textMuted text-sm line-clamp-2">{product.description}</p>
-                  <p className="text-primary font-semibold mt-2">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
-                  <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
-                  <p className="text-xs text-textMuted mt-1">
-                    Visitas: {productMetrics?.visits ?? 0} · Me gusta: {productMetrics?.likes ?? 0}
-                    {productMetrics?.likedByCurrentVisitor ? ' · Favorito' : ''}
-                  </p>
-                  {isComplete ? <p className="text-xs text-primary mt-1">Pack completo disponible</p> : null}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+              return (
+                <Link key={product.id} href={href} className="glass p-4 hover:shadow-glow transition-shadow">
+                  <div className="relative w-full h-56 bg-surface border border-line overflow-hidden">
+                    <Image src={getProductImageUrl(product)} alt={product.name} fill className="object-contain p-2" />
+                    <span className="absolute top-3 left-3 chip text-xs">{product.status}</span>
+                  </div>
+                  <div className="mt-4">
+                    <h3 className="font-semibold text-text">{product.name}</h3>
+                    <p className="text-textMuted text-sm line-clamp-2">{product.description}</p>
+                    <p className="text-primary font-semibold mt-2">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
+                    <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
+                    <p className="text-xs text-textMuted mt-1">
+                      Visitas: {productMetrics?.visits ?? 0} · Me gusta: {productMetrics?.likes ?? 0}
+                      {productMetrics?.likedByCurrentVisitor ? ' · Favorito' : ''}
+                    </p>
+                    {isComplete ? <p className="text-xs text-primary mt-1">Pack completo disponible</p> : null}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

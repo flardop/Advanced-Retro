@@ -8,6 +8,10 @@ export function normalizeProductText(value: string): string {
     .trim();
 }
 
+function looksLikeUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function hasToken(text: string, token: string): boolean {
   const safe = ` ${text} `;
   const key = ` ${token} `;
@@ -124,10 +128,12 @@ export function isMainGameProduct(product: any): boolean {
   if (component && component !== 'full_game' && component !== 'cartucho') return false;
 
   const category = String(product?.category || product?.category_id || '').toLowerCase();
+  const hasLegacyCategoryText = category && !looksLikeUuid(category);
   const isGameCategory = category.startsWith('juegos-') || category === 'consolas-retro';
-  if (category && !isGameCategory) return false;
+  if (hasLegacyCategoryText && !isGameCategory) return false;
   if (isManualProduct(product)) return false;
   if (isBoxProduct(product)) return false;
+  if (isAccessoryProduct(product)) return false;
   return true;
 }
 
