@@ -17,6 +17,7 @@
     "images:mapping:autofill": "npx tsx scripts/autofill-mapping-known-files.ts",
     "images:mapping:dedupe": "npx tsx scripts/mark-duplicate-variants.ts",
     "images:mapping:apply": "npx tsx scripts/apply-image-mapping.ts --apply",
+    "images:repair:splash": "npx tsx scripts/repair-splash-images.ts",
     "images:upload": "npx tsx scripts/upload-organized-images-to-supabase.ts --apply",
     "images:pipeline": "bash scripts/run-image-pipeline.sh",
     "products:dedupe": "npx tsx scripts/deduplicate-products.ts",

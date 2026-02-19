@@ -11,14 +11,13 @@ const WIKIMEDIA_GBC =
   'https://upload.wikimedia.org/wikipedia/commons/2/26/Nintendo_Game_Boy_Color.png';
 
 const LIBRETRO_GB_TETRIS =
-  'https://thumbnails.libretro.com/Nintendo%20-%20Game%20Boy/Named_Boxarts/Tetris.png';
+  'https://thumbnails.libretro.com/Nintendo%20-%20Game%20Boy/Named_Boxarts/Tetris%20(World)%20(Rev%201).png';
 const LIBRETRO_GB_POKEMON_RED =
-  'https://thumbnails.libretro.com/Nintendo%20-%20Game%20Boy/Named_Boxarts/Pokemon%20-%20Red%20Version.png';
+  'https://thumbnails.libretro.com/Nintendo%20-%20Game%20Boy/Named_Boxarts/Pokemon%20-%20Red%20Version%20(USA%2C%20Europe)%20(SGB%20Enhanced).png';
 
 const KNOWN_IMAGE_HOSTS = new Set([
   'images.unsplash.com',
   'thumbnails.libretro.com',
-  'splash.games.directory',
   'images.igdb.com',
   'upload.wikimedia.org',
 ]);
@@ -56,6 +55,12 @@ export function isLikelyProductImageUrl(rawUrl: unknown): boolean {
 
   const host = parsed.hostname.toLowerCase();
   const path = parsed.pathname.toLowerCase();
+
+  // Muchas rutas de splash históricas están caídas (404) en este catálogo.
+  // Preferimos reemplazarlas por fuentes estables.
+  if (host === 'splash.games.directory') {
+    return false;
+  }
 
   // algunos productos traían URL de ficha HTML, no imagen
   if (host.endsWith('gbxtreme.com') && path.startsWith('/product/')) {
