@@ -23,7 +23,33 @@ export async function GET() {
       userId: user?.id || null,
     });
 
-    return NextResponse.json({ success: true, boxes });
+    const publicBoxes = (boxes || []).map((box: any) => ({
+      ...box,
+      prizes: (box?.prizes || []).map((prize: any) => ({
+        id: prize.id,
+        label: prize.label,
+        prize_type: prize.prize_type,
+        stock: prize.stock ?? null,
+        metadata: prize.metadata && typeof prize.metadata === 'object' ? prize.metadata : {},
+      })),
+    }));
+
+    const ticketsByPrice = new Map<number, number>();
+    for (const box of publicBoxes) {
+      const price = Math.round(Number(box?.ticket_price || 0));
+      const available = Math.max(0, Number(box?.available_tickets || 0));
+      if (price <= 0) continue;
+      const prev = ticketsByPrice.get(price) || 0;
+      if (available > prev) ticketsByPrice.set(price, available);
+    }
+    const totalTickets = [...ticketsByPrice.values()].reduce((sum, value) => sum + value, 0);
+
+    return NextResponse.json({
+      success: true,
+      isAuthenticated: Boolean(user),
+      totalTickets,
+      boxes: publicBoxes,
+    });
   } catch (error: any) {
     if (isMysterySetupMissing(error)) {
       return NextResponse.json(

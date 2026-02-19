@@ -8,7 +8,6 @@ type MysteryPrize = {
   id: string;
   label: string;
   prize_type: 'physical_product' | 'discount_coupon' | 'other';
-  probability: number;
   stock: number | null;
   metadata: Record<string, unknown>;
 };
@@ -24,7 +23,17 @@ type MysteryBox = {
   prizes: MysteryPrize[];
 };
 
-const SEGMENT_COLORS = ['#f43f5e', '#0ea5e9', '#22c55e', '#f59e0b', '#a855f7', '#06b6d4', '#84cc16', '#fb7185'];
+const SEGMENT_STYLES = [
+  { hex: '#f43f5e', label: 'Rojo' },
+  { hex: '#0ea5e9', label: 'Azul' },
+  { hex: '#22c55e', label: 'Verde' },
+  { hex: '#f59e0b', label: 'Naranja' },
+  { hex: '#a855f7', label: 'Morado' },
+  { hex: '#06b6d4', label: 'Cian' },
+  { hex: '#84cc16', label: 'Lima' },
+  { hex: '#fb7185', label: 'Rosa' },
+];
+const SEGMENT_COLORS = SEGMENT_STYLES.map((segment) => segment.hex);
 
 function toEuro(cents: number): string {
   return `${(Number(cents || 0) / 100).toFixed(2)} €`;
@@ -33,6 +42,8 @@ function toEuro(cents: number): string {
 export default function MysteryRoulette() {
   const [boxes, setBoxes] = useState<MysteryBox[]>([]);
   const [selectedBoxId, setSelectedBoxId] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [totalTickets, setTotalTickets] = useState(0);
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
   const [rotationDeg, setRotationDeg] = useState(0);
@@ -51,12 +62,16 @@ export default function MysteryRoulette() {
           setSetupMessage(msg);
           setBoxes([]);
           setSelectedBoxId('');
+          setIsAuthenticated(false);
+          setTotalTickets(0);
           return;
         }
         throw new Error(data?.error || 'No se pudieron cargar las cajas');
       }
 
       const nextBoxes = Array.isArray(data?.boxes) ? data.boxes : [];
+      setIsAuthenticated(Boolean(data?.isAuthenticated));
+      setTotalTickets(Math.max(0, Number(data?.totalTickets || 0)));
       setBoxes(nextBoxes);
       setSetupMessage('');
       if (!selectedBoxId && nextBoxes[0]?.id) {
@@ -64,6 +79,8 @@ export default function MysteryRoulette() {
       }
     } catch (error: any) {
       toast.error(error?.message || 'No se pudieron cargar las mystery boxes');
+      setIsAuthenticated(false);
+      setTotalTickets(0);
     } finally {
       setLoading(false);
     }
@@ -194,6 +211,17 @@ export default function MysteryRoulette() {
           </div>
         ) : null}
 
+        <div className="glass p-4 border border-primary/30">
+          {isAuthenticated ? (
+            <p className="text-base">
+              <span className="text-textMuted">Tus tiradas disponibles:</span>{' '}
+              <span className="text-primary font-semibold text-xl">{totalTickets}</span>
+            </p>
+          ) : (
+            <p className="text-textMuted text-sm">Inicia sesión para ver y usar tus tiradas disponibles.</p>
+          )}
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-[360px,1fr]">
           <div className="glass p-4">
             <h2 className="font-semibold mb-3">Cajas disponibles</h2>
@@ -211,7 +239,7 @@ export default function MysteryRoulette() {
                   >
                     <p className="font-semibold">{box.name}</p>
                     <p className="text-xs text-textMuted">{toEuro(box.ticket_price)} por tirada</p>
-                    <p className="text-xs text-primary mt-1">Tickets disponibles: {box.available_tickets}</p>
+                    <p className="text-xs text-primary mt-1">Tus tiradas compatibles: {box.available_tickets}</p>
                   </button>
                 ))
               )}
@@ -228,7 +256,7 @@ export default function MysteryRoulette() {
                     <p className="font-semibold text-lg">{selectedBox.name}</p>
                     <p className="text-sm text-textMuted">{selectedBox.description}</p>
                     <p className="text-xs text-primary mt-1">
-                      Precio ticket: {toEuro(selectedBox.ticket_price)} · Tickets tuyos: {selectedBox.available_tickets}
+                      Precio ticket: {toEuro(selectedBox.ticket_price)} · Tiradas para esta caja: {selectedBox.available_tickets}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -260,15 +288,28 @@ export default function MysteryRoulette() {
                   <div className="space-y-2">
                     <p className="font-semibold">Premios de esta caja</p>
                     <div className="max-h-[260px] overflow-auto space-y-2 pr-1">
-                      {selectedBox.prizes.map((prize) => (
-                        <div key={prize.id} className="border border-line p-2 text-sm">
-                          <p className="font-medium">{prize.label}</p>
-                          <p className="text-xs text-textMuted">
-                            Prob.: {Number(prize.probability || 0).toFixed(4)}
-                            {prize.stock == null ? '' : ` · Stock: ${prize.stock}`}
-                          </p>
-                        </div>
-                      ))}
+                      {selectedBox.prizes.map((prize, index) => {
+                        const segment = SEGMENT_STYLES[index % SEGMENT_STYLES.length];
+                        return (
+                          <div key={prize.id} className="border border-line p-2 text-sm">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-start gap-2">
+                                <span
+                                  className="mt-1 inline-block h-3 w-3 rounded-full border border-white/40"
+                                  style={{ backgroundColor: segment.hex }}
+                                />
+                                <div>
+                                  <p className="font-medium">{prize.label}</p>
+                                  <p className="text-xs text-textMuted">Color: {segment.label} ({segment.hex})</p>
+                                </div>
+                              </div>
+                              {prize.stock == null ? null : (
+                                <p className="text-xs text-textMuted">Stock: {prize.stock}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

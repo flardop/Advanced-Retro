@@ -34,7 +34,22 @@ export async function POST(req: Request) {
       boxId,
     });
 
-    return NextResponse.json({ success: true, ...result });
+    return NextResponse.json({
+      success: true,
+      spin: result.spin,
+      box: result.box,
+      prize: result.prize
+        ? {
+            id: result.prize.id,
+            label: result.prize.label,
+            prize_type: result.prize.prize_type,
+            stock: result.prize.stock ?? null,
+            metadata: result.prize.metadata && typeof result.prize.metadata === 'object' ? result.prize.metadata : {},
+          }
+        : null,
+      coupon: result.coupon,
+      remainingTickets: result.remainingTickets,
+    });
   } catch (error: any) {
     if (isMysterySetupMissing(error)) {
       return NextResponse.json(
