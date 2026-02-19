@@ -83,32 +83,44 @@ export default function FeaturedProducts() {
   return (
     <section className="section">
       <div className="container">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-end justify-between gap-4 mb-8">
           <div>
-            <h2 className="title-display text-3xl">Productos destacados</h2>
-            <p className="text-textMuted">Curados para una experiencia premium.</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-primary">Selección editorial</p>
+            <h2 className="title-display text-3xl mt-2">Productos destacados</h2>
+            <p className="text-textMuted">Piezas con mayor interés reciente y stock activo.</p>
           </div>
-          <Link href="/tienda" className="button-secondary">Ver todo</Link>
+          <Link href="/tienda" className="button-secondary">Ver catálogo</Link>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {products.map((product: any) => (
-            <Link key={product.id} href={`/producto/${product.id}`} className="glass p-4 hover:shadow-glow transition-shadow">
-              <div className="relative w-full h-48 bg-surface border border-line overflow-hidden">
+            <Link
+              key={product.id}
+              href={`/producto/${product.id}`}
+              className="glass p-4 hover:shadow-glow transition-shadow group"
+            >
+              <div className="relative w-full h-48 bg-surface border border-line rounded-xl overflow-hidden">
                 <Image
                   src={getProductImageUrl(product)}
                   alt={product.name}
                   fill
-                  className="object-contain p-2"
+                  className="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.03]"
                 />
-                <span className="absolute top-3 left-3 chip text-xs">{product.status}</span>
+                {product.status ? <span className="absolute top-3 left-3 chip text-xs">{product.status}</span> : null}
               </div>
               <div className="mt-4">
-                <h3 className="font-semibold text-text">{product.name}</h3>
-                <p className="text-textMuted text-sm line-clamp-2">{product.description}</p>
-                <p className="text-primary font-semibold mt-2">
+                <h3 className="font-semibold text-text leading-tight line-clamp-2 min-h-[42px]">{product.name}</h3>
+                <p className="text-textMuted text-sm line-clamp-2 mt-2 min-h-[40px]">{product.description}</p>
+                <p className="text-primary font-semibold mt-3 text-lg">
                   {(product.price / 100).toFixed(2)} €
                 </p>
-                <p className="text-xs text-textMuted mt-1">
+                <p className="text-xs text-textMuted mt-1 flex items-center justify-between gap-2">
+                  <span>Visitas: {metrics[product.id]?.visits ?? 0}</span>
+                  <span>Me gusta: {metrics[product.id]?.likes ?? 0}</span>
+                </p>
+                <p className="text-xs text-primary mt-2">
+                  Ver detalle del producto
+                </p>
+                <p className="sr-only">
                   Visitas: {metrics[product.id]?.visits ?? 0} · Me gusta: {metrics[product.id]?.likes ?? 0}
                 </p>
               </div>

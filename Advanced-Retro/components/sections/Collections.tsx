@@ -44,20 +44,29 @@ export default function Collections() {
   return (
     <section className="section">
       <div className="container">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-end justify-between gap-4 mb-8">
           <div>
-            <h2 className="title-display text-3xl">Colecciones</h2>
-            <p className="text-textMuted">Explora por categoría premium.</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-primary">Navegación por consola</p>
+            <h2 className="title-display text-3xl mt-2">Colecciones principales</h2>
+            <p className="text-textMuted">Acceso rápido al catálogo según plataforma y tipo de producto.</p>
           </div>
         </div>
+
         <div className="grid gap-6 lg:grid-cols-3">
           {collections.map((c) => (
-            <Link key={c.title} href={c.href} className="glass p-8 hover:shadow-glow transition-shadow">
-              <p className="text-textMuted text-xs font-mono">Colección</p>
+            <Link
+              key={c.title}
+              href={c.href}
+              className="glass p-6 sm:p-7 hover:shadow-glow transition-shadow group"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-textMuted text-xs font-mono uppercase tracking-[0.12em]">Colección</p>
+                <span className="text-primary text-sm transition-transform group-hover:translate-x-1">→</span>
+              </div>
               <h3 className="title-display text-2xl mt-2">{c.title}</h3>
-              <p className="text-textMuted mt-2">{c.subtitle}</p>
-              <div className="mt-6 h-32 border border-line bg-surface relative overflow-hidden">
-                <Image src={c.cover} alt={`${c.title} portada`} fill className="object-cover" />
+              <p className="text-textMuted mt-2 min-h-[48px]">{c.subtitle}</p>
+              <div className="mt-5 h-36 rounded-xl border border-line bg-surface relative overflow-hidden">
+                <Image src={c.cover} alt={`${c.title} portada`} fill className="object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
               </div>
             </Link>
           ))}

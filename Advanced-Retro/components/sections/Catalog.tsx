@@ -401,13 +401,18 @@ export default function Catalog() {
   const renderMiniProduct = (product: any, label: string) => {
     const productId = String(product.id);
     return (
-      <Link key={`${label}-${productId}`} href={`/producto/${productId}`} className="glass p-3 hover:shadow-glow transition-shadow">
-        <div className="relative w-full h-36 bg-surface border border-line overflow-hidden">
+      <Link
+        key={`${label}-${productId}`}
+        href={`/producto/${productId}`}
+        className="glass p-3 hover:shadow-glow transition-shadow group"
+      >
+        <div className="relative w-full h-36 bg-surface border border-line rounded-xl overflow-hidden">
           <Image src={getProductImageUrl(product)} alt={product.name} fill className="object-contain p-2" />
         </div>
         <p className="text-xs text-primary mt-3">{label}</p>
         <h3 className="font-semibold text-sm line-clamp-2 mt-1">{product.name}</h3>
         <p className="text-xs text-textMuted mt-1">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
+        <p className="text-xs text-textMuted mt-2 group-hover:text-text">Ver producto</p>
       </Link>
     );
   };
@@ -415,29 +420,30 @@ export default function Catalog() {
   return (
     <section className="section">
       <div className="container">
-        <div className="glass p-4 mb-6 grid gap-3 md:grid-cols-3">
-          <div>
+        <div className="glass p-5 mb-6 grid gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
             <p className="text-primary text-sm font-semibold">Envíos desde España</p>
             <p className="text-xs text-textMuted mt-1">Preparación y salida en 24-48h laborables.</p>
           </div>
-          <div>
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
             <p className="text-primary text-sm font-semibold">Revisado y testado</p>
             <p className="text-xs text-textMuted mt-1">Cada pieza se comprueba antes de publicarse.</p>
           </div>
-          <div>
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
             <p className="text-primary text-sm font-semibold">Garantía coleccionista</p>
             <p className="text-xs text-textMuted mt-1">Soporte por ticket y seguimiento real del pedido.</p>
           </div>
         </div>
 
-        <div className="glass p-4 mb-8">
-          <p className="text-sm text-textMuted">
+        <div className="glass p-5 mb-8">
+          <p className="text-sm text-textMuted leading-relaxed">
             Cada cartucho tiene historia. Mystery Box es azar con tiradas y premios; Ruleta es el panel de giro; Encargos es compra asistida 1 a 1.
           </p>
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-primary">Catálogo profesional</p>
             <h1 className="title-display text-3xl">Catálogo</h1>
             <p className="text-textMuted">Retro revisado por coleccionistas y listo para tu vitrina.</p>
           </div>
@@ -446,7 +452,7 @@ export default function Catalog() {
               {QUICK_FILTERS.map((filter) => (
                 <button
                   key={filter.id}
-                  className={`chip ${active === filter.id ? 'text-primary border-primary' : ''}`}
+                  className={`chip ${active === filter.id ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
                   onClick={() => setActive(filter.id)}
                 >
                   {filter.label}
@@ -457,7 +463,7 @@ export default function Catalog() {
               {PLATFORM_FILTERS.map((filter) => (
                 <button
                   key={filter.id}
-                  className={`chip ${active === filter.id ? 'text-primary border-primary' : ''}`}
+                  className={`chip ${active === filter.id ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
                   onClick={() => setActive(filter.id)}
                 >
                   {filter.label}
@@ -470,22 +476,22 @@ export default function Catalog() {
         {!hasNoProducts && !isMysteryView ? (
           <div className="grid gap-4 md:grid-cols-3 mb-8">
             <div>
-              <h2 className="font-semibold mb-2">Trending retro</h2>
+              <h2 className="font-semibold mb-2 text-lg">Trending retro</h2>
               <div className="grid gap-3">{featuredTrending.map((product) => renderMiniProduct(product, 'Trending'))}</div>
             </div>
             <div>
-              <h2 className="font-semibold mb-2">Más valorados</h2>
+              <h2 className="font-semibold mb-2 text-lg">Más valorados</h2>
               <div className="grid gap-3">{featuredBestRated.map((product) => renderMiniProduct(product, 'Top'))}</div>
             </div>
             <div>
-              <h2 className="font-semibold mb-2">Últimas entradas</h2>
+              <h2 className="font-semibold mb-2 text-lg">Últimas entradas</h2>
               <div className="grid gap-3">{featuredLatest.map((product) => renderMiniProduct(product, 'Nuevo'))}</div>
             </div>
           </div>
         ) : null}
 
         {isMysteryView ? (
-          <div className="glass p-4 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="glass p-5 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <p className="font-semibold text-primary">Vista mystery simplificada</p>
               <p className="text-sm text-textMuted mt-1">
@@ -502,7 +508,7 @@ export default function Catalog() {
             </div>
           </div>
         ) : (
-          <div className="glass p-4 mb-6 grid gap-3 lg:grid-cols-[1.5fr,1fr,1fr,1fr,1fr]">
+          <div className="glass p-5 mb-6 grid gap-3 lg:grid-cols-[1.55fr,1fr,1fr,1fr,1fr]">
             <input
               className="w-full bg-transparent border border-line px-3 py-2"
               placeholder="Buscar por nombre o descripción"
@@ -579,15 +585,19 @@ export default function Catalog() {
               const productMetrics = metrics[productId];
 
               return (
-                <Link key={product.id} href={href} className="glass p-4 hover:shadow-glow transition-shadow">
-                  <div className="relative w-full h-56 bg-surface border border-line overflow-hidden">
+                <Link
+                  key={product.id}
+                  href={href}
+                  className="glass p-4 hover:shadow-glow transition-shadow group"
+                >
+                  <div className="relative w-full h-56 bg-surface border border-line rounded-xl overflow-hidden">
                     <Image src={getProductImageUrl(product)} alt={product.name} fill className="object-contain p-2" />
                     <span className="absolute top-3 left-3 chip text-xs">{product.status}</span>
                   </div>
                   <div className="mt-4">
-                    <h3 className="font-semibold text-text">{product.name}</h3>
-                    <p className="text-textMuted text-sm line-clamp-2">{product.description}</p>
-                    <p className="text-primary font-semibold mt-2">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
+                    <h3 className="font-semibold text-text leading-tight min-h-[42px]">{product.name}</h3>
+                    <p className="text-textMuted text-sm line-clamp-2 mt-2 min-h-[40px]">{product.description}</p>
+                    <p className="text-primary font-semibold mt-3 text-lg">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
                     <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
                     {!isMysteryView ? (
                       <p className="text-xs text-textMuted mt-1">
@@ -596,6 +606,7 @@ export default function Catalog() {
                       </p>
                     ) : null}
                     {isComplete ? <p className="text-xs text-primary mt-1">Pack completo disponible</p> : null}
+                    <p className="text-xs text-textMuted mt-2 group-hover:text-text">Abrir ficha del producto</p>
                   </div>
                 </Link>
               );

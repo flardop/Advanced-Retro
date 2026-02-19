@@ -780,9 +780,9 @@ export default function ProductDetail({
 
   return (
     <section className="section">
-      <div className="container grid gap-10 lg:grid-cols-2">
-        <div className="glass p-6">
-          <div className="relative w-full h-[500px] bg-surface border border-line flex items-center justify-center overflow-hidden">
+      <div className="container grid gap-8 lg:grid-cols-2">
+        <div className="glass p-5 sm:p-6">
+          <div className="relative w-full h-[420px] sm:h-[500px] bg-surface border border-line rounded-2xl flex items-center justify-center overflow-hidden">
             <Image
               src={images[selectedImage] || images[0] || PLACEHOLDER}
               alt={product.name}
@@ -798,7 +798,7 @@ export default function ProductDetail({
               <button
                 type="button"
                 key={`${img}-${index}`}
-                className={`relative h-20 border bg-surface overflow-hidden ${
+                className={`relative h-20 rounded-xl border bg-surface overflow-hidden transition-colors ${
                   selectedImage === index ? 'border-primary' : 'border-line'
                 }`}
                 onClick={() => setSelectedImage(index)}
@@ -810,24 +810,24 @@ export default function ProductDetail({
           <p className="text-xs text-textMuted mt-2">Sin recortes: la imagen se muestra completa.</p>
         </div>
 
-        <div className="glass p-6">
+        <div className="glass p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-textMuted font-mono">Stock: {product.stock}</p>
             <div className="flex items-center gap-2 text-xs text-textMuted">
-              <span>Visitas: {socialSummary.visits}</span>
-              <span>Me gusta: {socialSummary.likes}</span>
-              <span>Valoraciones: {socialSummary.reviewsCount}</span>
+              <span className="chip">Visitas: {socialSummary.visits}</span>
+              <span className="chip">Me gusta: {socialSummary.likes}</span>
+              <span className="chip">Valoraciones: {socialSummary.reviewsCount}</span>
             </div>
           </div>
 
-          <h1 className="title-display text-3xl mt-2">{product.name}</h1>
-          <p className="text-primary text-2xl mt-4">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
-          <p className="text-textMuted mt-4">{product.long_description || product.description}</p>
+          <h1 className="title-display text-3xl sm:text-4xl mt-3">{product.name}</h1>
+          <p className="text-primary text-3xl mt-4 font-semibold">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
+          <p className="text-textMuted mt-4 leading-relaxed">{product.long_description || product.description}</p>
 
           <div className="mt-4 flex items-center gap-3">
             <button
               type="button"
-              className={`chip ${socialSummary.likedByCurrentVisitor ? 'text-primary border-primary' : ''}`}
+              className={`chip ${socialSummary.likedByCurrentVisitor ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
               onClick={toggleLike}
             >
               {socialSummary.likedByCurrentVisitor ? 'Quitar me gusta' : 'Me gusta'}
@@ -839,7 +839,7 @@ export default function ProductDetail({
 
           {editionOptions.length > 1 ? (
             <div className="mt-6 border-t border-line pt-6">
-              <p className="font-semibold">Elige version del producto</p>
+              <p className="font-semibold text-lg">Elige versión del producto</p>
               <p className="text-sm text-textMuted mt-1">
                 Puedes cambiar rapido entre original y repro 1:1 cuando existan variantes.
               </p>
@@ -853,7 +853,7 @@ export default function ProductDetail({
                     <Link
                       key={`${edition.id}-${edition.edition}`}
                       href={buildProductHref(edition.id)}
-                      className={`chip ${isCurrent ? 'text-primary border-primary' : ''}`}
+                      className={`chip ${isCurrent ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
                     >
                       {label} · {labelPrice}
                       {edition.stock <= 0 ? ' · sin stock' : ''}
@@ -866,16 +866,16 @@ export default function ProductDetail({
 
           <div className="mt-6 grid gap-4">
             <div>
-              <p className="font-semibold">Detalles del producto</p>
-              <ul className="list-disc list-inside text-textMuted">
+              <p className="font-semibold text-lg">Detalles del producto</p>
+              <ul className="list-disc list-inside text-textMuted mt-2 space-y-1">
                 {(product.curiosities || []).map((item: string) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
             </div>
             <div>
-              <p className="font-semibold">Tips de coleccionista</p>
-              <ul className="list-disc list-inside text-textMuted">
+              <p className="font-semibold text-lg">Tips de coleccionista</p>
+              <ul className="list-disc list-inside text-textMuted mt-2 space-y-1">
                 {(product.tips || []).map((item: string) => (
                   <li key={item}>{item}</li>
                 ))}
@@ -913,7 +913,10 @@ export default function ProductDetail({
                 const canOpenProduct = !option.isVirtual && !isCurrentProduct;
 
                 return (
-                  <div key={option.id} className="flex items-center justify-between gap-3 border border-line px-3 py-2">
+                  <div
+                    key={option.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2 bg-[rgba(12,22,36,0.64)]"
+                  >
                     <div className="flex items-start gap-3">
                       <input
                         type="checkbox"
@@ -1050,7 +1053,7 @@ export default function ProductDetail({
       </div>
 
       <div className="container mt-10">
-        <div className="glass p-6">
+        <div className="glass p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="title-display text-2xl">Valoraciones</h2>
             <p className="text-textMuted text-sm">
@@ -1059,9 +1062,9 @@ export default function ProductDetail({
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-3">
+            <div className="space-y-3 rounded-xl border border-line p-4 bg-[rgba(12,22,36,0.62)]">
               {requiresPurchaseForReview && !canReview ? (
-                <div className="border border-line p-3 text-sm text-textMuted">
+                <div className="border border-line rounded-lg p-3 text-sm text-textMuted">
                   Para publicar valoración debes haber comprado este producto con tu cuenta.
                 </div>
               ) : null}
@@ -1139,7 +1142,7 @@ export default function ProductDetail({
                 <p className="text-textMuted">Aun no hay reseñas. Se el primero en opinar.</p>
               ) : (
                 reviews.map((review) => (
-                  <div key={review.id} className="border border-line p-4">
+                  <div key={review.id} className="border border-line rounded-xl p-4 bg-[rgba(12,22,36,0.58)]">
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold">{review.authorName}</p>
                       <p className="text-xs text-textMuted">{new Date(review.createdAt).toLocaleDateString('es-ES')}</p>
