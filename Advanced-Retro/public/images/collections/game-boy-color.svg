@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1020"/>
+      <stop offset="50%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(950 180) rotate(140) scale(440 260)">
+      <stop stop-color="#22d3ee" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#bg)"/>
+  <rect width="1200" height="700" fill="url(#glow)"/>
+  <rect x="680" y="160" width="320" height="390" rx="52" fill="#8b5cf6" opacity="0.9"/>
+  <rect x="735" y="225" width="210" height="145" rx="14" fill="#111827"/>
+  <circle cx="810" cy="445" r="19" fill="#f59e0b"/>
+  <circle cx="875" cy="475" r="19" fill="#38bdf8"/>
+  <rect x="755" y="420" width="80" height="10" rx="5" fill="#111827"/>
+  <rect x="755" y="460" width="80" height="10" rx="5" fill="#111827"/>
+  <text x="90" y="250" fill="#e5e7eb" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700">Game Boy Color</text>
+  <text x="90" y="320" fill="#9ca3af" font-family="Arial, Helvetica, sans-serif" font-size="34">Colección GBC multicolor</text>
+</svg>

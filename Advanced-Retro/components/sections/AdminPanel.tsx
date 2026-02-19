@@ -86,6 +86,18 @@ export default function AdminPanel() {
   const [ticketReplyStatus, setTicketReplyStatus] = useState<'open' | 'in_progress' | 'resolved' | 'closed'>('in_progress');
 
   const [listingNotesById, setListingNotesById] = useState<Record<string, string>>({});
+  const [listingDeliveryById, setListingDeliveryById] = useState<
+    Record<
+      string,
+      {
+        buyer_email: string;
+        delivery_status: string;
+        shipping_carrier: string;
+        shipping_tracking_code: string;
+        shipping_notes: string;
+      }
+    >
+  >({});
   const [dedupeSummary, setDedupeSummary] = useState<any | null>(null);
   const [couponForm, setCouponForm] = useState({
     code: '',
@@ -430,6 +442,42 @@ export default function AdminPanel() {
     }
 
     toast.success('Publicación actualizada');
+    setListings((prev) => prev.map((item) => (item.id === listingId ? { ...item, ...data.listing } : item)));
+  };
+
+  const getListingDeliveryDraft = (listing: any) => {
+    const existing = listingDeliveryById[listing.id];
+    if (existing) return existing;
+    return {
+      buyer_email: String(listing?.buyer_email || ''),
+      delivery_status: String(listing?.delivery_status || 'pending'),
+      shipping_carrier: String(listing?.shipping_carrier || ''),
+      shipping_tracking_code: String(listing?.shipping_tracking_code || ''),
+      shipping_notes: String(listing?.shipping_notes || ''),
+    };
+  };
+
+  const updateListingDelivery = async (listingId: string) => {
+    const listing = listings.find((item) => item.id === listingId);
+    if (!listing) {
+      toast.error('No se encontró la publicación');
+      return;
+    }
+    const draft = listingDeliveryById[listingId] || getListingDeliveryDraft(listing);
+
+    const res = await fetch(`/api/admin/listings/${listingId}/delivery`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(draft),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo guardar entrega');
+      return;
+    }
+
+    toast.success('Entrega actualizada');
     setListings((prev) => prev.map((item) => (item.id === listingId ? { ...item, ...data.listing } : item)));
   };
 
@@ -889,6 +937,12 @@ export default function AdminPanel() {
         {tab === 'listings' && (
           <div className="glass p-6">
             <h2 className="font-semibold mb-4">Publicaciones de usuarios ({listings.length})</h2>
+            <div className="glass p-3 mb-4 text-sm">
+              <p className="text-primary font-semibold">Marketplace comunidad</p>
+              <p className="text-textMuted mt-1">
+                Publicar cuesta 0,00 € para el cliente vendedor. Comisión para la tienda: 10% del precio cuando se vende.
+              </p>
+            </div>
             <div className="space-y-4 max-h-[780px] overflow-auto pr-1">
               {listings.map((listing) => (
                 <div key={listing.id} className="border border-line p-4">
@@ -899,6 +953,11 @@ export default function AdminPanel() {
                         {listing.user?.email || listing.user_id} · {(Number(listing.price || 0) / 100).toFixed(2)} €
                       </p>
                       <p className="text-xs text-primary">Estado revisión: {listing.status}</p>
+                      <p className="text-xs text-textMuted mt-1">
+                        Publicar: {(Number(listing.listing_fee_cents || 0) / 100).toFixed(2)} € · Comisión:
+                        {' '}{(Number(listing.commission_rate || 10)).toFixed(0)}% ·
+                        {' '}Importe comisión: {(Number(listing.commission_cents || 0) / 100).toFixed(2)} €
+                      </p>
                     </div>
                     <div className="flex gap-2">
                       <button className="chip" onClick={() => moderateListing(listing.id, 'approved')}>Aprobar</button>
@@ -940,6 +999,79 @@ export default function AdminPanel() {
                       }))
                     }
                   />
+
+                  {(() => {
+                    const deliveryDraft = getListingDeliveryDraft(listing);
+                    return (
+                      <div className="mt-3 grid gap-2 md:grid-cols-2">
+                        <input
+                          className="bg-transparent border border-line px-3 py-2"
+                          placeholder="Email comprador para avisos"
+                          value={deliveryDraft.buyer_email}
+                          onChange={(e) =>
+                            setListingDeliveryById((prev) => ({
+                              ...prev,
+                              [listing.id]: { ...deliveryDraft, buyer_email: e.target.value },
+                            }))
+                          }
+                        />
+                        <select
+                          className="bg-transparent border border-line px-3 py-2"
+                          value={deliveryDraft.delivery_status}
+                          onChange={(e) =>
+                            setListingDeliveryById((prev) => ({
+                              ...prev,
+                              [listing.id]: { ...deliveryDraft, delivery_status: e.target.value },
+                            }))
+                          }
+                        >
+                          <option value="pending">Pendiente</option>
+                          <option value="processing">Preparando envío</option>
+                          <option value="shipped">Enviado</option>
+                          <option value="delivered">Entregado</option>
+                          <option value="cancelled">Cancelado</option>
+                        </select>
+                        <input
+                          className="bg-transparent border border-line px-3 py-2"
+                          placeholder="Transportista (ej. Correos)"
+                          value={deliveryDraft.shipping_carrier}
+                          onChange={(e) =>
+                            setListingDeliveryById((prev) => ({
+                              ...prev,
+                              [listing.id]: { ...deliveryDraft, shipping_carrier: e.target.value },
+                            }))
+                          }
+                        />
+                        <input
+                          className="bg-transparent border border-line px-3 py-2"
+                          placeholder="Tracking"
+                          value={deliveryDraft.shipping_tracking_code}
+                          onChange={(e) =>
+                            setListingDeliveryById((prev) => ({
+                              ...prev,
+                              [listing.id]: { ...deliveryDraft, shipping_tracking_code: e.target.value },
+                            }))
+                          }
+                        />
+                        <textarea
+                          className="md:col-span-2 bg-transparent border border-line px-3 py-2 min-h-[80px]"
+                          placeholder="Notas de entrega para email"
+                          value={deliveryDraft.shipping_notes}
+                          onChange={(e) =>
+                            setListingDeliveryById((prev) => ({
+                              ...prev,
+                              [listing.id]: { ...deliveryDraft, shipping_notes: e.target.value },
+                            }))
+                          }
+                        />
+                        <div className="md:col-span-2">
+                          <button className="chip" onClick={() => updateListingDelivery(listing.id)}>
+                            Guardar entrega y enviar correo
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

@@ -274,8 +274,11 @@ export default function Catalog() {
     return set;
   }, [products]);
 
+  const isMysteryView = String(active).toLowerCase() === MYSTERY_FILTER;
+
   const filtered = useMemo(() => {
     let list = products;
+    const mysteryView = String(active).toLowerCase() === MYSTERY_FILTER;
 
     if (active === 'all') {
       list = list.filter((product) => isPrimaryStoreProduct(product));
@@ -300,33 +303,35 @@ export default function Catalog() {
       });
     }
 
-    const searchQuery = normalizeText(search);
-    if (searchQuery) {
-      list = list.filter((product) => {
-        const haystack = normalizeText(
-          `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')}`
-        );
-        return haystack.includes(searchQuery);
-      });
-    }
+    if (!mysteryView) {
+      const searchQuery = normalizeText(search);
+      if (searchQuery) {
+        list = list.filter((product) => {
+          const haystack = normalizeText(
+            `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')}`
+          );
+          return haystack.includes(searchQuery);
+        });
+      }
 
-    if (favoritesOnly) {
-      list = list.filter((product) => Boolean(metrics[String(product.id)]?.likedByCurrentVisitor));
-    }
+      if (favoritesOnly) {
+        list = list.filter((product) => Boolean(metrics[String(product.id)]?.likedByCurrentVisitor));
+      }
 
-    if (stockOnly) {
-      list = list.filter((product) => Number(product?.stock || 0) > 0);
-    }
+      if (stockOnly) {
+        list = list.filter((product) => Number(product?.stock || 0) > 0);
+      }
 
-    const minCents = minPrice.trim() ? Math.max(0, Math.round(Number(minPrice) * 100)) : 0;
-    const maxCents = maxPrice.trim() ? Math.max(0, Math.round(Number(maxPrice) * 100)) : 0;
+      const minCents = minPrice.trim() ? Math.max(0, Math.round(Number(minPrice) * 100)) : 0;
+      const maxCents = maxPrice.trim() ? Math.max(0, Math.round(Number(maxPrice) * 100)) : 0;
 
-    if (minCents > 0) {
-      list = list.filter((product) => Number(product?.price || 0) >= minCents);
-    }
+      if (minCents > 0) {
+        list = list.filter((product) => Number(product?.price || 0) >= minCents);
+      }
 
-    if (maxCents > 0) {
-      list = list.filter((product) => Number(product?.price || 0) <= maxCents);
+      if (maxCents > 0) {
+        list = list.filter((product) => Number(product?.price || 0) <= maxCents);
+      }
     }
 
     return list;
@@ -462,7 +467,7 @@ export default function Catalog() {
           </div>
         </div>
 
-        {!hasNoProducts ? (
+        {!hasNoProducts && !isMysteryView ? (
           <div className="grid gap-4 md:grid-cols-3 mb-8">
             <div>
               <h2 className="font-semibold mb-2">Trending retro</h2>
@@ -479,58 +484,77 @@ export default function Catalog() {
           </div>
         ) : null}
 
-        <div className="glass p-4 mb-6 grid gap-3 lg:grid-cols-[1.5fr,1fr,1fr,1fr,1fr]">
-          <input
-            className="w-full bg-transparent border border-line px-3 py-2"
-            placeholder="Buscar por nombre o descripción"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <select
-            className="w-full bg-transparent border border-line px-3 py-2"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              className="w-full bg-transparent border border-line px-3 py-2"
-              placeholder="Min €"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-            />
-            <input
-              className="w-full bg-transparent border border-line px-3 py-2"
-              placeholder="Max €"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-            />
+        {isMysteryView ? (
+          <div className="glass p-4 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <p className="font-semibold text-primary">Vista mystery simplificada</p>
+              <p className="text-sm text-textMuted mt-1">
+                Sin filtros extra. Elige caja y compra tirada directamente.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/ruleta" className="button-primary">
+                Ir a ruleta
+              </Link>
+              <Link href="/perfil" className="button-secondary">
+                Ver mis tickets
+              </Link>
+            </div>
           </div>
+        ) : (
+          <div className="glass p-4 mb-6 grid gap-3 lg:grid-cols-[1.5fr,1fr,1fr,1fr,1fr]">
+            <input
+              className="w-full bg-transparent border border-line px-3 py-2"
+              placeholder="Buscar por nombre o descripción"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
 
-          <button
-            className={`chip ${favoritesOnly ? 'text-primary border-primary' : ''}`}
-            onClick={() => setFavoritesOnly((prev) => !prev)}
-          >
-            Solo favoritos
-          </button>
+            <select
+              className="w-full bg-transparent border border-line px-3 py-2"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
 
-          <button
-            className={`chip ${stockOnly ? 'text-primary border-primary' : ''}`}
-            onClick={() => setStockOnly((prev) => !prev)}
-          >
-            Solo con stock
-          </button>
-        </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className="w-full bg-transparent border border-line px-3 py-2"
+                placeholder="Min €"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+              />
+              <input
+                className="w-full bg-transparent border border-line px-3 py-2"
+                placeholder="Max €"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+              />
+            </div>
+
+            <button
+              className={`chip ${favoritesOnly ? 'text-primary border-primary' : ''}`}
+              onClick={() => setFavoritesOnly((prev) => !prev)}
+            >
+              Solo favoritos
+            </button>
+
+            <button
+              className={`chip ${stockOnly ? 'text-primary border-primary' : ''}`}
+              onClick={() => setStockOnly((prev) => !prev)}
+            >
+              Solo con stock
+            </button>
+          </div>
+        )}
 
         <p className="text-sm text-textMuted mb-4">
-          Resultados: {sorted.length}
+          Resultados: {sorted.length}{isMysteryView ? ' · Cajas misteriosas activas' : ''}
           {usingFallbackCatalog ? ' · Mostrando selección recomendada mientras ajustas filtros/categorías.' : ''}
         </p>
 
@@ -565,10 +589,12 @@ export default function Catalog() {
                     <p className="text-textMuted text-sm line-clamp-2">{product.description}</p>
                     <p className="text-primary font-semibold mt-2">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
                     <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
-                    <p className="text-xs text-textMuted mt-1">
-                      Visitas: {productMetrics?.visits ?? 0} · Me gusta: {productMetrics?.likes ?? 0}
-                      {productMetrics?.likedByCurrentVisitor ? ' · Favorito' : ''}
-                    </p>
+                    {!isMysteryView ? (
+                      <p className="text-xs text-textMuted mt-1">
+                        Visitas: {productMetrics?.visits ?? 0} · Me gusta: {productMetrics?.likes ?? 0}
+                        {productMetrics?.likedByCurrentVisitor ? ' · Favorito' : ''}
+                      </p>
+                    ) : null}
                     {isComplete ? <p className="text-xs text-primary mt-1">Pack completo disponible</p> : null}
                   </div>
                 </Link>

@@ -37,12 +37,25 @@ async function sendOrderStatusEmailBestEffort(order: any) {
   const email = typeof userRow?.email === 'string' ? userRow.email.trim() : '';
   if (!email) return;
 
+  const shippingAddress =
+    order?.shipping_address && typeof order.shipping_address === 'object'
+      ? order.shipping_address
+      : null;
+  const shippingAddressSummary = shippingAddress
+    ? [shippingAddress.line1, shippingAddress.postal_code, shippingAddress.city, shippingAddress.country]
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+        .join(', ')
+    : null;
+
   try {
     await sendOrderStatusEmail({
       to: email,
       orderId: String(order.id),
       status: String(order.status || ''),
       trackingCode: typeof order.shipping_tracking_code === 'string' ? order.shipping_tracking_code : null,
+      shippingMethod: typeof order.shipping_method === 'string' ? order.shipping_method : null,
+      shippingAddressSummary,
     });
   } catch (error) {
     console.warn('Status email skipped:', error);

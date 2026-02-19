@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { ApiError, requireUserContext } from '@/lib/serverAuth';
-import { createUserListing, getUserListings, validateListingInput } from '@/lib/userListings';
+import {
+  COMMUNITY_COMMISSION_RATE,
+  COMMUNITY_LISTING_FEE_CENTS,
+  createUserListing,
+  getUserListings,
+  validateListingInput,
+} from '@/lib/userListings';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +21,13 @@ export async function GET() {
   try {
     const { user } = await requireUserContext();
     const listings = await getUserListings(user.id);
-    return NextResponse.json({ listings });
+    return NextResponse.json({
+      policy: {
+        listing_fee_cents: COMMUNITY_LISTING_FEE_CENTS,
+        commission_rate: COMMUNITY_COMMISSION_RATE,
+      },
+      listings,
+    });
   } catch (error: any) {
     return handleError(error);
   }
@@ -35,7 +47,13 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     const payload = validateListingInput(body);
     const listing = await createUserListing(user.id, payload);
-    return NextResponse.json({ listing });
+    return NextResponse.json({
+      policy: {
+        listing_fee_cents: COMMUNITY_LISTING_FEE_CENTS,
+        commission_rate: COMMUNITY_COMMISSION_RATE,
+      },
+      listing,
+    });
   } catch (error: any) {
     return handleError(error);
   }

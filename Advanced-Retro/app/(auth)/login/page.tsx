@@ -39,6 +39,7 @@ function LoginForm() {
     const errorDescription = searchParams.get('error_description');
     if (err === 'confirm') toast.error('El enlace de confirmación ha expirado o no es válido. Inicia sesión y te podemos reenviar el correo.');
     if (err === 'missing_code') toast.error('Faltan datos en el enlace. Prueba de nuevo desde el correo.');
+    if (err === 'oauth_incomplete') toast.error('El login social no devolvió el código. Revisa Redirect URLs en Supabase e inténtalo de nuevo.');
     if (err === 'config') toast.error('Configuración de auth incompleta.');
     if (err === 'oauth_cancelled') toast.error('Has cancelado el acceso social. Puedes intentarlo de nuevo.');
     if (err === 'oauth_failed') {
@@ -46,7 +47,7 @@ function LoginForm() {
       toast.error(reason ? decodeURIComponent(reason) : 'No se pudo completar el acceso con proveedor social.');
       return;
     }
-    if (err && !['confirm', 'missing_code', 'config', 'oauth_cancelled', 'oauth_failed'].includes(err)) {
+    if (err && !['confirm', 'missing_code', 'oauth_incomplete', 'config', 'oauth_cancelled', 'oauth_failed'].includes(err)) {
       const readable = errorDescription ? decodeURIComponent(errorDescription) : err;
       toast.error(`Error OAuth: ${readable}`);
     }

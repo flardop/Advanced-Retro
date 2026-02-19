@@ -36,6 +36,11 @@ type Listing = {
   images: string[];
   created_at: string;
   admin_notes?: string | null;
+  listing_fee_cents?: number;
+  commission_rate?: number;
+  commission_cents?: number;
+  delivery_status?: string;
+  shipping_tracking_code?: string | null;
 };
 
 type ProfileState = {
@@ -557,7 +562,10 @@ export default function ProfileView() {
         {tab === 'sell' && (
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="glass p-6">
-              <h2 className="font-semibold">Publicar producto</h2>
+              <h2 className="font-semibold">Marketplace comunidad</h2>
+              <p className="text-sm text-textMuted mt-2">
+                Publicación gratuita (0,00 €). Si se aprueba y se vende, la comisión para la tienda es del 10%.
+              </p>
               {!profile.is_verified_seller && profile.role !== 'admin' ? (
                 <p className="text-sm text-textMuted mt-2">
                   Tu cuenta aún no está verificada para publicar. Pide revisión desde soporte.
@@ -583,7 +591,6 @@ export default function ProfileView() {
                         <option value="manuales">Manuales</option>
                         <option value="accesorios">Accesorios</option>
                         <option value="consolas-retro">Consolas Retro</option>
-                        <option value="cajas-misteriosas">Cajas Misteriosas</option>
                       </select>
 
                       <select className="bg-transparent border border-line px-3 py-2" value={listingCondition} onChange={(e) => setListingCondition(e.target.value)}>
@@ -632,7 +639,15 @@ export default function ProfileView() {
                     <div key={listing.id} className="border border-line p-4">
                       <p className="font-semibold">{listing.title}</p>
                       <p className="text-xs text-textMuted">{(listing.price / 100).toFixed(2)} € · {listing.status}</p>
+                      <p className="text-xs text-textMuted mt-1">
+                        Publicar: {((Number(listing.listing_fee_cents || 0)) / 100).toFixed(2)} € · Comisión:
+                        {' '}{Number(listing.commission_rate || 10).toFixed(0)}% ({((Number(listing.commission_cents || 0)) / 100).toFixed(2)} €)
+                      </p>
                       <p className="text-xs text-textMuted mt-1">Originalidad: {listing.originality_status}</p>
+                      <p className="text-xs text-textMuted mt-1">Entrega: {listing.delivery_status || 'pending'}</p>
+                      {listing.shipping_tracking_code ? (
+                        <p className="text-xs text-primary mt-1">Tracking: {listing.shipping_tracking_code}</p>
+                      ) : null}
                       <p className="text-sm text-textMuted mt-2 line-clamp-3">{listing.description}</p>
                       {listing.admin_notes ? (
                         <p className="text-xs text-primary mt-2">Nota admin: {listing.admin_notes}</p>

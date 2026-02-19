@@ -7,4 +7,13 @@ const anonKey =
   process.env.ANON;
 
 export const supabaseClient =
-  supabaseUrl && anonKey ? createClient(supabaseUrl, anonKey) : null;
+  supabaseUrl && anonKey
+    ? createClient(supabaseUrl, anonKey, {
+        auth: {
+          flowType: 'pkce',
+          detectSessionInUrl: true,
+          persistSession: true,
+          autoRefreshToken: true,
+        },
+      })
+    : null;
