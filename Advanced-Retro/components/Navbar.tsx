@@ -8,7 +8,7 @@ import { supabaseClient } from '@/lib/supabaseClient';
 
 const NAV_ITEMS = [
   { href: '/tienda', label: 'Tienda' },
-  { href: '/#comunidad', label: 'Comunidad' },
+  { href: '/comunidad', label: 'Comunidad' },
   { href: '/tienda?category=cajas-misteriosas', label: 'Mystery' },
   { href: '/ruleta', label: 'Ruleta' },
   { href: '/servicio-compra', label: 'Encargos' },
@@ -64,9 +64,7 @@ export default function Navbar() {
 
         <nav className="hidden lg:flex items-center gap-6 text-[0.95rem]">
           {NAV_ITEMS.map((item) => {
-            const isActive = item.href.startsWith('/#')
-              ? false
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
                 key={item.href}

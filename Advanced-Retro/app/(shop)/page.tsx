@@ -4,7 +4,6 @@ import Collections from '@/components/sections/Collections';
 import Benefits from '@/components/sections/Benefits';
 import RetroStory from '@/components/sections/RetroStory';
 import FinalCTA from '@/components/sections/FinalCTA';
-import CommunityFeed from '@/components/sections/CommunityFeed';
 import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +29,6 @@ export default function HomePage({ searchParams }: HomePageProps) {
       <Collections />
       <Benefits />
       <RetroStory />
-      <CommunityFeed />
       <FinalCTA />
     </>
   );

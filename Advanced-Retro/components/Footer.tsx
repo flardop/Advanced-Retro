@@ -47,7 +47,7 @@ export default function Footer() {
             <li><Link href="/tienda?category=cajas-misteriosas" className="hover:text-text">Mystery Box</Link></li>
             <li><Link href="/ruleta" className="hover:text-text">Ruleta</Link></li>
             <li><Link href="/servicio-compra" className="hover:text-text">Encargos 5€</Link></li>
-            <li><Link href="/#comunidad" className="hover:text-text">Comunidad</Link></li>
+            <li><Link href="/comunidad" className="hover:text-text">Comunidad</Link></li>
             <li><Link href="/contacto" className="hover:text-text">Contacto</Link></li>
           </ul>
         </div>
