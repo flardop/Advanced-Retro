@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ApiError, requireAdminContext } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getMysterySetupErrorMessage, isMysterySetupMissing } from '@/lib/mysterySetup';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +44,15 @@ export async function GET() {
 
     return NextResponse.json({ boxes: enrichedBoxes });
   } catch (error: any) {
+    if (isMysterySetupMissing(error)) {
+      return NextResponse.json(
+        {
+          error: getMysterySetupErrorMessage(),
+          setupRequired: true,
+        },
+        { status: 503 }
+      );
+    }
     return handleError(error);
   }
 }

@@ -3,9 +3,16 @@
 ## 1) SQL obligatorio
 En Supabase SQL Editor ejecuta:
 
+- `database/mystery_roulette_bootstrap.sql` (rápido: crea ruleta + premios + tickets + cupones)
 - `database/admin_chat_seller_features.sql` (si aún no está)
 - `database/commerce_upgrade_mystery_shipping_coupons.sql`
 - Opcional catálogo extra: `database/seed_platforms_and_consoles.sql`
+
+Si ves el error:
+
+- `Could not find the table 'public.mystery_boxes' in the schema cache`
+
+ejecuta primero `database/mystery_roulette_bootstrap.sql`, espera 10-20 segundos y recarga.
 
 ## 2) Variables de entorno (Vercel)
 Configura en **Production/Preview/Development**:

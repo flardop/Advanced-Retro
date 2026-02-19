@@ -38,16 +38,27 @@ export default function MysteryRoulette() {
   const [rotationDeg, setRotationDeg] = useState(0);
   const [spinResult, setSpinResult] = useState<any | null>(null);
   const [spinHistory, setSpinHistory] = useState<any[]>([]);
+  const [setupMessage, setSetupMessage] = useState('');
 
   const loadBoxes = async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/mystery/boxes', { cache: 'no-store' });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || 'No se pudieron cargar las cajas');
+      if (!res.ok) {
+        if (data?.setupRequired) {
+          const msg = String(data?.error || 'Ruleta no configurada en base de datos.');
+          setSetupMessage(msg);
+          setBoxes([]);
+          setSelectedBoxId('');
+          return;
+        }
+        throw new Error(data?.error || 'No se pudieron cargar las cajas');
+      }
 
       const nextBoxes = Array.isArray(data?.boxes) ? data.boxes : [];
       setBoxes(nextBoxes);
+      setSetupMessage('');
       if (!selectedBoxId && nextBoxes[0]?.id) {
         setSelectedBoxId(nextBoxes[0].id);
       }
@@ -62,6 +73,12 @@ export default function MysteryRoulette() {
     try {
       const res = await fetch('/api/mystery/spins', { cache: 'no-store' });
       const data = await res.json().catch(() => null);
+      if (!res.ok && data?.setupRequired) {
+        const msg = String(data?.error || 'Ruleta no configurada en base de datos.');
+        setSetupMessage(msg);
+        setSpinHistory([]);
+        return;
+      }
       if (!res.ok) return;
       setSpinHistory(Array.isArray(data?.spins) ? data.spins : []);
     } catch {
@@ -166,6 +183,16 @@ export default function MysteryRoulette() {
             Los tickets solo sirven para cajas del mismo precio.
           </p>
         </div>
+
+        {setupMessage ? (
+          <div className="glass p-5 border border-red-500/40">
+            <p className="text-red-300 font-semibold">Ruleta pendiente de activar en Supabase</p>
+            <p className="text-textMuted mt-2">{setupMessage}</p>
+            <p className="text-textMuted mt-2 text-sm">
+              Abre Supabase SQL Editor y ejecuta: <code>database/mystery_roulette_bootstrap.sql</code>
+            </p>
+          </div>
+        ) : null}
 
         <div className="grid gap-6 lg:grid-cols-[360px,1fr]">
           <div className="glass p-4">

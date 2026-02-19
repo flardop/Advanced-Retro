@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { listMysteryBoxes } from '@/lib/mysteryBox';
+import { getMysterySetupErrorMessage, isMysterySetupMissing } from '@/lib/mysterySetup';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,15 @@ export async function GET() {
 
     return NextResponse.json({ success: true, boxes });
   } catch (error: any) {
+    if (isMysterySetupMissing(error)) {
+      return NextResponse.json(
+        {
+          error: getMysterySetupErrorMessage(),
+          setupRequired: true,
+        },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: error?.message || 'No se pudieron cargar las mystery boxes' },
       { status: 500 }

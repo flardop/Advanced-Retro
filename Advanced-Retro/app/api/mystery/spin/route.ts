@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { spinMysteryBox } from '@/lib/mysteryBox';
+import { getMysterySetupErrorMessage, isMysterySetupMissing } from '@/lib/mysterySetup';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, ...result });
   } catch (error: any) {
+    if (isMysterySetupMissing(error)) {
+      return NextResponse.json(
+        { error: getMysterySetupErrorMessage(), setupRequired: true },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: error?.message || 'No se pudo completar la tirada' },
       { status: 400 }
