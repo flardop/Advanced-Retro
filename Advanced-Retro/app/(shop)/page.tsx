@@ -8,15 +8,18 @@ import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
 type HomePageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<SearchParams>;
 };
 
-export default function HomePage({ searchParams }: HomePageProps) {
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const resolvedSearchParams = (await searchParams) || {};
   const hasAdminFlag =
-    typeof searchParams === 'object' &&
-    searchParams !== null &&
-    Object.prototype.hasOwnProperty.call(searchParams, 'admin');
+    typeof resolvedSearchParams === 'object' &&
+    resolvedSearchParams !== null &&
+    Object.prototype.hasOwnProperty.call(resolvedSearchParams, 'admin');
 
   if (hasAdminFlag) {
     redirect('/admin');

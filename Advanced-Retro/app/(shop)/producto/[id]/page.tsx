@@ -13,8 +13,8 @@ function parseBooleanQuery(value: string | string[] | undefined): boolean {
 }
 
 type ProductPageProps = {
-  params: { id: string };
-  searchParams?: { complete?: string | string[] };
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ complete?: string | string[] }>;
 };
 
 async function getProductById(id: string) {
@@ -29,13 +29,14 @@ async function getProductById(id: string) {
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const product = await getProductById(params.id);
+  const resolvedParams = await params;
+  const product = await getProductById(resolvedParams.id);
   if (!product) {
     return {
       title: 'Producto retro',
       description: 'Ficha de producto en AdvancedRetro.es',
       alternates: {
-        canonical: `/producto/${params.id}`,
+        canonical: `/producto/${resolvedParams.id}`,
       },
     };
   }
@@ -48,12 +49,12 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     title,
     description,
     alternates: {
-      canonical: `/producto/${params.id}`,
+      canonical: `/producto/${resolvedParams.id}`,
     },
     openGraph: {
       title,
       description,
-      url: `/producto/${params.id}`,
+      url: `/producto/${resolvedParams.id}`,
       type: 'website',
       images: [imageUrl],
     },
@@ -66,10 +67,12 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   };
 }
 
-export default function ProductPage({
+export default async function ProductPage({
   params,
   searchParams,
 }: ProductPageProps) {
-  const prefillComplete = parseBooleanQuery(searchParams?.complete);
-  return <ProductDetail productId={params.id} prefillComplete={prefillComplete} />;
+  const resolvedParams = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const prefillComplete = parseBooleanQuery(resolvedSearchParams?.complete);
+  return <ProductDetail productId={resolvedParams.id} prefillComplete={prefillComplete} />;
 }
