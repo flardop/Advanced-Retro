@@ -33,6 +33,15 @@ function normalizeEmail(value: string): string {
   return String(value || '').trim();
 }
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function toDeliveryStatusLabel(status: string): string {
   const normalized = String(status || '').trim().toLowerCase();
   if (normalized === 'processing') return 'Preparando envio';
@@ -53,12 +62,14 @@ export async function sendOrderPaidEmail(options: {
   if (!targetEmail) return { skipped: true };
 
   const subject = `Pago confirmado · Pedido ${options.orderId.slice(0, 8)}`;
+  const safeOrderId = escapeHtml(options.orderId);
+  const safeTotal = escapeHtml(toEuro(options.totalCents));
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.5">
       <h2>Pago confirmado</h2>
       <p>Hemos recibido tu pago correctamente.</p>
-      <p><strong>Pedido:</strong> ${options.orderId}</p>
-      <p><strong>Total:</strong> ${toEuro(options.totalCents)}</p>
+      <p><strong>Pedido:</strong> ${safeOrderId}</p>
+      <p><strong>Total:</strong> ${safeTotal}</p>
       <p>Desde tu perfil puedes seguir el estado del pedido y contactar soporte.</p>
     </div>
   `;
@@ -88,25 +99,27 @@ export async function sendOrderStatusEmail(options: {
   if (!targetEmail) return { skipped: true };
 
   const subject = `Actualización de pedido ${options.orderId.slice(0, 8)}: ${options.status}`;
+  const safeOrderId = escapeHtml(options.orderId);
+  const safeStatus = escapeHtml(options.status);
   const trackingBlock = options.trackingCode
-    ? `<p><strong>Código de seguimiento:</strong> ${options.trackingCode}</p>`
+    ? `<p><strong>Código de seguimiento:</strong> ${escapeHtml(options.trackingCode)}</p>`
     : '';
   const shippingMethodBlock = options.shippingMethod
-    ? `<p><strong>Método de envío:</strong> ${options.shippingMethod}</p>`
+    ? `<p><strong>Método de envío:</strong> ${escapeHtml(options.shippingMethod)}</p>`
     : '';
   const shippingCarrierBlock = options.shippingCarrier
-    ? `<p><strong>Transportista:</strong> ${options.shippingCarrier}</p>`
+    ? `<p><strong>Transportista:</strong> ${escapeHtml(options.shippingCarrier)}</p>`
     : '';
   const shippingAddressBlock = options.shippingAddressSummary
-    ? `<p><strong>Dirección de entrega:</strong> ${options.shippingAddressSummary}</p>`
+    ? `<p><strong>Dirección de entrega:</strong> ${escapeHtml(options.shippingAddressSummary)}</p>`
     : '';
 
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.5">
       <h2>Actualización de estado</h2>
       <p>Tu pedido ha cambiado de estado.</p>
-      <p><strong>Pedido:</strong> ${options.orderId}</p>
-      <p><strong>Nuevo estado:</strong> ${options.status}</p>
+      <p><strong>Pedido:</strong> ${safeOrderId}</p>
+      <p><strong>Nuevo estado:</strong> ${safeStatus}</p>
       ${shippingMethodBlock}
       ${shippingCarrierBlock}
       ${shippingAddressBlock}
@@ -146,18 +159,23 @@ export async function sendCommunityListingReviewEmail(options: {
         ? 'Rechazada'
         : 'Pendiente';
   const notesBlock = options.adminNotes
-    ? `<p><strong>Notas del equipo:</strong> ${options.adminNotes}</p>`
+    ? `<p><strong>Notas del equipo:</strong> ${escapeHtml(options.adminNotes)}</p>`
     : '';
 
   const subject = `Marketplace comunidad: publicación ${statusLabel.toLowerCase()}`;
+  const safeListingTitle = escapeHtml(options.listingTitle);
+  const safeStatusLabel = escapeHtml(statusLabel);
+  const safePrice = escapeHtml(toEuro(options.priceCents));
+  const safeListingFee = escapeHtml(toEuro(options.listingFeeCents));
+  const safeCommission = escapeHtml(toEuro(options.commissionCents));
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.5">
       <h2>Actualización de tu publicación</h2>
-      <p><strong>Producto:</strong> ${options.listingTitle}</p>
-      <p><strong>Estado:</strong> ${statusLabel}</p>
-      <p><strong>Precio:</strong> ${toEuro(options.priceCents)}</p>
-      <p><strong>Publicar:</strong> ${toEuro(options.listingFeeCents)}</p>
-      <p><strong>Comisión tienda al vender:</strong> ${toEuro(options.commissionCents)} (10%)</p>
+      <p><strong>Producto:</strong> ${safeListingTitle}</p>
+      <p><strong>Estado:</strong> ${safeStatusLabel}</p>
+      <p><strong>Precio:</strong> ${safePrice}</p>
+      <p><strong>Publicar:</strong> ${safeListingFee}</p>
+      <p><strong>Comisión tienda al vender:</strong> ${safeCommission} (10%)</p>
       ${notesBlock}
       <p>Si necesitas ayuda, abre un ticket desde tu perfil.</p>
     </div>
@@ -187,23 +205,25 @@ export async function sendCommunityDeliveryEmail(options: {
   if (!targetEmail) return { skipped: true };
 
   const trackingBlock = options.trackingCode
-    ? `<p><strong>Código de seguimiento:</strong> ${options.trackingCode}</p>`
+    ? `<p><strong>Código de seguimiento:</strong> ${escapeHtml(options.trackingCode)}</p>`
     : '';
   const shippingCarrierBlock = options.shippingCarrier
-    ? `<p><strong>Transportista:</strong> ${options.shippingCarrier}</p>`
+    ? `<p><strong>Transportista:</strong> ${escapeHtml(options.shippingCarrier)}</p>`
     : '';
   const notesBlock = options.shippingNotes
-    ? `<p><strong>Notas de entrega:</strong> ${options.shippingNotes}</p>`
+    ? `<p><strong>Notas de entrega:</strong> ${escapeHtml(options.shippingNotes)}</p>`
     : '';
 
   const statusLabel = toDeliveryStatusLabel(options.deliveryStatus);
+  const safeListingTitle = escapeHtml(options.listingTitle);
+  const safeStatusLabel = escapeHtml(statusLabel);
   const subject = `Marketplace comunidad: ${statusLabel} · ${options.listingTitle}`;
 
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.5">
       <h2>Actualización de entrega</h2>
-      <p><strong>Producto:</strong> ${options.listingTitle}</p>
-      <p><strong>Estado:</strong> ${statusLabel}</p>
+      <p><strong>Producto:</strong> ${safeListingTitle}</p>
+      <p><strong>Estado:</strong> ${safeStatusLabel}</p>
       ${shippingCarrierBlock}
       ${trackingBlock}
       ${notesBlock}

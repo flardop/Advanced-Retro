@@ -6,12 +6,14 @@ import {
   getProductSocialSummary,
   normalizeVisitorId,
   readProductSocialState,
+  toVisitorStorageKey,
   toggleLike,
   trackVisit,
   uploadReviewPhotoDataUrls,
   writeProductSocialState,
 } from '@/lib/productSocialStorage';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,8 +86,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const user = await getOptionalAuthUser();
     const visitorId = resolveVisitorId(req.nextUrl.searchParams.get('visitorId'), user?.id);
+    const visitorKey = visitorId ? toVisitorStorageKey(visitorId) : null;
     const state = await readProductSocialState(productId);
-    const summary = getProductSocialSummary(state, visitorId);
+    const summary = getProductSocialSummary(state, visitorKey);
 
     let canReview = false;
     if (user?.id) {
@@ -121,28 +124,45 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!action) return badRequest('action is required');
 
     const user = await getOptionalAuthUser();
+    const ip =
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip')?.trim() ||
+      'unknown';
+    const rl = checkRateLimit({
+      key: `product-social:${action}:${user?.id || ip}`,
+      maxRequests: action === 'visit' ? 120 : action === 'toggle_like' ? 40 : 20,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas acciones en poco tiempo. Inténtalo de nuevo en un minuto.' },
+        { status: 429 }
+      );
+    }
+
     const visitorId = resolveVisitorId((body as any).visitorId, user?.id);
+    const visitorKey = visitorId ? toVisitorStorageKey(visitorId) : null;
     const state = await readProductSocialState(productId);
 
     if (action === 'visit') {
-      if (!visitorId) return badRequest('visitorId is required');
-      const changed = trackVisit(state, visitorId);
+      if (!visitorKey) return badRequest('visitorId is required');
+      const changed = trackVisit(state, visitorKey);
       if (changed) await writeProductSocialState(productId, state);
       return NextResponse.json({
         success: true,
-        summary: getProductSocialSummary(state, visitorId),
+        summary: getProductSocialSummary(state, visitorKey),
       });
     }
 
     if (action === 'toggle_like') {
-      if (!visitorId) return badRequest('visitorId is required');
-      trackVisit(state, visitorId);
-      const liked = toggleLike(state, visitorId);
+      if (!visitorKey) return badRequest('visitorId is required');
+      trackVisit(state, visitorKey);
+      const liked = toggleLike(state, visitorKey);
       await writeProductSocialState(productId, state);
       return NextResponse.json({
         success: true,
         liked,
-        summary: getProductSocialSummary(state, visitorId),
+        summary: getProductSocialSummary(state, visitorKey),
       });
     }
 
@@ -154,7 +174,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         );
       }
 
-      if (!visitorId) {
+      if (!visitorKey) {
         return NextResponse.json({ error: 'No se pudo validar tu sesión' }, { status: 401 });
       }
 
@@ -166,7 +186,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         );
       }
 
-      trackVisit(state, visitorId);
+      trackVisit(state, visitorKey);
 
       const rating = Number((body as any).rating);
       if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
@@ -185,7 +205,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
       const duplicate = state.reviews.find(
         (review) =>
-          review.visitorId === visitorId &&
+          review.visitorId === visitorKey &&
           review.comment === rawComment &&
           review.rating === rating
       );
@@ -193,14 +213,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         return NextResponse.json({
           success: true,
           review: duplicate,
-          summary: getProductSocialSummary(state, visitorId),
+          summary: getProductSocialSummary(state, visitorKey),
           reviews: state.reviews,
           duplicate: true,
         });
       }
 
       const review = addReview(state, {
-        visitorId,
+        visitorId: visitorKey,
         authorName,
         rating,
         comment: rawComment,
@@ -218,7 +238,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({
         success: true,
         review,
-        summary: getProductSocialSummary(state, visitorId),
+        summary: getProductSocialSummary(state, visitorKey),
         reviews: state.reviews,
       });
     }

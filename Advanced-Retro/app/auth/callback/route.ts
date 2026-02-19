@@ -126,9 +126,15 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}${redirectTo}`);
     }
 
+    if ([...searchParams.keys()].length === 0) {
+      return NextResponse.redirect(`${origin}/login?error=oauth_incomplete&reason=missing_exchange_params`);
+    }
+
     const queryKeys = [...searchParams.keys()].slice(0, 12).join(',');
     const reason = queryKeys ? `missing exchange params (${queryKeys})` : 'missing exchange params';
-    return NextResponse.redirect(`${origin}/login?error=oauth_incomplete&reason=${encodeURIComponent(reason)}`);
+    return NextResponse.redirect(
+      `${origin}/login?error=oauth_incomplete&reason=${encodeURIComponent(reason)}`
+    );
   } catch (error: any) {
     const message = String(error?.message || '').trim();
     const lower = message.toLowerCase();

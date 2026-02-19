@@ -176,7 +176,7 @@ function LoginForm() {
     }
     const nextPath = searchParams.get('next');
     const safeNextPath = typeof nextPath === 'string' && nextPath.startsWith('/') ? nextPath : '/perfil';
-    const redirectTo = resolveAuthCallbackUrl(safeNextPath) || resolveAbsolutePathUrl(safeNextPath);
+    const redirectTo = resolveAbsolutePathUrl(safeNextPath) || resolveAuthCallbackUrl(safeNextPath);
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider,
       options: { redirectTo },

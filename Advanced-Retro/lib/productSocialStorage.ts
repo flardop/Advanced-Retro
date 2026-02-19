@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const SOCIAL_BUCKET = 'product-social';
@@ -6,6 +6,11 @@ const VISIT_COOLDOWN_MS = 1000 * 60 * 30;
 const MAX_REVIEWS_PER_PRODUCT = 250;
 const MAX_REVIEW_PHOTOS = 3;
 const MAX_REVIEW_PHOTO_BYTES = 2_500_000;
+const VISITOR_KEY_PREFIX = 'vf_';
+const VISITOR_HASH_SECRET =
+  process.env.SOCIAL_VISITOR_HASH_SECRET ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  'advanced-retro-social';
 
 export type ProductReview = {
   id: string;
@@ -43,6 +48,21 @@ const defaultState = (): ProductSocialState => ({
 
 const statePath = (productId: string) => `products/${productId}/social.json`;
 
+export function toVisitorStorageKey(visitorId: string): string {
+  const normalized = normalizeVisitorId(visitorId);
+  if (!normalized) return '';
+
+  if (new RegExp(`^${VISITOR_KEY_PREFIX}[a-f0-9]{32}$`).test(normalized)) {
+    return normalized;
+  }
+
+  const digest = createHash('sha256')
+    .update(`${VISITOR_HASH_SECRET}:${normalized}`)
+    .digest('hex')
+    .slice(0, 32);
+  return `${VISITOR_KEY_PREFIX}${digest}`;
+}
+
 export function normalizeVisitorId(input: unknown): string | null {
   if (typeof input !== 'string') return null;
   const value = input.trim();
@@ -59,7 +79,9 @@ function toSafeNumber(value: unknown, fallback = 0): number {
 function sanitizeReview(raw: any): ProductReview | null {
   if (!raw || typeof raw !== 'object') return null;
   const id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : randomUUID();
-  const visitorId = normalizeVisitorId(raw.visitorId);
+  const rawVisitorId = normalizeVisitorId(raw.visitorId);
+  if (!rawVisitorId) return null;
+  const visitorId = toVisitorStorageKey(rawVisitorId);
   if (!visitorId) return null;
 
   const rating = Number(raw.rating);
@@ -96,7 +118,10 @@ function sanitizeState(raw: any): ProductSocialState {
     raw.visitByVisitor && typeof raw.visitByVisitor === 'object' && !Array.isArray(raw.visitByVisitor)
       ? Object.fromEntries(
           Object.entries(raw.visitByVisitor)
-            .map(([key, value]) => [normalizeVisitorId(key), typeof value === 'string' ? value : ''])
+            .map(([key, value]) => {
+              const safeKey = normalizeVisitorId(key);
+              return [safeKey ? toVisitorStorageKey(safeKey) : null, typeof value === 'string' ? value : ''];
+            })
             .filter(([key]) => Boolean(key))
         ) as Record<string, string>
       : {};
@@ -105,7 +130,10 @@ function sanitizeState(raw: any): ProductSocialState {
     raw.likeByVisitor && typeof raw.likeByVisitor === 'object' && !Array.isArray(raw.likeByVisitor)
       ? Object.fromEntries(
           Object.entries(raw.likeByVisitor)
-            .map(([key, value]) => [normalizeVisitorId(key), Boolean(value)])
+            .map(([key, value]) => {
+              const safeKey = normalizeVisitorId(key);
+              return [safeKey ? toVisitorStorageKey(safeKey) : null, Boolean(value)];
+            })
             .filter(([key, value]) => Boolean(key) && value === true)
         ) as Record<string, boolean>
       : {};
@@ -181,8 +209,11 @@ export async function writeProductSocialState(productId: string, state: ProductS
 }
 
 export function trackVisit(state: ProductSocialState, visitorId: string): boolean {
+  const visitorKey = toVisitorStorageKey(visitorId);
+  if (!visitorKey) return false;
+
   const now = Date.now();
-  const lastIso = state.visitByVisitor[visitorId];
+  const lastIso = state.visitByVisitor[visitorKey];
   const lastAt = lastIso ? new Date(lastIso).getTime() : 0;
 
   if (lastAt && now - lastAt < VISIT_COOLDOWN_MS) {
@@ -190,19 +221,22 @@ export function trackVisit(state: ProductSocialState, visitorId: string): boolea
   }
 
   state.visits += 1;
-  state.visitByVisitor[visitorId] = new Date(now).toISOString();
+  state.visitByVisitor[visitorKey] = new Date(now).toISOString();
   state.updatedAt = new Date(now).toISOString();
   return true;
 }
 
 export function toggleLike(state: ProductSocialState, visitorId: string): boolean {
-  if (state.likeByVisitor[visitorId]) {
-    delete state.likeByVisitor[visitorId];
+  const visitorKey = toVisitorStorageKey(visitorId);
+  if (!visitorKey) return false;
+
+  if (state.likeByVisitor[visitorKey]) {
+    delete state.likeByVisitor[visitorKey];
     state.updatedAt = new Date().toISOString();
     return false;
   }
 
-  state.likeByVisitor[visitorId] = true;
+  state.likeByVisitor[visitorKey] = true;
   state.updatedAt = new Date().toISOString();
   return true;
 }
@@ -278,9 +312,14 @@ export function addReview(
     photos?: string[];
   }
 ): ProductReview {
+  const visitorKey = toVisitorStorageKey(payload.visitorId);
+  if (!visitorKey) {
+    throw new Error('Invalid visitor id');
+  }
+
   const review: ProductReview = {
     id: randomUUID(),
-    visitorId: payload.visitorId,
+    visitorId: visitorKey,
     authorName: payload.authorName.trim().slice(0, 60) || 'Coleccionista',
     rating: payload.rating,
     comment: payload.comment.trim().slice(0, 1000),
@@ -312,11 +351,13 @@ export function getProductSocialSummary(
         )
       : 0;
 
+  const visitorKey = visitorId ? toVisitorStorageKey(visitorId) : '';
+
   return {
     visits: state.visits,
     likes,
     reviewsCount,
     ratingAverage,
-    likedByCurrentVisitor: Boolean(visitorId && state.likeByVisitor[visitorId]),
+    likedByCurrentVisitor: Boolean(visitorKey && state.likeByVisitor[visitorKey]),
   };
 }

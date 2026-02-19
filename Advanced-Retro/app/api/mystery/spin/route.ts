@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { spinMysteryBox } from '@/lib/mysteryBox';
 import { getMysterySetupErrorMessage, isMysterySetupMissing } from '@/lib/mysterySetup';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,29 @@ export async function POST(req: Request) {
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const ip =
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip')?.trim() ||
+      'unknown';
+
+    const byUser = checkRateLimit({
+      key: `mystery-spin:user:${user.id}`,
+      maxRequests: 20,
+      windowMs: 60_000,
+    });
+    const byIp = checkRateLimit({
+      key: `mystery-spin:ip:${ip}`,
+      maxRequests: 40,
+      windowMs: 60_000,
+    });
+
+    if (!byUser.allowed || !byIp.allowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas tiradas en poco tiempo. Espera un minuto e inténtalo de nuevo.' },
+        { status: 429 }
+      );
     }
 
     const body = await req.json().catch(() => null);
