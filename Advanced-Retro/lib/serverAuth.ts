@@ -8,7 +8,12 @@ type AppUserProfile = {
   role: 'user' | 'admin';
   name: string | null;
   avatar_url: string | null;
+  banner_url: string | null;
   bio: string | null;
+  tagline: string | null;
+  favorite_console: string | null;
+  profile_theme: string | null;
+  badges: string[];
   is_verified_seller: boolean;
   created_at?: string;
   updated_at?: string;
@@ -149,7 +154,15 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
     role: profile.role === 'admin' ? 'admin' : 'user',
     name: typeof profile.name === 'string' ? profile.name : safeName,
     avatar_url: typeof profile.avatar_url === 'string' ? profile.avatar_url : safeAvatar,
+    banner_url: typeof profile.banner_url === 'string' ? profile.banner_url : null,
     bio: typeof profile.bio === 'string' ? profile.bio : null,
+    tagline: typeof profile.tagline === 'string' ? profile.tagline : null,
+    favorite_console:
+      typeof profile.favorite_console === 'string' ? profile.favorite_console : null,
+    profile_theme: typeof profile.profile_theme === 'string' ? profile.profile_theme : 'neon-grid',
+    badges: Array.isArray(profile.badges)
+      ? profile.badges.filter((value: unknown) => typeof value === 'string')
+      : [],
     is_verified_seller: Boolean(profile.is_verified_seller),
     created_at: profile.created_at,
     updated_at: profile.updated_at,

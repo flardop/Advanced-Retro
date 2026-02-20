@@ -35,21 +35,61 @@ export async function PUT(req: Request) {
 
     const body = await req.json().catch(() => null);
 
+    const allowedThemes = new Set(['neon-grid', 'sunset-glow', 'arcade-purple', 'mint-wave']);
+    const sanitizeBadges = (input: unknown): string[] => {
+      if (!Array.isArray(input)) return [];
+      const values = input
+        .filter((value): value is string => typeof value === 'string')
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean)
+        .map((value) => value.slice(0, 40));
+      return [...new Set(values)].slice(0, 8);
+    };
+
     const payload: Record<string, unknown> = {};
-    if (typeof body?.name === 'string') payload.name = body.name.trim().slice(0, 80);
-    if (typeof body?.avatar_url === 'string') payload.avatar_url = body.avatar_url.trim().slice(0, 500);
-    if (typeof body?.bio === 'string') payload.bio = body.bio.trim().slice(0, 1200);
+    if (typeof body?.name === 'string') {
+      const nextName = body.name.trim().slice(0, 80);
+      payload.name = nextName || 'Coleccionista';
+    }
+    if (typeof body?.avatar_url === 'string') {
+      const nextAvatar = body.avatar_url.trim().slice(0, 500);
+      payload.avatar_url = nextAvatar || null;
+    }
+    if (typeof body?.banner_url === 'string') {
+      const nextBanner = body.banner_url.trim().slice(0, 500);
+      payload.banner_url = nextBanner || null;
+    }
+    if (typeof body?.bio === 'string') {
+      const nextBio = body.bio.trim().slice(0, 1200);
+      payload.bio = nextBio || null;
+    }
+    if (typeof body?.tagline === 'string') {
+      const nextTagline = body.tagline.trim().slice(0, 120);
+      payload.tagline = nextTagline || null;
+    }
+    if (typeof body?.favorite_console === 'string') {
+      const nextFavorite = body.favorite_console.trim().slice(0, 120);
+      payload.favorite_console = nextFavorite || null;
+    }
+    if (typeof body?.profile_theme === 'string') {
+      const nextTheme = body.profile_theme.trim();
+      if (allowedThemes.has(nextTheme)) {
+        payload.profile_theme = nextTheme;
+      }
+    }
+    if (Array.isArray(body?.badges)) payload.badges = sanitizeBadges(body.badges);
 
     const hasUserField = Object.keys(payload).length > 0;
     if (!hasUserField) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
+    payload.updated_at = new Date().toISOString();
 
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('users')
       .update(payload)
       .eq('id', user.id)
-      .select('id,email,role,name,avatar_url,bio,is_verified_seller,created_at,updated_at')
+      .select('id,email,role,name,avatar_url,banner_url,bio,tagline,favorite_console,profile_theme,badges,is_verified_seller,created_at,updated_at')
       .single();
 
     if (updateError || !updated) {
@@ -58,7 +98,7 @@ export async function PUT(req: Request) {
         return NextResponse.json(
           {
             error:
-              'Faltan columnas de perfil en la base de datos. Ejecuta el SQL: database/admin_chat_seller_features.sql',
+              'Faltan columnas de personalización. Ejecuta SQL: database/admin_chat_seller_features.sql y database/profile_customization_upgrade.sql',
           },
           { status: 400 }
         );

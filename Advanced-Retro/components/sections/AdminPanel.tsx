@@ -46,7 +46,15 @@ type MysteryBoxAdmin = {
   prizes: MysteryPrizeAdmin[];
 };
 
+type UserVisualDraft = {
+  badges: string;
+  tagline: string;
+  favorite_console: string;
+  profile_theme: string;
+};
+
 const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const;
+const PROFILE_THEME_OPTIONS = ['neon-grid', 'sunset-glow', 'arcade-purple', 'mint-wave'] as const;
 
 export default function AdminPanel() {
   const [tab, setTab] = useState<AdminTab>('products');
@@ -105,6 +113,9 @@ export default function AdminPanel() {
     value: 10,
     max_uses: 1,
   });
+  const [userVisualDraftById, setUserVisualDraftById] = useState<
+    Record<string, UserVisualDraft>
+  >({});
 
   const load = async () => {
     setLoading(true);
@@ -282,6 +293,63 @@ export default function AdminPanel() {
     }
     toast.success('Usuario actualizado');
     setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, ...data.user } : user)));
+  };
+
+  const getUserVisualDraft = (user: any): UserVisualDraft => {
+    const existing = userVisualDraftById[user.id];
+    if (existing) return existing;
+    const badges = Array.isArray(user.badges)
+      ? user.badges.filter((value: unknown) => typeof value === 'string').join(', ')
+      : '';
+    return {
+      badges,
+      tagline: String(user.tagline || ''),
+      favorite_console: String(user.favorite_console || ''),
+      profile_theme: String(user.profile_theme || 'neon-grid'),
+    };
+  };
+
+  const setUserVisualDraftField = (
+    userId: string,
+    key: 'badges' | 'tagline' | 'favorite_console' | 'profile_theme',
+    value: string
+  ) => {
+    setUserVisualDraftById((prev) => {
+      const currentUser = users.find((user) => user.id === userId);
+      const base = currentUser
+        ? getUserVisualDraft(currentUser)
+        : ({
+            badges: '',
+            tagline: '',
+            favorite_console: '',
+            profile_theme: 'neon-grid',
+          } satisfies UserVisualDraft);
+      return {
+        ...prev,
+        [userId]: {
+          ...base,
+          [key]: value,
+        },
+      };
+    });
+  };
+
+  const saveUserVisualSettings = async (user: any) => {
+    const draft = getUserVisualDraft(user);
+    const badges = draft.badges
+      .split(/,|\n|;/g)
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean)
+      .slice(0, 12);
+    const safeTheme =
+      PROFILE_THEME_OPTIONS.find((theme) => theme === draft.profile_theme) || 'neon-grid';
+
+    await updateUser(user.id, {
+      badges,
+      tagline: draft.tagline,
+      favorite_console: draft.favorite_console,
+      profile_theme: safeTheme,
+    });
   };
 
   const createCoupon = async () => {
@@ -824,14 +892,38 @@ export default function AdminPanel() {
               {users.map((u) => {
                 const isAdmin = u.role === 'admin';
                 const isVerified = Boolean(u.is_verified_seller);
+                const visualDraft = getUserVisualDraft(u);
+                const badgesCount = visualDraft.badges
+                  .split(/,|\n|;/g)
+                  .map((value) => value.trim())
+                  .filter(Boolean).length;
 
                 return (
                   <div key={u.id} className="border border-line p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <p className="font-semibold">{u.name || u.email}</p>
-                        <p className="text-xs text-textMuted">{u.email}</p>
-                        <p className="text-xs text-textMuted">ID: {u.id}</p>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="h-12 w-12 overflow-hidden rounded-lg border border-line bg-slate-900">
+                          {u.avatar_url ? (
+                            <div
+                              className="h-full w-full bg-cover bg-center"
+                              style={{ backgroundImage: `url('${String(u.avatar_url).replace(/'/g, '%27')}')` }}
+                              role="img"
+                              aria-label={u.name || u.email}
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-primary">
+                              {String(u.name || u.email || 'U').slice(0, 1).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold">{u.name || u.email}</p>
+                          <p className="text-xs text-textMuted">{u.email}</p>
+                          <p className="text-xs text-textMuted">ID: {u.id}</p>
+                          <p className="text-xs text-textMuted mt-1">
+                            Tema: {u.profile_theme || 'neon-grid'} · Insignias: {badgesCount}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
@@ -847,6 +939,56 @@ export default function AdminPanel() {
                           {isVerified ? 'Quitar verificado' : 'Verificar vendedor'}
                         </button>
                       </div>
+                    </div>
+
+                    <div className="grid gap-3 mt-3 lg:grid-cols-2">
+                      <label className="grid gap-1">
+                        <span className="text-xs text-textMuted">Insignias (coma separada)</span>
+                        <input
+                          className="bg-transparent border border-line px-3 py-2 text-sm"
+                          value={visualDraft.badges}
+                          onChange={(e) => setUserVisualDraftField(u.id, 'badges', e.target.value)}
+                          placeholder="collector, trusted_seller, retro_master"
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="text-xs text-textMuted">Tema visual</span>
+                        <select
+                          className="bg-transparent border border-line px-3 py-2 text-sm"
+                          value={visualDraft.profile_theme}
+                          onChange={(e) => setUserVisualDraftField(u.id, 'profile_theme', e.target.value)}
+                        >
+                          {PROFILE_THEME_OPTIONS.map((theme) => (
+                            <option key={`${u.id}-${theme}`} value={theme}>
+                              {theme}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="text-xs text-textMuted">Tagline</span>
+                        <input
+                          className="bg-transparent border border-line px-3 py-2 text-sm"
+                          value={visualDraft.tagline}
+                          onChange={(e) => setUserVisualDraftField(u.id, 'tagline', e.target.value)}
+                          placeholder="Tu vitrina de coleccionismo retro"
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="text-xs text-textMuted">Consola favorita</span>
+                        <input
+                          className="bg-transparent border border-line px-3 py-2 text-sm"
+                          value={visualDraft.favorite_console}
+                          onChange={(e) => setUserVisualDraftField(u.id, 'favorite_console', e.target.value)}
+                          placeholder="Game Boy"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap justify-end gap-2">
+                      <button className="chip" onClick={() => saveUserVisualSettings(u)}>
+                        Guardar perfil visual
+                      </button>
                     </div>
                     {u.bio ? <p className="text-sm text-textMuted mt-2">Bio: {u.bio}</p> : null}
                   </div>

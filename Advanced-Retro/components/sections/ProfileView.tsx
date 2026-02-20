@@ -49,11 +49,71 @@ type ProfileState = {
   role: 'user' | 'admin';
   name: string | null;
   avatar_url: string | null;
+  banner_url: string | null;
   bio: string | null;
+  tagline: string | null;
+  favorite_console: string | null;
+  profile_theme: string | null;
+  badges: string[];
   is_verified_seller: boolean;
 };
 
 type Tab = 'profile' | 'orders' | 'tickets' | 'sell';
+
+const PROFILE_THEMES = [
+  {
+    id: 'neon-grid',
+    label: 'Neon Grid',
+    description: 'Azul eléctrico y rejilla arcade',
+    previewClass: 'from-cyan-500/35 via-slate-950 to-blue-700/35',
+    accentClass: 'border-cyan-300/50 bg-cyan-400/10 text-cyan-100',
+  },
+  {
+    id: 'sunset-glow',
+    label: 'Sunset Glow',
+    description: 'Naranja cálido con brillo sunset',
+    previewClass: 'from-orange-500/35 via-rose-950 to-amber-500/35',
+    accentClass: 'border-orange-300/50 bg-orange-400/10 text-orange-100',
+  },
+  {
+    id: 'arcade-purple',
+    label: 'Arcade Purple',
+    description: 'Estilo arcade nocturno púrpura',
+    previewClass: 'from-fuchsia-500/35 via-violet-950 to-indigo-600/35',
+    accentClass: 'border-fuchsia-300/50 bg-fuchsia-400/10 text-fuchsia-100',
+  },
+  {
+    id: 'mint-wave',
+    label: 'Mint Wave',
+    description: 'Tono mint fresco para vitrina',
+    previewClass: 'from-emerald-400/35 via-slate-950 to-teal-600/35',
+    accentClass: 'border-emerald-300/50 bg-emerald-400/10 text-emerald-100',
+  },
+] as const;
+
+const FAVORITE_CONSOLES = [
+  'Game Boy',
+  'Game Boy Color',
+  'Game Boy Advance',
+  'Super Nintendo',
+  'Nintendo 64',
+  'GameCube',
+  'Nintendo DS',
+  'PlayStation',
+  'Sega Mega Drive',
+  'Otra',
+] as const;
+
+const BADGE_LABELS: Record<string, string> = {
+  founder: 'Fundador',
+  collector: 'Coleccionista',
+  trusted_buyer: 'Comprador fiable',
+  trusted_seller: 'Vendedor verificado',
+  mystery_champion: 'Campeón ruleta',
+  premium_member: 'Miembro premium',
+  retro_master: 'Retro Master',
+  ambassador: 'Embajador',
+};
 
 function parseImageLines(input: string): string[] {
   const list = input
@@ -70,6 +130,8 @@ function isConciergeTicket(ticket: { subject?: string } | null | undefined): boo
 
 export default function ProfileView() {
   const autoOpenedTicketRef = useRef('');
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement | null>(null);
   const [deepLinkTab, setDeepLinkTab] = useState('');
   const [deepLinkTicketId, setDeepLinkTicketId] = useState('');
   const [tab, setTab] = useState<Tab>('profile');
@@ -81,9 +143,14 @@ export default function ProfileView() {
 
   const [name, setName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [bannerUrl, setBannerUrl] = useState('');
   const [bio, setBio] = useState('');
+  const [tagline, setTagline] = useState('');
+  const [favoriteConsole, setFavoriteConsole] = useState('');
+  const [profileTheme, setProfileTheme] = useState('neon-grid');
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState('');
@@ -107,6 +174,17 @@ export default function ProfileView() {
   const [listingImageText, setListingImageText] = useState('');
   const [publishingListing, setPublishingListing] = useState(false);
 
+  const applyProfileSnapshot = (nextProfile: ProfileState | null) => {
+    setProfile(nextProfile);
+    setName(String(nextProfile?.name || ''));
+    setAvatarUrl(String(nextProfile?.avatar_url || ''));
+    setBannerUrl(String(nextProfile?.banner_url || ''));
+    setBio(String(nextProfile?.bio || ''));
+    setTagline(String(nextProfile?.tagline || ''));
+    setFavoriteConsole(String(nextProfile?.favorite_console || ''));
+    setProfileTheme(String(nextProfile?.profile_theme || 'neon-grid'));
+  };
+
   const loadProfile = async () => {
     const res = await fetch('/api/auth/profile');
     const data = await res.json().catch(() => null);
@@ -117,11 +195,7 @@ export default function ProfileView() {
 
     setUser(data?.user || null);
     const nextProfile = data?.user?.profile || null;
-    setProfile(nextProfile);
-
-    setName(String(nextProfile?.name || ''));
-    setAvatarUrl(String(nextProfile?.avatar_url || ''));
-    setBio(String(nextProfile?.bio || ''));
+    applyProfileSnapshot(nextProfile);
   };
 
   const loadOrders = async (userId: string) => {
@@ -220,6 +294,9 @@ export default function ProfileView() {
         body: JSON.stringify({
           name,
           bio,
+          tagline,
+          favorite_console: favoriteConsole,
+          profile_theme: profileTheme,
         }),
       });
 
@@ -228,7 +305,7 @@ export default function ProfileView() {
         throw new Error(data?.error || 'No se pudo guardar el perfil');
       }
 
-      setProfile(data.profile || null);
+      applyProfileSnapshot(data.profile || null);
       toast.success('Perfil actualizado');
     } catch (error: any) {
       toast.error(error?.message || 'No se pudo guardar el perfil');
@@ -258,7 +335,7 @@ export default function ProfileView() {
         setAvatarUrl(data.avatar_url);
       }
       if (data?.profile) {
-        setProfile(data.profile);
+        applyProfileSnapshot(data.profile);
       }
 
       toast.success('Foto de perfil actualizada');
@@ -266,6 +343,80 @@ export default function ProfileView() {
       toast.error(error?.message || 'No se pudo subir la imagen');
     } finally {
       setUploadingAvatar(false);
+    }
+  };
+
+  const uploadBanner = async (file: File) => {
+    if (!file) return;
+
+    setUploadingBanner(true);
+    try {
+      const formData = new FormData();
+      formData.set('banner', file);
+
+      const res = await fetch('/api/auth/profile/banner', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo subir la portada');
+      }
+
+      if (typeof data?.banner_url === 'string') {
+        setBannerUrl(data.banner_url);
+      }
+      if (data?.profile) {
+        applyProfileSnapshot(data.profile);
+      }
+
+      toast.success('Portada actualizada');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo subir la portada');
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
+  const removeAvatar = async () => {
+    setUploadingAvatar(true);
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: '' }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo eliminar la foto');
+      }
+      applyProfileSnapshot(data.profile || null);
+      toast.success('Foto de perfil eliminada');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo eliminar la foto');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const removeBanner = async () => {
+    setUploadingBanner(true);
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ banner_url: '' }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo eliminar la portada');
+      }
+      applyProfileSnapshot(data.profile || null);
+      toast.success('Portada eliminada');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo eliminar la portada');
+    } finally {
+      setUploadingBanner(false);
     }
   };
 
@@ -408,6 +559,20 @@ export default function ProfileView() {
     [orders]
   );
 
+  const activeTheme = useMemo(
+    () => PROFILE_THEMES.find((theme) => theme.id === profileTheme) || PROFILE_THEMES[0],
+    [profileTheme]
+  );
+
+  const profileBadges = useMemo(() => {
+    if (!profile?.badges || !Array.isArray(profile.badges)) return [];
+    return profile.badges
+      .filter((value): value is string => typeof value === 'string')
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean)
+      .slice(0, 8);
+  }, [profile?.badges]);
+
   if (!supabaseClient) {
     return (
       <section className="section">
@@ -442,30 +607,146 @@ export default function ProfileView() {
       <div className="container">
         <h1 className="title-display text-3xl mb-6">Perfil</h1>
 
-        <div className="glass p-6 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full border border-line bg-surface overflow-hidden">
-              {profile.avatar_url ? (
-                <div
-                  className="w-full h-full bg-cover bg-center"
-                  style={{ backgroundImage: `url('${profile.avatar_url.replace(/'/g, '%27')}')` }}
-                  aria-label="Avatar"
-                  role="img"
-                />
-              ) : null}
+        <div className="glass mb-6 overflow-hidden">
+          <div
+            className={`relative h-44 sm:h-56 bg-gradient-to-r ${activeTheme.previewClass}`}
+            style={
+              bannerUrl
+                ? {
+                    backgroundImage: `linear-gradient(to right, rgba(2,6,23,0.82), rgba(2,6,23,0.45)), url('${bannerUrl.replace(/'/g, '%27')}')`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }
+                : undefined
+            }
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,.32),transparent_60%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_20%,rgba(2,6,23,0.65)_100%)]" />
+            <div className="absolute right-4 top-4 flex flex-wrap justify-end gap-2">
+              <button
+                className="chip"
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={uploadingBanner}
+              >
+                {uploadingBanner ? 'Subiendo portada...' : 'Subir portada'}
+              </button>
+              <button
+                className="chip"
+                onClick={() => removeBanner()}
+                disabled={uploadingBanner || !bannerUrl}
+              >
+                Quitar portada
+              </button>
+              <button className="button-secondary" onClick={() => supabaseClient?.auth.signOut()}>
+                Cerrar sesión
+              </button>
             </div>
-            <div>
-              <p className="font-semibold">{profile.name || 'Coleccionista'}</p>
-              <p className="text-sm text-textMuted">{profile.email}</p>
-              <p className="text-xs text-textMuted mt-1">
-                Rol: {profile.role} · Vendedor verificado: {profile.is_verified_seller ? 'sí' : 'no'}
-              </p>
-            </div>
+            <input
+              ref={bannerInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void uploadBanner(file);
+                e.currentTarget.value = '';
+              }}
+            />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button className="button-secondary" onClick={() => supabaseClient?.auth.signOut()}>
-              Cerrar sesión
-            </button>
+
+          <div className="p-6 pt-0">
+            <div className="-mt-12 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/40 bg-slate-900 shadow-[0_0_32px_rgba(34,211,238,.32)]"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                  >
+                    {avatarUrl ? (
+                      <div
+                        className="h-full w-full bg-cover bg-center"
+                        style={{ backgroundImage: `url('${avatarUrl.replace(/'/g, '%27')}')` }}
+                        aria-label="Avatar"
+                        role="img"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-primary">
+                        {(name || 'C').slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+                    <span className="absolute inset-x-0 bottom-0 bg-black/60 py-1 text-[11px]">
+                      {uploadingAvatar ? 'Subiendo...' : 'Cambiar'}
+                    </span>
+                  </button>
+                  <button
+                    className="chip absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px]"
+                    onClick={() => removeAvatar()}
+                    disabled={uploadingAvatar || !avatarUrl}
+                  >
+                    Quitar foto
+                  </button>
+                </div>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void uploadAvatar(file);
+                    e.currentTarget.value = '';
+                  }}
+                />
+
+                <div className="pt-3 sm:pt-0">
+                  <p className="text-2xl font-black">{name || profile.name || 'Coleccionista'}</p>
+                  <p className="text-sm text-textMuted">{profile.email}</p>
+                  <p className="text-xs text-textMuted mt-1">
+                    Rol: {profile.role} · Vendedor verificado: {profile.is_verified_seller ? 'sí' : 'no'}
+                  </p>
+                  <p className="text-sm text-primary mt-2">{tagline || 'Tu vitrina de coleccionismo retro'}</p>
+                  {favoriteConsole ? (
+                    <span className={`mt-2 inline-flex items-center border px-2 py-1 text-xs ${activeTheme.accentClass}`}>
+                      Consola favorita: {favoriteConsole}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-center text-xs sm:text-sm min-w-[260px]">
+                <div className="border border-line px-3 py-2 bg-slate-950/35">
+                  <p className="text-textMuted">Pedidos</p>
+                  <p className="font-semibold">{orders.length}</p>
+                </div>
+                <div className="border border-line px-3 py-2 bg-slate-950/35">
+                  <p className="text-textMuted">Tickets</p>
+                  <p className="font-semibold">{tickets.length}</p>
+                </div>
+                <div className="border border-line px-3 py-2 bg-slate-950/35">
+                  <p className="text-textMuted">Insignias</p>
+                  <p className="font-semibold">{profileBadges.length}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {profileBadges.length > 0 ? (
+                profileBadges.map((badge) => (
+                  <span
+                    key={badge}
+                    className={`inline-flex items-center border px-2 py-1 text-xs ${activeTheme.accentClass}`}
+                  >
+                    {BADGE_LABELS[badge] || badge}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-textMuted">
+                  Aún no tienes insignias. El admin puede asignártelas.
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -482,36 +763,164 @@ export default function ProfileView() {
         </div>
 
         {tab === 'profile' && (
-          <div className="glass p-6 grid gap-4 max-w-2xl">
-            <h2 className="font-semibold">Editar perfil</h2>
-            <label className="text-sm text-textMuted">Nombre visible</label>
-            <input className="bg-transparent border border-line px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="grid gap-6">
+            <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
+              <div className="glass p-6 space-y-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-primary">Identidad del perfil</p>
+                  <h2 className="text-2xl font-black mt-1">Personalización pública</h2>
+                  <p className="text-sm text-textMuted mt-1">
+                    Configura tu portada, estilo visual y cómo te ven otros coleccionistas.
+                  </p>
+                </div>
 
-            <label className="text-sm text-textMuted">Foto de perfil</label>
-            <div className="grid gap-2">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="bg-transparent border border-line px-3 py-2"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void uploadAvatar(file);
-                  e.currentTarget.value = '';
-                }}
-                disabled={uploadingAvatar}
-              />
-              <p className="text-xs text-textMuted">JPG, PNG, WEBP o GIF · máximo 5 MB</p>
-              {avatarUrl ? (
-                <p className="text-xs text-primary break-all">Avatar actual: {avatarUrl}</p>
-              ) : null}
+                <div className="grid gap-4">
+                  <label className="grid gap-2">
+                    <span className="text-sm text-textMuted">Nombre visible</span>
+                    <input
+                      className="bg-transparent border border-line px-3 py-2"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Tu nombre de coleccionista"
+                    />
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-sm text-textMuted">Frase de perfil</span>
+                    <input
+                      className="bg-transparent border border-line px-3 py-2"
+                      value={tagline}
+                      onChange={(e) => setTagline(e.target.value)}
+                      placeholder="Ej: Cazador de ediciones completas PAL"
+                    />
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-sm text-textMuted">Consola favorita</span>
+                    <input
+                      className="bg-transparent border border-line px-3 py-2"
+                      value={favoriteConsole}
+                      onChange={(e) => setFavoriteConsole(e.target.value)}
+                      placeholder="Ej: Game Boy Color"
+                      list="favorite-consoles-list"
+                    />
+                    <datalist id="favorite-consoles-list">
+                      {FAVORITE_CONSOLES.map((consoleName) => (
+                        <option key={consoleName} value={consoleName} />
+                      ))}
+                    </datalist>
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-sm text-textMuted">Bio</span>
+                    <textarea
+                      className="bg-transparent border border-line px-3 py-2 min-h-[130px]"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      placeholder="Cuenta tu historia como coleccionista, restaurador o vendedor."
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    className="button-secondary w-full"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                  >
+                    {uploadingAvatar ? 'Subiendo avatar...' : 'Subir avatar'}
+                  </button>
+                  <button
+                    className="button-secondary w-full"
+                    onClick={() => bannerInputRef.current?.click()}
+                    disabled={uploadingBanner}
+                  >
+                    {uploadingBanner ? 'Subiendo portada...' : 'Subir banner'}
+                  </button>
+                </div>
+                <p className="text-xs text-textMuted">
+                  Formatos admitidos: JPG, PNG, WEBP o GIF. Avatar hasta 5 MB, banner hasta 8 MB.
+                </p>
+              </div>
+
+              <div className="glass p-6 space-y-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-primary">Tema de perfil</p>
+                  <h3 className="text-xl font-semibold mt-1">Estilo visual</h3>
+                </div>
+
+                <div className="grid gap-3">
+                  {PROFILE_THEMES.map((theme) => (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      className={`w-full border p-3 text-left transition ${
+                        profileTheme === theme.id
+                          ? 'border-primary bg-primary/10'
+                          : 'border-line bg-slate-950/30 hover:border-primary/40'
+                      }`}
+                      onClick={() => setProfileTheme(theme.id)}
+                    >
+                      <div className={`h-10 bg-gradient-to-r ${theme.previewClass} border border-line`} />
+                      <p className="mt-2 font-semibold">{theme.label}</p>
+                      <p className="text-xs text-textMuted">{theme.description}</p>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="border border-line p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-textMuted">Vista previa</p>
+                  <div
+                    className={`mt-2 min-h-[130px] rounded-xl border border-line bg-gradient-to-r p-4 ${activeTheme.previewClass}`}
+                  >
+                    <p className="text-lg font-black">{name || 'Tu nombre'}</p>
+                    <p className="text-xs opacity-80 mt-1">
+                      {tagline || 'Tu vitrina de coleccionismo retro'}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(profileBadges.length > 0 ? profileBadges : ['collector']).slice(0, 3).map((badge) => (
+                        <span key={`preview-${badge}`} className={`inline-flex border px-2 py-1 text-[11px] ${activeTheme.accentClass}`}>
+                          {BADGE_LABELS[badge] || badge}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-line p-4">
+                  <p className="font-semibold">Insignias del perfil</p>
+                  {profileBadges.length > 0 ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {profileBadges.map((badge) => (
+                        <span key={`badge-${badge}`} className={`inline-flex border px-2 py-1 text-xs ${activeTheme.accentClass}`}>
+                          {BADGE_LABELS[badge] || badge}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-textMuted mt-2">
+                      Aún no tienes insignias. Un admin puede asignarlas desde el panel.
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <label className="text-sm text-textMuted">Bio</label>
-            <textarea className="bg-transparent border border-line px-3 py-2 min-h-[120px]" value={bio} onChange={(e) => setBio(e.target.value)} />
-
-            <button className="button-primary" onClick={saveProfile} disabled={savingProfile || uploadingAvatar}>
-              {uploadingAvatar ? 'Subiendo foto...' : savingProfile ? 'Guardando...' : 'Guardar cambios'}
-            </button>
+            <div className="glass p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold">Guardar cambios del perfil</p>
+                <p className="text-xs text-textMuted">
+                  Se actualizan nombre, bio, frase, consola favorita y tema visual.
+                </p>
+              </div>
+              <button
+                className="button-primary min-w-[190px]"
+                onClick={saveProfile}
+                disabled={savingProfile || uploadingAvatar || uploadingBanner}
+              >
+                {savingProfile ? 'Guardando...' : 'Guardar perfil'}
+              </button>
+            </div>
           </div>
         )}
 
