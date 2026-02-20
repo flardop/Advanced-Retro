@@ -83,6 +83,7 @@ export default function ProfileView() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [bio, setBio] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState('');
@@ -218,7 +219,6 @@ export default function ProfileView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
-          avatar_url: avatarUrl,
           bio,
         }),
       });
@@ -234,6 +234,38 @@ export default function ProfileView() {
       toast.error(error?.message || 'No se pudo guardar el perfil');
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const uploadAvatar = async (file: File) => {
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.set('avatar', file);
+
+      const res = await fetch('/api/auth/profile/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo subir la foto');
+      }
+
+      if (typeof data?.avatar_url === 'string') {
+        setAvatarUrl(data.avatar_url);
+      }
+      if (data?.profile) {
+        setProfile(data.profile);
+      }
+
+      toast.success('Foto de perfil actualizada');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo subir la imagen');
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -455,14 +487,30 @@ export default function ProfileView() {
             <label className="text-sm text-textMuted">Nombre visible</label>
             <input className="bg-transparent border border-line px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} />
 
-            <label className="text-sm text-textMuted">URL de foto de perfil</label>
-            <input className="bg-transparent border border-line px-3 py-2" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://..." />
+            <label className="text-sm text-textMuted">Foto de perfil</label>
+            <div className="grid gap-2">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="bg-transparent border border-line px-3 py-2"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void uploadAvatar(file);
+                  e.currentTarget.value = '';
+                }}
+                disabled={uploadingAvatar}
+              />
+              <p className="text-xs text-textMuted">JPG, PNG, WEBP o GIF · máximo 5 MB</p>
+              {avatarUrl ? (
+                <p className="text-xs text-primary break-all">Avatar actual: {avatarUrl}</p>
+              ) : null}
+            </div>
 
             <label className="text-sm text-textMuted">Bio</label>
             <textarea className="bg-transparent border border-line px-3 py-2 min-h-[120px]" value={bio} onChange={(e) => setBio(e.target.value)} />
 
-            <button className="button-primary" onClick={saveProfile} disabled={savingProfile}>
-              {savingProfile ? 'Guardando...' : 'Guardar cambios'}
+            <button className="button-primary" onClick={saveProfile} disabled={savingProfile || uploadingAvatar}>
+              {uploadingAvatar ? 'Subiendo foto...' : savingProfile ? 'Guardando...' : 'Guardar cambios'}
             </button>
           </div>
         )}

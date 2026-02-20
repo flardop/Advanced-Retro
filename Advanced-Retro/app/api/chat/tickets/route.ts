@@ -1,11 +1,25 @@
 import { NextResponse } from 'next/server';
 import { ApiError, requireUserContext } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { createUserTicket, listUserTickets } from '@/lib/supportTickets';
+import {
+  createUserTicket,
+  getSupportSetupErrorMessage,
+  isSupportSetupMissing,
+  listUserTickets,
+} from '@/lib/supportTickets';
 
 export const dynamic = 'force-dynamic';
 
 function handleError(error: any) {
+  if (isSupportSetupMissing(error)) {
+    return NextResponse.json(
+      {
+        error: getSupportSetupErrorMessage(),
+        setupRequired: true,
+      },
+      { status: 503 }
+    );
+  }
   if (error instanceof ApiError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }

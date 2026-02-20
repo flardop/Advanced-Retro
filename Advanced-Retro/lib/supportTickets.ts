@@ -2,6 +2,8 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 
+const SUPPORT_SETUP_SQL = 'database/admin_chat_seller_features.sql';
+
 function isConciergeTicketSubject(subject: string): boolean {
   const normalized = String(subject || '').trim().toLowerCase();
   return normalized.includes('encargo');
@@ -20,6 +22,35 @@ function normalizeStatus(input: unknown): TicketStatus {
   if (value === 'resolved') return 'resolved';
   if (value === 'closed') return 'closed';
   return 'open';
+}
+
+function normalizeErrorText(error: any): string {
+  return String(error?.message || error || '')
+    .trim()
+    .toLowerCase();
+}
+
+export function isSupportSetupMissing(error: any): boolean {
+  const text = normalizeErrorText(error);
+  if (!text) return false;
+
+  const tableMentioned =
+    text.includes('support_tickets') ||
+    text.includes('support_messages') ||
+    text.includes('public.support_tickets') ||
+    text.includes('public.support_messages');
+
+  const missingHint =
+    text.includes('schema cache') ||
+    text.includes('does not exist') ||
+    text.includes('relation') ||
+    text.includes('could not find the table');
+
+  return tableMentioned && missingHint;
+}
+
+export function getSupportSetupErrorMessage(): string {
+  return `Falta configurar el sistema de tickets en Supabase. Ejecuta ${SUPPORT_SETUP_SQL} en SQL Editor y recarga.`;
 }
 
 export async function ensureTicketForOrder(options: {
