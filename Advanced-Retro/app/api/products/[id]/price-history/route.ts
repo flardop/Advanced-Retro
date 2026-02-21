@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { toPriceChartingConsoleName, stripProductNameForExternalSearch } from '@/lib/catalogPlatform';
 import { fetchPriceChartingSnapshotByQuery } from '@/lib/priceCharting';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
+import { fetchEbayMarketSnapshotByQuery } from '@/lib/ebayBrowse';
 
 export const dynamic = 'force-dynamic';
 
@@ -129,6 +130,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     const sorted = compactPoints(sortByDate(points), 80);
 
     let marketGuide: any = null;
+    let marketGuideEbay: any = null;
     if (!isMysteryOrRouletteProduct(product as any)) {
       const externalName =
         stripProductNameForExternalSearch(String(product.name || '')) || String(product.name || '');
@@ -137,7 +139,12 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         name: String(product.name || ''),
       });
       const priceChartingQuery = `${externalName} ${externalConsole}`.trim();
-      marketGuide = await fetchPriceChartingSnapshotByQuery(priceChartingQuery);
+      const [priceChartingSnapshot, ebaySnapshot] = await Promise.all([
+        fetchPriceChartingSnapshotByQuery(priceChartingQuery),
+        fetchEbayMarketSnapshotByQuery(priceChartingQuery),
+      ]);
+      marketGuide = priceChartingSnapshot;
+      marketGuideEbay = ebaySnapshot;
     }
 
     if (sorted.length > 0) {
@@ -147,6 +154,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         salesCount: sorted.length,
         points: sorted,
         marketGuide,
+        marketGuideEbay,
       });
     }
 
@@ -158,6 +166,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         salesCount: 0,
         points: [{ date: new Date().toISOString(), price: currentPrice }],
         marketGuide,
+        marketGuideEbay,
       });
     }
 
@@ -167,6 +176,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       salesCount: 0,
       points: [],
       marketGuide,
+      marketGuideEbay,
     });
   } catch (error: any) {
     return NextResponse.json(

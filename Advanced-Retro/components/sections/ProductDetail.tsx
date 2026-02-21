@@ -78,6 +78,32 @@ type MarketGuide = {
   gradedPrice: number | null;
 };
 
+type EbayComparable = {
+  itemId: string | null;
+  title: string | null;
+  itemWebUrl: string | null;
+  imageUrl: string | null;
+  condition: string | null;
+  currency: string | null;
+  price: number | null;
+};
+
+type EbayMarketGuide = {
+  available: boolean;
+  provider: 'ebay';
+  note?: string;
+  query?: string;
+  marketplaceId: string;
+  currency: string | null;
+  sampleSize: number;
+  totalResults: number;
+  minPrice: number | null;
+  maxPrice: number | null;
+  averagePrice: number | null;
+  medianPrice: number | null;
+  comparables: EbayComparable[];
+};
+
 const EMPTY_SUMMARY: ProductSocialSummary = {
   visits: 0,
   likes: 0,
@@ -423,6 +449,7 @@ export default function ProductDetail({
   const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
   const [priceSource, setPriceSource] = useState<'orders' | 'current' | 'none'>('none');
   const [marketGuide, setMarketGuide] = useState<MarketGuide | null>(null);
+  const [marketGuideEbay, setMarketGuideEbay] = useState<EbayMarketGuide | null>(null);
   const [loadingPriceHistory, setLoadingPriceHistory] = useState(false);
   const [priceHistoryError, setPriceHistoryError] = useState('');
 
@@ -572,6 +599,7 @@ export default function ProductDetail({
     if (isMysteryOrRouletteProduct(product as any)) {
       setPriceHistory([]);
       setMarketGuide(null);
+      setMarketGuideEbay(null);
       setPriceSource('none');
       setPriceHistoryError('');
       return;
@@ -588,6 +616,12 @@ export default function ProductDetail({
         setMarketGuide(data.marketGuide as MarketGuide);
       } else {
         setMarketGuide(null);
+      }
+
+      if (data?.marketGuideEbay && typeof data.marketGuideEbay === 'object') {
+        setMarketGuideEbay(data.marketGuideEbay as EbayMarketGuide);
+      } else {
+        setMarketGuideEbay(null);
       }
 
       const nextPoints = Array.isArray(data?.points)
@@ -615,6 +649,7 @@ export default function ProductDetail({
         setPriceHistory([{ date: new Date().toISOString(), price: Number(product.price) }]);
         setPriceSource('current');
       }
+      setMarketGuideEbay(null);
     } finally {
       setLoadingPriceHistory(false);
     }
@@ -1045,6 +1080,68 @@ export default function ProductDetail({
                       </p>
                     )}
                   </div>
+                )}
+              </div>
+
+              <div className="mt-6 border-t border-line pt-6">
+                <p className="font-semibold mb-2">Comparativa de mercado (eBay)</p>
+                {!marketGuideEbay ? (
+                  <p className="text-sm text-textMuted">Sin datos de eBay por ahora.</p>
+                ) : marketGuideEbay.available ? (
+                  <div className="space-y-2 text-sm">
+                    <p className="text-textMuted">
+                      Marketplace: {marketGuideEbay.marketplaceId} · Muestras: {marketGuideEbay.sampleSize}
+                      {marketGuideEbay.totalResults ? ` · Resultados: ${marketGuideEbay.totalResults}` : ''}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                      <p className="chip">
+                        Mínimo:{' '}
+                        {marketGuideEbay.minPrice ? `${(marketGuideEbay.minPrice / 100).toFixed(2)} €` : '—'}
+                      </p>
+                      <p className="chip">
+                        Mediana:{' '}
+                        {marketGuideEbay.medianPrice ? `${(marketGuideEbay.medianPrice / 100).toFixed(2)} €` : '—'}
+                      </p>
+                      <p className="chip">
+                        Media:{' '}
+                        {marketGuideEbay.averagePrice ? `${(marketGuideEbay.averagePrice / 100).toFixed(2)} €` : '—'}
+                      </p>
+                      <p className="chip">
+                        Máximo:{' '}
+                        {marketGuideEbay.maxPrice ? `${(marketGuideEbay.maxPrice / 100).toFixed(2)} €` : '—'}
+                      </p>
+                    </div>
+
+                    {Array.isArray(marketGuideEbay.comparables) && marketGuideEbay.comparables.length > 0 ? (
+                      <div className="mt-2 space-y-2">
+                        {marketGuideEbay.comparables.slice(0, 4).map((item, index) => (
+                          <a
+                            key={`${item.itemId || item.itemWebUrl || 'ebay'}-${index}`}
+                            href={item.itemWebUrl || '#'}
+                            target={item.itemWebUrl ? '_blank' : undefined}
+                            rel={item.itemWebUrl ? 'noreferrer noopener' : undefined}
+                            className={`flex items-center justify-between gap-2 border border-line p-2 ${
+                              item.itemWebUrl ? 'hover:border-primary' : ''
+                            }`}
+                          >
+                            <span className="text-xs text-textMuted line-clamp-1">
+                              {item.title || 'Producto eBay'}
+                            </span>
+                            <span className="text-xs text-primary">
+                              {item.price ? `${(item.price / 100).toFixed(2)} €` : '—'}
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
+                    <p className="text-xs text-textMuted">
+                      eBay refleja listados activos del mercado, no ventas cerradas.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-textMuted">
+                    No se pudo consultar eBay{marketGuideEbay.note ? `: ${marketGuideEbay.note}` : '.'}
+                  </p>
                 )}
               </div>
             </>
