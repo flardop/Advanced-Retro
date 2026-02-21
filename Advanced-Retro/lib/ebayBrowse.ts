@@ -94,8 +94,10 @@ function getAuthCredentials():
       clientSecret: string;
     }
   | null {
-  const clientId = normalizeString(process.env.EBAY_CLIENT_ID);
-  const clientSecret = normalizeString(process.env.EBAY_CLIENT_SECRET);
+  const clientId =
+    normalizeString(process.env.EBAY_CLIENT_ID) || normalizeString(process.env.EBAY_APP_ID);
+  const clientSecret =
+    normalizeString(process.env.EBAY_CLIENT_SECRET) || normalizeString(process.env.EBAY_CERT_ID);
   if (!clientId || !clientSecret) return null;
   return { clientId, clientSecret };
 }
@@ -150,7 +152,8 @@ async function getAccessToken(): Promise<{ token: string | null; note?: string }
   if (!credentials) {
     return {
       token: null,
-      note: 'EBAY_CLIENT_ID/EBAY_CLIENT_SECRET no configurados',
+      note:
+        'EBAY_CLIENT_ID/EBAY_CLIENT_SECRET no configurados (también acepta EBAY_APP_ID/EBAY_CERT_ID)',
     };
   }
 
