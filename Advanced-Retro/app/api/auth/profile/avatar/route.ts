@@ -7,13 +7,30 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const AVATAR_BUCKET = 'profile-avatars';
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const MAX_AVATAR_BYTES = 10 * 1024 * 1024;
 
 const MIME_TO_EXT: Record<string, string> = {
+  'image/jpg': 'jpg',
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
   'image/gif': 'gif',
+  'image/avif': 'avif',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+  'image/bmp': 'bmp',
+};
+
+const EXT_TO_MIME: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  avif: 'image/avif',
+  heic: 'image/heic',
+  heif: 'image/heif',
+  bmp: 'image/bmp',
 };
 
 function isMissingColumnError(error: any): boolean {
@@ -52,6 +69,37 @@ function handleError(error: any) {
   return NextResponse.json({ error: error?.message || 'Unexpected error' }, { status: 500 });
 }
 
+function isFileLike(value: unknown): value is File {
+  if (!value || typeof value !== 'object') return false;
+  return typeof (value as any).arrayBuffer === 'function' && typeof (value as any).name === 'string';
+}
+
+function resolveMimeAndExt(file: File): { mime: string; ext: string } | null {
+  const mime = String(file.type || '').toLowerCase().trim();
+  const extFromMime = MIME_TO_EXT[mime];
+  if (extFromMime) {
+    return {
+      mime: EXT_TO_MIME[extFromMime] || mime,
+      ext: extFromMime,
+    };
+  }
+
+  const extFromName = String(file.name || '')
+    .split('.')
+    .pop()
+    ?.toLowerCase()
+    ?.trim();
+
+  if (extFromName && EXT_TO_MIME[extFromName]) {
+    return {
+      mime: EXT_TO_MIME[extFromName],
+      ext: extFromName === 'jpeg' ? 'jpg' : extFromName,
+    };
+  }
+
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     const { user } = await requireUserContext();
@@ -62,22 +110,22 @@ export async function POST(req: Request) {
     const formData = await req.formData().catch(() => null);
     const avatar = formData?.get('avatar');
 
-    if (!(avatar instanceof File)) {
+    if (!isFileLike(avatar)) {
       return NextResponse.json({ error: 'Debes seleccionar una imagen' }, { status: 400 });
     }
 
-    const mime = String(avatar.type || '').toLowerCase();
-    const ext = MIME_TO_EXT[mime];
-    if (!ext) {
+    const fileMeta = resolveMimeAndExt(avatar);
+    if (!fileMeta) {
       return NextResponse.json(
-        { error: 'Formato no válido. Usa JPG, PNG, WEBP o GIF.' },
+        { error: 'Formato no válido. Usa JPG, PNG, WEBP, GIF, AVIF o HEIC.' },
         { status: 400 }
       );
     }
+    const { mime, ext } = fileMeta;
 
     if (!avatar.size || avatar.size > MAX_AVATAR_BYTES) {
       return NextResponse.json(
-        { error: 'La imagen supera el tamaño máximo (5 MB).' },
+        { error: 'La imagen supera el tamaño máximo (10 MB).' },
         { status: 400 }
       );
     }

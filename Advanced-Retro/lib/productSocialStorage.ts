@@ -2,7 +2,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const SOCIAL_BUCKET = 'product-social';
-const VISIT_COOLDOWN_MS = 1000 * 60 * 30;
+// Count page openings again without long cooldown so the UI reflects visits in real time.
+const VISIT_COOLDOWN_MS = 0;
 const MAX_REVIEWS_PER_PRODUCT = 250;
 const MAX_REVIEW_PHOTOS = 3;
 const MAX_REVIEW_PHOTO_BYTES = 2_500_000;
@@ -216,7 +217,7 @@ export function trackVisit(state: ProductSocialState, visitorId: string): boolea
   const lastIso = state.visitByVisitor[visitorKey];
   const lastAt = lastIso ? new Date(lastIso).getTime() : 0;
 
-  if (lastAt && now - lastAt < VISIT_COOLDOWN_MS) {
+  if (VISIT_COOLDOWN_MS > 0 && lastAt && now - lastAt < VISIT_COOLDOWN_MS) {
     return false;
   }
 

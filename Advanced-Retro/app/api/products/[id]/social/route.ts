@@ -156,7 +156,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     if (action === 'toggle_like') {
       if (!visitorKey) return badRequest('visitorId is required');
-      trackVisit(state, visitorKey);
       const liked = toggleLike(state, visitorKey);
       await writeProductSocialState(productId, state);
       return NextResponse.json({
@@ -185,8 +184,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           { status: 403 }
         );
       }
-
-      trackVisit(state, visitorKey);
 
       const rating = Number((body as any).rating);
       if (!Number.isInteger(rating) || rating < 1 || rating > 5) {

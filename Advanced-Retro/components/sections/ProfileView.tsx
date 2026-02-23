@@ -628,7 +628,7 @@ export default function ProfileView() {
                 onClick={() => bannerInputRef.current?.click()}
                 disabled={uploadingBanner}
               >
-                {uploadingBanner ? 'Subiendo portada...' : 'Subir portada'}
+                {uploadingBanner ? 'Subiendo banner...' : 'Subir imagen de banner'}
               </button>
               <button
                 className="chip"
@@ -828,18 +828,18 @@ export default function ProfileView() {
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={uploadingAvatar}
                   >
-                    {uploadingAvatar ? 'Subiendo avatar...' : 'Subir avatar'}
+                    {uploadingAvatar ? 'Subiendo avatar...' : 'Subir imagen de perfil'}
                   </button>
                   <button
                     className="button-secondary w-full"
                     onClick={() => bannerInputRef.current?.click()}
                     disabled={uploadingBanner}
                   >
-                    {uploadingBanner ? 'Subiendo portada...' : 'Subir banner'}
+                    {uploadingBanner ? 'Subiendo banner...' : 'Subir imagen de banner'}
                   </button>
                 </div>
                 <p className="text-xs text-textMuted">
-                  Formatos admitidos: JPG, PNG, WEBP o GIF. Avatar hasta 5 MB, banner hasta 8 MB.
+                  Formatos admitidos: JPG, PNG, WEBP, GIF, AVIF o HEIC. Avatar hasta 10 MB, banner hasta 15 MB.
                 </p>
               </div>
 
