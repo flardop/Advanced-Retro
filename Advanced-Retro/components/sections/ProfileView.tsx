@@ -58,7 +58,30 @@ type ProfileState = {
   is_verified_seller: boolean;
 };
 
-type Tab = 'profile' | 'orders' | 'tickets' | 'sell';
+type WalletTransaction = {
+  id: string;
+  amount_cents: number;
+  direction: 'credit' | 'debit';
+  status: 'pending' | 'available' | 'spent' | 'cancelled';
+  kind: string;
+  description: string | null;
+  reference_type: string | null;
+  reference_id: string | null;
+  created_at: string;
+};
+
+type WalletState = {
+  account: {
+    user_id: string;
+    balance_cents: number;
+    pending_cents: number;
+    total_earned_cents: number;
+    total_withdrawn_cents: number;
+  };
+  transactions: WalletTransaction[];
+};
+
+type Tab = 'profile' | 'wallet' | 'orders' | 'tickets' | 'sell';
 
 const PROFILE_THEMES = [
   {
@@ -124,6 +147,14 @@ function parseImageLines(input: string): string[] {
   return [...new Set(list)];
 }
 
+function toEuro(cents: number): string {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 2,
+  }).format(Number(cents || 0) / 100);
+}
+
 function isConciergeTicket(ticket: { subject?: string } | null | undefined): boolean {
   return String(ticket?.subject || '').toLowerCase().includes('encargo');
 }
@@ -173,6 +204,9 @@ export default function ProfileView() {
   const [listingOriginalityNotes, setListingOriginalityNotes] = useState('');
   const [listingImageText, setListingImageText] = useState('');
   const [publishingListing, setPublishingListing] = useState(false);
+  const [wallet, setWallet] = useState<WalletState | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletError, setWalletError] = useState('');
 
   const applyProfileSnapshot = (nextProfile: ProfileState | null) => {
     setProfile(nextProfile);
@@ -219,6 +253,24 @@ export default function ProfileView() {
     setTickets(Array.isArray(data?.tickets) ? data.tickets : []);
   };
 
+  const loadWallet = async () => {
+    setWalletLoading(true);
+    setWalletError('');
+    try {
+      const res = await fetch('/api/wallet');
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo cargar la cartera');
+      }
+      setWallet(data?.wallet || null);
+    } catch (error: any) {
+      setWallet(null);
+      setWalletError(error?.message || 'No se pudo cargar la cartera');
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
   const loadListings = async () => {
     const res = await fetch('/api/profile/listings');
     const data = await res.json().catch(() => null);
@@ -241,13 +293,20 @@ export default function ProfileView() {
       if (authUserId) {
         await loadOrders(authUserId);
       }
-      const [ticketsResult, listingsResult] = await Promise.allSettled([loadTickets(), loadListings()]);
+      const [ticketsResult, listingsResult, walletResult] = await Promise.allSettled([
+        loadTickets(),
+        loadListings(),
+        loadWallet(),
+      ]);
 
       if (ticketsResult.status === 'rejected') {
         setTickets([]);
       }
       if (listingsResult.status === 'rejected') {
         setListings([]);
+      }
+      if (walletResult.status === 'rejected') {
+        setWallet(null);
       }
     } catch (error: any) {
       toast.error(error?.message || 'Error cargando perfil');
@@ -751,13 +810,21 @@ export default function ProfileView() {
         </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
-          {(['profile', 'orders', 'tickets', 'sell'] as const).map((entry) => (
+          {(['profile', 'wallet', 'orders', 'tickets', 'sell'] as const).map((entry) => (
             <button
               key={entry}
               className={`chip ${tab === entry ? 'text-primary border-primary' : ''}`}
               onClick={() => setTab(entry)}
             >
-              {entry === 'profile' ? 'Perfil' : entry === 'orders' ? 'Pedidos' : entry === 'tickets' ? 'Tickets' : 'Vender'}
+              {entry === 'profile'
+                ? 'Perfil'
+                : entry === 'wallet'
+                  ? 'Cartera'
+                  : entry === 'orders'
+                    ? 'Pedidos'
+                    : entry === 'tickets'
+                      ? 'Tickets'
+                      : 'Vender'}
             </button>
           ))}
         </div>
@@ -946,6 +1013,111 @@ export default function ProfileView() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === 'wallet' && (
+          <div className="grid gap-6 lg:grid-cols-[0.95fr,1.05fr]">
+            <div className="glass p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-primary">Cartera interna (MVP)</p>
+                  <h2 className="text-2xl font-black mt-1">Saldo y comisiones</h2>
+                </div>
+                <button className="chip" onClick={() => void loadWallet()} disabled={walletLoading}>
+                  {walletLoading ? 'Cargando...' : 'Actualizar'}
+                </button>
+              </div>
+
+              <p className="text-sm text-textMuted mt-2">
+                MVP inicial: saldo interno para comisiones/abonos. Las retiradas automáticas se añaden después.
+              </p>
+
+              {walletError ? (
+                <div className="mt-4 border border-line p-4 text-sm text-textMuted">
+                  <p className="text-red-400">{walletError}</p>
+                  <p className="mt-2">
+                    Si aparece por primera vez, ejecuta en Supabase: <span className="text-primary">database/internal_wallet_mvp.sql</span>
+                  </p>
+                </div>
+              ) : null}
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="border border-line p-4 bg-slate-950/35">
+                  <p className="text-xs text-textMuted">Saldo disponible</p>
+                  <p className="text-2xl font-black text-primary">
+                    {toEuro(wallet?.account?.balance_cents || 0)}
+                  </p>
+                </div>
+                <div className="border border-line p-4 bg-slate-950/35">
+                  <p className="text-xs text-textMuted">Saldo pendiente</p>
+                  <p className="text-2xl font-black">
+                    {toEuro(wallet?.account?.pending_cents || 0)}
+                  </p>
+                </div>
+                <div className="border border-line p-4 bg-slate-950/35">
+                  <p className="text-xs text-textMuted">Total ganado</p>
+                  <p className="text-lg font-semibold">
+                    {toEuro(wallet?.account?.total_earned_cents || 0)}
+                  </p>
+                </div>
+                <div className="border border-line p-4 bg-slate-950/35">
+                  <p className="text-xs text-textMuted">Total retirado</p>
+                  <p className="text-lg font-semibold">
+                    {toEuro(wallet?.account?.total_withdrawn_cents || 0)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 border border-line p-4 text-sm text-textMuted">
+                <p className="font-semibold text-text">Qué incluye este MVP</p>
+                <ul className="mt-2 list-disc list-inside space-y-1">
+                  <li>Abonos internos de comisiones/ventas</li>
+                  <li>Historial de movimientos</li>
+                  <li>Base lista para retiradas y reglas antifraude</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="glass p-6">
+              <h3 className="font-semibold mb-3">Movimientos recientes</h3>
+              {!wallet && !walletLoading ? (
+                <p className="text-sm text-textMuted">Sin datos de cartera todavía.</p>
+              ) : null}
+              <div className="space-y-3 max-h-[620px] overflow-auto pr-1">
+                {(wallet?.transactions || []).length === 0 ? (
+                  <p className="text-sm text-textMuted">
+                    Aún no tienes movimientos. Cuando se te abone una comisión aparecerá aquí.
+                  </p>
+                ) : (
+                  (wallet?.transactions || []).map((tx) => {
+                    const sign = tx.direction === 'debit' ? '-' : '+';
+                    const amountClass = tx.direction === 'debit' ? 'text-red-400' : 'text-primary';
+                    return (
+                      <div key={tx.id} className="border border-line p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-sm">{tx.description || 'Movimiento de cartera'}</p>
+                            <p className="text-xs text-textMuted mt-1">
+                              {tx.kind} · {tx.status}
+                              {tx.reference_type && tx.reference_id
+                                ? ` · ${tx.reference_type}:${tx.reference_id.slice(0, 8)}`
+                                : ''}
+                            </p>
+                          </div>
+                          <p className={`text-sm font-semibold ${amountClass}`}>
+                            {sign}{toEuro(tx.amount_cents)}
+                          </p>
+                        </div>
+                        <p className="text-xs text-textMuted mt-2">
+                          {new Date(tx.created_at).toLocaleString('es-ES')}
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
         )}
 

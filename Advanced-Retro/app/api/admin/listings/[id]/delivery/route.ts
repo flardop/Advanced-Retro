@@ -3,6 +3,7 @@ import { ApiError, requireAdminContext } from '@/lib/serverAuth';
 import { sendCommunityDeliveryEmail } from '@/lib/orderEmails';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getListingById, updateCommunityListingDelivery } from '@/lib/userListings';
+import { creditCommunitySaleToSellerIfDelivered } from '@/lib/wallet';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,7 +61,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       }
     }
 
-    return NextResponse.json({ listing: enriched });
+    let walletCredit: any = null;
+    try {
+      walletCredit = await creditCommunitySaleToSellerIfDelivered({
+        listing: enriched,
+        adminId: user.id,
+      });
+    } catch (walletError: any) {
+      walletCredit = {
+        credited: false,
+        error: walletError?.message || 'No se pudo procesar el abono en cartera',
+      };
+    }
+
+    return NextResponse.json({ listing: enriched, wallet_credit: walletCredit });
   } catch (error: any) {
     if (error instanceof ApiError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
