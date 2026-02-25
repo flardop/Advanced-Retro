@@ -152,9 +152,18 @@ export async function GET() {
       .limit(50);
 
     if (error) throw error;
+    const normalizedRequests = (data || []).map((row: any) => normalizeRequest(row));
+    const latestPayout =
+      normalizedRequests.find(
+        (request: any) =>
+          request?.payout_details &&
+          typeof request.payout_details === 'object' &&
+          Object.keys(request.payout_details).length > 0
+      )?.payout_details || null;
 
     return NextResponse.json({
-      requests: (data || []).map((row: any) => normalizeRequest(row)),
+      requests: normalizedRequests,
+      last_payout_details: latestPayout,
       wallet: {
         available_cents: Math.max(0, Math.round(Number(wallet.account.balance_cents || 0))),
         outstanding_withdrawals_cents: outstanding,

@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 type UiMessage = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  links?: { label: string; href: string }[];
 };
 
 function makeId() {
@@ -32,7 +34,12 @@ export default function SupportAssistantWidget() {
       id: makeId(),
       role: 'assistant',
       content:
-        'Hola. Soy el asistente de Advanced Retro. Puedo ayudarte con envíos, pedidos, mystery box, ruleta y encargos.',
+        'Hola. Soy el asistente de Advanced Retro. Puedo ayudarte con envíos, pedidos, mystery box, ruleta, encargos y comunidad.',
+      links: [
+        { label: 'Tienda', href: '/tienda' },
+        { label: 'Ruleta', href: '/ruleta' },
+        { label: 'Mi perfil', href: '/perfil' },
+      ],
     },
   ]);
 
@@ -57,9 +64,23 @@ export default function SupportAssistantWidget() {
         }),
       });
       const data = await res.json().catch(() => null);
-      const answer = String(data?.message || '').trim() || 'No he podido responder ahora mismo.';
+      const answer =
+        String(data?.message || '').trim() || 'No he podido responder ahora mismo. Prueba de nuevo.';
+      const links = Array.isArray(data?.links)
+        ? data.links
+            .filter((item: any) => item && typeof item === 'object')
+            .map((item: any) => ({
+              label: String(item.label || '').trim(),
+              href: String(item.href || '').trim(),
+            }))
+            .filter((item: { label: string; href: string }) => item.label && item.href.startsWith('/'))
+            .slice(0, 6)
+        : [];
       setProvider(data?.provider === 'openai' ? 'openai' : 'fallback');
-      setMessages((prev) => [...prev, { id: makeId(), role: 'assistant', content: answer }]);
+      setMessages((prev) => [
+        ...prev,
+        { id: makeId(), role: 'assistant', content: answer, links: links.length ? links : undefined },
+      ]);
     } catch {
       setProvider('fallback');
       setMessages((prev) => [
@@ -69,6 +90,10 @@ export default function SupportAssistantWidget() {
           role: 'assistant',
           content:
             'No he podido responder ahora mismo. Si es algo urgente, abre un ticket desde tu perfil.',
+          links: [
+            { label: 'Abrir ticket', href: '/perfil?tab=tickets' },
+            { label: 'Mi perfil', href: '/perfil' },
+          ],
         },
       ]);
     } finally {
@@ -76,10 +101,17 @@ export default function SupportAssistantWidget() {
     }
   };
 
+  const quickPrompts = [
+    '¿Dónde veo el tracking de mi pedido?',
+    '¿Cómo funciona la ruleta y los tickets?',
+    'Quiero hacer un encargo de un juego',
+    'Tengo un problema con el login de Google',
+  ];
+
   return (
     <div className="fixed bottom-4 right-4 z-[60]">
       {open ? (
-        <div className="w-[min(94vw,380px)] glass border border-line shadow-[0_12px_40px_rgba(2,6,23,.6)]">
+        <div className="w-[min(96vw,390px)] glass border border-line shadow-[0_12px_40px_rgba(2,6,23,.6)]">
           <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
             <div>
               <p className="text-sm font-semibold">Asistente Advanced Retro</p>
@@ -110,6 +142,19 @@ export default function SupportAssistantWidget() {
                   {msg.role === 'assistant' ? 'Asistente' : 'Tú'}
                 </p>
                 <p>{msg.content}</p>
+                {msg.role === 'assistant' && Array.isArray(msg.links) && msg.links.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {msg.links.map((link) => (
+                      <Link
+                        key={`${msg.id}-${link.href}`}
+                        href={link.href}
+                        className="rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] text-primary hover:bg-primary/15"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ))}
             {loading ? (
@@ -120,10 +165,23 @@ export default function SupportAssistantWidget() {
           </div>
 
           <div className="border-t border-line p-3">
+            <div className="mb-3 flex flex-wrap gap-2">
+              {quickPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  className="rounded-full border border-line px-2.5 py-1 text-[11px] text-textMuted hover:border-primary/40 hover:text-text"
+                  onClick={() => setText(prompt)}
+                  disabled={loading}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
             <div className="flex gap-2">
               <input
                 className="flex-1 bg-transparent border border-line px-3 py-2 text-sm"
-                placeholder="Pregunta algo sobre la tienda..."
+                placeholder="Pregunta algo sobre tienda, envíos, ruleta..."
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => {
@@ -138,7 +196,8 @@ export default function SupportAssistantWidget() {
               </button>
             </div>
             <p className="text-[11px] text-textMuted mt-2">
-              Para temas de pedido/cuenta, abre ticket desde <span className="text-primary">Mi perfil</span>.
+              Para temas de pedido/cuenta, abre ticket desde <span className="text-primary">Mi perfil</span>. Las
+              respuestas del asistente no sustituyen el soporte.
             </p>
           </div>
         </div>

@@ -23,7 +23,10 @@ function handleError(error: any) {
   if (error instanceof ApiError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
-  return NextResponse.json({ error: error?.message || 'Unexpected error' }, { status: 500 });
+  return NextResponse.json(
+    { error: error?.message || 'No se pudo procesar la solicitud de tickets' },
+    { status: 500 }
+  );
 }
 
 export async function GET() {
@@ -40,12 +43,12 @@ export async function POST(req: Request) {
   try {
     const { user } = await requireUserContext();
     if (!supabaseAdmin) {
-      return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
+      return NextResponse.json({ error: 'Supabase no está configurado' }, { status: 503 });
     }
 
     const body = await req.json().catch(() => null);
-    const subject = String(body?.subject || '').trim();
-    const firstMessage = String(body?.message || '').trim();
+    const subject = String(body?.subject || '').trim().slice(0, 140);
+    const firstMessage = String(body?.message || '').trim().slice(0, 3000);
     const rawOrderId = String(body?.orderId || '').trim();
 
     if (subject.length < 4) {
@@ -54,6 +57,12 @@ export async function POST(req: Request) {
 
     if (firstMessage.length < 2) {
       return NextResponse.json({ error: 'El mensaje debe tener al menos 2 caracteres' }, { status: 400 });
+    }
+    if (firstMessage.length > 2000) {
+      return NextResponse.json(
+        { error: 'El mensaje es demasiado largo (máximo 2000 caracteres)' },
+        { status: 400 }
+      );
     }
 
     let orderId: string | null = null;
@@ -66,7 +75,7 @@ export async function POST(req: Request) {
         .maybeSingle();
 
       if (orderError || !order) {
-        return NextResponse.json({ error: 'Pedido no valido para este usuario' }, { status: 400 });
+        return NextResponse.json({ error: 'Pedido no válido para este usuario' }, { status: 400 });
       }
       orderId = order.id;
     }

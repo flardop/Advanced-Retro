@@ -158,36 +158,36 @@ const TICKET_REPLY_TEMPLATES = [
     id: 'recibido',
     label: 'Acuse recibo',
     status: 'in_progress' as const,
-    build: () =>
-      'Hola, hemos recibido tu ticket y ya lo estamos revisando. Te responderemos con una actualización lo antes posible.',
+    template:
+      'Hola {nombre}, hemos recibido tu ticket{pedido}. Ya lo estamos revisando y te responderemos con una actualización lo antes posible.',
   },
   {
     id: 'mas-datos',
     label: 'Pedir datos',
     status: 'in_progress' as const,
-    build: () =>
-      'Para poder ayudarte mejor, necesitamos más información: número de pedido (si aplica), fotos del producto/incidencia y una breve descripción de lo ocurrido.',
+    template:
+      'Hola {nombre}. Para poder ayudarte mejor necesitamos más información{pedido}: fotos del producto/incidencia y una breve descripción de lo ocurrido.',
   },
   {
     id: 'en-proceso-envio',
     label: 'Preparando envío',
     status: 'in_progress' as const,
-    build: () =>
-      'Tu consulta está revisada. Estamos preparando el pedido/envío y te avisaremos en cuanto tengamos actualización o tracking.',
+    template:
+      'Hola {nombre}. Tu consulta está revisada{pedido}. Estamos preparando el pedido/envío y te avisaremos en cuanto tengamos actualización o tracking.',
   },
   {
     id: 'tracking',
     label: 'Tracking enviado',
     status: 'resolved' as const,
-    build: () =>
-      'Tu pedido ya está enviado. Si ya ves tracking en tu perfil, puedes seguirlo desde ahí. Si hay cualquier incidencia de transporte, responde por este mismo ticket.',
+    template:
+      'Hola {nombre}. Tu pedido {pedido_id} ya está enviado. Tracking: {tracking}. Si hay cualquier incidencia de transporte, responde por este mismo ticket.',
   },
   {
     id: 'resuelto',
     label: 'Cerrar ticket',
     status: 'resolved' as const,
-    build: () =>
-      'Hemos marcado el ticket como resuelto. Si necesitas algo más o la incidencia continúa, puedes responder por aquí y lo reabrimos.',
+    template:
+      'Hola {nombre}. Hemos marcado el ticket como resuelto. Si necesitas algo más o la incidencia continúa, puedes responder por aquí y lo reabrimos.',
   },
 ] as const;
 
@@ -844,11 +844,32 @@ export default function AdminPanel() {
     toast.success('Respuesta enviada');
   };
 
+  const resolveTicketTemplateText = (templateText: string) => {
+    const ticket = selectedTicket;
+    const orderId = String(ticket?.order_id || '').trim();
+    const order = orderId ? orders.find((item) => String(item?.id || '') === orderId) : null;
+    const rawName =
+      String(ticket?.user?.name || '').trim() ||
+      String(ticket?.user?.email || '').trim().split('@')[0] ||
+      'cliente';
+    const safeName = rawName.length > 1 ? rawName : 'cliente';
+    const tracking = String(order?.shipping_tracking_code || '').trim() || 'pendiente de asignar';
+    const orderIdShort = orderId ? `#${orderId.slice(0, 8)}` : 'sin pedido';
+    const orderSuffix = orderId ? ` sobre el pedido ${orderIdShort}` : '';
+
+    return templateText
+      .replaceAll('{nombre}', safeName)
+      .replaceAll('{pedido}', orderSuffix)
+      .replaceAll('{pedido_id}', orderIdShort)
+      .replaceAll('{tracking}', tracking)
+      .trim();
+  };
+
   const applyTicketReplyTemplate = (templateId: string) => {
     const template = TICKET_REPLY_TEMPLATES.find((item) => item.id === templateId);
     if (!template) return;
 
-    const message = template.build();
+    const message = resolveTicketTemplateText(template.template);
     setTicketReply((prev) => {
       const current = prev.trim();
       if (!current) return message;
@@ -994,6 +1015,26 @@ export default function AdminPanel() {
     [users]
   );
 
+  const pendingOverview = useMemo(() => {
+    const shipping = orders.filter((order) => Boolean(order?.needs_shipping)).length;
+    const ticketsOpen = tickets.filter((ticket) => ['open', 'in_progress'].includes(String(ticket.status))).length;
+    const ticketsWaitingCustomer = tickets.filter(
+      (ticket) => ticket.last_message && ticket.last_message.is_admin
+    ).length;
+    const withdrawalsPending = withdrawals.filter((request) =>
+      ['pending', 'approved'].includes(String(request.status || '').toLowerCase())
+    ).length;
+    const listingsReview = listings.filter((listing) => String(listing?.status || '') === 'pending_review').length;
+    return {
+      shipping,
+      ticketsOpen,
+      ticketsWaitingCustomer,
+      withdrawalsPending,
+      listingsReview,
+      totalActionable: shipping + ticketsOpen + withdrawalsPending + listingsReview,
+    };
+  }, [orders, tickets, withdrawals, listings]);
+
   return (
     <section className="section">
       <div className="container">
@@ -1034,6 +1075,48 @@ export default function AdminPanel() {
             <p className="text-text">{errorMessage}</p>
           </div>
         )}
+
+        <div className="glass p-5 mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-primary">Panel de pendientes</p>
+              <h2 className="text-lg font-semibold mt-1">
+                Acciones pendientes: {pendingOverview.totalActionable}
+              </h2>
+            </div>
+            <button className="chip" onClick={load} disabled={loading}>
+              {loading ? 'Actualizando...' : 'Recalcular panel'}
+            </button>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <button className="border border-line p-3 text-left hover:border-primary/50" onClick={() => setTab('shipping')}>
+              <p className="text-xs text-textMuted">Envíos pendientes</p>
+              <p className="text-xl font-semibold text-primary mt-1">{pendingOverview.shipping}</p>
+              <p className="text-xs text-textMuted mt-1">Pedidos pagados sin tracking</p>
+            </button>
+            <button className="border border-line p-3 text-left hover:border-primary/50" onClick={() => setTab('chats')}>
+              <p className="text-xs text-textMuted">Tickets abiertos</p>
+              <p className="text-xl font-semibold text-primary mt-1">{pendingOverview.ticketsOpen}</p>
+              <p className="text-xs text-textMuted mt-1">open / in_progress</p>
+            </button>
+            <button className="border border-line p-3 text-left hover:border-primary/50" onClick={() => setTab('withdrawals')}>
+              <p className="text-xs text-textMuted">Retiradas pendientes</p>
+              <p className="text-xl font-semibold text-primary mt-1">{pendingOverview.withdrawalsPending}</p>
+              <p className="text-xs text-textMuted mt-1">pending / approved</p>
+            </button>
+            <button className="border border-line p-3 text-left hover:border-primary/50" onClick={() => setTab('listings')}>
+              <p className="text-xs text-textMuted">Publicaciones a revisar</p>
+              <p className="text-xl font-semibold text-primary mt-1">{pendingOverview.listingsReview}</p>
+              <p className="text-xs text-textMuted mt-1">Marketplace comunidad</p>
+            </button>
+            <button className="border border-line p-3 text-left hover:border-primary/50" onClick={() => setTab('chats')}>
+              <p className="text-xs text-textMuted">Chats esperando cliente</p>
+              <p className="text-xl font-semibold text-primary mt-1">{pendingOverview.ticketsWaitingCustomer}</p>
+              <p className="text-xs text-textMuted mt-1">Último mensaje admin</p>
+            </button>
+          </div>
+        </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
           {(['products', 'orders', 'shipping', 'users', 'wallets', 'withdrawals', 'chats', 'listings', 'coupons', 'mystery'] as const).map((t) => (

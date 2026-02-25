@@ -339,6 +339,23 @@ export default function ProfileView() {
       }
       setWithdrawalRequests(Array.isArray(data?.requests) ? data.requests : []);
       setWithdrawalsState(data?.wallet || null);
+
+      const lastPayout =
+        data?.last_payout_details && typeof data.last_payout_details === 'object' && !Array.isArray(data.last_payout_details)
+          ? data.last_payout_details
+          : null;
+
+      if (lastPayout) {
+        setWithdrawalAccountHolder((prev) =>
+          prev.trim() ? prev : String((lastPayout as any).account_holder || '')
+        );
+        setWithdrawalIban((prev) =>
+          prev.trim() ? prev : formatIbanForInput(String((lastPayout as any).iban || ''))
+        );
+        setWithdrawalBankName((prev) =>
+          prev.trim() ? prev : String((lastPayout as any).bank_name || '')
+        );
+      }
     } catch (error: any) {
       setWithdrawalRequests([]);
       setWithdrawalsState(null);

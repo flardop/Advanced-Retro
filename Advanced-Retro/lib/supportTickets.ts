@@ -86,7 +86,7 @@ export async function ensureTicketForOrder(options: {
     .single();
 
   if (ticketError || !ticket) {
-    throw new Error(ticketError?.message || 'Could not create support ticket');
+    throw new Error(ticketError?.message || 'No se pudo crear el ticket de soporte');
   }
 
   const { error: messageError } = await supabaseAdmin.from('support_messages').insert({
@@ -113,7 +113,7 @@ export async function createUserTicket(options: {
 
   const safeSubject = String(options.subject || '').trim().slice(0, 140) || 'Consulta general';
   const safeMessage = sanitizeMessage(options.firstMessage);
-  if (safeMessage.length < 2) throw new Error('Message too short');
+  if (safeMessage.length < 2) throw new Error('Mensaje demasiado corto');
 
   const nowIso = new Date().toISOString();
 
@@ -130,7 +130,7 @@ export async function createUserTicket(options: {
     .single();
 
   if (ticketError || !ticket) {
-    throw new Error(ticketError?.message || 'Could not create ticket');
+    throw new Error(ticketError?.message || 'No se pudo crear el ticket');
   }
 
   const { error: messageError } = await supabaseAdmin.from('support_messages').insert({
@@ -164,7 +164,7 @@ export async function getTicketById(ticketId: string) {
     .eq('id', ticketId)
     .single();
 
-  if (error || !data) throw new Error(error?.message || 'Ticket not found');
+  if (error || !data) throw new Error(error?.message || 'Ticket no encontrado');
   return data;
 }
 
@@ -191,7 +191,7 @@ export async function postTicketMessage(options: {
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const safeMessage = sanitizeMessage(options.message);
-  if (safeMessage.length < 2) throw new Error('Message too short');
+  if (safeMessage.length < 2) throw new Error('Mensaje demasiado corto');
 
   const nowIso = new Date().toISOString();
 
@@ -206,7 +206,9 @@ export async function postTicketMessage(options: {
     .select('*')
     .single();
 
-  if (messageError || !messageRow) throw new Error(messageError?.message || 'Could not send message');
+  if (messageError || !messageRow) {
+    throw new Error(messageError?.message || 'No se pudo enviar el mensaje del ticket');
+  }
 
   const updatePayload: Record<string, unknown> = { updated_at: nowIso };
   if (options.status) {

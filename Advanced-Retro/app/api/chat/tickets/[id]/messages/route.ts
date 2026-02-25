@@ -23,7 +23,10 @@ function handleError(error: any) {
   if (error instanceof ApiError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
-  return NextResponse.json({ error: error?.message || 'Unexpected error' }, { status: 500 });
+  return NextResponse.json(
+    { error: error?.message || 'No se pudo procesar el mensaje del ticket' },
+    { status: 500 }
+  );
 }
 
 async function canAccessTicket(ticketId: string) {
@@ -33,7 +36,7 @@ async function canAccessTicket(ticketId: string) {
   const isAdmin = ctx.profile.role === 'admin';
   const isOwner = String(ticket.user_id) === String(ctx.user.id);
   if (!isAdmin && !isOwner) {
-    throw new ApiError(403, 'Forbidden');
+    throw new ApiError(403, 'No autorizado para acceder a este ticket');
   }
 
   return { ctx, ticket, isAdmin };
@@ -45,7 +48,7 @@ export async function GET(
 ) {
   try {
     const ticketId = String(params?.id || '').trim();
-    if (!ticketId) return NextResponse.json({ error: 'Ticket id required' }, { status: 400 });
+    if (!ticketId) return NextResponse.json({ error: 'ID de ticket requerido' }, { status: 400 });
 
     const { ticket } = await canAccessTicket(ticketId);
     const messages = await getTicketMessages(ticket.id);
@@ -62,15 +65,21 @@ export async function POST(
 ) {
   try {
     const ticketId = String(params?.id || '').trim();
-    if (!ticketId) return NextResponse.json({ error: 'Ticket id required' }, { status: 400 });
+    if (!ticketId) return NextResponse.json({ error: 'ID de ticket requerido' }, { status: 400 });
 
     const { ctx, ticket, isAdmin } = await canAccessTicket(ticketId);
     const body = await req.json().catch(() => null);
-    const message = String(body?.message || '').trim();
+    const message = String(body?.message || '').trim().slice(0, 3000);
     const status = typeof body?.status === 'string' ? body.status : undefined;
 
     if (message.length < 2) {
       return NextResponse.json({ error: 'Mensaje demasiado corto' }, { status: 400 });
+    }
+    if (message.length > 2000) {
+      return NextResponse.json(
+        { error: 'El mensaje es demasiado largo (máximo 2000 caracteres)' },
+        { status: 400 }
+      );
     }
 
     const row = await postTicketMessage({
@@ -93,13 +102,16 @@ export async function PATCH(
 ) {
   try {
     const ticketId = String(params?.id || '').trim();
-    if (!ticketId) return NextResponse.json({ error: 'Ticket id required' }, { status: 400 });
+    if (!ticketId) return NextResponse.json({ error: 'ID de ticket requerido' }, { status: 400 });
 
     const { isAdmin } = await canAccessTicket(ticketId);
-    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!isAdmin) return NextResponse.json({ error: 'Solo un admin puede cambiar el estado del ticket' }, { status: 403 });
 
     const body = await req.json().catch(() => null);
-    const status = String(body?.status || 'open').trim();
+    const status = String(body?.status || 'open').trim().toLowerCase();
+    if (!['open', 'in_progress', 'resolved', 'closed'].includes(status)) {
+      return NextResponse.json({ error: 'Estado de ticket no válido' }, { status: 400 });
+    }
 
     await postTicketMessage({
       ticketId,

@@ -8,13 +8,13 @@ function handleError(error: any) {
   if (error instanceof ApiError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
-  return NextResponse.json({ error: error?.message || 'Unexpected error' }, { status: 500 });
+  return NextResponse.json({ error: error?.message || 'No se pudo procesar la publicación de comunidad' }, { status: 500 });
 }
 
 export async function GET() {
   try {
     if (!supabaseAdmin) {
-      return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
+      return NextResponse.json({ error: 'Supabase no está configurado' }, { status: 503 });
     }
 
     const { data: posts, error } = await supabaseAdmin
@@ -50,10 +50,13 @@ export async function POST(req: Request) {
   try {
     const { user, profile } = await requireUserContext();
     if (!supabaseAdmin) {
-      return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
+      return NextResponse.json({ error: 'Supabase no está configurado' }, { status: 503 });
     }
 
     const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Formato de petición inválido' }, { status: 400 });
+    }
     const title = String(body?.title || '').trim().slice(0, 140);
     const content = String(body?.content || '').trim().slice(0, 2500);
     const images = Array.isArray(body?.images)
@@ -69,6 +72,9 @@ export async function POST(req: Request) {
     }
     if (content.length < 20) {
       return NextResponse.json({ error: 'El contenido debe tener al menos 20 caracteres' }, { status: 400 });
+    }
+    if (content.length > 2000) {
+      return NextResponse.json({ error: 'El contenido es demasiado largo (máximo 2000 caracteres)' }, { status: 400 });
     }
 
     const { data, error } = await supabaseAdmin
