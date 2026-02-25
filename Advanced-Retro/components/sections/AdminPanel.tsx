@@ -4,7 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
-type AdminTab = 'products' | 'orders' | 'shipping' | 'users' | 'chats' | 'listings' | 'coupons' | 'mystery';
+type AdminTab =
+  | 'products'
+  | 'orders'
+  | 'shipping'
+  | 'users'
+  | 'wallets'
+  | 'chats'
+  | 'listings'
+  | 'coupons'
+  | 'mystery';
 
 type AdminTicket = {
   id: string;
@@ -53,8 +62,84 @@ type UserVisualDraft = {
   profile_theme: string;
 };
 
+type AdminWalletListItem = {
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: 'admin' | 'user';
+    avatar_url: string | null;
+    is_verified_seller: boolean;
+    created_at: string | null;
+  };
+  account: {
+    user_id: string;
+    balance_cents: number;
+    pending_cents: number;
+    total_earned_cents: number;
+    total_withdrawn_cents: number;
+    created_at: string | null;
+    updated_at: string | null;
+    initialized: boolean;
+  };
+};
+
+type AdminWalletSummary = {
+  users: number;
+  initialized: number;
+  balance_cents: number;
+  pending_cents: number;
+  total_earned_cents: number;
+  total_withdrawn_cents: number;
+};
+
+type AdminWalletDetail = {
+  user: {
+    id: string;
+    email?: string;
+    name?: string | null;
+    role?: string;
+    avatar_url?: string | null;
+    is_verified_seller?: boolean;
+    created_at?: string;
+  } | null;
+  wallet: {
+    account: {
+      user_id: string;
+      balance_cents: number;
+      pending_cents: number;
+      total_earned_cents: number;
+      total_withdrawn_cents: number;
+      created_at?: string;
+      updated_at?: string;
+    };
+    transactions: Array<{
+      id: string;
+      amount_cents: number;
+      direction: 'credit' | 'debit';
+      status: 'pending' | 'available' | 'spent' | 'cancelled';
+      kind: string;
+      description: string | null;
+      reference_type: string | null;
+      reference_id: string | null;
+      metadata?: Record<string, unknown>;
+      created_by: string | null;
+      created_at: string;
+    }>;
+  };
+};
+
 const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const;
 const PROFILE_THEME_OPTIONS = ['neon-grid', 'sunset-glow', 'arcade-purple', 'mint-wave'] as const;
+const WALLET_STATUS_OPTIONS = ['available', 'pending', 'spent'] as const;
+
+function toEuro(cents: number) {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 2,
+  }).format(Number(cents || 0) / 100);
+}
 
 export default function AdminPanel() {
   const [tab, setTab] = useState<AdminTab>('products');
@@ -68,6 +153,21 @@ export default function AdminPanel() {
   const [listings, setListings] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [mysteryBoxes, setMysteryBoxes] = useState<MysteryBoxAdmin[]>([]);
+  const [walletRows, setWalletRows] = useState<AdminWalletListItem[]>([]);
+  const [walletSummary, setWalletSummary] = useState<AdminWalletSummary | null>(null);
+  const [walletsSetupRequired, setWalletsSetupRequired] = useState(false);
+  const [walletsErrorMessage, setWalletsErrorMessage] = useState<string | null>(null);
+  const [walletSearch, setWalletSearch] = useState('');
+  const [selectedWalletUserId, setSelectedWalletUserId] = useState('');
+  const [selectedWalletDetail, setSelectedWalletDetail] = useState<AdminWalletDetail | null>(null);
+  const [walletDetailLoading, setWalletDetailLoading] = useState(false);
+  const [walletDetailError, setWalletDetailError] = useState<string | null>(null);
+  const [walletAdjustForm, setWalletAdjustForm] = useState({
+    direction: 'credit' as 'credit' | 'debit',
+    amount_cents: 500,
+    status: 'available' as 'available' | 'pending' | 'spent',
+    description: '',
+  });
 
   const [form, setForm] = useState<any>({
     name: '',
@@ -117,12 +217,68 @@ export default function AdminPanel() {
     Record<string, UserVisualDraft>
   >({});
 
+  const loadWallets = async (search = '') => {
+    setWalletsErrorMessage(null);
+    setWalletsSetupRequired(false);
+
+    try {
+      const url = new URL('/api/admin/wallets', window.location.origin);
+      if (search.trim()) url.searchParams.set('q', search.trim());
+      url.searchParams.set('limit', '200');
+
+      const res = await fetch(url.pathname + url.search);
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setWalletRows([]);
+        setWalletSummary(null);
+        setWalletsErrorMessage(data?.error || 'No se pudieron cargar las carteras');
+        return;
+      }
+
+      setWalletRows(Array.isArray(data?.wallets) ? data.wallets : []);
+      setWalletSummary(data?.summary || null);
+      setWalletsSetupRequired(Boolean(data?.setup_required));
+      if (data?.error) setWalletsErrorMessage(String(data.error));
+    } catch {
+      setWalletRows([]);
+      setWalletSummary(null);
+      setWalletsErrorMessage('No se pudieron cargar las carteras');
+    }
+  };
+
+  const openWalletDetail = async (userId: string) => {
+    if (!userId) return;
+    setSelectedWalletUserId(userId);
+    setWalletDetailLoading(true);
+    setWalletDetailError(null);
+
+    try {
+      const res = await fetch(`/api/admin/wallets/${userId}?tx_limit=60`);
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setSelectedWalletDetail(null);
+        setWalletDetailError(data?.error || 'No se pudo abrir la cartera');
+        return;
+      }
+      setSelectedWalletDetail({
+        user: data?.user || null,
+        wallet: data?.wallet || { account: null, transactions: [] },
+      } as AdminWalletDetail);
+    } catch {
+      setSelectedWalletDetail(null);
+      setWalletDetailError('No se pudo abrir la cartera');
+    } finally {
+      setWalletDetailLoading(false);
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const [pRes, oRes, uRes, tRes, lRes, cRes, mRes] = await Promise.all([
+      const [pRes, oRes, uRes, tRes, lRes, cRes, mRes, wRes] = await Promise.all([
         fetch('/api/admin/products'),
         fetch('/api/admin/orders'),
         fetch('/api/admin/users'),
@@ -130,6 +286,7 @@ export default function AdminPanel() {
         fetch('/api/admin/listings'),
         fetch('/api/admin/coupons'),
         fetch('/api/admin/mystery'),
+        fetch('/api/admin/wallets?limit=200'),
       ]);
 
       if (!pRes.ok || !oRes.ok || !uRes.ok) {
@@ -173,6 +330,20 @@ export default function AdminPanel() {
         setMysteryBoxes(Array.isArray(m?.boxes) ? m.boxes : []);
       } else {
         setMysteryBoxes([]);
+      }
+
+      if (wRes.ok) {
+        const w = await wRes.json().catch(() => null);
+        setWalletRows(Array.isArray(w?.wallets) ? w.wallets : []);
+        setWalletSummary(w?.summary || null);
+        setWalletsSetupRequired(Boolean(w?.setup_required));
+        setWalletsErrorMessage(typeof w?.error === 'string' ? w.error : null);
+      } else {
+        const wErr = await wRes.json().catch(() => null);
+        setWalletRows([]);
+        setWalletSummary(null);
+        setWalletsSetupRequired(false);
+        setWalletsErrorMessage(wErr?.error || 'No se pudieron cargar las carteras');
       }
     } catch {
       setErrorMessage('No se pudo cargar el panel de administración.');
@@ -549,6 +720,83 @@ export default function AdminPanel() {
     setListings((prev) => prev.map((item) => (item.id === listingId ? { ...item, ...data.listing } : item)));
   };
 
+  const submitWalletAdjustment = async () => {
+    if (!selectedWalletUserId) {
+      toast.error('Selecciona una cartera');
+      return;
+    }
+
+    const amountCents = Math.round(Number(walletAdjustForm.amount_cents || 0));
+    if (!Number.isFinite(amountCents) || amountCents <= 0) {
+      toast.error('El importe debe ser mayor que 0');
+      return;
+    }
+
+    const payload = {
+      user_id: selectedWalletUserId,
+      direction: walletAdjustForm.direction,
+      amount_cents: amountCents,
+      status: walletAdjustForm.status,
+      description: walletAdjustForm.description.trim() || undefined,
+    };
+
+    const res = await fetch('/api/admin/wallets/adjust', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo guardar el ajuste');
+      return;
+    }
+
+    toast.success(data?.duplicate ? 'Movimiento ya existente (idempotente)' : 'Ajuste aplicado');
+    setWalletAdjustForm((prev) => ({
+      ...prev,
+      description: '',
+    }));
+    await Promise.all([loadWallets(walletSearch), openWalletDetail(selectedWalletUserId)]);
+  };
+
+  const filteredWalletRows = useMemo(() => {
+    const q = walletSearch.trim().toLowerCase();
+    const base = q
+      ? walletRows.filter((entry) => {
+          const haystack = [
+            entry.user.email,
+            entry.user.name || '',
+            entry.user.id,
+          ]
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(q);
+        })
+      : walletRows;
+
+    return [...base].sort((a, b) => {
+      const balanceDiff = Number(b.account.balance_cents || 0) - Number(a.account.balance_cents || 0);
+      if (balanceDiff !== 0) return balanceDiff;
+      return String(a.user.email || '').localeCompare(String(b.user.email || ''), 'es');
+    });
+  }, [walletRows, walletSearch]);
+
+  useEffect(() => {
+    if (!selectedWalletUserId && filteredWalletRows.length > 0) {
+      void openWalletDetail(filteredWalletRows[0].user.id);
+      return;
+    }
+
+    if (
+      selectedWalletUserId &&
+      filteredWalletRows.length > 0 &&
+      !filteredWalletRows.some((row) => row.user.id === selectedWalletUserId)
+    ) {
+      void openWalletDetail(filteredWalletRows[0].user.id);
+    }
+  }, [filteredWalletRows, selectedWalletUserId]);
+
   const userCountVerified = useMemo(
     () => users.filter((user) => Boolean(user.is_verified_seller)).length,
     [users]
@@ -561,7 +809,7 @@ export default function AdminPanel() {
           <div>
             <p className="text-primary font-mono text-xs">ADVANCED RETRO ADMIN</p>
             <h1 className="title-display text-3xl mt-2">Panel de administración</h1>
-            <p className="text-textMuted mt-1">Gestión de catálogo, pedidos, usuarios, chats y publicaciones.</p>
+            <p className="text-textMuted mt-1">Gestión de catálogo, pedidos, usuarios, carteras, chats y publicaciones.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="glass px-4 py-3 text-center min-w-[120px]">
@@ -596,7 +844,7 @@ export default function AdminPanel() {
         )}
 
         <div className="flex flex-wrap gap-3 mb-6">
-          {(['products', 'orders', 'shipping', 'users', 'chats', 'listings', 'coupons', 'mystery'] as const).map((t) => (
+          {(['products', 'orders', 'shipping', 'users', 'wallets', 'chats', 'listings', 'coupons', 'mystery'] as const).map((t) => (
             <button
               key={t}
               className={`chip ${tab === t ? 'text-primary border-primary' : ''}`}
@@ -927,6 +1175,16 @@ export default function AdminPanel() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
+                          className="chip"
+                          onClick={() => {
+                            setTab('wallets');
+                            setWalletSearch(u.email || '');
+                            void openWalletDetail(u.id);
+                          }}
+                        >
+                          Ver cartera
+                        </button>
+                        <button
                           className={`chip ${isAdmin ? 'text-primary border-primary' : ''}`}
                           onClick={() => updateUser(u.id, { role: isAdmin ? 'user' : 'admin' })}
                         >
@@ -994,6 +1252,316 @@ export default function AdminPanel() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {tab === 'wallets' && (
+          <div className="grid gap-6 lg:grid-cols-[380px,1fr]">
+            <div className="glass p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h2 className="font-semibold">Carteras internas</h2>
+                <button
+                  className="chip"
+                  onClick={() => {
+                    void loadWallets(walletSearch);
+                    if (selectedWalletUserId) void openWalletDetail(selectedWalletUserId);
+                  }}
+                >
+                  Refrescar
+                </button>
+              </div>
+
+              <div className="grid gap-2 mb-3">
+                <input
+                  className="bg-transparent border border-line px-3 py-2 text-sm"
+                  placeholder="Buscar por email, nombre o ID"
+                  value={walletSearch}
+                  onChange={(e) => setWalletSearch(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <button className="chip" onClick={() => void loadWallets(walletSearch)}>
+                    Buscar
+                  </button>
+                  {walletSearch ? (
+                    <button
+                      className="chip"
+                      onClick={() => {
+                        setWalletSearch('');
+                        void loadWallets('');
+                      }}
+                    >
+                      Limpiar
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              {walletSummary ? (
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="border border-line p-2">
+                    <p className="text-xs text-textMuted">Usuarios</p>
+                    <p className="text-sm font-semibold">{walletSummary.users}</p>
+                    <p className="text-[11px] text-textMuted">Inicializadas: {walletSummary.initialized}</p>
+                  </div>
+                  <div className="border border-line p-2">
+                    <p className="text-xs text-textMuted">Saldo disponible total</p>
+                    <p className="text-sm font-semibold text-primary">{toEuro(walletSummary.balance_cents)}</p>
+                  </div>
+                  <div className="border border-line p-2">
+                    <p className="text-xs text-textMuted">Saldo pendiente</p>
+                    <p className="text-sm font-semibold">{toEuro(walletSummary.pending_cents)}</p>
+                  </div>
+                  <div className="border border-line p-2">
+                    <p className="text-xs text-textMuted">Total retirado</p>
+                    <p className="text-sm font-semibold">{toEuro(walletSummary.total_withdrawn_cents)}</p>
+                  </div>
+                </div>
+              ) : null}
+
+              {walletsErrorMessage ? (
+                <div className="border border-line p-3 mb-3 text-sm">
+                  <p className="text-red-400">{walletsErrorMessage}</p>
+                  {walletsSetupRequired ? (
+                    <p className="text-xs text-textMuted mt-1">
+                      Ejecuta en Supabase SQL Editor: <span className="text-primary">database/internal_wallet_mvp.sql</span>
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="space-y-2 max-h-[720px] overflow-auto pr-1">
+                {filteredWalletRows.map((entry) => {
+                  const active = selectedWalletUserId === entry.user.id;
+                  return (
+                    <button
+                      key={entry.user.id}
+                      className={`w-full text-left border p-3 ${active ? 'border-primary' : 'border-line'}`}
+                      onClick={() => void openWalletDetail(entry.user.id)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold line-clamp-1">
+                            {entry.user.name || entry.user.email}
+                          </p>
+                          <p className="text-xs text-textMuted line-clamp-1">{entry.user.email}</p>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {entry.user.role === 'admin' ? (
+                              <span className="chip text-[10px] text-primary border-primary">Admin</span>
+                            ) : null}
+                            {entry.user.is_verified_seller ? (
+                              <span className="chip text-[10px] text-primary border-primary">Verificado</span>
+                            ) : null}
+                            {!entry.account.initialized ? (
+                              <span className="chip text-[10px]">Sin inicializar</span>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-textMuted">Disponible</p>
+                          <p className="text-sm font-semibold text-primary">
+                            {toEuro(entry.account.balance_cents)}
+                          </p>
+                          <p className="text-[11px] text-textMuted">
+                            Pend: {toEuro(entry.account.pending_cents)}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+
+                {filteredWalletRows.length === 0 ? (
+                  <p className="text-sm text-textMuted">
+                    {walletsSetupRequired ? 'Cartera pendiente de configurar en Supabase.' : 'No hay resultados de carteras.'}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="glass p-6">
+              {!selectedWalletUserId ? (
+                <p className="text-textMuted">Selecciona una cartera para ver movimientos y hacer ajustes.</p>
+              ) : walletDetailLoading ? (
+                <p className="text-textMuted">Cargando cartera...</p>
+              ) : walletDetailError ? (
+                <div className="border border-line p-3">
+                  <p className="text-red-400">{walletDetailError}</p>
+                </div>
+              ) : !selectedWalletDetail?.wallet?.account ? (
+                <p className="text-textMuted">No se pudo cargar la cartera seleccionada.</p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                    <div>
+                      <p className="text-xs text-primary font-mono">CARTERA USUARIO</p>
+                      <h2 className="font-semibold text-lg mt-1">
+                        {selectedWalletDetail.user?.name || selectedWalletDetail.user?.email || selectedWalletUserId}
+                      </h2>
+                      <p className="text-xs text-textMuted">
+                        {selectedWalletDetail.user?.email || selectedWalletUserId}
+                      </p>
+                      <p className="text-xs text-textMuted mt-1">
+                        ID: {selectedWalletDetail.wallet.account.user_id}
+                      </p>
+                    </div>
+                    <button
+                      className="chip"
+                      onClick={() => void openWalletDetail(selectedWalletUserId)}
+                    >
+                      Recargar movimientos
+                    </button>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-6">
+                    <div className="border border-line p-3">
+                      <p className="text-xs text-textMuted">Disponible</p>
+                      <p className="text-lg font-semibold text-primary">
+                        {toEuro(selectedWalletDetail.wallet.account.balance_cents)}
+                      </p>
+                    </div>
+                    <div className="border border-line p-3">
+                      <p className="text-xs text-textMuted">Pendiente</p>
+                      <p className="text-lg font-semibold">
+                        {toEuro(selectedWalletDetail.wallet.account.pending_cents)}
+                      </p>
+                    </div>
+                    <div className="border border-line p-3">
+                      <p className="text-xs text-textMuted">Ganado total</p>
+                      <p className="text-lg font-semibold">
+                        {toEuro(selectedWalletDetail.wallet.account.total_earned_cents)}
+                      </p>
+                    </div>
+                    <div className="border border-line p-3">
+                      <p className="text-xs text-textMuted">Retirado total</p>
+                      <p className="text-lg font-semibold">
+                        {toEuro(selectedWalletDetail.wallet.account.total_withdrawn_cents)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border border-line p-4 mb-6">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <h3 className="font-semibold">Ajuste manual de saldo</h3>
+                      <p className="text-xs text-textMuted">
+                        Abonos/cargos internos (MVP)
+                      </p>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <select
+                        className="bg-transparent border border-line px-3 py-2"
+                        value={walletAdjustForm.direction}
+                        onChange={(e) =>
+                          setWalletAdjustForm((prev) => ({
+                            ...prev,
+                            direction: e.target.value === 'debit' ? 'debit' : 'credit',
+                          }))
+                        }
+                      >
+                        <option value="credit">Abono (credit)</option>
+                        <option value="debit">Cargo (debit)</option>
+                      </select>
+                      <select
+                        className="bg-transparent border border-line px-3 py-2"
+                        value={walletAdjustForm.status}
+                        onChange={(e) =>
+                          setWalletAdjustForm((prev) => ({
+                            ...prev,
+                            status: (WALLET_STATUS_OPTIONS.find((v) => v === e.target.value) || 'available') as
+                              | 'available'
+                              | 'pending'
+                              | 'spent',
+                          }))
+                        }
+                      >
+                        {WALLET_STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        className="bg-transparent border border-line px-3 py-2"
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={walletAdjustForm.amount_cents}
+                        onChange={(e) =>
+                          setWalletAdjustForm((prev) => ({
+                            ...prev,
+                            amount_cents: Math.max(0, Math.round(Number(e.target.value || 0))),
+                          }))
+                        }
+                        placeholder="Importe en céntimos"
+                      />
+                      <div className="border border-line px-3 py-2 text-sm">
+                        Equivale a: <span className="text-primary font-semibold">{toEuro(walletAdjustForm.amount_cents)}</span>
+                      </div>
+                      <textarea
+                        className="md:col-span-2 bg-transparent border border-line px-3 py-2 min-h-[90px]"
+                        placeholder="Motivo (ej. Ajuste manual por incidencia, bono de compensación...)"
+                        value={walletAdjustForm.description}
+                        onChange={(e) =>
+                          setWalletAdjustForm((prev) => ({ ...prev, description: e.target.value }))
+                        }
+                      />
+                      <div className="md:col-span-2 flex justify-end">
+                        <button className="button-primary" onClick={submitWalletAdjustment}>
+                          Aplicar ajuste
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border border-line p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <h3 className="font-semibold">Movimientos recientes</h3>
+                      <p className="text-xs text-textMuted">
+                        {(selectedWalletDetail.wallet.transactions || []).length} movimientos
+                      </p>
+                    </div>
+                    <div className="space-y-2 max-h-[520px] overflow-auto pr-1">
+                      {(selectedWalletDetail.wallet.transactions || []).length === 0 ? (
+                        <p className="text-sm text-textMuted">Aún no hay movimientos en esta cartera.</p>
+                      ) : (
+                        selectedWalletDetail.wallet.transactions.map((tx) => (
+                          <div key={tx.id} className="border border-line p-3">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold">
+                                  {tx.description || tx.kind}
+                                </p>
+                                <p className="text-xs text-textMuted">
+                                  {tx.kind} · {tx.direction} · {tx.status}
+                                </p>
+                                <p className="text-xs text-textMuted mt-1">
+                                  {new Date(tx.created_at).toLocaleString('es-ES')}
+                                </p>
+                                {tx.reference_type || tx.reference_id ? (
+                                  <p className="text-xs text-textMuted mt-1">
+                                    Ref: {tx.reference_type || '-'} / {tx.reference_id || '-'}
+                                  </p>
+                                ) : null}
+                              </div>
+                              <div className="text-right">
+                                <p
+                                  className={`text-sm font-semibold ${
+                                    tx.direction === 'credit' ? 'text-primary' : 'text-amber-300'
+                                  }`}
+                                >
+                                  {tx.direction === 'credit' ? '+' : '-'}
+                                  {toEuro(tx.amount_cents)}
+                                </p>
+                                <p className="text-xs text-textMuted">{tx.id.slice(0, 8)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
