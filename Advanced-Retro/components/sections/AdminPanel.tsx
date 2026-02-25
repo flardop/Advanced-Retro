@@ -10,6 +10,7 @@ type AdminTab =
   | 'shipping'
   | 'users'
   | 'wallets'
+  | 'withdrawals'
   | 'chats'
   | 'listings'
   | 'coupons'
@@ -129,6 +130,25 @@ type AdminWalletDetail = {
   };
 };
 
+type AdminWithdrawalRequest = {
+  id: string;
+  user_id: string;
+  amount_cents: number;
+  status: 'pending' | 'approved' | 'rejected' | 'paid' | 'cancelled' | string;
+  payout_method: string;
+  payout_details: Record<string, unknown>;
+  note: string | null;
+  admin_note: string | null;
+  wallet_transaction_id: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  paid_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  user?: { id: string; email?: string; name?: string | null; avatar_url?: string | null } | null;
+  reviewer?: { id: string; email?: string; name?: string | null; avatar_url?: string | null } | null;
+};
+
 const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const;
 const PROFILE_THEME_OPTIONS = ['neon-grid', 'sunset-glow', 'arcade-purple', 'mint-wave'] as const;
 const WALLET_STATUS_OPTIONS = ['available', 'pending', 'spent'] as const;
@@ -153,6 +173,17 @@ export default function AdminPanel() {
   const [listings, setListings] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [mysteryBoxes, setMysteryBoxes] = useState<MysteryBoxAdmin[]>([]);
+  const [withdrawals, setWithdrawals] = useState<AdminWithdrawalRequest[]>([]);
+  const [withdrawalsSummary, setWithdrawalsSummary] = useState<{
+    total: number;
+    amount_cents: number;
+    by_status: Record<string, number>;
+  } | null>(null);
+  const [withdrawalsSetupRequired, setWithdrawalsSetupRequired] = useState(false);
+  const [withdrawalsErrorMessage, setWithdrawalsErrorMessage] = useState<string | null>(null);
+  const [withdrawalStatusFilter, setWithdrawalStatusFilter] = useState('all');
+  const [withdrawalSearch, setWithdrawalSearch] = useState('');
+  const [withdrawalAdminNoteById, setWithdrawalAdminNoteById] = useState<Record<string, string>>({});
   const [walletRows, setWalletRows] = useState<AdminWalletListItem[]>([]);
   const [walletSummary, setWalletSummary] = useState<AdminWalletSummary | null>(null);
   const [walletsSetupRequired, setWalletsSetupRequired] = useState(false);
@@ -273,12 +304,79 @@ export default function AdminPanel() {
     }
   };
 
+  const loadWithdrawals = async (options?: { status?: string; q?: string }) => {
+    setWithdrawalsErrorMessage(null);
+    setWithdrawalsSetupRequired(false);
+    try {
+      const url = new URL('/api/admin/wallet-withdrawals', window.location.origin);
+      url.searchParams.set('status', (options?.status || withdrawalStatusFilter || 'all').trim() || 'all');
+      if ((options?.q ?? withdrawalSearch).trim()) {
+        url.searchParams.set('q', (options?.q ?? withdrawalSearch).trim());
+      }
+      url.searchParams.set('limit', '200');
+
+      const res = await fetch(url.pathname + url.search);
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setWithdrawals([]);
+        setWithdrawalsSummary(null);
+        setWithdrawalsSetupRequired(Boolean(data?.setupRequired));
+        setWithdrawalsErrorMessage(data?.error || 'No se pudieron cargar retiradas');
+        return;
+      }
+
+      setWithdrawals(Array.isArray(data?.requests) ? data.requests : []);
+      setWithdrawalsSummary(data?.summary || null);
+      setWithdrawalsSetupRequired(Boolean(data?.setupRequired));
+      if (typeof data?.error === 'string') setWithdrawalsErrorMessage(data.error);
+    } catch {
+      setWithdrawals([]);
+      setWithdrawalsSummary(null);
+      setWithdrawalsErrorMessage('No se pudieron cargar retiradas');
+    }
+  };
+
+  const updateWithdrawalStatus = async (
+    requestId: string,
+    status: 'pending' | 'approved' | 'rejected' | 'paid' | 'cancelled'
+  ) => {
+    const admin_note = (withdrawalAdminNoteById[requestId] || '').trim();
+
+    const res = await fetch(`/api/admin/wallet-withdrawals/${requestId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, admin_note }),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo actualizar la retirada');
+      return;
+    }
+
+    toast.success(
+      status === 'paid'
+        ? 'Retirada marcada como pagada (saldo debitado)'
+        : 'Retirada actualizada'
+    );
+
+    setWithdrawals((prev) => prev.map((item) => (item.id === requestId ? { ...item, ...data.request } : item)));
+    await Promise.all([loadWithdrawals(), loadWallets(walletSearch)]);
+    const targetUserId =
+      withdrawals.find((item) => item.id === requestId)?.user_id ||
+      data?.request?.user_id ||
+      selectedWalletUserId;
+    if (targetUserId && selectedWalletUserId === targetUserId) {
+      await openWalletDetail(targetUserId);
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const [pRes, oRes, uRes, tRes, lRes, cRes, mRes, wRes] = await Promise.all([
+      const [pRes, oRes, uRes, tRes, lRes, cRes, mRes, wRes, wdRes] = await Promise.all([
         fetch('/api/admin/products'),
         fetch('/api/admin/orders'),
         fetch('/api/admin/users'),
@@ -287,6 +385,7 @@ export default function AdminPanel() {
         fetch('/api/admin/coupons'),
         fetch('/api/admin/mystery'),
         fetch('/api/admin/wallets?limit=200'),
+        fetch('/api/admin/wallet-withdrawals?status=all&limit=150'),
       ]);
 
       if (!pRes.ok || !oRes.ok || !uRes.ok) {
@@ -344,6 +443,20 @@ export default function AdminPanel() {
         setWalletSummary(null);
         setWalletsSetupRequired(false);
         setWalletsErrorMessage(wErr?.error || 'No se pudieron cargar las carteras');
+      }
+
+      if (wdRes.ok) {
+        const wd = await wdRes.json().catch(() => null);
+        setWithdrawals(Array.isArray(wd?.requests) ? wd.requests : []);
+        setWithdrawalsSummary(wd?.summary || null);
+        setWithdrawalsSetupRequired(Boolean(wd?.setupRequired));
+        setWithdrawalsErrorMessage(typeof wd?.error === 'string' ? wd.error : null);
+      } else {
+        const wdErr = await wdRes.json().catch(() => null);
+        setWithdrawals([]);
+        setWithdrawalsSummary(null);
+        setWithdrawalsSetupRequired(Boolean(wdErr?.setupRequired));
+        setWithdrawalsErrorMessage(wdErr?.error || 'No se pudieron cargar retiradas');
       }
     } catch {
       setErrorMessage('No se pudo cargar el panel de administración.');
@@ -844,7 +957,7 @@ export default function AdminPanel() {
         )}
 
         <div className="flex flex-wrap gap-3 mb-6">
-          {(['products', 'orders', 'shipping', 'users', 'wallets', 'chats', 'listings', 'coupons', 'mystery'] as const).map((t) => (
+          {(['products', 'orders', 'shipping', 'users', 'wallets', 'withdrawals', 'chats', 'listings', 'coupons', 'mystery'] as const).map((t) => (
             <button
               key={t}
               className={`chip ${tab === t ? 'text-primary border-primary' : ''}`}
@@ -1562,6 +1675,171 @@ export default function AdminPanel() {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {tab === 'withdrawals' && (
+          <div className="glass p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 className="font-semibold">Solicitudes de retirada</h2>
+                <p className="text-xs text-textMuted mt-1">
+                  Gestión de aprobaciones y pagos de cartera interna (MVP).
+                </p>
+              </div>
+              <button className="chip" onClick={() => void loadWithdrawals()}>
+                Refrescar retiradas
+              </button>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-[220px,1fr,auto] mb-4">
+              <select
+                className="bg-transparent border border-line px-3 py-2"
+                value={withdrawalStatusFilter}
+                onChange={(e) => setWithdrawalStatusFilter(e.target.value)}
+              >
+                <option value="all">Todas</option>
+                <option value="pending">Pendientes</option>
+                <option value="approved">Aprobadas</option>
+                <option value="rejected">Rechazadas</option>
+                <option value="paid">Pagadas</option>
+                <option value="cancelled">Canceladas</option>
+              </select>
+              <input
+                className="bg-transparent border border-line px-3 py-2"
+                placeholder="Buscar por email, nombre, ID o nota"
+                value={withdrawalSearch}
+                onChange={(e) => setWithdrawalSearch(e.target.value)}
+              />
+              <button
+                className="chip"
+                onClick={() => void loadWithdrawals({ status: withdrawalStatusFilter, q: withdrawalSearch })}
+              >
+                Buscar
+              </button>
+            </div>
+
+            {withdrawalsSummary ? (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-4">
+                <div className="border border-line p-3">
+                  <p className="text-xs text-textMuted">Solicitudes</p>
+                  <p className="text-lg font-semibold">{withdrawalsSummary.total}</p>
+                </div>
+                <div className="border border-line p-3">
+                  <p className="text-xs text-textMuted">Importe total</p>
+                  <p className="text-lg font-semibold text-primary">{toEuro(withdrawalsSummary.amount_cents)}</p>
+                </div>
+                <div className="border border-line p-3">
+                  <p className="text-xs text-textMuted">Pendientes</p>
+                  <p className="text-lg font-semibold">{Number(withdrawalsSummary.by_status?.pending || 0)}</p>
+                </div>
+                <div className="border border-line p-3">
+                  <p className="text-xs text-textMuted">Pagadas</p>
+                  <p className="text-lg font-semibold">{Number(withdrawalsSummary.by_status?.paid || 0)}</p>
+                </div>
+              </div>
+            ) : null}
+
+            {withdrawalsErrorMessage ? (
+              <div className="border border-line p-3 mb-4">
+                <p className="text-red-400">{withdrawalsErrorMessage}</p>
+                {withdrawalsSetupRequired ? (
+                  <p className="text-xs text-textMuted mt-1">
+                    Ejecuta en Supabase SQL Editor: <span className="text-primary">database/wallet_withdrawal_requests_mvp.sql</span>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="space-y-4">
+              {withdrawals.map((request) => (
+                <div key={request.id} className="border border-line p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">
+                        {request.user?.name || request.user?.email || request.user_id}
+                      </p>
+                      <p className="text-xs text-textMuted">{request.user?.email || request.user_id}</p>
+                      <p className="text-xs text-textMuted mt-1">
+                        #{request.id} · {request.payout_method}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-semibold text-primary">{toEuro(request.amount_cents)}</p>
+                      <p className="text-xs text-textMuted">Estado: {request.status}</p>
+                      {request.paid_at ? (
+                        <p className="text-xs text-textMuted">Pagada: {new Date(request.paid_at).toLocaleString('es-ES')}</p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 mt-3 md:grid-cols-2">
+                    <div className="text-xs text-textMuted space-y-1">
+                      <p>Creada: {request.created_at ? new Date(request.created_at).toLocaleString('es-ES') : '-'}</p>
+                      <p>Revisada: {request.reviewed_at ? new Date(request.reviewed_at).toLocaleString('es-ES') : '-'}</p>
+                      {request.wallet_transaction_id ? <p>Tx cartera: {request.wallet_transaction_id}</p> : null}
+                    </div>
+                    <div className="text-xs text-textMuted space-y-1">
+                      {request.note ? <p>Nota usuario: {request.note}</p> : <p>Nota usuario: -</p>}
+                      {request.reviewer?.email ? <p>Revisado por: {request.reviewer.email}</p> : null}
+                    </div>
+                  </div>
+
+                  <textarea
+                    className="w-full bg-transparent border border-line px-3 py-2 mt-3 min-h-[80px]"
+                    placeholder="Nota interna de administración..."
+                    value={withdrawalAdminNoteById[request.id] ?? request.admin_note ?? ''}
+                    onChange={(e) =>
+                      setWithdrawalAdminNoteById((prev) => ({
+                        ...prev,
+                        [request.id]: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button className="chip" onClick={() => updateWithdrawalStatus(request.id, 'approved')}>
+                      Aprobar
+                    </button>
+                    <button className="chip" onClick={() => updateWithdrawalStatus(request.id, 'rejected')}>
+                      Rechazar
+                    </button>
+                    <button className="chip" onClick={() => updateWithdrawalStatus(request.id, 'cancelled')}>
+                      Cancelar
+                    </button>
+                    <button
+                      className="chip text-primary border-primary"
+                      onClick={() => updateWithdrawalStatus(request.id, 'paid')}
+                    >
+                      Marcar pagada (debita saldo)
+                    </button>
+                    <button className="chip" onClick={() => updateWithdrawalStatus(request.id, 'pending')}>
+                      Volver a pendiente
+                    </button>
+                    {request.user_id ? (
+                      <button
+                        className="chip"
+                        onClick={() => {
+                          setTab('wallets');
+                          setWalletSearch(request.user?.email || '');
+                          void openWalletDetail(request.user_id);
+                        }}
+                      >
+                        Abrir cartera
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+
+              {withdrawals.length === 0 ? (
+                <p className="text-sm text-textMuted">
+                  {withdrawalsSetupRequired
+                    ? 'Sistema de retiradas pendiente de configurar en Supabase.'
+                    : 'No hay solicitudes de retirada con los filtros actuales.'}
+                </p>
+              ) : null}
             </div>
           </div>
         )}
