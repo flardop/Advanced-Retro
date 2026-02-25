@@ -398,6 +398,23 @@ export default function Catalog() {
     [sorted]
   );
 
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (search.trim()) count += 1;
+    if (sortBy !== 'newest') count += 1;
+    if (favoritesOnly) count += 1;
+    if (stockOnly) count += 1;
+    if (minPrice.trim()) count += 1;
+    if (maxPrice.trim()) count += 1;
+    if (active !== 'all') count += 1;
+    return count;
+  }, [search, sortBy, favoritesOnly, stockOnly, minPrice, maxPrice, active]);
+
+  const totalVisibleStock = useMemo(
+    () => sorted.reduce((sum, product) => sum + Math.max(0, Number(product?.stock || 0)), 0),
+    [sorted]
+  );
+
   const renderMiniProduct = (product: any, label: string) => {
     const productId = String(product.id);
     return (
@@ -514,7 +531,8 @@ export default function Catalog() {
             </div>
           </div>
         ) : (
-          <div className="glass p-5 mb-6 grid gap-3 lg:grid-cols-[1.55fr,1fr,1fr,1fr,1fr]">
+          <div className="glass p-5 mb-6">
+            <div className="grid gap-3 lg:grid-cols-[1.55fr,1fr,1fr,1fr,1fr]">
             <input
               className="w-full bg-transparent border border-line px-3 py-2"
               placeholder="Buscar por nombre o descripción"
@@ -562,6 +580,40 @@ export default function Catalog() {
             >
               Solo con stock
             </button>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+                <p className="text-xs text-textMuted">Resultados visibles</p>
+                <p className="text-primary text-lg font-semibold mt-1">{sorted.length}</p>
+                <p className="text-xs text-textMuted mt-1">{activeFilterCount} filtros activos</p>
+              </div>
+              <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+                <p className="text-xs text-textMuted">Stock total visible</p>
+                <p className="text-primary text-lg font-semibold mt-1">{totalVisibleStock}</p>
+                <p className="text-xs text-textMuted mt-1">Suma de stock en esta vista</p>
+              </div>
+              <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)] flex flex-col justify-between">
+                <div>
+                  <p className="text-xs text-textMuted">Acción rápida</p>
+                  <p className="text-sm mt-1">Restablecer filtros y volver al catálogo general</p>
+                </div>
+                <button
+                  className="chip mt-2 self-start"
+                  onClick={() => {
+                    setActive('all');
+                    setSearch('');
+                    setSortBy('newest');
+                    setFavoritesOnly(false);
+                    setStockOnly(false);
+                    setMinPrice('');
+                    setMaxPrice('');
+                  }}
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -594,7 +646,7 @@ export default function Catalog() {
                 <Link
                   key={product.id}
                   href={href}
-                  className="glass p-4 hover:shadow-glow transition-shadow group"
+                  className="glass p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5"
                 >
                   <div className="relative w-full h-56 bg-surface border border-line rounded-xl overflow-hidden">
                     <SafeImage
@@ -604,7 +656,12 @@ export default function Catalog() {
                       fill
                       className="object-contain p-2"
                     />
-                    <span className="absolute top-3 left-3 chip text-xs">{product.status}</span>
+                    <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+                      <span className="chip text-xs">{product.status}</span>
+                      {Number(product.stock || 0) <= 0 ? (
+                        <span className="chip text-xs border-red-400 text-red-300">Sin stock</span>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="mt-4">
                     <h3 className="font-semibold text-text leading-tight min-h-[42px]">{product.name}</h3>
@@ -612,13 +669,16 @@ export default function Catalog() {
                     <p className="text-primary font-semibold mt-3 text-lg">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
                     <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
                     {!isMysteryView ? (
-                      <p className="text-xs text-textMuted mt-1">
-                        Visitas: {productMetrics?.visits ?? 0} · Me gusta: {productMetrics?.likes ?? 0}
-                        {productMetrics?.likedByCurrentVisitor ? ' · Favorito' : ''}
-                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                        <span className="chip">Visitas: {productMetrics?.visits ?? 0}</span>
+                        <span className="chip">Me gusta: {productMetrics?.likes ?? 0}</span>
+                        {productMetrics?.likedByCurrentVisitor ? (
+                          <span className="chip border-primary text-primary">Favorito</span>
+                        ) : null}
+                      </div>
                     ) : null}
                     {isComplete ? <p className="text-xs text-primary mt-1">Pack completo disponible</p> : null}
-                    <p className="text-xs text-textMuted mt-2 group-hover:text-text">Abrir ficha del producto</p>
+                    <p className="text-xs text-primary mt-3 group-hover:underline">Abrir ficha del producto</p>
                   </div>
                 </Link>
               );

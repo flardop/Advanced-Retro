@@ -91,12 +91,35 @@ export default function FeaturedProducts() {
           </div>
           <Link href="/tienda" className="button-secondary">Ver catálogo</Link>
         </div>
+
+        <div className="glass p-4 mb-6 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+            <p className="text-xs text-textMuted">Selección visible</p>
+            <p className="text-lg font-semibold text-primary mt-1">{products.length} productos</p>
+            <p className="text-xs text-textMuted mt-1">Destacados sin manuales sueltos en portada</p>
+          </div>
+          <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+            <p className="text-xs text-textMuted">Interés total</p>
+            <p className="text-lg font-semibold text-primary mt-1">
+              {Object.values(metrics).reduce((sum, item) => sum + Number(item.visits || 0), 0)}
+            </p>
+            <p className="text-xs text-textMuted mt-1">Visitas acumuladas de la selección</p>
+          </div>
+          <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+            <p className="text-xs text-textMuted">Favoritos</p>
+            <p className="text-lg font-semibold text-primary mt-1">
+              {Object.values(metrics).reduce((sum, item) => sum + Number(item.likes || 0), 0)}
+            </p>
+            <p className="text-xs text-textMuted mt-1">Me gusta acumulados en productos destacados</p>
+          </div>
+        </div>
+
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {products.map((product: any) => (
             <Link
               key={product.id}
               href={`/producto/${product.id}`}
-              className="glass p-4 hover:shadow-glow transition-shadow group"
+              className="glass p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5"
             >
               <div className="relative w-full h-48 bg-surface border border-line rounded-xl overflow-hidden">
                 <SafeImage
@@ -106,7 +129,12 @@ export default function FeaturedProducts() {
                   fill
                   className="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.03]"
                 />
-                {product.status ? <span className="absolute top-3 left-3 chip text-xs">{product.status}</span> : null}
+                <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                  {product.status ? <span className="chip text-xs">{product.status}</span> : null}
+                  {Number(product.stock || 0) <= 0 ? (
+                    <span className="chip text-xs border-red-400 text-red-300">Sin stock</span>
+                  ) : null}
+                </div>
               </div>
               <div className="mt-4">
                 <h3 className="font-semibold text-text leading-tight line-clamp-2 min-h-[42px]">{product.name}</h3>
@@ -114,13 +142,12 @@ export default function FeaturedProducts() {
                 <p className="text-primary font-semibold mt-3 text-lg">
                   {(product.price / 100).toFixed(2)} €
                 </p>
-                <p className="text-xs text-textMuted mt-1 flex items-center justify-between gap-2">
-                  <span>Visitas: {metrics[product.id]?.visits ?? 0}</span>
-                  <span>Me gusta: {metrics[product.id]?.likes ?? 0}</span>
-                </p>
-                <p className="text-xs text-primary mt-2">
-                  Ver detalle del producto
-                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  <span className="chip">Visitas: {metrics[product.id]?.visits ?? 0}</span>
+                  <span className="chip">Me gusta: {metrics[product.id]?.likes ?? 0}</span>
+                  <span className="chip">Stock: {Number(product.stock || 0)}</span>
+                </div>
+                <p className="text-xs text-primary mt-3 group-hover:underline">Ver detalle del producto</p>
                 <p className="sr-only">
                   Visitas: {metrics[product.id]?.visits ?? 0} · Me gusta: {metrics[product.id]?.likes ?? 0}
                 </p>

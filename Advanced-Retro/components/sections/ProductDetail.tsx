@@ -691,6 +691,7 @@ export default function ProductDetail({
 
   const selectedTotalPrice = selectedUnitPrice * Math.max(1, qty);
   const hideMarketPricing = isMysteryOrRouletteProduct(product as any);
+  const ebayDiagnosticHref = `/api/market/ebay-diagnostic?q=${encodeURIComponent(String(product?.name || ''))}`;
 
   if (!product) {
     return (
@@ -828,12 +829,12 @@ export default function ProductDetail({
             <span className="absolute bottom-4 right-4 chip text-xs">Foto {selectedImage + 1} / {images.length}</span>
           </div>
 
-          <div className="grid grid-cols-4 gap-3 mt-4">
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4">
             {images.slice(0, 12).map((img: string, index: number) => (
               <button
                 type="button"
                 key={`${img}-${index}`}
-                className={`relative h-20 rounded-xl border bg-surface overflow-hidden transition-colors ${
+                className={`relative h-20 w-20 shrink-0 sm:w-auto rounded-xl border bg-surface overflow-hidden transition-colors ${
                   selectedImage === index ? 'border-primary' : 'border-line'
                 }`}
                 onClick={() => setSelectedImage(index)}
@@ -858,6 +859,28 @@ export default function ProductDetail({
           <h1 className="title-display text-3xl sm:text-4xl mt-3">{product.name}</h1>
           <p className="text-primary text-3xl mt-4 font-semibold">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
           <p className="text-textMuted mt-4 leading-relaxed">{product.long_description || product.description}</p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+              <p className="text-xs text-textMuted">Compra segura</p>
+              <p className="text-sm mt-1">Soporte por ticket y seguimiento del pedido</p>
+            </div>
+            <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+              <p className="text-xs text-textMuted">Opciones de compra</p>
+              <p className="text-sm mt-1">Cartucho, caja, manual, insert y protectores</p>
+            </div>
+            <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+              <p className="text-xs text-textMuted">Ayuda personalizada</p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                <Link href="/perfil?tab=tickets" className="chip border-primary text-primary">
+                  Abrir ticket
+                </Link>
+                <Link href="/servicio-compra" className="chip">
+                  Encargo
+                </Link>
+              </div>
+            </div>
+          </div>
 
           <div className="mt-4 flex items-center gap-3">
             <button
@@ -1139,13 +1162,36 @@ export default function ProductDetail({
                     </p>
                   </div>
                 ) : (
-                  <p className="text-sm text-textMuted">
-                    No se pudo consultar eBay{marketGuideEbay.note ? `: ${marketGuideEbay.note}` : '.'}
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-textMuted">
+                      No se pudo consultar eBay{marketGuideEbay.note ? `: ${marketGuideEbay.note}` : '.'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <a href={ebayDiagnosticHref} target="_blank" rel="noreferrer" className="chip text-xs">
+                        Abrir diagnóstico eBay
+                      </a>
+                      <button type="button" className="chip text-xs" onClick={refreshPriceHistory}>
+                        Reintentar comparativa
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      <div className="container lg:hidden mt-4">
+        <div className="glass p-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs text-textMuted">Selección actual</p>
+            <p className="text-primary font-semibold">{(selectedTotalPrice / 100).toFixed(2)} €</p>
+            <p className="text-xs text-textMuted">{Math.max(1, qty)} ud · {selectedBundleOptions.filter((o) => o.stock > 0 && !o.isVirtual).length} items</p>
+          </div>
+          <button className="button-primary" onClick={addSelectedToCart}>
+            Añadir al carrito
+          </button>
         </div>
       </div>
 

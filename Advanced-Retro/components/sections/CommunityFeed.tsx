@@ -19,7 +19,7 @@ type CommunityListing = {
   buyer_email?: string | null;
   shipping_tracking_code?: string | null;
   delivery_status?: string;
-  user?: { name?: string | null; avatar_url?: string | null } | null;
+  user?: { id?: string | null; name?: string | null; avatar_url?: string | null } | null;
 };
 
 type MarketPolicy = {
@@ -476,6 +476,7 @@ export default function CommunityFeed() {
                       : '/logo.png';
                   const sellerName = String(listing.user?.name || 'Vendedor verificado');
                   const sellerAvatar = String(listing.user?.avatar_url || '');
+                  const sellerId = String(listing.user?.id || '').trim();
                   const commissionCents = Number(listing.commission_cents || 0);
                   return (
                     <article
@@ -559,6 +560,14 @@ export default function CommunityFeed() {
                                 Comisión tienda {Number(listing.commission_rate || 10).toFixed(0)}% ·{' '}
                                 {toPrice(commissionCents)}
                               </p>
+                              {sellerId ? (
+                                <Link
+                                  href={`/comunidad/vendedor/${sellerId}`}
+                                  className="text-[11px] text-cyan-700 hover:underline"
+                                >
+                                  Ver perfil del vendedor
+                                </Link>
+                              ) : null}
                             </div>
                           </div>
                         </div>

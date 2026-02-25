@@ -28,14 +28,32 @@ export default function Hero() {
             y atención directa por ticket en cada pedido.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-3">
-            <Link href="/tienda" className="button-primary">
+            <Link href="/tienda" className="button-primary text-center">
               Explorar tienda
             </Link>
-            <Link href="/ruleta" className="button-secondary">Probar ruleta</Link>
-            <Link href="/servicio-compra" className="button-secondary">Encargo 1:1</Link>
+            <Link href="/comunidad" className="button-secondary text-center">Ver comunidad</Link>
+            <Link href="/servicio-compra" className="button-secondary text-center">Encargo 1:1</Link>
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-4 text-sm">
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            <Link href="/tienda?category=platform:game-boy" className="chip hover:border-primary/60">
+              Game Boy
+            </Link>
+            <Link href="/tienda?category=platform:game-boy-color" className="chip hover:border-primary/60">
+              Game Boy Color
+            </Link>
+            <Link href="/tienda?category=platform:game-boy-advance" className="chip hover:border-primary/60">
+              Game Boy Advance
+            </Link>
+            <Link href="/tienda?category=cajas-misteriosas" className="chip hover:border-primary/60">
+              Mystery Box
+            </Link>
+            <Link href="/ruleta" className="chip hover:border-primary/60">
+              Ruleta
+            </Link>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-primary font-semibold text-lg">24-48h</p>
               <p className="text-textMuted">Preparación de pedidos</p>
@@ -48,6 +66,24 @@ export default function Hero() {
               <p className="text-primary font-semibold text-lg">100%</p>
               <p className="text-textMuted">Catálogo con foto y stock visible</p>
             </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <Link href="/tienda" className="glass p-3 hover:shadow-glow transition-shadow">
+              <p className="text-xs uppercase tracking-[0.14em] text-primary">Tienda</p>
+              <p className="mt-1 font-semibold">Juegos, cajas y consolas</p>
+              <p className="text-xs text-textMuted mt-1">Catálogo filtrable con fotos completas y métricas.</p>
+            </Link>
+            <Link href="/comunidad" className="glass p-3 hover:shadow-glow transition-shadow">
+              <p className="text-xs uppercase tracking-[0.14em] text-primary">Comunidad</p>
+              <p className="mt-1 font-semibold">Marketplace de usuarios</p>
+              <p className="text-xs text-textMuted mt-1">Compra segura con revisión y seguimiento de la tienda.</p>
+            </Link>
+            <Link href="/ruleta" className="glass p-3 hover:shadow-glow transition-shadow">
+              <p className="text-xs uppercase tracking-[0.14em] text-primary">Experiencias</p>
+              <p className="mt-1 font-semibold">Ruleta y mystery box</p>
+              <p className="text-xs text-textMuted mt-1">Tickets por precio y premios gestionados desde tu perfil.</p>
+            </Link>
           </div>
         </motion.div>
 
@@ -85,6 +121,23 @@ export default function Hero() {
               <div className="rounded-xl border border-line p-3 bg-[rgba(12,23,37,0.74)]">
                 <p className="text-xs text-textMuted">Marketplace comunidad</p>
                 <p className="text-sm mt-1">Publica y vende con comisión clara</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-line p-3 bg-[rgba(12,23,37,0.66)]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs text-textMuted">Siguiente paso recomendado</p>
+                  <p className="text-sm mt-1">Explora la tienda o abre un encargo si buscas una pieza concreta</p>
+                </div>
+                <div className="flex gap-2">
+                  <Link href="/tienda" className="chip border-primary text-primary">
+                    Ir a tienda
+                  </Link>
+                  <Link href="/servicio-compra" className="chip">
+                    Encargo
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

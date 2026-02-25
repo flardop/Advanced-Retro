@@ -16,6 +16,12 @@ export async function GET(req: Request) {
     }
 
     const snapshot = await fetchEbayMarketSnapshotByQuery(query);
+    if (!snapshot.available) {
+      return NextResponse.json({
+        ...snapshot,
+        debug_hint: '/api/market/ebay-diagnostic?q=' + encodeURIComponent(query),
+      });
+    }
     return NextResponse.json(snapshot);
   } catch (error: any) {
     return NextResponse.json(

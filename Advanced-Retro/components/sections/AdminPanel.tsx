@@ -199,6 +199,46 @@ function toEuro(cents: number) {
   }).format(Number(cents || 0) / 100);
 }
 
+function shortId(value: unknown): string {
+  const raw = String(value || '').trim();
+  if (!raw) return '—';
+  return raw.length > 8 ? `#${raw.slice(0, 8)}` : raw;
+}
+
+function formatDateTimeShort(value: unknown): string {
+  const raw = String(value || '').trim();
+  if (!raw) return '—';
+  const date = new Date(raw);
+  if (!Number.isFinite(date.getTime())) return raw;
+  return date.toLocaleString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function escapeCsvCell(value: unknown): string {
+  const text = String(value ?? '');
+  if (/[",;\n]/.test(text)) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+  return text;
+}
+
+function downloadCsvFile(filename: string, headers: string[], rows: Array<Array<unknown>>) {
+  const csv = [headers.join(';'), ...rows.map((row) => row.map(escapeCsvCell).join(';'))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export default function AdminPanel() {
   const [tab, setTab] = useState<AdminTab>('products');
   const [loading, setLoading] = useState(false);
@@ -1035,6 +1075,86 @@ export default function AdminPanel() {
     };
   }, [orders, tickets, withdrawals, listings]);
 
+  const workbenchQueues = useMemo(() => {
+    const shippingQueue = orders
+      .filter((order) => Boolean(order?.needs_shipping))
+      .slice(0, 6);
+    const ticketQueue = tickets
+      .filter((ticket) => ['open', 'in_progress'].includes(String(ticket.status)))
+      .slice(0, 6);
+    const withdrawalQueue = withdrawals
+      .filter((request) => ['pending', 'approved'].includes(String(request.status || '').toLowerCase()))
+      .slice(0, 6);
+    const listingQueue = listings
+      .filter((listing) => String(listing?.status || '') === 'pending_review')
+      .slice(0, 6);
+
+    return { shippingQueue, ticketQueue, withdrawalQueue, listingQueue };
+  }, [orders, tickets, withdrawals, listings]);
+
+  const exportOrdersCsvLocal = () => {
+    if (orders.length === 0) {
+      toast.error('No hay pedidos para exportar');
+      return;
+    }
+    downloadCsvFile(
+      `pedidos-admin-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['id', 'estado', 'total_eur', 'user_email', 'tracking', 'needs_shipping', 'created_at'],
+      orders.map((order) => [
+        order.id,
+        order.status,
+        (Number(order.total || 0) / 100).toFixed(2),
+        order.user?.email || order.user_id || '',
+        order.shipping_tracking_code || '',
+        order.needs_shipping ? 'yes' : 'no',
+        order.created_at || '',
+      ])
+    );
+    toast.success('CSV de pedidos descargado');
+  };
+
+  const exportTicketsCsvLocal = () => {
+    if (tickets.length === 0) {
+      toast.error('No hay tickets para exportar');
+      return;
+    }
+    downloadCsvFile(
+      `tickets-admin-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['id', 'estado', 'subject', 'user_email', 'order_id', 'updated_at', 'ultimo_mensaje_admin'],
+      tickets.map((ticket) => [
+        ticket.id,
+        ticket.status,
+        ticket.subject,
+        ticket.user?.email || ticket.user_id,
+        ticket.order_id || '',
+        ticket.updated_at || '',
+        ticket.last_message?.is_admin ? 'yes' : 'no',
+      ])
+    );
+    toast.success('CSV de tickets descargado');
+  };
+
+  const exportListingsCsvLocal = () => {
+    if (listings.length === 0) {
+      toast.error('No hay publicaciones para exportar');
+      return;
+    }
+    downloadCsvFile(
+      `marketplace-comunidad-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['id', 'estado', 'titulo', 'precio_eur', 'seller', 'delivery_status', 'created_at'],
+      listings.map((listing) => [
+        listing.id,
+        listing.status,
+        listing.title,
+        (Number(listing.price || 0) / 100).toFixed(2),
+        listing.user?.email || listing.user?.name || listing.user_id || '',
+        listing.delivery_status || '',
+        listing.created_at || '',
+      ])
+    );
+    toast.success('CSV de publicaciones descargado');
+  };
+
   return (
     <section className="section">
       <div className="container">
@@ -1115,6 +1235,184 @@ export default function AdminPanel() {
               <p className="text-xl font-semibold text-primary mt-1">{pendingOverview.ticketsWaitingCustomer}</p>
               <p className="text-xs text-textMuted mt-1">Último mensaje admin</p>
             </button>
+          </div>
+        </div>
+
+        <div className="glass p-5 mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-primary">Bandeja de trabajo</p>
+              <h2 className="text-lg font-semibold mt-1">Pendientes + acciones rápidas + exportes</h2>
+              <p className="text-xs text-textMuted mt-1">
+                Vista operativa para gestionar el día sin entrar en cada pestaña.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button className="chip" onClick={exportOrdersCsvLocal}>
+                Export pedidos CSV
+              </button>
+              <button className="chip" onClick={exportTicketsCsvLocal}>
+                Export tickets CSV
+              </button>
+              <button className="chip" onClick={exportListingsCsvLocal}>
+                Export comunidad CSV
+              </button>
+              <button className="chip" onClick={exportWithdrawalsCsv}>
+                Export retiradas CSV
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 mb-4">
+            <button className="border border-line p-3 text-left hover:border-primary/50" onClick={() => setTab('shipping')}>
+              <p className="text-xs text-textMuted">Acción rápida</p>
+              <p className="font-semibold mt-1">Gestionar envíos</p>
+              <p className="text-xs text-textMuted mt-1">Ir a pedidos listos para enviar</p>
+            </button>
+            <button className="border border-line p-3 text-left hover:border-primary/50" onClick={() => setTab('chats')}>
+              <p className="text-xs text-textMuted">Acción rápida</p>
+              <p className="font-semibold mt-1">Responder tickets</p>
+              <p className="text-xs text-textMuted mt-1">Abrir chat de soporte y usar plantillas</p>
+            </button>
+            <button className="border border-line p-3 text-left hover:border-primary/50" onClick={() => setTab('withdrawals')}>
+              <p className="text-xs text-textMuted">Acción rápida</p>
+              <p className="font-semibold mt-1">Procesar retiradas</p>
+              <p className="text-xs text-textMuted mt-1">Aprobar, rechazar o marcar pagada</p>
+            </button>
+            <button className="border border-line p-3 text-left hover:border-primary/50" onClick={() => setTab('listings')}>
+              <p className="text-xs text-textMuted">Acción rápida</p>
+              <p className="font-semibold mt-1">Moderar comunidad</p>
+              <p className="text-xs text-textMuted mt-1">Revisión de anuncios y entrega</p>
+            </button>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <div className="border border-line p-4">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h3 className="font-semibold">Cola de envíos ({workbenchQueues.shippingQueue.length})</h3>
+                <button className="chip" onClick={() => setTab('shipping')}>
+                  Abrir
+                </button>
+              </div>
+              <div className="space-y-2">
+                {workbenchQueues.shippingQueue.length === 0 ? (
+                  <p className="text-xs text-textMuted">No hay pedidos pendientes de envío.</p>
+                ) : (
+                  workbenchQueues.shippingQueue.map((order) => (
+                    <div key={`wb-shipping-${order.id}`} className="border border-line px-3 py-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-xs text-primary font-mono">{shortId(order.id)}</p>
+                          <p className="text-sm">{order.user?.email || order.user_id}</p>
+                          <p className="text-xs text-textMuted">{formatDateTimeShort(order.created_at)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">{toEuro(Number(order.total || 0))}</p>
+                          <p className="text-xs text-textMuted">{order.status}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="border border-line p-4">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h3 className="font-semibold">Cola de tickets ({workbenchQueues.ticketQueue.length})</h3>
+                <button className="chip" onClick={() => setTab('chats')}>
+                  Abrir
+                </button>
+              </div>
+              <div className="space-y-2">
+                {workbenchQueues.ticketQueue.length === 0 ? (
+                  <p className="text-xs text-textMuted">No hay tickets abiertos.</p>
+                ) : (
+                  workbenchQueues.ticketQueue.map((ticket) => (
+                    <button
+                      key={`wb-ticket-${ticket.id}`}
+                      type="button"
+                      className="w-full border border-line px-3 py-2 text-left hover:border-primary/50"
+                      onClick={() => {
+                        setTab('chats');
+                        void openTicket(ticket.id);
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs text-primary font-mono">{shortId(ticket.id)}</p>
+                          <p className="text-sm line-clamp-1">{ticket.subject}</p>
+                          <p className="text-xs text-textMuted line-clamp-1">
+                            {ticket.user?.email || ticket.user_id} · {ticket.status}
+                          </p>
+                        </div>
+                        <p className="text-xs text-textMuted whitespace-nowrap">
+                          {formatDateTimeShort(ticket.updated_at)}
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="border border-line p-4">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h3 className="font-semibold">Cola de retiradas ({workbenchQueues.withdrawalQueue.length})</h3>
+                <button className="chip" onClick={() => setTab('withdrawals')}>
+                  Abrir
+                </button>
+              </div>
+              <div className="space-y-2">
+                {workbenchQueues.withdrawalQueue.length === 0 ? (
+                  <p className="text-xs text-textMuted">No hay retiradas pendientes.</p>
+                ) : (
+                  workbenchQueues.withdrawalQueue.map((request) => (
+                    <div key={`wb-withdrawal-${request.id}`} className="border border-line px-3 py-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-xs text-primary font-mono">{shortId(request.id)}</p>
+                          <p className="text-sm">{request.user?.email || request.user_id}</p>
+                          <p className="text-xs text-textMuted">
+                            {String(request.status || '').toUpperCase()} · {formatDateTimeShort(request.created_at)}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold">{toEuro(Number(request.amount_cents || 0))}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="border border-line p-4">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h3 className="font-semibold">Cola de anuncios ({workbenchQueues.listingQueue.length})</h3>
+                <button className="chip" onClick={() => setTab('listings')}>
+                  Abrir
+                </button>
+              </div>
+              <div className="space-y-2">
+                {workbenchQueues.listingQueue.length === 0 ? (
+                  <p className="text-xs text-textMuted">No hay anuncios pendientes de revisión.</p>
+                ) : (
+                  workbenchQueues.listingQueue.map((listing) => (
+                    <div key={`wb-listing-${listing.id}`} className="border border-line px-3 py-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs text-primary font-mono">{shortId(listing.id)}</p>
+                          <p className="text-sm line-clamp-1">{listing.title}</p>
+                          <p className="text-xs text-textMuted line-clamp-1">
+                            {listing.user?.email || listing.user_id || 'seller'} · {listing.category || 'sin categoría'}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold">{toEuro(Number(listing.price || 0))}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

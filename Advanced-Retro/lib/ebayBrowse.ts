@@ -68,6 +68,47 @@ export type EbayMarketSnapshot = {
   comparables: EbayComparableItem[];
 };
 
+export type EbayDiagnostics = {
+  ok: boolean;
+  timestamp: string;
+  environment: {
+    mode: 'sandbox' | 'production';
+    baseUrl: string;
+    marketplaceId: string;
+    scope: string;
+  };
+  credentials: {
+    configured: boolean;
+    source: 'client' | 'app' | 'mixed' | 'missing';
+    clientIdPreview: string | null;
+    clientSecretConfigured: boolean;
+    sandboxKeyDetected: boolean;
+    productionKeyDetected: boolean;
+  };
+  oauth: {
+    ok: boolean;
+    source: 'cache' | 'network' | null;
+    note: string | null;
+    expiresInSecondsApprox: number | null;
+  };
+  searchTest: {
+    performed: boolean;
+    query: string | null;
+    available: boolean;
+    note: string | null;
+    sampleSize: number;
+    totalResults: number;
+    currency: string | null;
+  };
+  checks: Array<{
+    id: string;
+    status: 'ok' | 'warning' | 'error';
+    label: string;
+    detail: string;
+  }>;
+  nextActions: string[];
+};
+
 let cachedAccessToken: { value: string; expiresAtMs: number } | null = null;
 
 function normalizeString(value: unknown): string {
@@ -88,6 +129,20 @@ function getMarketplaceId(): string {
   return fromEnv || 'EBAY_ES';
 }
 
+function getCredentialSource(): 'client' | 'app' | 'mixed' | 'missing' {
+  const hasClientPair =
+    Boolean(normalizeString(process.env.EBAY_CLIENT_ID)) &&
+    Boolean(normalizeString(process.env.EBAY_CLIENT_SECRET));
+  const hasAppPair =
+    Boolean(normalizeString(process.env.EBAY_APP_ID)) &&
+    Boolean(normalizeString(process.env.EBAY_CERT_ID));
+
+  if (hasClientPair && hasAppPair) return 'mixed';
+  if (hasClientPair) return 'client';
+  if (hasAppPair) return 'app';
+  return 'missing';
+}
+
 function getAuthCredentials():
   | {
       clientId: string;
@@ -100,6 +155,13 @@ function getAuthCredentials():
     normalizeString(process.env.EBAY_CLIENT_SECRET) || normalizeString(process.env.EBAY_CERT_ID);
   if (!clientId || !clientSecret) return null;
   return { clientId, clientSecret };
+}
+
+function maskClientId(value: string | null): string | null {
+  const v = normalizeString(value || '');
+  if (!v) return null;
+  if (v.length <= 8) return `${v.slice(0, 2)}***`;
+  return `${v.slice(0, 6)}...${v.slice(-6)}`;
 }
 
 function toCentsFromPriceValue(value: unknown): number | null {
@@ -147,19 +209,30 @@ async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Respon
   }
 }
 
-async function getAccessToken(): Promise<{ token: string | null; note?: string }> {
+async function getAccessToken(): Promise<{
+  token: string | null;
+  note?: string;
+  fromCache?: boolean;
+  expiresInSecondsApprox?: number | null;
+}> {
   const credentials = getAuthCredentials();
   if (!credentials) {
     return {
       token: null,
       note:
         'EBAY_CLIENT_ID/EBAY_CLIENT_SECRET no configurados (también acepta EBAY_APP_ID/EBAY_CERT_ID)',
+      fromCache: false,
+      expiresInSecondsApprox: null,
     };
   }
 
   const now = Date.now();
   if (cachedAccessToken && cachedAccessToken.expiresAtMs > now + 15_000) {
-    return { token: cachedAccessToken.value };
+    return {
+      token: cachedAccessToken.value,
+      fromCache: true,
+      expiresInSecondsApprox: Math.max(0, Math.round((cachedAccessToken.expiresAtMs - now) / 1000)),
+    };
   }
 
   const authValue = Buffer.from(`${credentials.clientId}:${credentials.clientSecret}`).toString('base64');
@@ -187,6 +260,8 @@ async function getAccessToken(): Promise<{ token: string | null; note?: string }
       return {
         token: null,
         note: `OAuth eBay falló: ${message}`,
+        fromCache: false,
+        expiresInSecondsApprox: null,
       };
     }
 
@@ -196,6 +271,8 @@ async function getAccessToken(): Promise<{ token: string | null; note?: string }
       return {
         token: null,
         note: 'OAuth eBay devolvió una respuesta inválida',
+        fromCache: false,
+        expiresInSecondsApprox: null,
       };
     }
 
@@ -204,11 +281,17 @@ async function getAccessToken(): Promise<{ token: string | null; note?: string }
       expiresAtMs: now + expiresInSeconds * 1000,
     };
 
-    return { token: accessToken };
+    return {
+      token: accessToken,
+      fromCache: false,
+      expiresInSecondsApprox: expiresInSeconds,
+    };
   } catch (error: any) {
     return {
       token: null,
       note: error?.message || 'Error de red obteniendo token OAuth eBay',
+      fromCache: false,
+      expiresInSecondsApprox: null,
     };
   }
 }
@@ -384,4 +467,137 @@ export async function fetchEbayMarketSnapshotByQuery(query: string): Promise<Eba
       comparables: [],
     };
   }
+}
+
+export async function runEbayDiagnostics(inputQuery?: string): Promise<EbayDiagnostics> {
+  const marketplaceId = getMarketplaceId();
+  const baseUrl = getEbayBaseUrl();
+  const mode = isSandboxEnabled() ? 'sandbox' : 'production';
+  const credentials = getAuthCredentials();
+  const credentialSource = getCredentialSource();
+  const clientId =
+    normalizeString(process.env.EBAY_CLIENT_ID) || normalizeString(process.env.EBAY_APP_ID) || '';
+  const sandboxKeyDetected = clientId.includes('SBX');
+  const productionKeyDetected = Boolean(clientId) && !sandboxKeyDetected;
+  const query = normalizeString(inputQuery || '') || 'pokemon yellow game boy';
+
+  const checks: EbayDiagnostics['checks'] = [];
+  const nextActions: string[] = [];
+
+  checks.push({
+    id: 'mode',
+    status: 'ok',
+    label: 'Modo eBay',
+    detail: `${mode === 'sandbox' ? 'Sandbox' : 'Producción'} · ${baseUrl}`,
+  });
+
+  if (!credentials) {
+    checks.push({
+      id: 'credentials',
+      status: 'error',
+      label: 'Claves eBay',
+      detail: 'No se detectan claves válidas (EBAY_CLIENT_ID/SECRET o EBAY_APP_ID/CERT_ID).',
+    });
+    nextActions.push('Configura las variables EBAY_APP_ID y EBAY_CERT_ID (o EBAY_CLIENT_ID / EBAY_CLIENT_SECRET) en Vercel.');
+  } else {
+    checks.push({
+      id: 'credentials',
+      status: 'ok',
+      label: 'Claves eBay',
+      detail: `Claves detectadas (${credentialSource}). Client ID: ${maskClientId(clientId)}`,
+    });
+  }
+
+  if (sandboxKeyDetected && mode === 'production') {
+    checks.push({
+      id: 'sandbox-mismatch',
+      status: 'warning',
+      label: 'Posible desajuste sandbox/producción',
+      detail: 'Las claves parecen de Sandbox (SBX) pero EBAY_USE_SANDBOX está desactivado.',
+    });
+    nextActions.push('Activa EBAY_USE_SANDBOX=true o cambia a claves de producción.');
+  }
+
+  if (productionKeyDetected && mode === 'sandbox') {
+    checks.push({
+      id: 'production-mismatch',
+      status: 'warning',
+      label: 'Posible desajuste producción/sandbox',
+      detail: 'Las claves parecen de producción pero EBAY_USE_SANDBOX=true.',
+    });
+    nextActions.push('Desactiva EBAY_USE_SANDBOX=false si estás usando claves de producción.');
+  }
+
+  const oauthResult = await getAccessToken();
+  const oauthOk = Boolean(oauthResult.token);
+  checks.push({
+    id: 'oauth',
+    status: oauthOk ? 'ok' : 'error',
+    label: 'OAuth token',
+    detail: oauthOk
+      ? `Token obtenido correctamente (${oauthResult.fromCache ? 'cache' : 'red'})`
+      : oauthResult.note || 'No se pudo obtener token OAuth',
+  });
+  if (!oauthOk) {
+    nextActions.push('Revisa App ID / Cert ID, el modo sandbox/producción y vuelve a hacer redeploy en Vercel.');
+  }
+
+  let snapshot: EbayMarketSnapshot | null = null;
+  if (oauthOk) {
+    snapshot = await fetchEbayMarketSnapshotByQuery(query);
+    checks.push({
+      id: 'search',
+      status: snapshot.available ? 'ok' : 'warning',
+      label: 'Búsqueda Browse API',
+      detail: snapshot.available
+        ? `Marketplace ${snapshot.marketplaceId} · ${snapshot.sampleSize} muestras con precio`
+        : snapshot.note || 'La búsqueda respondió sin precios válidos',
+    });
+    if (!snapshot.available) {
+      nextActions.push('Prueba otra query más específica (ej. “pokemon yellow game boy color pal”).');
+      nextActions.push('Verifica EBAY_MARKETPLACE_ID (por ejemplo EBAY_ES o EBAY_GB) según el mercado que quieras comparar.');
+    }
+  }
+
+  if (nextActions.length === 0) {
+    nextActions.push('La configuración base está correcta. El siguiente paso es ajustar la query por producto para mejorar precisión.');
+  }
+
+  return {
+    ok: Boolean(credentials) && oauthOk,
+    timestamp: new Date().toISOString(),
+    environment: {
+      mode,
+      baseUrl,
+      marketplaceId,
+      scope: EBAY_SCOPE,
+    },
+    credentials: {
+      configured: Boolean(credentials),
+      source: credentialSource,
+      clientIdPreview: maskClientId(clientId || null),
+      clientSecretConfigured: Boolean(
+        normalizeString(process.env.EBAY_CLIENT_SECRET) || normalizeString(process.env.EBAY_CERT_ID)
+      ),
+      sandboxKeyDetected,
+      productionKeyDetected,
+    },
+    oauth: {
+      ok: oauthOk,
+      source: oauthOk ? (oauthResult.fromCache ? 'cache' : 'network') : null,
+      note: oauthOk ? null : oauthResult.note || 'No se pudo obtener token',
+      expiresInSecondsApprox: oauthResult.expiresInSecondsApprox ?? null,
+    },
+    searchTest: {
+      performed: oauthOk,
+      query: oauthOk ? query : null,
+      available: Boolean(snapshot?.available),
+      note: snapshot?.note || null,
+      sampleSize: Number(snapshot?.sampleSize || 0),
+      totalResults: Number(snapshot?.totalResults || 0),
+      currency: snapshot?.currency || null,
+    },
+    checks,
+    nextActions,
+  };
 }

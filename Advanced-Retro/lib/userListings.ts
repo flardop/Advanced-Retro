@@ -260,6 +260,77 @@ export async function getListingById(listingId: string) {
   return withCommunityDefaults(data);
 }
 
+export async function getPublicSellerProfileByUserId(userId: string) {
+  if (!supabaseAdmin) throw new Error('Supabase not configured');
+
+  const safeUserId = String(userId || '').trim();
+  if (!safeUserId) throw new Error('Seller id required');
+
+  const { data: user, error: userError } = await supabaseAdmin
+    .from('users')
+    .select(
+      'id,name,avatar_url,banner_url,bio,tagline,favorite_console,profile_theme,badges,is_verified_seller,created_at'
+    )
+    .eq('id', safeUserId)
+    .maybeSingle();
+
+  if (userError) throw new Error(userError.message);
+  if (!user) throw new Error('Vendedor no encontrado');
+
+  const { data: listings, error: listingsError } = await supabaseAdmin
+    .from('user_product_listings')
+    .select('*')
+    .eq('user_id', safeUserId)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (listingsError) throw new Error(listingsError.message);
+
+  const normalizedListings = (listings || []).map((listing) => withCommunityDefaults(listing));
+  const deliveredCount = normalizedListings.filter(
+    (listing) => String(listing.delivery_status || '') === 'delivered'
+  ).length;
+  const activeCount = normalizedListings.filter((listing) =>
+    ['pending', 'processing', 'shipped'].includes(String(listing.delivery_status || 'pending'))
+  ).length;
+  const avgPriceCents =
+    normalizedListings.length > 0
+      ? Math.round(
+          normalizedListings.reduce((sum, listing) => sum + Math.max(0, Number(listing.price || 0)), 0) /
+            normalizedListings.length
+        )
+      : 0;
+
+  const categories = [...new Set(normalizedListings.map((listing) => String(listing.category || '')).filter(Boolean))];
+
+  return {
+    seller: {
+      id: String(user.id),
+      name: typeof user.name === 'string' && user.name.trim() ? user.name.trim() : 'Coleccionista',
+      avatar_url: typeof user.avatar_url === 'string' ? user.avatar_url : null,
+      banner_url: typeof user.banner_url === 'string' ? user.banner_url : null,
+      bio: typeof user.bio === 'string' ? user.bio : null,
+      tagline: typeof user.tagline === 'string' ? user.tagline : null,
+      favorite_console: typeof user.favorite_console === 'string' ? user.favorite_console : null,
+      profile_theme: typeof user.profile_theme === 'string' ? user.profile_theme : 'neon-grid',
+      badges: Array.isArray(user.badges)
+        ? user.badges.filter((value: unknown): value is string => typeof value === 'string')
+        : [],
+      is_verified_seller: Boolean(user.is_verified_seller),
+      created_at: typeof user.created_at === 'string' ? user.created_at : null,
+    },
+    stats: {
+      approved_listings: normalizedListings.length,
+      active_listings: activeCount,
+      delivered_sales: deliveredCount,
+      average_price_cents: avgPriceCents,
+      categories,
+    },
+    listings: normalizedListings,
+  };
+}
+
 export async function updateListingStatus(options: {
   listingId: string;
   status: ListingStatus;

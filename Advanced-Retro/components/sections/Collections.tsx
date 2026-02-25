@@ -50,6 +50,9 @@ export default function Collections() {
             <h2 className="title-display text-3xl mt-2">Colecciones principales</h2>
             <p className="text-textMuted">Acceso rápido al catálogo según plataforma y tipo de producto.</p>
           </div>
+          <Link href="/tienda" className="button-secondary hidden sm:inline-flex">
+            Ver toda la tienda
+          </Link>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -57,7 +60,7 @@ export default function Collections() {
             <Link
               key={c.title}
               href={c.href}
-              className="glass p-6 sm:p-7 hover:shadow-glow transition-shadow group"
+              className="glass p-6 sm:p-7 hover:shadow-glow transition-all group hover:-translate-y-0.5"
             >
               <div className="flex items-start justify-between gap-3">
                 <p className="text-textMuted text-xs font-mono uppercase tracking-[0.12em]">Colección</p>
@@ -72,8 +75,15 @@ export default function Collections() {
                   fallbackSrc="/placeholder.svg"
                   alt={`${c.title} portada`}
                   fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  className="object-contain p-4 transition-transform duration-300 group-hover:scale-[1.03]"
                 />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#07111b] to-transparent p-3">
+                  <p className="text-xs text-textMuted">Entrar en {c.title}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between gap-2">
+                <span className="text-xs text-textMuted">Filtrado directo por plataforma</span>
+                <span className="chip text-xs border-primary/40 text-primary">Abrir colección</span>
               </div>
             </Link>
           ))}
