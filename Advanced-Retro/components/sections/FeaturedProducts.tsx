@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { sampleProducts } from '@/lib/sampleData';
 import Link from 'next/link';
-import Image from 'next/image';
-import { getProductImageUrl } from '@/lib/imageUrl';
+import SafeImage from '@/components/SafeImage';
+import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { isManualProduct } from '@/lib/productClassification';
 
 function filterFeaturedProducts(input: any[]): any[] {
@@ -99,8 +99,9 @@ export default function FeaturedProducts() {
               className="glass p-4 hover:shadow-glow transition-shadow group"
             >
               <div className="relative w-full h-48 bg-surface border border-line rounded-xl overflow-hidden">
-                <Image
+                <SafeImage
                   src={getProductImageUrl(product)}
+                  fallbackSrc={getProductFallbackImageUrl(product)}
                   alt={product.name}
                   fill
                   className="object-contain p-2 transition-transform duration-300 group-hover:scale-[1.03]"

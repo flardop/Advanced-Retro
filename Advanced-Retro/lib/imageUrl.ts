@@ -50,7 +50,7 @@ export function getProductImageUrl(product: any): string {
   const fromSingle = parseImageCollection(product?.image);
   const fromLegacy = parseImageCollection(product?.gallery_images);
   const candidate = [...fromArray, ...fromSingle, ...fromLegacy][0];
-  return isValidImageUrl(candidate) ? candidate : PLACEHOLDER;
+  return isValidImageUrl(candidate) ? candidate : getProductFallbackImageUrl(product);
 }
 
 export function getProductImageUrls(product: any): string[] {
@@ -62,5 +62,73 @@ export function getProductImageUrls(product: any): string[] {
 
   const deduped = [...new Set(raw)];
   const valid = deduped.filter(isValidImageUrl);
-  return valid.length > 0 ? valid : [PLACEHOLDER];
+  return valid.length > 0 ? valid : [getProductFallbackImageUrl(product)];
+}
+
+export function getProductFallbackImageUrl(product: any): string {
+  const name = String(product?.name || '').toLowerCase();
+  const category = String(product?.category || product?.category_id || '').toLowerCase();
+  const platform = String(product?.platform || '').toLowerCase();
+
+  if (category.includes('misterios') || category.includes('mystery') || Boolean(product?.is_mystery_box)) {
+    return '/images/mystery-box-5.png';
+  }
+
+  if (category.includes('consola') || platform.includes('consola') || name.startsWith('consola ')) {
+    return '/images/collections/consolas.svg';
+  }
+
+  if (
+    category.includes('gamecube') ||
+    platform.includes('gamecube') ||
+    platform.includes('game cube') ||
+    name.includes('gamecube') ||
+    name.includes('game cube')
+  ) {
+    return '/images/collections/gamecube.svg';
+  }
+
+  if (
+    category.includes('super-nintendo') ||
+    platform.includes('super-nintendo') ||
+    platform.includes('snes') ||
+    name.includes('super nintendo') ||
+    name.includes('snes')
+  ) {
+    return '/images/collections/super-nintendo.svg';
+  }
+
+  if (
+    category.includes('gameboy-advance') ||
+    category.includes('game-boy-advance') ||
+    platform.includes('game-boy-advance') ||
+    platform.includes('gameboy advance') ||
+    name.includes('game boy advance') ||
+    name.includes('gameboy advance')
+  ) {
+    return '/images/collections/game-boy-advance.svg';
+  }
+
+  if (
+    category.includes('gameboy-color') ||
+    category.includes('game-boy-color') ||
+    platform.includes('game-boy-color') ||
+    platform.includes('gameboy color') ||
+    name.includes('game boy color') ||
+    name.includes('gameboy color')
+  ) {
+    return '/images/collections/game-boy-color.svg';
+  }
+
+  if (
+    category.includes('gameboy') ||
+    category.includes('game-boy') ||
+    platform.includes('game-boy') ||
+    platform.includes('gameboy') ||
+    name.includes('game boy')
+  ) {
+    return '/images/collections/game-boy.svg';
+  }
+
+  return PLACEHOLDER;
 }

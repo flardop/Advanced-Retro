@@ -6,6 +6,7 @@ import Script from 'next/script';
 import { JetBrains_Mono, Manrope, Sora } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SupportAssistantWidget from '@/components/SupportAssistantWidget';
 import { absoluteUrl, getSiteUrl } from '@/lib/siteConfig';
 
 const siteUrl = getSiteUrl();
@@ -151,6 +152,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             },
           }}
         />
+        <SupportAssistantWidget />
         <Analytics />
       </body>
     </html>

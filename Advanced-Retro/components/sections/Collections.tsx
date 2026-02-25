@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import SafeImage from '@/components/SafeImage';
 
 export default function Collections() {
   const collections = [
@@ -66,7 +66,14 @@ export default function Collections() {
               <h3 className="title-display text-2xl mt-2">{c.title}</h3>
               <p className="text-textMuted mt-2 min-h-[48px]">{c.subtitle}</p>
               <div className="mt-5 h-36 rounded-xl border border-line bg-surface relative overflow-hidden">
-                <Image src={c.cover} alt={`${c.title} portada`} fill className="object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(75,228,214,.15),transparent_55%)]" />
+                <SafeImage
+                  src={c.cover}
+                  fallbackSrc="/placeholder.svg"
+                  alt={`${c.title} portada`}
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                />
               </div>
             </Link>
           ))}

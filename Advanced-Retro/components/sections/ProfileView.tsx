@@ -81,6 +81,29 @@ type WalletState = {
   transactions: WalletTransaction[];
 };
 
+type WalletWithdrawalRequest = {
+  id: string;
+  user_id: string;
+  amount_cents: number;
+  status: 'pending' | 'approved' | 'rejected' | 'paid' | 'cancelled' | string;
+  payout_method: string;
+  payout_details: Record<string, unknown>;
+  note: string | null;
+  admin_note: string | null;
+  wallet_transaction_id: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  paid_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+type WalletWithdrawalsState = {
+  available_cents: number;
+  outstanding_withdrawals_cents: number;
+  requestable_now_cents: number;
+};
+
 type Tab = 'profile' | 'wallet' | 'orders' | 'tickets' | 'sell';
 
 const PROFILE_THEMES = [
@@ -207,6 +230,13 @@ export default function ProfileView() {
   const [wallet, setWallet] = useState<WalletState | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletError, setWalletError] = useState('');
+  const [withdrawalRequests, setWithdrawalRequests] = useState<WalletWithdrawalRequest[]>([]);
+  const [withdrawalsState, setWithdrawalsState] = useState<WalletWithdrawalsState | null>(null);
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(false);
+  const [withdrawalsError, setWithdrawalsError] = useState('');
+  const [withdrawalAmountEuro, setWithdrawalAmountEuro] = useState('');
+  const [withdrawalNote, setWithdrawalNote] = useState('');
+  const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
 
   const applyProfileSnapshot = (nextProfile: ProfileState | null) => {
     setProfile(nextProfile);
@@ -271,6 +301,26 @@ export default function ProfileView() {
     }
   };
 
+  const loadWithdrawals = async () => {
+    setWithdrawalsLoading(true);
+    setWithdrawalsError('');
+    try {
+      const res = await fetch('/api/wallet/withdrawals');
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudieron cargar las retiradas');
+      }
+      setWithdrawalRequests(Array.isArray(data?.requests) ? data.requests : []);
+      setWithdrawalsState(data?.wallet || null);
+    } catch (error: any) {
+      setWithdrawalRequests([]);
+      setWithdrawalsState(null);
+      setWithdrawalsError(error?.message || 'No se pudieron cargar las retiradas');
+    } finally {
+      setWithdrawalsLoading(false);
+    }
+  };
+
   const loadListings = async () => {
     const res = await fetch('/api/profile/listings');
     const data = await res.json().catch(() => null);
@@ -293,10 +343,11 @@ export default function ProfileView() {
       if (authUserId) {
         await loadOrders(authUserId);
       }
-      const [ticketsResult, listingsResult, walletResult] = await Promise.allSettled([
+      const [ticketsResult, listingsResult, walletResult, withdrawalsResult] = await Promise.allSettled([
         loadTickets(),
         loadListings(),
         loadWallet(),
+        loadWithdrawals(),
       ]);
 
       if (ticketsResult.status === 'rejected') {
@@ -308,10 +359,55 @@ export default function ProfileView() {
       if (walletResult.status === 'rejected') {
         setWallet(null);
       }
+      if (withdrawalsResult.status === 'rejected') {
+        setWithdrawalRequests([]);
+        setWithdrawalsState(null);
+      }
     } catch (error: any) {
       toast.error(error?.message || 'Error cargando perfil');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createWithdrawalRequest = async () => {
+    const amountEuro = Number(String(withdrawalAmountEuro || '').replace(',', '.'));
+    const amountCents = Math.round(amountEuro * 100);
+
+    if (!Number.isFinite(amountCents) || amountCents <= 0) {
+      toast.error('Introduce un importe válido');
+      return;
+    }
+
+    if (withdrawalsState && amountCents > Number(withdrawalsState.requestable_now_cents || 0)) {
+      toast.error('El importe supera el saldo disponible para retirada');
+      return;
+    }
+
+    setSubmittingWithdrawal(true);
+    try {
+      const res = await fetch('/api/wallet/withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount_cents: amountCents,
+          payout_method: 'manual_transfer',
+          note: withdrawalNote,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo crear la solicitud de retirada');
+      }
+
+      setWithdrawalAmountEuro('');
+      setWithdrawalNote('');
+      await Promise.all([loadWithdrawals(), loadWallet()]);
+      toast.success('Solicitud de retirada enviada');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo crear la retirada');
+    } finally {
+      setSubmittingWithdrawal(false);
     }
   };
 
@@ -703,7 +799,7 @@ export default function ProfileView() {
             <input
               ref={bannerInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,image/bmp"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -750,7 +846,7 @@ export default function ProfileView() {
                 <input
                   ref={avatarInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,image/bmp"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -1024,13 +1120,19 @@ export default function ProfileView() {
                   <p className="text-xs uppercase tracking-[0.2em] text-primary">Cartera interna (MVP)</p>
                   <h2 className="text-2xl font-black mt-1">Saldo y comisiones</h2>
                 </div>
-                <button className="chip" onClick={() => void loadWallet()} disabled={walletLoading}>
-                  {walletLoading ? 'Cargando...' : 'Actualizar'}
+                <button
+                  className="chip"
+                  onClick={() => {
+                    void Promise.all([loadWallet(), loadWithdrawals()]);
+                  }}
+                  disabled={walletLoading || withdrawalsLoading}
+                >
+                  {walletLoading || withdrawalsLoading ? 'Cargando...' : 'Actualizar'}
                 </button>
               </div>
 
               <p className="text-sm text-textMuted mt-2">
-                MVP inicial: saldo interno para comisiones/abonos. Las retiradas automáticas se añaden después.
+                MVP inicial: saldo interno para comisiones/abonos y solicitudes de retirada con revisión manual.
               </p>
 
               {walletError ? (
@@ -1038,6 +1140,15 @@ export default function ProfileView() {
                   <p className="text-red-400">{walletError}</p>
                   <p className="mt-2">
                     Si aparece por primera vez, ejecuta en Supabase: <span className="text-primary">database/internal_wallet_mvp.sql</span>
+                  </p>
+                </div>
+              ) : null}
+
+              {withdrawalsError ? (
+                <div className="mt-4 border border-line p-4 text-sm text-textMuted">
+                  <p className="text-red-400">{withdrawalsError}</p>
+                  <p className="mt-2">
+                    Si es la primera vez, ejecuta en Supabase: <span className="text-primary">database/wallet_withdrawal_requests_mvp.sql</span>
                   </p>
                 </div>
               ) : null}
@@ -1070,21 +1181,113 @@ export default function ProfileView() {
               </div>
 
               <div className="mt-4 border border-line p-4 text-sm text-textMuted">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs text-textMuted">Disponible para solicitar</p>
+                    <p className="text-lg font-semibold text-primary">
+                      {toEuro(withdrawalsState?.requestable_now_cents || 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-textMuted">Retiradas pendientes/aprobadas</p>
+                    <p className="text-lg font-semibold">
+                      {toEuro(withdrawalsState?.outstanding_withdrawals_cents || 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-textMuted">Solicitudes</p>
+                    <p className="text-lg font-semibold">{withdrawalRequests.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 border border-line p-4 text-sm text-textMuted">
+                <p className="font-semibold text-text">Solicitar retirada (revisión manual)</p>
+                <p className="mt-1">
+                  De momento las retiradas son manuales: tú solicitas, administración revisa y marca el pago.
+                </p>
+                <div className="mt-3 grid gap-3">
+                  <div className="grid gap-3 sm:grid-cols-[1fr,auto]">
+                    <input
+                      className="w-full bg-transparent border border-line px-3 py-2"
+                      inputMode="decimal"
+                      placeholder="Importe (ej. 15.50)"
+                      value={withdrawalAmountEuro}
+                      onChange={(e) => setWithdrawalAmountEuro(e.target.value)}
+                    />
+                    <button
+                      className="button-primary"
+                      onClick={createWithdrawalRequest}
+                      disabled={submittingWithdrawal || withdrawalsLoading}
+                    >
+                      {submittingWithdrawal ? 'Enviando...' : 'Solicitar retirada'}
+                    </button>
+                  </div>
+                  <textarea
+                    className="w-full bg-transparent border border-line px-3 py-2 min-h-[84px]"
+                    placeholder="Nota opcional (método preferido, referencia, observaciones)"
+                    value={withdrawalNote}
+                    onChange={(e) => setWithdrawalNote(e.target.value)}
+                  />
+                  <p className="text-xs">
+                    Máximo disponible ahora: <span className="text-primary">{toEuro(withdrawalsState?.requestable_now_cents || 0)}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 border border-line p-4 text-sm text-textMuted">
                 <p className="font-semibold text-text">Qué incluye este MVP</p>
                 <ul className="mt-2 list-disc list-inside space-y-1">
                   <li>Abonos internos de comisiones/ventas</li>
                   <li>Historial de movimientos</li>
-                  <li>Base lista para retiradas y reglas antifraude</li>
+                  <li>Solicitudes de retirada con revisión manual en admin</li>
+                  <li>Base lista para antifraude y automatización posterior</li>
                 </ul>
               </div>
             </div>
 
             <div className="glass p-6">
+              <div className="mb-5">
+                <h3 className="font-semibold">Solicitudes de retirada</h3>
+                <div className="mt-3 space-y-3 max-h-[250px] overflow-auto pr-1">
+                  {withdrawalRequests.length === 0 ? (
+                    <p className="text-sm text-textMuted">
+                      Aún no has creado solicitudes de retirada.
+                    </p>
+                  ) : (
+                    withdrawalRequests.map((request) => (
+                      <div key={request.id} className="border border-line p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-sm">{toEuro(request.amount_cents)}</p>
+                            <p className="text-xs text-textMuted mt-1">
+                              Estado: {request.status} · Método: {request.payout_method}
+                            </p>
+                          </div>
+                          <p className="text-xs text-textMuted">
+                            {request.created_at ? new Date(request.created_at).toLocaleString('es-ES') : '-'}
+                          </p>
+                        </div>
+                        {request.note ? <p className="text-xs text-textMuted mt-2">Tu nota: {request.note}</p> : null}
+                        {request.admin_note ? (
+                          <p className="text-xs text-primary mt-2">Admin: {request.admin_note}</p>
+                        ) : null}
+                        {request.paid_at ? (
+                          <p className="text-xs text-primary mt-2">
+                            Pagada: {new Date(request.paid_at).toLocaleString('es-ES')}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
               <h3 className="font-semibold mb-3">Movimientos recientes</h3>
               {!wallet && !walletLoading ? (
                 <p className="text-sm text-textMuted">Sin datos de cartera todavía.</p>
               ) : null}
-              <div className="space-y-3 max-h-[620px] overflow-auto pr-1">
+              <div className="space-y-3 max-h-[360px] overflow-auto pr-1">
                 {(wallet?.transactions || []).length === 0 ? (
                   <p className="text-sm text-textMuted">
                     Aún no tienes movimientos. Cuando se te abone una comisión aparecerá aquí.
