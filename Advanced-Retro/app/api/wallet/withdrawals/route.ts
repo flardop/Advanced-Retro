@@ -49,6 +49,78 @@ function normalizeRequest(row: any) {
   };
 }
 
+function normalizeIban(input: unknown): string {
+  return String(input || '')
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+function isValidIbanChecksum(iban: string): boolean {
+  const value = normalizeIban(iban);
+  if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(value)) return false;
+  const rearranged = `${value.slice(4)}${value.slice(0, 4)}`;
+  const expanded = rearranged.replace(/[A-Z]/g, (char) => String(char.charCodeAt(0) - 55));
+  let remainder = 0;
+  for (const digit of expanded) {
+    remainder = (remainder * 10 + Number(digit)) % 97;
+  }
+  return remainder === 1;
+}
+
+function maskIban(iban: string): string {
+  const value = normalizeIban(iban);
+  if (value.length < 8) return value;
+  return `${value.slice(0, 4)} ${'*'.repeat(Math.max(0, value.length - 8))}${value.slice(-4)}`;
+}
+
+function sanitizePayoutDetails(payoutMethodInput: unknown, rawDetails: unknown) {
+  const method = String(payoutMethodInput || 'bank_transfer')
+    .trim()
+    .toLowerCase();
+
+  if (method !== 'bank_transfer' && method !== 'manual_transfer') {
+    throw new Error('Método de retirada no válido');
+  }
+
+  const source = rawDetails && typeof rawDetails === 'object' && !Array.isArray(rawDetails) ? (rawDetails as any) : {};
+
+  const accountHolder = String(source.account_holder || source.accountHolder || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 140);
+  const iban = normalizeIban(source.iban);
+  const bankName = String(source.bank_name || source.bankName || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 140);
+  const country = String(source.country || 'ES')
+    .trim()
+    .toUpperCase()
+    .slice(0, 2);
+
+  if (accountHolder.length < 4) {
+    throw new Error('Titular de la cuenta no válido');
+  }
+  if (!iban) {
+    throw new Error('Debes indicar un IBAN');
+  }
+  if (!isValidIbanChecksum(iban)) {
+    throw new Error('IBAN no válido');
+  }
+
+  return {
+    payout_method: 'bank_transfer',
+    payout_details: {
+      account_holder: accountHolder,
+      iban,
+      iban_masked: maskIban(iban),
+      bank_name: bankName || null,
+      country: country || 'ES',
+    },
+  };
+}
+
 async function getOutstandingWithdrawalsCents(userId: string) {
   if (!supabaseAdmin) throw new Error('Supabase not configured');
   const { data, error } = await supabaseAdmin
@@ -113,15 +185,12 @@ export async function POST(req: Request) {
     const payoutMethod =
       typeof body?.payout_method === 'string' && body.payout_method.trim()
         ? body.payout_method.trim().slice(0, 80)
-        : 'manual_transfer';
+        : 'bank_transfer';
     const note =
       typeof body?.note === 'string' && body.note.trim()
         ? body.note.trim().slice(0, 1000)
         : null;
-    const payoutDetails =
-      body?.payout_details && typeof body.payout_details === 'object' && !Array.isArray(body.payout_details)
-        ? body.payout_details
-        : {};
+    const payout = sanitizePayoutDetails(payoutMethod, body?.payout_details);
 
     const [wallet, outstanding] = await Promise.all([
       getUserWalletSnapshot(user.id, 20),
@@ -147,8 +216,8 @@ export async function POST(req: Request) {
         user_id: user.id,
         amount_cents: amountCents,
         status: 'pending',
-        payout_method: payoutMethod,
-        payout_details: payoutDetails,
+        payout_method: payout.payout_method,
+        payout_details: payout.payout_details,
         note,
         created_at: nowIso,
         updated_at: nowIso,

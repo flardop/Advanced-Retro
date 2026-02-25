@@ -153,6 +153,44 @@ const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const;
 const PROFILE_THEME_OPTIONS = ['neon-grid', 'sunset-glow', 'arcade-purple', 'mint-wave'] as const;
 const WALLET_STATUS_OPTIONS = ['available', 'pending', 'spent'] as const;
 
+const TICKET_REPLY_TEMPLATES = [
+  {
+    id: 'recibido',
+    label: 'Acuse recibo',
+    status: 'in_progress' as const,
+    build: () =>
+      'Hola, hemos recibido tu ticket y ya lo estamos revisando. Te responderemos con una actualización lo antes posible.',
+  },
+  {
+    id: 'mas-datos',
+    label: 'Pedir datos',
+    status: 'in_progress' as const,
+    build: () =>
+      'Para poder ayudarte mejor, necesitamos más información: número de pedido (si aplica), fotos del producto/incidencia y una breve descripción de lo ocurrido.',
+  },
+  {
+    id: 'en-proceso-envio',
+    label: 'Preparando envío',
+    status: 'in_progress' as const,
+    build: () =>
+      'Tu consulta está revisada. Estamos preparando el pedido/envío y te avisaremos en cuanto tengamos actualización o tracking.',
+  },
+  {
+    id: 'tracking',
+    label: 'Tracking enviado',
+    status: 'resolved' as const,
+    build: () =>
+      'Tu pedido ya está enviado. Si ya ves tracking en tu perfil, puedes seguirlo desde ahí. Si hay cualquier incidencia de transporte, responde por este mismo ticket.',
+  },
+  {
+    id: 'resuelto',
+    label: 'Cerrar ticket',
+    status: 'resolved' as const,
+    build: () =>
+      'Hemos marcado el ticket como resuelto. Si necesitas algo más o la incidencia continúa, puedes responder por aquí y lo reabrimos.',
+  },
+] as const;
+
 function toEuro(cents: number) {
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',
@@ -368,6 +406,34 @@ export default function AdminPanel() {
       selectedWalletUserId;
     if (targetUserId && selectedWalletUserId === targetUserId) {
       await openWalletDetail(targetUserId);
+    }
+  };
+
+  const exportWithdrawalsCsv = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.set('status', withdrawalStatusFilter || 'all');
+      if (withdrawalSearch.trim()) params.set('q', withdrawalSearch.trim());
+      params.set('limit', '3000');
+
+      const res = await fetch(`/api/admin/wallet-withdrawals/export?${params.toString()}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'No se pudo exportar CSV');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `retiradas-cartera-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('CSV descargado');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo exportar CSV');
     }
   };
 
@@ -776,6 +842,19 @@ export default function AdminPanel() {
     await openTicket(selectedTicketId);
     await load();
     toast.success('Respuesta enviada');
+  };
+
+  const applyTicketReplyTemplate = (templateId: string) => {
+    const template = TICKET_REPLY_TEMPLATES.find((item) => item.id === templateId);
+    if (!template) return;
+
+    const message = template.build();
+    setTicketReply((prev) => {
+      const current = prev.trim();
+      if (!current) return message;
+      return `${current}\n\n${message}`;
+    });
+    setTicketReplyStatus(template.status);
   };
 
   const moderateListing = async (listingId: string, status: 'pending_review' | 'approved' | 'rejected') => {
@@ -1688,9 +1767,14 @@ export default function AdminPanel() {
                   Gestión de aprobaciones y pagos de cartera interna (MVP).
                 </p>
               </div>
-              <button className="chip" onClick={() => void loadWithdrawals()}>
-                Refrescar retiradas
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button className="chip" onClick={exportWithdrawalsCsv}>
+                  Export CSV
+                </button>
+                <button className="chip" onClick={() => void loadWithdrawals()}>
+                  Refrescar retiradas
+                </button>
+              </div>
             </div>
 
             <div className="grid gap-3 lg:grid-cols-[220px,1fr,auto] mb-4">
@@ -1782,6 +1866,15 @@ export default function AdminPanel() {
                     </div>
                     <div className="text-xs text-textMuted space-y-1">
                       {request.note ? <p>Nota usuario: {request.note}</p> : <p>Nota usuario: -</p>}
+                      {request.payout_details?.account_holder ? (
+                        <p>Titular: {String(request.payout_details.account_holder)}</p>
+                      ) : null}
+                      {request.payout_details?.iban_masked ? (
+                        <p>IBAN: {String(request.payout_details.iban_masked)}</p>
+                      ) : null}
+                      {request.payout_details?.bank_name ? (
+                        <p>Banco: {String(request.payout_details.bank_name)}</p>
+                      ) : null}
                       {request.reviewer?.email ? <p>Revisado por: {request.reviewer.email}</p> : null}
                     </div>
                   </div>
@@ -1908,6 +2001,18 @@ export default function AdminPanel() {
                   </div>
 
                   <div className="mt-4 space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      {TICKET_REPLY_TEMPLATES.map((template) => (
+                        <button
+                          key={template.id}
+                          className="chip"
+                          onClick={() => applyTicketReplyTemplate(template.id)}
+                          type="button"
+                        >
+                          {template.label}
+                        </button>
+                      ))}
+                    </div>
                     <textarea
                       className="w-full bg-transparent border border-line px-3 py-2 min-h-[100px]"
                       placeholder="Escribe tu respuesta al cliente..."

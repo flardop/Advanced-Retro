@@ -178,6 +178,30 @@ function toEuro(cents: number): string {
   }).format(Number(cents || 0) / 100);
 }
 
+function normalizeIbanInput(value: string): string {
+  return String(value || '')
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+function formatIbanForInput(value: string): string {
+  const normalized = normalizeIbanInput(value);
+  return normalized.replace(/(.{4})/g, '$1 ').trim();
+}
+
+function isValidIban(value: string): boolean {
+  const iban = normalizeIbanInput(value);
+  if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(iban)) return false;
+  const moved = `${iban.slice(4)}${iban.slice(0, 4)}`;
+  const expanded = moved.replace(/[A-Z]/g, (char) => String(char.charCodeAt(0) - 55));
+  let remainder = 0;
+  for (const digit of expanded) {
+    remainder = (remainder * 10 + Number(digit)) % 97;
+  }
+  return remainder === 1;
+}
+
 function isConciergeTicket(ticket: { subject?: string } | null | undefined): boolean {
   return String(ticket?.subject || '').toLowerCase().includes('encargo');
 }
@@ -236,6 +260,9 @@ export default function ProfileView() {
   const [withdrawalsError, setWithdrawalsError] = useState('');
   const [withdrawalAmountEuro, setWithdrawalAmountEuro] = useState('');
   const [withdrawalNote, setWithdrawalNote] = useState('');
+  const [withdrawalAccountHolder, setWithdrawalAccountHolder] = useState('');
+  const [withdrawalIban, setWithdrawalIban] = useState('');
+  const [withdrawalBankName, setWithdrawalBankName] = useState('');
   const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
 
   const applyProfileSnapshot = (nextProfile: ProfileState | null) => {
@@ -373,9 +400,22 @@ export default function ProfileView() {
   const createWithdrawalRequest = async () => {
     const amountEuro = Number(String(withdrawalAmountEuro || '').replace(',', '.'));
     const amountCents = Math.round(amountEuro * 100);
+    const accountHolder = withdrawalAccountHolder.trim().replace(/\s+/g, ' ');
+    const ibanNormalized = normalizeIbanInput(withdrawalIban);
+    const bankName = withdrawalBankName.trim().replace(/\s+/g, ' ');
 
     if (!Number.isFinite(amountCents) || amountCents <= 0) {
       toast.error('Introduce un importe válido');
+      return;
+    }
+
+    if (accountHolder.length < 4) {
+      toast.error('Indica el titular de la cuenta');
+      return;
+    }
+
+    if (!isValidIban(ibanNormalized)) {
+      toast.error('IBAN no válido');
       return;
     }
 
@@ -391,7 +431,13 @@ export default function ProfileView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount_cents: amountCents,
-          payout_method: 'manual_transfer',
+          payout_method: 'bank_transfer',
+          payout_details: {
+            account_holder: accountHolder,
+            iban: ibanNormalized,
+            bank_name: bankName || undefined,
+            country: 'ES',
+          },
           note: withdrawalNote,
         }),
       });
@@ -402,6 +448,7 @@ export default function ProfileView() {
 
       setWithdrawalAmountEuro('');
       setWithdrawalNote('');
+      // Mantenemos los datos bancarios para futuras retiradas (UX).
       await Promise.all([loadWithdrawals(), loadWallet()]);
       toast.success('Solicitud de retirada enviada');
     } catch (error: any) {
@@ -1207,6 +1254,49 @@ export default function ProfileView() {
                   De momento las retiradas son manuales: tú solicitas, administración revisa y marca el pago.
                 </p>
                 <div className="mt-3 grid gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-1">
+                      <span className="text-xs text-textMuted">Titular de la cuenta</span>
+                      <input
+                        className="w-full bg-transparent border border-line px-3 py-2"
+                        placeholder="Nombre y apellidos"
+                        value={withdrawalAccountHolder}
+                        onChange={(e) => setWithdrawalAccountHolder(e.target.value)}
+                      />
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-xs text-textMuted">Banco (opcional)</span>
+                      <input
+                        className="w-full bg-transparent border border-line px-3 py-2"
+                        placeholder="Ej. Santander / CaixaBank"
+                        value={withdrawalBankName}
+                        onChange={(e) => setWithdrawalBankName(e.target.value)}
+                      />
+                    </label>
+                  </div>
+
+                  <label className="grid gap-1">
+                    <span className="text-xs text-textMuted">IBAN (validación automática)</span>
+                    <input
+                      className={`w-full bg-transparent border px-3 py-2 ${
+                        withdrawalIban && !isValidIban(withdrawalIban) ? 'border-red-400/60' : 'border-line'
+                      }`}
+                      placeholder="ES12 3456 7890 1234 5678 9012"
+                      value={formatIbanForInput(withdrawalIban)}
+                      onChange={(e) => setWithdrawalIban(formatIbanForInput(e.target.value))}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <span className={withdrawalIban && !isValidIban(withdrawalIban) ? 'text-red-400' : 'text-textMuted'}>
+                        {withdrawalIban
+                          ? isValidIban(withdrawalIban)
+                            ? 'IBAN válido'
+                            : 'IBAN no válido'
+                          : 'Introduce un IBAN para validar antes de enviar'}
+                      </span>
+                      <span className="text-textMuted">Método: transferencia bancaria (manual)</span>
+                    </div>
+                  </label>
+
                   <div className="grid gap-3 sm:grid-cols-[1fr,auto]">
                     <input
                       className="w-full bg-transparent border border-line px-3 py-2"
@@ -1263,6 +1353,11 @@ export default function ProfileView() {
                             <p className="text-xs text-textMuted mt-1">
                               Estado: {request.status} · Método: {request.payout_method}
                             </p>
+                            {request.payout_details?.iban_masked ? (
+                              <p className="text-xs text-textMuted mt-1">
+                                IBAN: {String(request.payout_details.iban_masked)}
+                              </p>
+                            ) : null}
                           </div>
                           <p className="text-xs text-textMuted">
                             {request.created_at ? new Date(request.created_at).toLocaleString('es-ES') : '-'}
