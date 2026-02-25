@@ -152,6 +152,7 @@ type AdminWithdrawalRequest = {
 const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const;
 const PROFILE_THEME_OPTIONS = ['neon-grid', 'sunset-glow', 'arcade-purple', 'mint-wave'] as const;
 const WALLET_STATUS_OPTIONS = ['available', 'pending', 'spent'] as const;
+const ADMIN_PREFS_STORAGE_KEY = 'advanced-retro-admin-prefs-v1';
 
 const TICKET_REPLY_TEMPLATES = [
   {
@@ -239,6 +240,18 @@ function downloadCsvFile(filename: string, headers: string[], rows: Array<Array<
   window.URL.revokeObjectURL(url);
 }
 
+function isSameLocalDay(value: unknown, referenceDate = new Date()): boolean {
+  const raw = String(value || '').trim();
+  if (!raw) return false;
+  const date = new Date(raw);
+  if (!Number.isFinite(date.getTime())) return false;
+  return (
+    date.getFullYear() === referenceDate.getFullYear() &&
+    date.getMonth() === referenceDate.getMonth() &&
+    date.getDate() === referenceDate.getDate()
+  );
+}
+
 export default function AdminPanel() {
   const [tab, setTab] = useState<AdminTab>('products');
   const [loading, setLoading] = useState(false);
@@ -316,6 +329,7 @@ export default function AdminPanel() {
     >
   >({});
   const [dedupeSummary, setDedupeSummary] = useState<any | null>(null);
+  const [workbenchOnlyToday, setWorkbenchOnlyToday] = useState(false);
   const [couponForm, setCouponForm] = useState({
     code: '',
     type: 'percent',
@@ -574,6 +588,63 @@ export default function AdminPanel() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(ADMIN_PREFS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return;
+
+      const nextTab = String((parsed as any).tab || '').trim().toLowerCase();
+      const allowedTabs: AdminTab[] = [
+        'products',
+        'orders',
+        'shipping',
+        'users',
+        'wallets',
+        'withdrawals',
+        'chats',
+        'listings',
+        'coupons',
+        'mystery',
+      ];
+      if (allowedTabs.includes(nextTab as AdminTab)) setTab(nextTab as AdminTab);
+
+      if (typeof (parsed as any).withdrawalStatusFilter === 'string') {
+        setWithdrawalStatusFilter(String((parsed as any).withdrawalStatusFilter));
+      }
+      if (typeof (parsed as any).withdrawalSearch === 'string') {
+        setWithdrawalSearch(String((parsed as any).withdrawalSearch).slice(0, 120));
+      }
+      if (typeof (parsed as any).walletSearch === 'string') {
+        setWalletSearch(String((parsed as any).walletSearch).slice(0, 120));
+      }
+      if (typeof (parsed as any).workbenchOnlyToday === 'boolean') {
+        setWorkbenchOnlyToday(Boolean((parsed as any).workbenchOnlyToday));
+      }
+    } catch {
+      // ignore malformed local prefs
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const payload = {
+      tab,
+      withdrawalStatusFilter,
+      withdrawalSearch,
+      walletSearch,
+      workbenchOnlyToday,
+      updatedAt: new Date().toISOString(),
+    };
+    try {
+      window.localStorage.setItem(ADMIN_PREFS_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // localStorage may be unavailable
+    }
+  }, [tab, withdrawalStatusFilter, withdrawalSearch, walletSearch, workbenchOnlyToday]);
 
   const createProduct = async () => {
     const res = await fetch('/api/admin/products', {
@@ -1056,15 +1127,28 @@ export default function AdminPanel() {
   );
 
   const pendingOverview = useMemo(() => {
-    const shipping = orders.filter((order) => Boolean(order?.needs_shipping)).length;
-    const ticketsOpen = tickets.filter((ticket) => ['open', 'in_progress'].includes(String(ticket.status))).length;
-    const ticketsWaitingCustomer = tickets.filter(
+    const orderSource = workbenchOnlyToday
+      ? orders.filter((order) => isSameLocalDay(order?.created_at))
+      : orders;
+    const ticketSource = workbenchOnlyToday
+      ? tickets.filter((ticket) => isSameLocalDay(ticket?.updated_at || ticket?.created_at))
+      : tickets;
+    const withdrawalSource = workbenchOnlyToday
+      ? withdrawals.filter((request) => isSameLocalDay(request?.updated_at || request?.created_at))
+      : withdrawals;
+    const listingSource = workbenchOnlyToday
+      ? listings.filter((listing) => isSameLocalDay(listing?.updated_at || listing?.created_at))
+      : listings;
+
+    const shipping = orderSource.filter((order) => Boolean(order?.needs_shipping)).length;
+    const ticketsOpen = ticketSource.filter((ticket) => ['open', 'in_progress'].includes(String(ticket.status))).length;
+    const ticketsWaitingCustomer = ticketSource.filter(
       (ticket) => ticket.last_message && ticket.last_message.is_admin
     ).length;
-    const withdrawalsPending = withdrawals.filter((request) =>
+    const withdrawalsPending = withdrawalSource.filter((request) =>
       ['pending', 'approved'].includes(String(request.status || '').toLowerCase())
     ).length;
-    const listingsReview = listings.filter((listing) => String(listing?.status || '') === 'pending_review').length;
+    const listingsReview = listingSource.filter((listing) => String(listing?.status || '') === 'pending_review').length;
     return {
       shipping,
       ticketsOpen,
@@ -1073,24 +1157,37 @@ export default function AdminPanel() {
       listingsReview,
       totalActionable: shipping + ticketsOpen + withdrawalsPending + listingsReview,
     };
-  }, [orders, tickets, withdrawals, listings]);
+  }, [orders, tickets, withdrawals, listings, workbenchOnlyToday]);
 
   const workbenchQueues = useMemo(() => {
-    const shippingQueue = orders
+    const orderSource = workbenchOnlyToday
+      ? orders.filter((order) => isSameLocalDay(order?.created_at))
+      : orders;
+    const ticketSource = workbenchOnlyToday
+      ? tickets.filter((ticket) => isSameLocalDay(ticket?.updated_at || ticket?.created_at))
+      : tickets;
+    const withdrawalSource = workbenchOnlyToday
+      ? withdrawals.filter((request) => isSameLocalDay(request?.updated_at || request?.created_at))
+      : withdrawals;
+    const listingSource = workbenchOnlyToday
+      ? listings.filter((listing) => isSameLocalDay(listing?.updated_at || listing?.created_at))
+      : listings;
+
+    const shippingQueue = orderSource
       .filter((order) => Boolean(order?.needs_shipping))
       .slice(0, 6);
-    const ticketQueue = tickets
+    const ticketQueue = ticketSource
       .filter((ticket) => ['open', 'in_progress'].includes(String(ticket.status)))
       .slice(0, 6);
-    const withdrawalQueue = withdrawals
+    const withdrawalQueue = withdrawalSource
       .filter((request) => ['pending', 'approved'].includes(String(request.status || '').toLowerCase()))
       .slice(0, 6);
-    const listingQueue = listings
+    const listingQueue = listingSource
       .filter((listing) => String(listing?.status || '') === 'pending_review')
       .slice(0, 6);
 
     return { shippingQueue, ticketQueue, withdrawalQueue, listingQueue };
-  }, [orders, tickets, withdrawals, listings]);
+  }, [orders, tickets, withdrawals, listings, workbenchOnlyToday]);
 
   const exportOrdersCsvLocal = () => {
     if (orders.length === 0) {
@@ -1202,11 +1299,20 @@ export default function AdminPanel() {
               <p className="text-xs uppercase tracking-[0.18em] text-primary">Panel de pendientes</p>
               <h2 className="text-lg font-semibold mt-1">
                 Acciones pendientes: {pendingOverview.totalActionable}
+                {workbenchOnlyToday ? ' (hoy)' : ''}
               </h2>
             </div>
-            <button className="chip" onClick={load} disabled={loading}>
-              {loading ? 'Actualizando...' : 'Recalcular panel'}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={`chip ${workbenchOnlyToday ? 'border-primary text-primary' : ''}`}
+                onClick={() => setWorkbenchOnlyToday((prev) => !prev)}
+              >
+                {workbenchOnlyToday ? 'Vista: solo hoy' : 'Vista: todo'}
+              </button>
+              <button className="chip" onClick={load} disabled={loading}>
+                {loading ? 'Actualizando...' : 'Recalcular panel'}
+              </button>
+            </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -1245,9 +1351,36 @@ export default function AdminPanel() {
               <h2 className="text-lg font-semibold mt-1">Pendientes + acciones rápidas + exportes</h2>
               <p className="text-xs text-textMuted mt-1">
                 Vista operativa para gestionar el día sin entrar en cada pestaña.
+                {workbenchOnlyToday ? ' Filtrada por trabajo de hoy.' : ''}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                className={`chip ${workbenchOnlyToday ? 'border-primary text-primary' : ''}`}
+                onClick={() => setWorkbenchOnlyToday((prev) => !prev)}
+              >
+                {workbenchOnlyToday ? 'Solo trabajo de hoy' : 'Ver todo'}
+              </button>
+              <button
+                className="chip"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    try {
+                      window.localStorage.removeItem(ADMIN_PREFS_STORAGE_KEY);
+                    } catch {
+                      // ignore
+                    }
+                  }
+                  setWorkbenchOnlyToday(false);
+                  setWithdrawalStatusFilter('all');
+                  setWithdrawalSearch('');
+                  setWalletSearch('');
+                  setTab('products');
+                  toast.success('Preferencias de admin restablecidas');
+                }}
+              >
+                Reset filtros guardados
+              </button>
               <button className="chip" onClick={exportOrdersCsvLocal}>
                 Export pedidos CSV
               </button>

@@ -517,7 +517,9 @@ export default function CommunityFeed() {
                         </div>
 
                         <h3 className="mt-2 font-semibold leading-snug line-clamp-2 min-h-[2.7rem]">
-                          {listing.title}
+                          <Link href={`/comunidad/anuncio/${listing.id}`} className="hover:text-cyan-700">
+                            {listing.title}
+                          </Link>
                         </h3>
                         <p className="mt-2 text-sm text-slate-600 line-clamp-2 min-h-[2.5rem]">
                           {listing.description}
@@ -573,6 +575,12 @@ export default function CommunityFeed() {
                         </div>
 
                         <div className="mt-3 grid gap-2">
+                          <Link
+                            href={`/comunidad/anuncio/${listing.id}`}
+                            className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                          >
+                            Ver anuncio completo
+                          </Link>
                           <Link
                             href="/perfil?tab=tickets"
                             className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"

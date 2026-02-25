@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublicSellerProfileByUserId } from '@/lib/userListings';
+import CommunitySellerProfileSocial from '@/components/sections/CommunitySellerProfileSocial';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,13 @@ function themeBannerClass(theme: string | null): string {
     return 'bg-[radial-gradient(circle_at_18%_18%,rgba(45,212,191,0.22),transparent_44%),radial-gradient(circle_at_80%_12%,rgba(34,211,238,0.20),transparent_52%),linear-gradient(135deg,#07111a,#0d1b24,#0c1420)]';
   }
   return 'bg-[radial-gradient(circle_at_15%_20%,rgba(75,228,214,.22),transparent_45%),radial-gradient(circle_at_85%_10%,rgba(59,130,246,.18),transparent_48%),linear-gradient(135deg,#07111b,#0d1827,#07101a)]';
+}
+
+function activityTypeLabel(type: string): string {
+  if (type === 'listing_delivered') return 'Venta entregada';
+  if (type === 'listing_approved') return 'Aprobado';
+  if (type === 'community_post') return 'Post comunidad';
+  return 'Nuevo anuncio';
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -163,6 +171,8 @@ export default async function CommunitySellerPage({ params }: PageProps) {
                   </div>
                 </div>
               ) : null}
+
+              <CommunitySellerProfileSocial sellerId={seller.id} />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -238,7 +248,11 @@ export default async function CommunitySellerPage({ params }: PageProps) {
                     </div>
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold line-clamp-2">{listing.title}</h3>
+                        <h3 className="font-semibold line-clamp-2">
+                          <Link href={`/comunidad/anuncio/${listing.id}`} className="hover:text-primary">
+                            {listing.title}
+                          </Link>
+                        </h3>
                         <span className="text-primary font-semibold whitespace-nowrap">{toEuro(Number(listing.price || 0))}</span>
                       </div>
                       <p className="text-xs text-textMuted mt-2 line-clamp-2">{listing.description}</p>
@@ -248,11 +262,49 @@ export default async function CommunitySellerPage({ params }: PageProps) {
                         <span className="chip">{String(listing.delivery_status || 'pending')}</span>
                       </div>
                       <p className="text-xs text-textMuted mt-3">Publicado {relativeDate(String(listing.created_at || ''))}</p>
+                      <Link href={`/comunidad/anuncio/${listing.id}`} className="chip mt-3 inline-flex">
+                        Ver anuncio
+                      </Link>
                     </div>
                   </article>
                 );
               })}
             </div>
+          )}
+        </div>
+
+        <div className="glass p-5">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-primary">Actividad pública</p>
+              <h2 className="title-display text-2xl mt-1">Timeline del vendedor</h2>
+            </div>
+          </div>
+
+          {Array.isArray((data as any).activity) && (data as any).activity.length > 0 ? (
+            <div className="space-y-3">
+              {(data as any).activity.map((item: any) => (
+                <div key={item.id} className="rounded-2xl border border-line p-4 bg-[rgba(8,16,28,0.46)]">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="chip text-xs">{activityTypeLabel(String(item.type || ''))}</span>
+                        {item.listing_id ? (
+                          <Link href={`/comunidad/anuncio/${item.listing_id}`} className="text-xs text-primary hover:underline">
+                            Ver anuncio
+                          </Link>
+                        ) : null}
+                      </div>
+                      <p className="font-semibold mt-2">{String(item.title || 'Actividad')}</p>
+                      <p className="text-sm text-textMuted mt-1">{String(item.subtitle || '')}</p>
+                    </div>
+                    <p className="text-xs text-textMuted">{relativeDate(String(item.at || ''))}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-textMuted">Aún no hay actividad pública registrada.</p>
           )}
         </div>
       </div>

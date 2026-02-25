@@ -248,6 +248,50 @@ export async function getPublicApprovedListings(limit = 60) {
   }));
 }
 
+export async function getPublicApprovedListingWithSellerById(listingId: string) {
+  if (!supabaseAdmin) throw new Error('Supabase not configured');
+
+  const safeId = String(listingId || '').trim();
+  if (!safeId) throw new Error('Listing id required');
+
+  const { data, error } = await supabaseAdmin
+    .from('user_product_listings')
+    .select('*')
+    .eq('id', safeId)
+    .eq('status', 'approved')
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('Publicación no encontrada');
+
+  const listing = withCommunityDefaults(data);
+
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('id,name,avatar_url,banner_url,bio,tagline,is_verified_seller')
+    .eq('id', String(listing.user_id))
+    .maybeSingle();
+
+  let relatedBySeller: any[] = [];
+  const { data: relatedRows } = await supabaseAdmin
+    .from('user_product_listings')
+    .select('*')
+    .eq('user_id', String(listing.user_id))
+    .eq('status', 'approved')
+    .neq('id', safeId)
+    .order('created_at', { ascending: false })
+    .limit(6);
+  relatedBySeller = Array.isArray(relatedRows) ? relatedRows.map((row) => withCommunityDefaults(row)) : [];
+
+  return {
+    listing: {
+      ...listing,
+      user: user || null,
+    },
+    relatedBySeller,
+  };
+}
+
 export async function getListingById(listingId: string) {
   if (!supabaseAdmin) throw new Error('Supabase not configured');
   const { data, error } = await supabaseAdmin
@@ -304,6 +348,89 @@ export async function getPublicSellerProfileByUserId(userId: string) {
 
   const categories = [...new Set(normalizedListings.map((listing) => String(listing.category || '')).filter(Boolean))];
 
+  type SellerActivityItem = {
+    id: string;
+    type: 'listing_published' | 'listing_approved' | 'listing_delivered' | 'community_post';
+    at: string;
+    title: string;
+    subtitle: string;
+    listing_id?: string | null;
+    post_id?: string | null;
+  };
+
+  const activity: SellerActivityItem[] = [];
+
+  for (const listing of normalizedListings) {
+    const listingId = String(listing.id || '');
+    const title = String(listing.title || 'Anuncio');
+    const price = Math.max(0, Number(listing.price || 0));
+    const priceText = `${(price / 100).toFixed(2)} €`;
+    const createdAt = typeof listing.created_at === 'string' ? listing.created_at : '';
+    const approvedAt = typeof (listing as any).approved_at === 'string' ? (listing as any).approved_at : '';
+    const deliveredAt = typeof (listing as any).delivered_at === 'string' ? (listing as any).delivered_at : '';
+
+    if (createdAt) {
+      activity.push({
+        id: `listing-published-${listingId}`,
+        type: 'listing_published',
+        at: createdAt,
+        title: `Publicó: ${title}`,
+        subtitle: `${priceText} · ${String(listing.category || 'comunidad')}`,
+        listing_id: listingId,
+      });
+    }
+    if (approvedAt) {
+      activity.push({
+        id: `listing-approved-${listingId}`,
+        type: 'listing_approved',
+        at: approvedAt,
+        title: `Anuncio aprobado: ${title}`,
+        subtitle: `Visible en comunidad · ${priceText}`,
+        listing_id: listingId,
+      });
+    }
+    if (deliveredAt || String(listing.delivery_status || '') === 'delivered') {
+      activity.push({
+        id: `listing-delivered-${listingId}`,
+        type: 'listing_delivered',
+        at: deliveredAt || String(listing.updated_at || listing.created_at || new Date().toISOString()),
+        title: `Venta entregada: ${title}`,
+        subtitle: `Entrega completada · ${priceText}`,
+        listing_id: listingId,
+      });
+    }
+  }
+
+  try {
+    const { data: posts, error: postsError } = await supabaseAdmin
+      .from('community_posts')
+      .select('id,title,created_at')
+      .eq('user_id', safeUserId)
+      .order('created_at', { ascending: false })
+      .limit(8);
+    if (!postsError) {
+      for (const post of posts || []) {
+        const createdAt = typeof (post as any).created_at === 'string' ? String((post as any).created_at) : '';
+        if (!createdAt) continue;
+        activity.push({
+          id: `community-post-${String((post as any).id || '')}`,
+          type: 'community_post',
+          at: createdAt,
+          title: `Publicó en comunidad: ${String((post as any).title || 'Publicación')}`,
+          subtitle: 'Blog / restauración / experiencia',
+          post_id: String((post as any).id || ''),
+        });
+      }
+    }
+  } catch {
+    // Tabla opcional en algunos entornos. Si no existe, no bloquea el perfil público.
+  }
+
+  const recentActivity = activity
+    .filter((item) => item.at && item.title)
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, 20);
+
   return {
     seller: {
       id: String(user.id),
@@ -327,6 +454,7 @@ export async function getPublicSellerProfileByUserId(userId: string) {
       average_price_cents: avgPriceCents,
       categories,
     },
+    activity: recentActivity,
     listings: normalizedListings,
   };
 }
