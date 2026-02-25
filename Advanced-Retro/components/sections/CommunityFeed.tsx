@@ -27,6 +27,26 @@ type MarketPolicy = {
   commission_rate: number;
 };
 
+type CommunitySellerRankingRow = {
+  seller: {
+    id: string;
+    name: string;
+    avatar_url?: string | null;
+    tagline?: string | null;
+    is_verified_seller?: boolean;
+  };
+  stats: {
+    approved_listings: number;
+    active_listings: number;
+    delivered_sales: number;
+    average_price_cents: number;
+    total_likes: number;
+    listing_comments: number;
+  };
+  score: number;
+  last_activity_at?: string | null;
+};
+
 function toDeliveryLabel(status: string): string {
   const key = String(status || '').toLowerCase();
   if (key === 'processing') return 'Preparando envío';
@@ -112,6 +132,7 @@ export default function CommunityFeed() {
     publish_fee_cents: 0,
     commission_rate: 10,
   });
+  const [sellerRanking, setSellerRanking] = useState<CommunitySellerRankingRow[]>([]);
 
   const [marketQuery, setMarketQuery] = useState('');
   const [marketSort, setMarketSort] = useState<'newest' | 'price_asc' | 'price_desc'>('newest');
@@ -158,9 +179,21 @@ export default function CommunityFeed() {
     }
   };
 
+  const loadRanking = async () => {
+    try {
+      const res = await fetch('/api/community/ranking?limit=6', { cache: 'no-store' });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || 'No se pudo cargar ranking');
+      setSellerRanking(Array.isArray(data?.ranking) ? data.ranking : []);
+    } catch {
+      setSellerRanking([]);
+    }
+  };
+
   useEffect(() => {
     loadPosts();
     loadMarketplace();
+    loadRanking();
   }, []);
 
   const visibleListings = useMemo(() => {
@@ -592,7 +625,7 @@ export default function CommunityFeed() {
                             className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                             onClick={() => {
                               if (typeof window === 'undefined') return;
-                              const url = `${window.location.origin}/comunidad`;
+                              const url = `${window.location.origin}/comunidad/anuncio/${listing.id}`;
                               if (!navigator?.clipboard?.writeText) {
                                 toast.error('Tu navegador no permite copiar automáticamente');
                                 return;
@@ -615,6 +648,107 @@ export default function CommunityFeed() {
           </div>
 
           <div className="space-y-6">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <h3 className="font-semibold text-slate-900">Top vendedores de comunidad</h3>
+                  <p className="text-slate-500 text-sm mt-1">Ranking por actividad, likes y ventas entregadas.</p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  onClick={loadRanking}
+                >
+                  Actualizar
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {sellerRanking.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-sm text-slate-500">
+                    Aún no hay ranking suficiente. Se irá llenando con actividad y likes de perfiles/anuncios.
+                  </div>
+                ) : (
+                  sellerRanking.map((row, index) => {
+                    const sellerId = String(row?.seller?.id || '').trim();
+                    const sellerName = String(row?.seller?.name || 'Coleccionista');
+                    const avatar = String(row?.seller?.avatar_url || '');
+                    const delivered = Number(row?.stats?.delivered_sales || 0);
+                    const active = Number(row?.stats?.active_listings || 0);
+                    const likes = Number(row?.stats?.total_likes || 0);
+                    const commentsCount = Number(row?.stats?.listing_comments || 0);
+                    return (
+                      <div key={`${sellerId}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">
+                            #{index + 1}
+                          </div>
+                          <div className="h-10 w-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-xs font-bold text-slate-700">
+                            {avatar ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={avatar}
+                                alt={sellerName}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                                onError={(event) => {
+                                  event.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              buildSellerInitial(sellerName)
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-semibold text-slate-900 line-clamp-1">{sellerName}</p>
+                              {row?.seller?.is_verified_seller ? (
+                                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                  Verificado
+                                </span>
+                              ) : null}
+                            </div>
+                            {row?.seller?.tagline ? (
+                              <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">{String(row.seller.tagline)}</p>
+                            ) : null}
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700">
+                                {likes} likes
+                              </span>
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700">
+                                {delivered} ventas
+                              </span>
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700">
+                                {active} activos
+                              </span>
+                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700">
+                                {commentsCount} comentarios
+                              </span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between gap-2">
+                              <p className="text-[11px] text-slate-500">
+                                {row.last_activity_at
+                                  ? `Actividad ${toRelativeDate(String(row.last_activity_at))}`
+                                  : 'Actividad reciente'}
+                              </p>
+                              {sellerId ? (
+                                <Link
+                                  href={`/comunidad/vendedor/${sellerId}`}
+                                  className="text-xs font-semibold text-cyan-700 hover:underline"
+                                >
+                                  Ver perfil
+                                </Link>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
             <div className="rounded-3xl border border-slate-200 bg-white p-6">
               <h3 className="font-semibold text-slate-900">Publicar en el blog de comunidad</h3>
               <p className="text-slate-500 text-sm mt-2">

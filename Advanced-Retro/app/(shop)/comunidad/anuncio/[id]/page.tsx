@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublicApprovedListingWithSellerById } from '@/lib/userListings';
+import CommunityListingSocialPanel from '@/components/sections/CommunityListingSocialPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -200,6 +201,8 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
           </div>
         </div>
 
+        <CommunityListingSocialPanel listingId={String(listing.id)} />
+
         {Array.isArray(relatedBySeller) && relatedBySeller.length > 0 ? (
           <div className="glass p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
@@ -249,4 +252,3 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
     </section>
   );
 }
-

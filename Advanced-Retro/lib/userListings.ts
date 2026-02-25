@@ -1,4 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSellerSocialSummary, readSellerSocialState } from '@/lib/communitySellerSocial';
+import {
+  getCommunityListingSocialSummary,
+  readCommunityListingSocialState,
+} from '@/lib/communityListingSocial';
 
 export type ListingStatus = 'pending_review' | 'approved' | 'rejected';
 export type ListingDeliveryStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
@@ -457,6 +462,218 @@ export async function getPublicSellerProfileByUserId(userId: string) {
     activity: recentActivity,
     listings: normalizedListings,
   };
+}
+
+export type CommunitySellerRankingEntry = {
+  seller: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+    tagline: string | null;
+    is_verified_seller: boolean;
+  };
+  stats: {
+    approved_listings: number;
+    active_listings: number;
+    delivered_sales: number;
+    average_price_cents: number;
+    profile_likes: number;
+    profile_visits: number;
+    listing_likes: number;
+    listing_comments: number;
+    listing_visits: number;
+    total_likes: number;
+  };
+  score: number;
+  last_activity_at: string | null;
+  sample_listings: Array<{ id: string; title: string; price: number }>;
+};
+
+function toIsoTimestamp(value: unknown): number {
+  if (typeof value !== 'string' || !value.trim()) return 0;
+  const ts = new Date(value).getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+function recencyBonusFromIso(value: string | null): number {
+  const ts = toIsoTimestamp(value);
+  if (!ts) return 0;
+  const days = (Date.now() - ts) / (1000 * 60 * 60 * 24);
+  if (days <= 2) return 12;
+  if (days <= 7) return 8;
+  if (days <= 15) return 5;
+  if (days <= 30) return 2;
+  return 0;
+}
+
+export async function getCommunitySellerRanking(limit = 10): Promise<CommunitySellerRankingEntry[]> {
+  if (!supabaseAdmin) throw new Error('Supabase not configured');
+
+  const safeLimit = Math.min(Math.max(Number(limit || 0), 1), 20);
+
+  const { data: listingRows, error } = await supabaseAdmin
+    .from('user_product_listings')
+    .select('*')
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+    .limit(600);
+
+  if (error) throw new Error(error.message);
+
+  const rows = (listingRows || []).map((row) => withCommunityDefaults(row));
+  if (rows.length === 0) return [];
+
+  type Candidate = {
+    userId: string;
+    listings: any[];
+    approvedCount: number;
+    activeCount: number;
+    deliveredCount: number;
+    avgPriceCents: number;
+    lastActivityAt: string | null;
+    baseScore: number;
+  };
+
+  const grouped = new Map<string, any[]>();
+  for (const listing of rows) {
+    const userId = String(listing.user_id || '').trim();
+    if (!userId) continue;
+    const current = grouped.get(userId);
+    if (current) current.push(listing);
+    else grouped.set(userId, [listing]);
+  }
+
+  const candidates: Candidate[] = [...grouped.entries()]
+    .map(([userId, listings]) => {
+      const approvedCount = listings.length;
+      const activeCount = listings.filter((item) =>
+        ['pending', 'processing', 'shipped'].includes(String(item.delivery_status || 'pending'))
+      ).length;
+      const deliveredCount = listings.filter((item) => String(item.delivery_status || '') === 'delivered').length;
+      const avgPriceCents =
+        approvedCount > 0
+          ? Math.round(listings.reduce((sum, item) => sum + Math.max(0, Number(item.price || 0)), 0) / approvedCount)
+          : 0;
+      const lastActivityAtTs = Math.max(
+        ...listings.map((item) =>
+          Math.max(
+            toIsoTimestamp(item.delivered_at),
+            toIsoTimestamp(item.updated_at),
+            toIsoTimestamp(item.approved_at),
+            toIsoTimestamp(item.created_at)
+          )
+        )
+      );
+      const lastActivityAt = lastActivityAtTs ? new Date(lastActivityAtTs).toISOString() : null;
+      const baseScore =
+        deliveredCount * 30 + activeCount * 10 + approvedCount * 4 + recencyBonusFromIso(lastActivityAt);
+
+      return {
+        userId,
+        listings,
+        approvedCount,
+        activeCount,
+        deliveredCount,
+        avgPriceCents,
+        lastActivityAt,
+        baseScore,
+      };
+    })
+    .sort((a, b) => b.baseScore - a.baseScore || b.approvedCount - a.approvedCount)
+    .slice(0, Math.max(safeLimit * 3, 12));
+
+  if (candidates.length === 0) return [];
+
+  const userIds = candidates.map((item) => item.userId);
+  const { data: users } = await supabaseAdmin
+    .from('users')
+    .select('id,name,avatar_url,tagline,is_verified_seller')
+    .in('id', userIds);
+  const userMap = new Map<string, any>((users || []).map((item) => [String(item.id), item]));
+
+  const enriched = await Promise.all(
+    candidates.map(async (candidate) => {
+      let profileLikes = 0;
+      let profileVisits = 0;
+      try {
+        const sellerState = await readSellerSocialState(candidate.userId);
+        const sellerSummary = getSellerSocialSummary(sellerState);
+        profileLikes = Number(sellerSummary.likes || 0);
+        profileVisits = Number(sellerSummary.visits || 0);
+      } catch {
+        // social storage opcional
+      }
+
+      let listingLikes = 0;
+      let listingComments = 0;
+      let listingVisits = 0;
+      const listingSubset = candidate.listings.slice(0, 40);
+      await Promise.all(
+        listingSubset.map(async (listing) => {
+          try {
+            const state = await readCommunityListingSocialState(String(listing.id));
+            const summary = getCommunityListingSocialSummary(state);
+            listingLikes += Number(summary.likes || 0);
+            listingComments += Number(summary.commentsCount || 0);
+            listingVisits += Number(summary.visits || 0);
+          } catch {
+            // anuncios sin social aún
+          }
+        })
+      );
+
+      const totalLikes = profileLikes + listingLikes;
+      const user = userMap.get(candidate.userId);
+      const verifiedBonus = user?.is_verified_seller ? 10 : 0;
+      const score =
+        candidate.baseScore +
+        totalLikes * 4 +
+        listingComments * 3 +
+        Math.min(20, Math.floor((profileVisits + listingVisits) / 25)) +
+        verifiedBonus;
+
+      return {
+        seller: {
+          id: candidate.userId,
+          name:
+            typeof user?.name === 'string' && user.name.trim()
+              ? user.name.trim()
+              : 'Coleccionista',
+          avatar_url: typeof user?.avatar_url === 'string' ? user.avatar_url : null,
+          tagline: typeof user?.tagline === 'string' ? user.tagline : null,
+          is_verified_seller: Boolean(user?.is_verified_seller),
+        },
+        stats: {
+          approved_listings: candidate.approvedCount,
+          active_listings: candidate.activeCount,
+          delivered_sales: candidate.deliveredCount,
+          average_price_cents: candidate.avgPriceCents,
+          profile_likes: profileLikes,
+          profile_visits: profileVisits,
+          listing_likes: listingLikes,
+          listing_comments: listingComments,
+          listing_visits: listingVisits,
+          total_likes: totalLikes,
+        },
+        score,
+        last_activity_at: candidate.lastActivityAt,
+        sample_listings: candidate.listings.slice(0, 3).map((listing) => ({
+          id: String(listing.id),
+          title: String(listing.title || 'Anuncio'),
+          price: Math.max(0, Number(listing.price || 0)),
+        })),
+      } satisfies CommunitySellerRankingEntry;
+    })
+  );
+
+  return enriched
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.stats.total_likes !== a.stats.total_likes) return b.stats.total_likes - a.stats.total_likes;
+      if (b.stats.delivered_sales !== a.stats.delivered_sales) return b.stats.delivered_sales - a.stats.delivered_sales;
+      return a.seller.name.localeCompare(b.seller.name, 'es');
+    })
+    .slice(0, safeLimit);
 }
 
 export async function updateListingStatus(options: {
