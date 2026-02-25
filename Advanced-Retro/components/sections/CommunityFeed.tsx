@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
 type CommunityListing = {
@@ -46,6 +46,15 @@ type CommunitySellerRankingRow = {
   score: number;
   last_activity_at?: string | null;
 };
+
+type CommunityListingCardSocialSummary = {
+  visits: number;
+  likes: number;
+  commentsCount: number;
+  likedByCurrentVisitor: boolean;
+};
+
+type RankingPeriod = 'today' | '7d' | 'historical';
 
 function toDeliveryLabel(status: string): string {
   const key = String(status || '').toLowerCase();
@@ -125,6 +134,19 @@ function toRelativeDate(value: string): string {
   return new Date(time).toLocaleDateString('es-ES');
 }
 
+function getOrCreateVisitorId(): string {
+  if (typeof window === 'undefined') return '';
+  const key = 'advanced-retro-visitor-id';
+  const existing = window.localStorage.getItem(key);
+  if (existing) return existing;
+  const next =
+    typeof window.crypto?.randomUUID === 'function'
+      ? window.crypto.randomUUID()
+      : `visitor-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  window.localStorage.setItem(key, next);
+  return next;
+}
+
 export default function CommunityFeed() {
   const [posts, setPosts] = useState<any[]>([]);
   const [marketListings, setMarketListings] = useState<CommunityListing[]>([]);
@@ -133,6 +155,13 @@ export default function CommunityFeed() {
     commission_rate: 10,
   });
   const [sellerRanking, setSellerRanking] = useState<CommunitySellerRankingRow[]>([]);
+  const [rankingPeriod, setRankingPeriod] = useState<RankingPeriod>('historical');
+  const [rankingLoading, setRankingLoading] = useState(false);
+  const [visitorId, setVisitorId] = useState('');
+  const [listingSocialMetrics, setListingSocialMetrics] = useState<Record<string, CommunityListingCardSocialSummary>>(
+    {}
+  );
+  const [cardLikeLoadingById, setCardLikeLoadingById] = useState<Record<string, boolean>>({});
 
   const [marketQuery, setMarketQuery] = useState('');
   const [marketSort, setMarketSort] = useState<'newest' | 'price_asc' | 'price_desc'>('newest');
@@ -179,22 +208,90 @@ export default function CommunityFeed() {
     }
   };
 
-  const loadRanking = async () => {
+  const loadRanking = useCallback(async (period: RankingPeriod) => {
+    setRankingLoading(true);
     try {
-      const res = await fetch('/api/community/ranking?limit=6', { cache: 'no-store' });
+      const res = await fetch(`/api/community/ranking?limit=6&period=${encodeURIComponent(period)}`, {
+        cache: 'no-store',
+      });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar ranking');
       setSellerRanking(Array.isArray(data?.ranking) ? data.ranking : []);
     } catch {
       setSellerRanking([]);
+    } finally {
+      setRankingLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    setVisitorId(getOrCreateVisitorId());
+  }, []);
 
   useEffect(() => {
     loadPosts();
     loadMarketplace();
-    loadRanking();
   }, []);
+
+  useEffect(() => {
+    void loadRanking(rankingPeriod);
+  }, [rankingPeriod, loadRanking]);
+
+  useEffect(() => {
+    if (!visitorId || marketListings.length === 0) return;
+
+    let cancelled = false;
+
+    const loadListingSocialBatch = async () => {
+      try {
+        const listingIds = marketListings.map((item) => String(item.id || '')).filter(Boolean);
+        if (listingIds.length === 0) return;
+        const res = await fetch('/api/community/listings/social/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingIds, visitorId }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.error || 'No se pudieron cargar métricas sociales');
+        if (cancelled) return;
+        setListingSocialMetrics(
+          data?.metrics && typeof data.metrics === 'object' && !Array.isArray(data.metrics) ? data.metrics : {}
+        );
+      } catch {
+        if (cancelled) return;
+        setListingSocialMetrics({});
+      }
+    };
+
+    void loadListingSocialBatch();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [visitorId, marketListings]);
+
+  const toggleCardLike = async (listingId: string) => {
+    const safeId = String(listingId || '').trim();
+    if (!safeId || !visitorId || cardLikeLoadingById[safeId]) return;
+
+    setCardLikeLoadingById((prev) => ({ ...prev, [safeId]: true }));
+    try {
+      const res = await fetch(`/api/community/listings/${encodeURIComponent(safeId)}/social`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_like', visitorId }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || 'No se pudo actualizar me gusta');
+      if (data?.summary) {
+        setListingSocialMetrics((prev) => ({ ...prev, [safeId]: data.summary }));
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo actualizar me gusta');
+    } finally {
+      setCardLikeLoadingById((prev) => ({ ...prev, [safeId]: false }));
+    }
+  };
 
   const visibleListings = useMemo(() => {
     const q = marketQuery.trim().toLowerCase();
@@ -511,6 +608,13 @@ export default function CommunityFeed() {
                   const sellerAvatar = String(listing.user?.avatar_url || '');
                   const sellerId = String(listing.user?.id || '').trim();
                   const commissionCents = Number(listing.commission_cents || 0);
+                  const social = listingSocialMetrics[String(listing.id)] || {
+                    visits: 0,
+                    likes: 0,
+                    commentsCount: 0,
+                    likedByCurrentVisitor: false,
+                  };
+                  const likeBusy = Boolean(cardLikeLoadingById[String(listing.id)]);
                   return (
                     <article
                       key={listing.id}
@@ -569,6 +673,38 @@ export default function CommunityFeed() {
                           >
                             {toOriginalityLabel(String(listing.originality_status || ''))}
                           </span>
+                        </div>
+
+                        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-2.5">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap gap-1.5">
+                              <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
+                                {social.likes} likes
+                              </span>
+                              <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
+                                {social.commentsCount} comentarios
+                              </span>
+                              <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
+                                {social.visits} visitas
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                                social.likedByCurrentVisitor
+                                  ? 'border-cyan-300 bg-cyan-50 text-cyan-900'
+                                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                              } ${likeBusy ? 'opacity-70' : ''}`}
+                              disabled={likeBusy || !visitorId}
+                              onClick={() => toggleCardLike(String(listing.id))}
+                            >
+                              {likeBusy
+                                ? '...'
+                                : social.likedByCurrentVisitor
+                                  ? 'Quitar me gusta'
+                                  : 'Me gusta'}
+                            </button>
+                          </div>
                         </div>
 
                         <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
@@ -652,21 +788,46 @@ export default function CommunityFeed() {
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
                   <h3 className="font-semibold text-slate-900">Top vendedores de comunidad</h3>
-                  <p className="text-slate-500 text-sm mt-1">Ranking por actividad, likes y ventas entregadas.</p>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Ranking por actividad, likes y ventas entregadas.
+                  </p>
                 </div>
                 <button
                   type="button"
                   className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                  onClick={loadRanking}
+                  onClick={() => loadRanking(rankingPeriod)}
                 >
-                  Actualizar
+                  {rankingLoading ? 'Actualizando...' : 'Actualizar'}
                 </button>
+              </div>
+
+              <div className="mb-3 flex flex-wrap gap-2">
+                {[
+                  { id: 'today', label: 'Hoy' },
+                  { id: '7d', label: '7 días' },
+                  { id: 'historical', label: 'Histórico' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setRankingPeriod(tab.id as RankingPeriod)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                      rankingPeriod === tab.id
+                        ? 'border-cyan-300 bg-cyan-50 text-cyan-900'
+                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
 
               <div className="space-y-3">
                 {sellerRanking.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-sm text-slate-500">
-                    Aún no hay ranking suficiente. Se irá llenando con actividad y likes de perfiles/anuncios.
+                    {rankingLoading
+                      ? 'Cargando ranking...'
+                      : 'Aún no hay ranking suficiente para este periodo. Se llenará con actividad y likes.'}
                   </div>
                 ) : (
                   sellerRanking.map((row, index) => {

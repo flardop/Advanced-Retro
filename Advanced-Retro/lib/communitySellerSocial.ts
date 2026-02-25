@@ -5,6 +5,7 @@ type SellerSocialState = {
   visits: number;
   visitByVisitor: Record<string, string>;
   likeByVisitor: Record<string, boolean>;
+  likeAtByVisitor: Record<string, string>;
   updatedAt: string;
 };
 
@@ -20,6 +21,7 @@ function defaultState(): SellerSocialState {
     visits: 0,
     visitByVisitor: {},
     likeByVisitor: {},
+    likeAtByVisitor: {},
     updatedAt: new Date().toISOString(),
   };
 }
@@ -58,6 +60,18 @@ function sanitizeState(raw: any): SellerSocialState {
         })
         .filter(([key, value]) => Boolean(key) && value === true)
     ) as Record<string, boolean>;
+  }
+
+  if (raw.likeAtByVisitor && typeof raw.likeAtByVisitor === 'object' && !Array.isArray(raw.likeAtByVisitor)) {
+    safe.likeAtByVisitor = Object.fromEntries(
+      Object.entries(raw.likeAtByVisitor)
+        .map(([key, value]) => {
+          const normalized = normalizeVisitorId(key);
+          if (!normalized) return [null, null];
+          return [toVisitorStorageKey(normalized), typeof value === 'string' ? value : ''];
+        })
+        .filter(([key, value]) => Boolean(key) && typeof value === 'string' && value.length > 0)
+    ) as Record<string, string>;
   }
 
   return safe;
@@ -113,11 +127,13 @@ export function toggleSellerProfileLike(state: SellerSocialState, visitorId: str
 
   if (state.likeByVisitor[visitorKey]) {
     delete state.likeByVisitor[visitorKey];
+    delete state.likeAtByVisitor[visitorKey];
     state.updatedAt = new Date().toISOString();
     return false;
   }
 
   state.likeByVisitor[visitorKey] = true;
+  state.likeAtByVisitor[visitorKey] = new Date().toISOString();
   state.updatedAt = new Date().toISOString();
   return true;
 }
@@ -135,3 +151,25 @@ export function getSellerSocialSummary(
   };
 }
 
+export function getSellerSocialPeriodCounts(
+  state: SellerSocialState,
+  sinceMs: number | null
+): { visits: number; likes: number } {
+  if (!sinceMs || !Number.isFinite(sinceMs)) {
+    return {
+      visits: Math.max(0, Number(state.visits || 0)),
+      likes: Object.keys(state.likeByVisitor || {}).length,
+    };
+  }
+
+  const visits = Object.values(state.visitByVisitor || {}).filter((iso) => {
+    const ts = new Date(String(iso || '')).getTime();
+    return Number.isFinite(ts) && ts >= sinceMs;
+  }).length;
+  const likes = Object.values(state.likeAtByVisitor || {}).filter((iso) => {
+    const ts = new Date(String(iso || '')).getTime();
+    return Number.isFinite(ts) && ts >= sinceMs;
+  }).length;
+
+  return { visits, likes };
+}

@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { checkRateLimit } from '@/lib/rateLimit';
 import {
   addCommunityListingComment,
+  addCommunityListingCommentReply,
   getCommunityListingSocialSummary,
   readCommunityListingSocialState,
   toggleCommunityListingLike,
@@ -74,6 +75,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       success: true,
       listingId,
       canComment: Boolean(user?.id),
+      canReply: Boolean(user?.id),
       summary: getCommunityListingSocialSummary(state, visitorKey),
       comments: state.comments,
       updatedAt: state.updatedAt,
@@ -139,10 +141,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
     }
 
-    if (action === 'add_comment') {
+    if (action === 'add_comment' || action === 'reply_to_comment') {
       if (!user?.id) {
         return NextResponse.json(
-          { error: 'Debes iniciar sesión para comentar anuncios de comunidad' },
+          { error: 'Debes iniciar sesión para comentar o responder en anuncios de comunidad' },
           { status: 401 }
         );
       }
@@ -151,20 +153,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       }
 
       const rawComment = typeof (body as any).comment === 'string' ? (body as any).comment.trim() : '';
-      if (rawComment.length < 2) return badRequest('El comentario debe tener al menos 2 caracteres');
-      if (rawComment.length > 1200) return badRequest('El comentario no puede superar 1200 caracteres');
-
-      const duplicate = state.comments.find(
-        (item) => item.visitorId === visitorKey && item.comment === rawComment
-      );
-      if (duplicate) {
-        return NextResponse.json({
-          success: true,
-          duplicate: true,
-          comment: duplicate,
-          comments: state.comments,
-          summary: getCommunityListingSocialSummary(state, visitorKey),
-        });
+      if (rawComment.length < 2) {
+        return badRequest(
+          action === 'reply_to_comment'
+            ? 'La respuesta debe tener al menos 2 caracteres'
+            : 'El comentario debe tener al menos 2 caracteres'
+        );
+      }
+      if (action === 'reply_to_comment' && rawComment.length > 1000) {
+        return badRequest('La respuesta no puede superar 1000 caracteres');
+      }
+      if (action === 'add_comment' && rawComment.length > 1200) {
+        return badRequest('El comentario no puede superar 1200 caracteres');
       }
 
       const profile = await loadAuthorProfile(user.id);
@@ -177,7 +177,58 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           ? profile.avatar_url.trim()
           : null;
 
-      const comment = addCommunityListingComment(state, {
+      if (action === 'add_comment') {
+        const duplicate = state.comments.find(
+          (item) => item.visitorId === visitorKey && item.comment === rawComment
+        );
+        if (duplicate) {
+          return NextResponse.json({
+            success: true,
+            duplicate: true,
+            comment: duplicate,
+            comments: state.comments,
+            summary: getCommunityListingSocialSummary(state, visitorKey),
+          });
+        }
+
+        const comment = addCommunityListingComment(state, {
+          visitorId: visitorKey,
+          userId: user.id,
+          authorName,
+          authorAvatarUrl,
+          comment: rawComment,
+        });
+        await writeCommunityListingSocialState(listingId, state);
+
+        return NextResponse.json({
+          success: true,
+          comment,
+          comments: state.comments,
+          summary: getCommunityListingSocialSummary(state, visitorKey),
+        });
+      }
+
+      const parentCommentId = String((body as any).commentId || '').trim();
+      if (!parentCommentId) return badRequest('commentId es requerido para responder');
+
+      const parent = state.comments.find((item) => item.id === parentCommentId);
+      if (!parent) return badRequest('No se encontró el comentario a responder');
+
+      const duplicateReply = (parent.replies || []).find(
+        (item) => item.visitorId === visitorKey && item.comment === rawComment
+      );
+      if (duplicateReply) {
+        return NextResponse.json({
+          success: true,
+          duplicate: true,
+          reply: duplicateReply,
+          comments: state.comments,
+          summary: getCommunityListingSocialSummary(state, visitorKey),
+        });
+      }
+
+      const reply = addCommunityListingCommentReply(state, {
+        parentCommentId,
         visitorId: visitorKey,
         userId: user.id,
         authorName,
@@ -188,7 +239,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
       return NextResponse.json({
         success: true,
-        comment,
+        reply,
         comments: state.comments,
         summary: getCommunityListingSocialSummary(state, visitorKey),
       });
@@ -202,4 +253,3 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     );
   }
 }
-

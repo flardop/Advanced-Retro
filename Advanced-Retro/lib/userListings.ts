@@ -1,6 +1,11 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { getSellerSocialSummary, readSellerSocialState } from '@/lib/communitySellerSocial';
 import {
+  getSellerSocialPeriodCounts,
+  getSellerSocialSummary,
+  readSellerSocialState,
+} from '@/lib/communitySellerSocial';
+import {
+  getCommunityListingSocialPeriodCounts,
   getCommunityListingSocialSummary,
   readCommunityListingSocialState,
 } from '@/lib/communityListingSocial';
@@ -489,6 +494,8 @@ export type CommunitySellerRankingEntry = {
   sample_listings: Array<{ id: string; title: string; price: number }>;
 };
 
+export type CommunitySellerRankingPeriod = 'today' | '7d' | 'historical';
+
 function toIsoTimestamp(value: unknown): number {
   if (typeof value !== 'string' || !value.trim()) return 0;
   const ts = new Date(value).getTime();
@@ -506,10 +513,28 @@ function recencyBonusFromIso(value: string | null): number {
   return 0;
 }
 
-export async function getCommunitySellerRanking(limit = 10): Promise<CommunitySellerRankingEntry[]> {
+function getRankingSinceMs(period: CommunitySellerRankingPeriod): number | null {
+  if (period === 'historical') return null;
+  const now = new Date();
+  if (period === 'today') {
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    return start.getTime();
+  }
+  return now.getTime() - 7 * 24 * 60 * 60 * 1000;
+}
+
+export async function getCommunitySellerRanking(
+  limit = 10,
+  period: CommunitySellerRankingPeriod = 'historical'
+): Promise<CommunitySellerRankingEntry[]> {
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const safeLimit = Math.min(Math.max(Number(limit || 0), 1), 20);
+  const safePeriod: CommunitySellerRankingPeriod = ['today', '7d', 'historical'].includes(period)
+    ? period
+    : 'historical';
+  const sinceMs = getRankingSinceMs(safePeriod);
 
   const { data: listingRows, error } = await supabaseAdmin
     .from('user_product_listings')
@@ -532,6 +557,9 @@ export async function getCommunitySellerRanking(limit = 10): Promise<CommunitySe
     avgPriceCents: number;
     lastActivityAt: string | null;
     baseScore: number;
+    recentActivityCount: number;
+    recentDeliveredCount: number;
+    recentPublishedCount: number;
   };
 
   const grouped = new Map<string, any[]>();
@@ -565,8 +593,32 @@ export async function getCommunitySellerRanking(limit = 10): Promise<CommunitySe
         )
       );
       const lastActivityAt = lastActivityAtTs ? new Date(lastActivityAtTs).toISOString() : null;
-      const baseScore =
-        deliveredCount * 30 + activeCount * 10 + approvedCount * 4 + recencyBonusFromIso(lastActivityAt);
+      const recentActivityCount = listings.filter((item) => {
+        if (!sinceMs) return true;
+        const ts = Math.max(
+          toIsoTimestamp(item.delivered_at),
+          toIsoTimestamp(item.updated_at),
+          toIsoTimestamp(item.approved_at),
+          toIsoTimestamp(item.created_at)
+        );
+        return ts >= sinceMs;
+      }).length;
+      const recentDeliveredCount = listings.filter((item) => {
+        if (!sinceMs) return String(item.delivery_status || '') === 'delivered';
+        return (
+          String(item.delivery_status || '') === 'delivered' &&
+          toIsoTimestamp(item.delivered_at || item.updated_at) >= sinceMs
+        );
+      }).length;
+      const recentPublishedCount = listings.filter((item) => {
+        if (!sinceMs) return true;
+        const ts = Math.max(toIsoTimestamp(item.approved_at), toIsoTimestamp(item.created_at));
+        return ts >= sinceMs;
+      }).length;
+
+      const baseScore = sinceMs
+        ? recentDeliveredCount * 34 + recentActivityCount * 14 + recentPublishedCount * 8 + activeCount * 2
+        : deliveredCount * 30 + activeCount * 10 + approvedCount * 4 + recencyBonusFromIso(lastActivityAt);
 
       return {
         userId,
@@ -577,6 +629,9 @@ export async function getCommunitySellerRanking(limit = 10): Promise<CommunitySe
         avgPriceCents,
         lastActivityAt,
         baseScore,
+        recentActivityCount,
+        recentDeliveredCount,
+        recentPublishedCount,
       };
     })
     .sort((a, b) => b.baseScore - a.baseScore || b.approvedCount - a.approvedCount)
@@ -595,18 +650,28 @@ export async function getCommunitySellerRanking(limit = 10): Promise<CommunitySe
     candidates.map(async (candidate) => {
       let profileLikes = 0;
       let profileVisits = 0;
+      let profileLikesWindow = 0;
+      let profileVisitsWindow = 0;
       try {
         const sellerState = await readSellerSocialState(candidate.userId);
         const sellerSummary = getSellerSocialSummary(sellerState);
         profileLikes = Number(sellerSummary.likes || 0);
         profileVisits = Number(sellerSummary.visits || 0);
+        const windowCounts = getSellerSocialPeriodCounts(sellerState, sinceMs);
+        profileLikesWindow = Number(windowCounts.likes || 0);
+        profileVisitsWindow = Number(windowCounts.visits || 0);
       } catch {
         // social storage opcional
       }
 
       let listingLikes = 0;
       let listingComments = 0;
+      let listingReplies = 0;
       let listingVisits = 0;
+      let listingLikesWindow = 0;
+      let listingCommentsWindow = 0;
+      let listingRepliesWindow = 0;
+      let listingVisitsWindow = 0;
       const listingSubset = candidate.listings.slice(0, 40);
       await Promise.all(
         listingSubset.map(async (listing) => {
@@ -616,6 +681,13 @@ export async function getCommunitySellerRanking(limit = 10): Promise<CommunitySe
             listingLikes += Number(summary.likes || 0);
             listingComments += Number(summary.commentsCount || 0);
             listingVisits += Number(summary.visits || 0);
+            const windowCounts = getCommunityListingSocialPeriodCounts(state, sinceMs);
+            const fullCounts = getCommunityListingSocialPeriodCounts(state, null);
+            listingLikesWindow += Number(windowCounts.likes || 0);
+            listingCommentsWindow += Number(windowCounts.comments || 0);
+            listingRepliesWindow += Number(windowCounts.replies || 0);
+            listingVisitsWindow += Number(windowCounts.visits || 0);
+            listingReplies += Number(fullCounts.replies || 0);
           } catch {
             // anuncios sin social aún
           }
@@ -623,14 +695,20 @@ export async function getCommunitySellerRanking(limit = 10): Promise<CommunitySe
       );
 
       const totalLikes = profileLikes + listingLikes;
+      const totalLikesWindow = profileLikesWindow + listingLikesWindow;
       const user = userMap.get(candidate.userId);
       const verifiedBonus = user?.is_verified_seller ? 10 : 0;
-      const score =
-        candidate.baseScore +
-        totalLikes * 4 +
-        listingComments * 3 +
-        Math.min(20, Math.floor((profileVisits + listingVisits) / 25)) +
-        verifiedBonus;
+      const score = sinceMs
+        ? candidate.baseScore +
+          totalLikesWindow * 5 +
+          (listingCommentsWindow + listingRepliesWindow) * 3 +
+          Math.min(20, Math.floor((profileVisitsWindow + listingVisitsWindow) / 15)) +
+          verifiedBonus
+        : candidate.baseScore +
+          totalLikes * 4 +
+          (listingComments + listingReplies) * 3 +
+          Math.min(20, Math.floor((profileVisits + listingVisits) / 25)) +
+          verifiedBonus;
 
       return {
         seller: {
@@ -667,6 +745,7 @@ export async function getCommunitySellerRanking(limit = 10): Promise<CommunitySe
   );
 
   return enriched
+    .filter((entry) => (sinceMs ? entry.score > 0 : true))
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (b.stats.total_likes !== a.stats.total_likes) return b.stats.total_likes - a.stats.total_likes;

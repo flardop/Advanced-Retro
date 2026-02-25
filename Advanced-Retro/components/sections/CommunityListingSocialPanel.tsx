@@ -11,6 +11,14 @@ type ListingComment = {
   authorAvatarUrl?: string | null;
   comment: string;
   createdAt: string;
+  replies?: Array<{
+    id: string;
+    userId?: string | null;
+    authorName: string;
+    authorAvatarUrl?: string | null;
+    comment: string;
+    createdAt: string;
+  }>;
 };
 
 type ListingSocialSummary = {
@@ -27,6 +35,10 @@ const EMPTY_SUMMARY: ListingSocialSummary = {
   commentsCount: 0,
   likedByCurrentVisitor: false,
 };
+
+type ReplyDraftMap = Record<string, string>;
+
+type ReplyOpenMap = Record<string, boolean>;
 
 function getOrCreateVisitorId(): string {
   if (typeof window === 'undefined') return '';
@@ -65,10 +77,14 @@ export default function CommunityListingSocialPanel({ listingId }: { listingId: 
   const [summary, setSummary] = useState<ListingSocialSummary>(EMPTY_SUMMARY);
   const [comments, setComments] = useState<ListingComment[]>([]);
   const [canComment, setCanComment] = useState(false);
+  const [canReply, setCanReply] = useState(false);
   const [loading, setLoading] = useState(true);
   const [liking, setLiking] = useState(false);
   const [comment, setComment] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
+  const [replyOpen, setReplyOpen] = useState<ReplyOpenMap>({});
+  const [replyDrafts, setReplyDrafts] = useState<ReplyDraftMap>({});
+  const [sendingReplyFor, setSendingReplyFor] = useState<string | null>(null);
 
   useEffect(() => {
     setVisitorId(getOrCreateVisitorId());
@@ -91,11 +107,13 @@ export default function CommunityListingSocialPanel({ listingId }: { listingId: 
         if (data?.summary) setSummary(data.summary);
         setComments(Array.isArray(data?.comments) ? data.comments : []);
         setCanComment(Boolean(data?.canComment));
+        setCanReply(Boolean(data?.canReply ?? data?.canComment));
       } catch {
         if (cancelled) return;
         setSummary(EMPTY_SUMMARY);
         setComments([]);
         setCanComment(false);
+        setCanReply(false);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -180,6 +198,51 @@ export default function CommunityListingSocialPanel({ listingId }: { listingId: 
       toast.error(error?.message || 'No se pudo enviar el comentario');
     } finally {
       setSendingComment(false);
+    }
+  };
+
+  const submitReply = async (commentId: string) => {
+    const id = String(commentId || '').trim();
+    if (!id) return;
+    const value = String(replyDrafts[id] || '').trim();
+    if (value.length < 2) {
+      toast.error('La respuesta debe tener al menos 2 caracteres');
+      return;
+    }
+    if (value.length > 1000) {
+      toast.error('La respuesta no puede superar 1000 caracteres');
+      return;
+    }
+    if (!listingId || !visitorId || sendingReplyFor) return;
+
+    setSendingReplyFor(id);
+    try {
+      const res = await fetch(`/api/community/listings/${encodeURIComponent(listingId)}/social`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'reply_to_comment',
+          visitorId,
+          commentId: id,
+          comment: value,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        if (res.status === 401) {
+          setCanReply(false);
+        }
+        throw new Error(data?.error || 'No se pudo enviar la respuesta');
+      }
+      if (data?.summary) setSummary(data.summary);
+      if (Array.isArray(data?.comments)) setComments(data.comments);
+      setReplyDrafts((prev) => ({ ...prev, [id]: '' }));
+      setReplyOpen((prev) => ({ ...prev, [id]: false }));
+      toast.success(data?.duplicate ? 'Respuesta ya enviada anteriormente' : 'Respuesta publicada');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo enviar la respuesta');
+    } finally {
+      setSendingReplyFor(null);
     }
   };
 
@@ -302,6 +365,103 @@ export default function CommunityListingSocialPanel({ listingId }: { listingId: 
                     <p className="text-sm text-textMuted mt-1 whitespace-pre-wrap break-words">
                       {item.comment}
                     </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] text-textMuted">
+                        {(item.replies || []).length} respuesta{(item.replies || []).length === 1 ? '' : 's'}
+                      </span>
+                      {canReply ? (
+                        <button
+                          type="button"
+                          className="text-[11px] font-semibold text-primary hover:underline"
+                          onClick={() =>
+                            setReplyOpen((prev) => ({ ...prev, [item.id]: !Boolean(prev[item.id]) }))
+                          }
+                        >
+                          {replyOpen[item.id] ? 'Cancelar' : 'Responder'}
+                        </button>
+                      ) : null}
+                    </div>
+
+                    {Array.isArray(item.replies) && item.replies.length > 0 ? (
+                      <div className="mt-3 space-y-2 pl-3 border-l border-line">
+                        {item.replies.map((reply) => (
+                          <div key={reply.id} className="rounded-lg border border-line p-2 bg-[rgba(6,12,20,0.45)]">
+                            <div className="flex items-start gap-2">
+                              <div className="h-7 w-7 rounded-full border border-line bg-surface overflow-hidden flex items-center justify-center text-[10px] font-semibold">
+                                {reply.authorAvatarUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={reply.authorAvatarUrl}
+                                    alt={reply.authorName}
+                                    className="h-full w-full object-cover"
+                                    loading="lazy"
+                                    onError={(event) => {
+                                      event.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  avatarFallback(reply.authorName)
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <p className="text-xs font-semibold line-clamp-1">{reply.authorName}</p>
+                                  <p className="text-[11px] text-textMuted">{relativeDate(reply.createdAt)}</p>
+                                </div>
+                                <p className="text-xs text-textMuted mt-1 whitespace-pre-wrap break-words">
+                                  {reply.comment}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {replyOpen[item.id] ? (
+                      canReply ? (
+                        <div className="mt-3 rounded-xl border border-line p-3 bg-[rgba(6,12,20,0.4)]">
+                          <textarea
+                            className="w-full rounded-lg border border-line bg-[rgba(6,12,22,0.65)] px-3 py-2 text-xs text-white placeholder:text-textMuted min-h-[72px]"
+                            placeholder="Responder a este comentario..."
+                            value={replyDrafts[item.id] || ''}
+                            onChange={(event) =>
+                              setReplyDrafts((prev) => ({ ...prev, [item.id]: event.target.value }))
+                            }
+                            maxLength={1000}
+                          />
+                          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-[11px] text-textMuted">
+                              {String(replyDrafts[item.id] || '').trim().length}/1000
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                className="chip text-xs"
+                                onClick={() => setReplyOpen((prev) => ({ ...prev, [item.id]: false }))}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                type="button"
+                                className="button-primary disabled:opacity-60 text-xs px-3 py-2"
+                                onClick={() => submitReply(item.id)}
+                                disabled={
+                                  sendingReplyFor === item.id ||
+                                  String(replyDrafts[item.id] || '').trim().length < 2
+                                }
+                              >
+                                {sendingReplyFor === item.id ? 'Enviando...' : 'Responder'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-3 text-xs text-textMuted">
+                          Inicia sesión para responder en el hilo.
+                        </div>
+                      )
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -312,4 +472,3 @@ export default function CommunityListingSocialPanel({ listingId }: { listingId: 
     </div>
   );
 }
-

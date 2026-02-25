@@ -3,8 +3,9 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { ensureSocialBucket, normalizeVisitorId, toVisitorStorageKey } from '@/lib/productSocialStorage';
 
 const MAX_COMMENTS_PER_LISTING = 250;
+const MAX_REPLIES_PER_COMMENT = 30;
 
-export type CommunityListingComment = {
+export type CommunityListingCommentReply = {
   id: string;
   visitorId: string;
   userId: string | null;
@@ -14,10 +15,22 @@ export type CommunityListingComment = {
   createdAt: string;
 };
 
+export type CommunityListingComment = {
+  id: string;
+  visitorId: string;
+  userId: string | null;
+  authorName: string;
+  authorAvatarUrl: string | null;
+  comment: string;
+  createdAt: string;
+  replies: CommunityListingCommentReply[];
+};
+
 type CommunityListingSocialState = {
   visits: number;
   visitByVisitor: Record<string, string>;
   likeByVisitor: Record<string, boolean>;
+  likeAtByVisitor: Record<string, string>;
   comments: CommunityListingComment[];
   updatedAt: string;
 };
@@ -35,6 +48,7 @@ function defaultState(): CommunityListingSocialState {
     visits: 0,
     visitByVisitor: {},
     likeByVisitor: {},
+    likeAtByVisitor: {},
     comments: [],
     updatedAt: new Date().toISOString(),
   };
@@ -55,6 +69,67 @@ function sanitizeComment(raw: any): CommunityListingComment | null {
   const comment =
     typeof raw.comment === 'string' && raw.comment.trim()
       ? raw.comment.trim().slice(0, 1200)
+      : '';
+  if (comment.length < 2) return null;
+
+  const authorName =
+    typeof raw.authorName === 'string' && raw.authorName.trim()
+      ? raw.authorName.trim().slice(0, 60)
+      : 'Coleccionista';
+
+  const authorAvatarUrl =
+    typeof raw.authorAvatarUrl === 'string' &&
+    raw.authorAvatarUrl.trim() &&
+    (/^https?:\/\//i.test(raw.authorAvatarUrl) || raw.authorAvatarUrl.startsWith('/'))
+      ? raw.authorAvatarUrl.trim()
+      : null;
+
+  const userId =
+    typeof raw.userId === 'string' && raw.userId.trim()
+      ? raw.userId.trim().slice(0, 80)
+      : null;
+
+  const createdAt =
+    typeof raw.createdAt === 'string' && raw.createdAt.trim()
+      ? raw.createdAt.trim()
+      : new Date().toISOString();
+
+  const id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : randomUUID();
+
+  const replies = Array.isArray(raw.replies)
+    ? raw.replies
+        .map((item: any) => sanitizeReply(item))
+        .filter((item: CommunityListingCommentReply | null): item is CommunityListingCommentReply => Boolean(item))
+        .sort(
+          (a: CommunityListingCommentReply, b: CommunityListingCommentReply) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        )
+        .slice(0, MAX_REPLIES_PER_COMMENT)
+    : [];
+
+  return {
+    id,
+    visitorId,
+    userId,
+    authorName,
+    authorAvatarUrl,
+    comment,
+    createdAt,
+    replies,
+  };
+}
+
+function sanitizeReply(raw: any): CommunityListingCommentReply | null {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const rawVisitor = normalizeVisitorId(raw.visitorId);
+  if (!rawVisitor) return null;
+  const visitorId = toVisitorStorageKey(rawVisitor);
+  if (!visitorId) return null;
+
+  const comment =
+    typeof raw.comment === 'string' && raw.comment.trim()
+      ? raw.comment.trim().slice(0, 1000)
       : '';
   if (comment.length < 2) return null;
 
@@ -125,6 +200,18 @@ function sanitizeState(raw: any): CommunityListingSocialState {
     ) as Record<string, boolean>;
   }
 
+  if (raw.likeAtByVisitor && typeof raw.likeAtByVisitor === 'object' && !Array.isArray(raw.likeAtByVisitor)) {
+    safe.likeAtByVisitor = Object.fromEntries(
+      Object.entries(raw.likeAtByVisitor)
+        .map(([key, value]) => {
+          const normalized = normalizeVisitorId(key);
+          if (!normalized) return [null, null];
+          return [toVisitorStorageKey(normalized), typeof value === 'string' ? value : ''];
+        })
+        .filter(([key, value]) => Boolean(key) && typeof value === 'string' && value.length > 0)
+    ) as Record<string, string>;
+  }
+
   const comments = Array.isArray(raw.comments) ? raw.comments : [];
   safe.comments = comments
     .map((item: any) => sanitizeComment(item))
@@ -191,11 +278,13 @@ export function toggleCommunityListingLike(state: CommunityListingSocialState, v
 
   if (state.likeByVisitor[visitorKey]) {
     delete state.likeByVisitor[visitorKey];
+    delete state.likeAtByVisitor[visitorKey];
     state.updatedAt = new Date().toISOString();
     return false;
   }
 
   state.likeByVisitor[visitorKey] = true;
+  state.likeAtByVisitor[visitorKey] = new Date().toISOString();
   state.updatedAt = new Date().toISOString();
   return true;
 }
@@ -226,6 +315,7 @@ export function addCommunityListingComment(
         : null,
     comment: String(payload.comment || '').trim().slice(0, 1200),
     createdAt: new Date().toISOString(),
+    replies: [],
   };
 
   if (next.comment.length < 2) {
@@ -236,6 +326,58 @@ export function addCommunityListingComment(
   if (state.comments.length > MAX_COMMENTS_PER_LISTING) {
     state.comments = state.comments.slice(0, MAX_COMMENTS_PER_LISTING);
   }
+  state.updatedAt = new Date().toISOString();
+  return next;
+}
+
+export function addCommunityListingCommentReply(
+  state: CommunityListingSocialState,
+  payload: {
+    parentCommentId: string;
+    visitorId: string;
+    userId?: string | null;
+    authorName: string;
+    authorAvatarUrl?: string | null;
+    comment: string;
+  }
+): CommunityListingCommentReply {
+  const parentId = String(payload.parentCommentId || '').trim();
+  if (!parentId) throw new Error('Comentario padre requerido');
+
+  const parent = state.comments.find((item) => item.id === parentId);
+  if (!parent) throw new Error('Comentario no encontrado');
+
+  const visitorKey = toVisitorStorageKey(payload.visitorId);
+  if (!visitorKey) throw new Error('Invalid visitor id');
+
+  const next: CommunityListingCommentReply = {
+    id: randomUUID(),
+    visitorId: visitorKey,
+    userId: payload.userId ? String(payload.userId).trim().slice(0, 80) : null,
+    authorName: String(payload.authorName || '').trim().slice(0, 60) || 'Coleccionista',
+    authorAvatarUrl:
+      typeof payload.authorAvatarUrl === 'string' &&
+      payload.authorAvatarUrl.trim() &&
+      (/^https?:\/\//i.test(payload.authorAvatarUrl) || payload.authorAvatarUrl.startsWith('/'))
+        ? payload.authorAvatarUrl.trim()
+        : null,
+    comment: String(payload.comment || '').trim().slice(0, 1000),
+    createdAt: new Date().toISOString(),
+  };
+
+  if (next.comment.length < 2) {
+    throw new Error('Respuesta demasiado corta');
+  }
+
+  parent.replies = Array.isArray(parent.replies) ? parent.replies : [];
+  parent.replies.push(next);
+  parent.replies = parent.replies
+    .sort(
+      (a: CommunityListingCommentReply, b: CommunityListingCommentReply) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+    .slice(-MAX_REPLIES_PER_COMMENT);
+
   state.updatedAt = new Date().toISOString();
   return next;
 }
@@ -253,4 +395,51 @@ export function getCommunityListingSocialSummary(
     likedByCurrentVisitor: Boolean(visitorKey && state.likeByVisitor[visitorKey]),
     updatedAt: state.updatedAt || new Date().toISOString(),
   };
+}
+
+export function getCommunityListingSocialPeriodCounts(
+  state: CommunityListingSocialState,
+  sinceMs: number | null
+): {
+  visits: number;
+  likes: number;
+  comments: number;
+  replies: number;
+} {
+  if (!sinceMs || !Number.isFinite(sinceMs)) {
+    const comments = Array.isArray(state.comments) ? state.comments.length : 0;
+    const replies = (state.comments || []).reduce(
+      (sum, item) => sum + (Array.isArray(item.replies) ? item.replies.length : 0),
+      0
+    );
+    return {
+      visits: Math.max(0, Number(state.visits || 0)),
+      likes: Object.keys(state.likeByVisitor || {}).length,
+      comments,
+      replies,
+    };
+  }
+
+  const visits = Object.values(state.visitByVisitor || {}).filter((iso) => {
+    const ts = new Date(String(iso || '')).getTime();
+    return Number.isFinite(ts) && ts >= sinceMs;
+  }).length;
+
+  const likes = Object.values(state.likeAtByVisitor || {}).filter((iso) => {
+    const ts = new Date(String(iso || '')).getTime();
+    return Number.isFinite(ts) && ts >= sinceMs;
+  }).length;
+
+  let comments = 0;
+  let replies = 0;
+  for (const item of state.comments || []) {
+    const commentTs = new Date(String(item.createdAt || '')).getTime();
+    if (Number.isFinite(commentTs) && commentTs >= sinceMs) comments += 1;
+    for (const reply of item.replies || []) {
+      const replyTs = new Date(String(reply.createdAt || '')).getTime();
+      if (Number.isFinite(replyTs) && replyTs >= sinceMs) replies += 1;
+    }
+  }
+
+  return { visits, likes, comments, replies };
 }
