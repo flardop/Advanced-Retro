@@ -14,6 +14,16 @@ type AppUserProfile = {
   favorite_console: string | null;
   profile_theme: string | null;
   badges: string[];
+  shipping_address: {
+    full_name: string;
+    line1: string;
+    line2: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+    phone: string;
+  } | null;
   is_verified_seller: boolean;
   created_at?: string;
   updated_at?: string;
@@ -61,6 +71,25 @@ function userBannerFromAuth(user: User): string | null {
     return user.user_metadata.banner_url;
   }
   return null;
+}
+
+function normalizeShippingAddressFromUnknown(input: unknown) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  const source = input as Record<string, unknown>;
+  const payload = {
+    full_name: String(source.full_name || '').trim().slice(0, 120),
+    line1: String(source.line1 || '').trim().slice(0, 200),
+    line2: String(source.line2 || '').trim().slice(0, 200),
+    city: String(source.city || '').trim().slice(0, 120),
+    state: String(source.state || '').trim().slice(0, 120),
+    postal_code: String(source.postal_code || '').trim().slice(0, 30),
+    country: String(source.country || '').trim().slice(0, 80),
+    phone: String(source.phone || '').trim().slice(0, 50),
+  };
+  if (!payload.full_name || !payload.line1 || !payload.city || !payload.postal_code || !payload.country) {
+    return null;
+  }
+  return payload;
 }
 
 function requiresLegacyPasswordHash(error: any): boolean {
@@ -146,6 +175,7 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
   const { safeEmail, safeName, safeAvatar } = await syncAuthUserProfileRow(user);
   const safeBanner = userBannerFromAuth(user);
   const metadata = user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {};
+  const metadataShipping = normalizeShippingAddressFromUnknown((metadata as any).shipping_address);
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('users')
@@ -198,6 +228,21 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
       : Array.isArray(metadata.badges)
         ? metadata.badges.filter((value: unknown) => typeof value === 'string')
         : [],
+    shipping_address:
+      normalizeShippingAddressFromUnknown((profile as any).shipping_address) ||
+      metadataShipping ||
+      (profile.address || profile.city || profile.country
+        ? {
+            full_name: typeof profile.name === 'string' ? profile.name : safeName,
+            line1: String(profile.address || '').trim().slice(0, 200),
+            line2: '',
+            city: String(profile.city || '').trim().slice(0, 120),
+            state: '',
+            postal_code: '',
+            country: String(profile.country || 'España').trim().slice(0, 80),
+            phone: String(profile.phone || '').trim().slice(0, 50),
+          }
+        : null),
     is_verified_seller: Boolean(profile.is_verified_seller),
     created_at: profile.created_at,
     updated_at: profile.updated_at,

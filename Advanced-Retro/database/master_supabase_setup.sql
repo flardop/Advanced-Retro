@@ -56,6 +56,7 @@ create table if not exists public.users (
   favorite_console text,
   profile_theme text not null default 'neon-grid',
   badges text[] not null default '{}',
+  shipping_address jsonb,
   is_verified_seller boolean not null default false,
   phone text,
   address text,
@@ -76,6 +77,7 @@ alter table if exists public.users add column if not exists tagline text;
 alter table if exists public.users add column if not exists favorite_console text;
 alter table if exists public.users add column if not exists profile_theme text;
 alter table if exists public.users add column if not exists badges text[];
+alter table if exists public.users add column if not exists shipping_address jsonb;
 alter table if exists public.users add column if not exists is_verified_seller boolean;
 alter table if exists public.users add column if not exists phone text;
 alter table if exists public.users add column if not exists address text;

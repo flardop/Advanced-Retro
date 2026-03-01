@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCartStore } from '@/store/cartStore';
 import { stripePromise } from '@/lib/stripe';
 import toast from 'react-hot-toast';
+import { calculateShippingQuoteFromArenys } from '@/lib/shipping';
 
 function toEuro(cents: number): string {
   return `${(Number(cents || 0) / 100).toFixed(2)} €`;
@@ -25,9 +26,24 @@ export default function CheckoutView() {
   const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('España');
   const [phone, setPhone] = useState('');
+  const [prefillLoaded, setPrefillLoaded] = useState(false);
 
-  const shippingMethod = 'envio-estandar';
-  const shippingCost = 450;
+  const shippingQuote = useMemo(
+    () =>
+      calculateShippingQuoteFromArenys({
+        full_name: fullName,
+        line1,
+        line2,
+        city,
+        state,
+        postal_code: postalCode,
+        country,
+        phone,
+      }),
+    [fullName, line1, line2, city, state, postalCode, country, phone]
+  );
+  const shippingMethod = shippingQuote.method;
+  const shippingCost = shippingQuote.costCents;
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0),
@@ -36,6 +52,39 @@ export default function CheckoutView() {
 
   const totalBeforeCoupon = subtotal + shippingCost;
   const total = Math.max(0, totalBeforeCoupon - couponDiscount);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSavedAddress = async () => {
+      try {
+        const res = await fetch('/api/auth/profile');
+        const data = await res.json().catch(() => null);
+        if (!res.ok) return;
+
+        const saved = data?.user?.profile?.shipping_address;
+        if (!saved || typeof saved !== 'object' || !isMounted) return;
+
+        setFullName(String(saved.full_name || ''));
+        setLine1(String(saved.line1 || ''));
+        setLine2(String(saved.line2 || ''));
+        setCity(String(saved.city || ''));
+        setState(String(saved.state || ''));
+        setPostalCode(String(saved.postal_code || ''));
+        setCountry(String(saved.country || 'España'));
+        setPhone(String(saved.phone || ''));
+      } catch {
+        // Ignore profile prefill errors in checkout.
+      } finally {
+        if (isMounted) setPrefillLoaded(true);
+      }
+    };
+
+    void loadSavedAddress();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const validateCoupon = async () => {
     if (!couponCode.trim()) {
@@ -82,6 +131,24 @@ export default function CheckoutView() {
 
     setLoading(true);
     try {
+      // Best-effort: guarda la dirección para futuros pedidos.
+      await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shipping_address: {
+            full_name: fullName,
+            line1,
+            line2,
+            city,
+            state,
+            postal_code: postalCode,
+            country,
+            phone,
+          },
+        }),
+      }).catch(() => null);
+
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -146,10 +213,17 @@ export default function CheckoutView() {
               <input className="w-full bg-transparent border border-line px-4 py-3" placeholder="País" value={country} onChange={(e) => setCountry(e.target.value)} />
               <input className="w-full bg-transparent border border-line px-4 py-3 sm:col-span-2" placeholder="Teléfono (opcional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
+            {prefillLoaded ? (
+              <p className="text-xs text-textMuted">
+                Si ya habías guardado dirección en tu perfil, se rellena automáticamente.
+              </p>
+            ) : (
+              <p className="text-xs text-textMuted">Cargando dirección guardada...</p>
+            )}
 
             <div className="border border-line p-3">
               <p className="text-sm text-textMuted">Método de envío</p>
-              <p className="font-semibold">Envío estándar · {toEuro(shippingCost)}</p>
+              <p className="font-semibold">Envío estándar ({shippingQuote.etaLabel}) · {toEuro(shippingCost)}</p>
             </div>
 
             <div className="border border-line p-3 space-y-2">

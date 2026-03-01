@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { normalizeCouponCode, validateCouponForCheckout } from '@/lib/coupons';
 import { applyPaidOrderWithStockUpdate } from '@/lib/orderSettlement';
+import { calculateShippingQuoteFromArenys } from '@/lib/shipping';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,12 +42,6 @@ function normalizeShippingAddress(input: any): ShippingAddress | null {
   return payload;
 }
 
-function toAmount(value: unknown): number {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return 0;
-  return Math.max(0, Math.round(num));
-}
-
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 });
@@ -75,8 +70,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const shippingMethod = String(body?.shippingMethod || 'envio-estandar').trim().slice(0, 80);
-  const shippingCost = toAmount(body?.shippingCost);
+  const shippingQuote = calculateShippingQuoteFromArenys(shippingAddress);
+  const shippingMethod = shippingQuote.method;
+  const shippingCost = shippingQuote.costCents;
   const couponCode = normalizeCouponCode(body?.couponCode);
 
   const itemQuantities = new Map<string, number>();

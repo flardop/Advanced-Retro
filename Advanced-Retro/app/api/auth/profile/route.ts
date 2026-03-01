@@ -11,6 +11,25 @@ function handleError(error: any) {
   return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
 }
 
+function sanitizeShippingAddress(input: unknown) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  const source = input as Record<string, unknown>;
+  const payload = {
+    full_name: String(source.full_name || '').trim().slice(0, 120),
+    line1: String(source.line1 || '').trim().slice(0, 200),
+    line2: String(source.line2 || '').trim().slice(0, 200),
+    city: String(source.city || '').trim().slice(0, 120),
+    state: String(source.state || '').trim().slice(0, 120),
+    postal_code: String(source.postal_code || '').trim().slice(0, 30),
+    country: String(source.country || '').trim().slice(0, 80),
+    phone: String(source.phone || '').trim().slice(0, 50),
+  };
+  if (!payload.full_name || !payload.line1 || !payload.city || !payload.postal_code || !payload.country) {
+    return null;
+  }
+  return payload;
+}
+
 export async function GET() {
   try {
     const { user, profile } = await requireUserContext();
@@ -78,6 +97,9 @@ export async function PUT(req: Request) {
       }
     }
     if (Array.isArray(body?.badges)) payload.badges = sanitizeBadges(body.badges);
+    if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'shipping_address')) {
+      payload.shipping_address = sanitizeShippingAddress((body as any).shipping_address);
+    }
 
     const hasUserField = Object.keys(payload).length > 0;
     if (!hasUserField) {
@@ -89,7 +111,7 @@ export async function PUT(req: Request) {
       .from('users')
       .update(payload)
       .eq('id', user.id)
-      .select('id,email,role,name,avatar_url,banner_url,bio,tagline,favorite_console,profile_theme,badges,is_verified_seller,created_at,updated_at')
+      .select('id,email,role,name,avatar_url,banner_url,bio,tagline,favorite_console,profile_theme,badges,shipping_address,is_verified_seller,created_at,updated_at')
       .single();
 
     if (updateError || !updated) {
@@ -104,6 +126,9 @@ export async function PUT(req: Request) {
         if (typeof body?.favorite_console === 'string') metadataPatch.favorite_console = body.favorite_console.trim().slice(0, 120) || null;
         if (typeof body?.profile_theme === 'string') metadataPatch.profile_theme = body.profile_theme.trim().slice(0, 40) || null;
         if (Array.isArray(body?.badges)) metadataPatch.badges = sanitizeBadges(body.badges);
+        if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'shipping_address')) {
+          metadataPatch.shipping_address = sanitizeShippingAddress((body as any).shipping_address);
+        }
 
         if (Object.keys(metadataPatch).length > 0) {
           const nextMetadata = {
@@ -139,6 +164,10 @@ export async function PUT(req: Request) {
                     ? metadataPatch.profile_theme
                     : currentProfile.profile_theme,
                 badges: Array.isArray(metadataPatch.badges) ? metadataPatch.badges : currentProfile.badges,
+                shipping_address:
+                  Object.prototype.hasOwnProperty.call(metadataPatch, 'shipping_address')
+                    ? ((metadataPatch.shipping_address as any) || null)
+                    : currentProfile.shipping_address,
                 updated_at: new Date().toISOString(),
               },
               fallback: 'auth_user_metadata',

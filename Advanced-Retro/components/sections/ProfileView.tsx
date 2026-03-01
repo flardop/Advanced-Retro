@@ -55,6 +55,16 @@ type ProfileState = {
   favorite_console: string | null;
   profile_theme: string | null;
   badges: string[];
+  shipping_address: {
+    full_name: string;
+    line1: string;
+    line2: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+    phone: string;
+  } | null;
   is_verified_seller: boolean;
 };
 
@@ -226,6 +236,14 @@ export default function ProfileView() {
   const [tagline, setTagline] = useState('');
   const [favoriteConsole, setFavoriteConsole] = useState('');
   const [profileTheme, setProfileTheme] = useState('neon-grid');
+  const [shippingFullName, setShippingFullName] = useState('');
+  const [shippingLine1, setShippingLine1] = useState('');
+  const [shippingLine2, setShippingLine2] = useState('');
+  const [shippingCity, setShippingCity] = useState('');
+  const [shippingState, setShippingState] = useState('');
+  const [shippingPostalCode, setShippingPostalCode] = useState('');
+  const [shippingCountry, setShippingCountry] = useState('España');
+  const [shippingPhone, setShippingPhone] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
@@ -274,6 +292,14 @@ export default function ProfileView() {
     setTagline(String(nextProfile?.tagline || ''));
     setFavoriteConsole(String(nextProfile?.favorite_console || ''));
     setProfileTheme(String(nextProfile?.profile_theme || 'neon-grid'));
+    setShippingFullName(String(nextProfile?.shipping_address?.full_name || nextProfile?.name || ''));
+    setShippingLine1(String(nextProfile?.shipping_address?.line1 || ''));
+    setShippingLine2(String(nextProfile?.shipping_address?.line2 || ''));
+    setShippingCity(String(nextProfile?.shipping_address?.city || ''));
+    setShippingState(String(nextProfile?.shipping_address?.state || ''));
+    setShippingPostalCode(String(nextProfile?.shipping_address?.postal_code || ''));
+    setShippingCountry(String(nextProfile?.shipping_address?.country || 'España'));
+    setShippingPhone(String(nextProfile?.shipping_address?.phone || ''));
   };
 
   const loadProfile = async () => {
@@ -516,6 +542,16 @@ export default function ProfileView() {
           tagline,
           favorite_console: favoriteConsole,
           profile_theme: profileTheme,
+          shipping_address: {
+            full_name: shippingFullName,
+            line1: shippingLine1,
+            line2: shippingLine2,
+            city: shippingCity,
+            state: shippingState,
+            postal_code: shippingPostalCode,
+            country: shippingCountry,
+            phone: shippingPhone,
+          },
         }),
       });
 
@@ -1051,6 +1087,64 @@ export default function ProfileView() {
                       placeholder="Cuenta tu historia como coleccionista, restaurador o vendedor."
                     />
                   </label>
+
+                  <div className="border border-line p-4 bg-slate-950/25 space-y-3">
+                    <p className="text-sm font-semibold">Dirección guardada para checkout</p>
+                    <p className="text-xs text-textMuted">
+                      Esta dirección se usará para autocompletar el pago y evitar que la escribas en cada compra.
+                    </p>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        className="bg-transparent border border-line px-3 py-2 sm:col-span-2"
+                        value={shippingFullName}
+                        onChange={(e) => setShippingFullName(e.target.value)}
+                        placeholder="Nombre completo"
+                      />
+                      <input
+                        className="bg-transparent border border-line px-3 py-2 sm:col-span-2"
+                        value={shippingLine1}
+                        onChange={(e) => setShippingLine1(e.target.value)}
+                        placeholder="Dirección"
+                      />
+                      <input
+                        className="bg-transparent border border-line px-3 py-2 sm:col-span-2"
+                        value={shippingLine2}
+                        onChange={(e) => setShippingLine2(e.target.value)}
+                        placeholder="Dirección 2 (opcional)"
+                      />
+                      <input
+                        className="bg-transparent border border-line px-3 py-2"
+                        value={shippingCity}
+                        onChange={(e) => setShippingCity(e.target.value)}
+                        placeholder="Ciudad"
+                      />
+                      <input
+                        className="bg-transparent border border-line px-3 py-2"
+                        value={shippingState}
+                        onChange={(e) => setShippingState(e.target.value)}
+                        placeholder="Provincia / Estado"
+                      />
+                      <input
+                        className="bg-transparent border border-line px-3 py-2"
+                        value={shippingPostalCode}
+                        onChange={(e) => setShippingPostalCode(e.target.value)}
+                        placeholder="Código postal"
+                      />
+                      <input
+                        className="bg-transparent border border-line px-3 py-2"
+                        value={shippingCountry}
+                        onChange={(e) => setShippingCountry(e.target.value)}
+                        placeholder="País"
+                      />
+                      <input
+                        className="bg-transparent border border-line px-3 py-2 sm:col-span-2"
+                        value={shippingPhone}
+                        onChange={(e) => setShippingPhone(e.target.value)}
+                        placeholder="Teléfono (opcional)"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid gap-2 sm:grid-cols-2">

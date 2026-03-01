@@ -14,6 +14,7 @@ alter table if exists public.users add column if not exists tagline text;
 alter table if exists public.users add column if not exists favorite_console text;
 alter table if exists public.users add column if not exists profile_theme text default 'neon-grid';
 alter table if exists public.users add column if not exists badges text[] default '{}';
+alter table if exists public.users add column if not exists shipping_address jsonb;
 alter table if exists public.users add column if not exists is_verified_seller boolean default false;
 alter table if exists public.users add column if not exists updated_at timestamptz default now();
 
