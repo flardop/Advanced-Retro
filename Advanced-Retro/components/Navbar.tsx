@@ -5,21 +5,23 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
-
-const NAV_ITEMS = [
-  { href: '/tienda', label: 'Tienda' },
-  { href: '/comunidad', label: 'Comunidad' },
-  { href: '/tienda?category=cajas-misteriosas', label: 'Mystery' },
-  { href: '/ruleta', label: 'Ruleta' },
-  { href: '/servicio-compra', label: 'Encargos' },
-  { href: '/contacto', label: 'Contacto' },
-];
+import { useLocale } from '@/components/LocaleProvider';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { t } = useLocale();
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<{ email?: string } | null>(null);
   const [open, setOpen] = useState(false);
+
+  const navItems = [
+    { href: '/tienda', label: t('nav.shop', 'Tienda') },
+    { href: '/comunidad', label: t('nav.community', 'Comunidad') },
+    { href: '/tienda?category=cajas-misteriosas', label: t('nav.mystery', 'Mystery') },
+    { href: '/ruleta', label: t('nav.roulette', 'Ruleta') },
+    { href: '/servicio-compra', label: t('nav.concierge', 'Encargos') },
+    { href: '/contacto', label: t('nav.contact', 'Contacto') },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -63,7 +65,7 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-6 text-[0.95rem]">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
@@ -79,10 +81,10 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <Link href="/carrito" className="chip hover:border-primary/50 hover:text-text">
-            Carrito
+            {t('nav.cart', 'Carrito')}
           </Link>
           <Link href={user ? '/perfil' : '/login'} className="button-secondary hidden sm:inline-flex">
-            {user ? 'Mi perfil' : 'Entrar'}
+            {user ? t('nav.profile', 'Mi perfil') : t('nav.login', 'Entrar')}
           </Link>
           <button
             className={`lg:hidden chip ${open ? 'border-primary/60 text-text' : ''}`}
@@ -90,7 +92,7 @@ export default function Navbar() {
             aria-expanded={open}
             aria-label="Abrir menú"
           >
-            {open ? 'Cerrar' : 'Menu'}
+            {open ? t('nav.close', 'Cerrar') : t('nav.menu', 'Menu')}
           </button>
         </div>
       </div>
@@ -99,7 +101,7 @@ export default function Navbar() {
         <div className="lg:hidden border-t border-line">
           <div className="container py-4">
             <div className="glass p-4 space-y-3 text-sm">
-              {NAV_ITEMS.map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={`mobile-${item.href}`}
                   href={item.href}
@@ -116,15 +118,15 @@ export default function Navbar() {
                   onClick={() => setOpen(false)}
                   className="button-secondary w-full"
                 >
-                  {user ? 'Mi perfil' : 'Iniciar sesión'}
+                  {user ? t('nav.profile', 'Mi perfil') : t('nav.login_mobile', 'Iniciar sesión')}
                 </Link>
                 <Link href="/carrito" onClick={() => setOpen(false)} className="button-primary w-full">
-                  Ir al carrito
+                  {t('nav.go_cart_mobile', 'Ir al carrito')}
                 </Link>
               </div>
 
               {user?.email ? (
-                <p className="text-xs text-textMuted pt-1">Sesión: {user.email}</p>
+                <p className="text-xs text-textMuted pt-1">{t('nav.session', 'Sesión')}: {user.email}</p>
               ) : null}
             </div>
           </div>
@@ -134,13 +136,16 @@ export default function Navbar() {
       <div className="border-t border-line/60 hidden lg:block">
         <div className="container py-2 text-[11px] text-textMuted flex flex-wrap items-center gap-6">
           <span>
-            <strong className="text-primary">Envío 24-48h:</strong> preparación desde España
+            <strong className="text-primary">{t('trust.shipping_title', 'Envío 24-48h:')}</strong>{' '}
+            {t('trust.shipping_text', 'preparación desde España')}
           </span>
           <span>
-            <strong className="text-primary">Verificación:</strong> piezas revisadas antes de publicar
+            <strong className="text-primary">{t('trust.verify_title', 'Verificación:')}</strong>{' '}
+            {t('trust.verify_text', 'piezas revisadas antes de publicar')}
           </span>
           <span>
-            <strong className="text-primary">Soporte:</strong> ticket y chat comprador ↔ tienda
+            <strong className="text-primary">{t('trust.support_title', 'Soporte:')}</strong>{' '}
+            {t('trust.support_text', 'ticket y chat comprador ↔ tienda')}
           </span>
         </div>
       </div>

@@ -7,6 +7,8 @@ import { JetBrains_Mono, Manrope, Sora } from 'next/font/google';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SupportAssistantWidget from '@/components/SupportAssistantWidget';
+import { LocaleProvider } from '@/components/LocaleProvider';
+import LanguageSwitcherPopup from '@/components/LanguageSwitcherPopup';
 import { absoluteUrl, getSiteUrl } from '@/lib/siteConfig';
 
 const siteUrl = getSiteUrl();
@@ -123,37 +125,40 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body className="font-body">
-        {gaMeasurementId ? (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="ga4" strategy="afterInteractive">
-              {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaMeasurementId}', { anonymize_ip: true });`}
-            </Script>
-          </>
-        ) : null}
-        <Script
-          id="schema-org"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationSchema, websiteSchema]) }}
-        />
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: '#11131a',
-              color: '#f5f7ff',
-              border: '1px solid #24283a',
-            },
-          }}
-        />
-        <SupportAssistantWidget />
-        <Analytics />
+        <LocaleProvider>
+          {gaMeasurementId ? (
+            <>
+              <Script
+                src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+                strategy="afterInteractive"
+              />
+              <Script id="ga4" strategy="afterInteractive">
+                {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaMeasurementId}', { anonymize_ip: true });`}
+              </Script>
+            </>
+          ) : null}
+          <Script
+            id="schema-org"
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationSchema, websiteSchema]) }}
+          />
+          <Navbar />
+          <main>{children}</main>
+          <Footer />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: '#11131a',
+                color: '#f5f7ff',
+                border: '1px solid #24283a',
+              },
+            }}
+          />
+          <SupportAssistantWidget />
+          <LanguageSwitcherPopup />
+          <Analytics />
+        </LocaleProvider>
       </body>
     </html>
   );

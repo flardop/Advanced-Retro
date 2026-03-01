@@ -79,11 +79,11 @@ export default function PriceHistoryChart({
   }
 
   const width = 760;
-  const height = 260;
+  const height = 280;
   const paddingLeft = 64;
   const paddingRight = 24;
   const paddingTop = 16;
-  const paddingBottom = 30;
+  const paddingBottom = 52;
   const chartLeft = paddingLeft;
   const chartRight = width - paddingRight;
   const chartTop = paddingTop;
@@ -130,9 +130,24 @@ export default function PriceHistoryChart({
       : pointCoords.map((coord) => ({ x: coord.x, y: coord.y }));
   const linePath = createLinePath(lineCoords);
 
-  const first = safePoints[0];
+  const xTickIndexesRaw =
+    pointCoords.length <= 12
+      ? pointCoords.map((_, index) => index)
+      : Array.from({ length: 6 }, (_, index) =>
+          Math.round((index * Math.max(0, pointCoords.length - 1)) / 5)
+        );
+  const xTickIndexes = [...new Set(xTickIndexesRaw)];
+  const xTicks = xTickIndexes.map((index) => {
+    const point = safePoints[index];
+    const coord = pointCoords[index];
+    const label = new Date(point.date).toLocaleDateString('es-ES', {
+      month: 'short',
+      day: '2-digit',
+    });
+    return { x: coord.x, label };
+  });
+
   const last = safePoints[safePoints.length - 1];
-  const middle = safePoints[Math.floor(safePoints.length / 2)];
   const marketLines = marketOverlay?.available
     ? [
         { id: 'min', label: 'eBay mínimo', value: marketOverlay.minPrice, color: '#67e8f9' },
@@ -159,6 +174,22 @@ export default function PriceHistoryChart({
           );
         })}
 
+        {xTicks.map((tick, index) => (
+          <g key={`xtick-${index}`}>
+            <line x1={tick.x} x2={tick.x} y1={chartTop} y2={chartBottom} stroke="#233045" strokeWidth="1" />
+            <text
+              x={tick.x - 2}
+              y={height - 8}
+              fill="#8f95a3"
+              fontSize="10"
+              textAnchor="end"
+              transform={`rotate(-35 ${tick.x - 2} ${height - 8})`}
+            >
+              {tick.label}
+            </text>
+          </g>
+        ))}
+
         {marketLines.map((line) => {
           const y = toY(Number(line.value));
           return (
@@ -169,15 +200,15 @@ export default function PriceHistoryChart({
                 y1={y}
                 y2={y}
                 stroke={line.color}
-                strokeWidth="1.2"
+                strokeWidth="1"
                 strokeDasharray="4 4"
-                opacity="0.9"
+                opacity="0.75"
               />
               <text
                 x={chartRight - 4}
                 y={y - 4}
                 fill={line.color}
-                fontSize="10"
+                fontSize="9"
                 textAnchor="end"
               >
                 {line.label}
@@ -186,29 +217,19 @@ export default function PriceHistoryChart({
           );
         })}
 
-        {linePath ? <path d={linePath} fill="none" stroke="#ff355e" strokeWidth="2.5" /> : null}
+        {linePath ? <path d={linePath} fill="none" stroke="#5d8bff" strokeWidth="2.6" /> : null}
 
         {pointCoords.map((coord, index) => (
           <circle
             key={`${coord.point.date}-${index}`}
             cx={coord.x}
             cy={coord.y}
-            r={2.8}
-            fill="#0b0c10"
-            stroke="#ff355e"
-            strokeWidth="1.5"
+            r={3.1}
+            fill="#5d8bff"
+            stroke="#d9e5ff"
+            strokeWidth="1"
           />
         ))}
-
-        <text x={chartLeft} y={height - 6} fill="#8f95a3" fontSize="11">
-          {new Date(first.date).toLocaleDateString('es-ES')}
-        </text>
-        <text x={width / 2} y={height - 6} fill="#8f95a3" fontSize="11" textAnchor="middle">
-          {new Date(middle.date).toLocaleDateString('es-ES')}
-        </text>
-        <text x={chartRight} y={height - 6} fill="#8f95a3" fontSize="11" textAnchor="end">
-          {new Date(last.date).toLocaleDateString('es-ES')}
-        </text>
       </svg>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-textMuted">

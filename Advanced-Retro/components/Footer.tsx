@@ -1,7 +1,12 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useLocale } from '@/components/LocaleProvider';
 
 export default function Footer() {
+  const { t } = useLocale();
+
   return (
     <footer className="mt-16 border-t border-line bg-[rgba(8,15,26,0.62)] backdrop-blur-sm">
       <div className="container py-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4 text-sm text-textMuted">
@@ -16,22 +21,27 @@ export default function Footer() {
             />
           </Link>
           <p>
-            Tienda especializada en retro gaming, coleccionismo y restauración con enfoque profesional.
+            {t(
+              'footer.about',
+              'Tienda especializada en retro gaming, coleccionismo y restauración con enfoque profesional.'
+            )}
           </p>
           <div className="space-y-1 text-xs">
             <p>
-              <span className="text-primary font-semibold">Operación:</span> España
+              <span className="text-primary font-semibold">{t('footer.operation', 'Operación:')}</span>{' '}
+              {t('footer.operation_value', 'España')}
             </p>
             <p>
-              <span className="text-primary font-semibold">Atención:</span> ticket privado comprador ↔ tienda
+              <span className="text-primary font-semibold">{t('footer.attention', 'Atención:')}</span>{' '}
+              {t('footer.attention_value', 'ticket privado comprador ↔ tienda')}
             </p>
           </div>
         </div>
 
         <div>
-          <p className="text-text font-semibold">Tienda</p>
+          <p className="text-text font-semibold">{t('footer.store', 'Tienda')}</p>
           <ul className="mt-3 space-y-2">
-            <li><Link href="/tienda" className="hover:text-text">Catálogo completo</Link></li>
+            <li><Link href="/tienda" className="hover:text-text">{t('footer.catalog', 'Catálogo completo')}</Link></li>
             <li><Link href="/tienda?category=platform:game-boy" className="hover:text-text">Game Boy</Link></li>
             <li><Link href="/tienda?category=platform:game-boy-color" className="hover:text-text">Game Boy Color</Link></li>
             <li><Link href="/tienda?category=platform:game-boy-advance" className="hover:text-text">Game Boy Advance</Link></li>
@@ -42,7 +52,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <p className="text-text font-semibold">Servicios</p>
+          <p className="text-text font-semibold">{t('footer.services', 'Servicios')}</p>
           <ul className="mt-3 space-y-2">
             <li><Link href="/tienda?category=cajas-misteriosas" className="hover:text-text">Mystery Box</Link></li>
             <li><Link href="/ruleta" className="hover:text-text">Ruleta</Link></li>
@@ -53,17 +63,22 @@ export default function Footer() {
         </div>
 
         <div>
-          <p className="text-text font-semibold">Legal</p>
+          <p className="text-text font-semibold">{t('footer.legal', 'Legal')}</p>
           <ul className="mt-3 space-y-2">
-            <li><Link href="/terminos" className="hover:text-text">Términos</Link></li>
-            <li><Link href="/privacidad" className="hover:text-text">Privacidad</Link></li>
-            <li><Link href="/cookies" className="hover:text-text">Cookies</Link></li>
+            <li><Link href="/terminos" className="hover:text-text">{t('footer.terms', 'Términos')}</Link></li>
+            <li><Link href="/privacidad" className="hover:text-text">{t('footer.privacy', 'Privacidad')}</Link></li>
+            <li><Link href="/cookies" className="hover:text-text">{t('footer.cookies', 'Cookies')}</Link></li>
           </ul>
           <div className="mt-5 rounded-xl border border-line p-3 text-xs leading-relaxed">
-            <p className="text-text font-semibold">Compra segura</p>
-            <p className="mt-1">Seguimiento de pedidos, soporte por ticket y estado de envío actualizado.</p>
+            <p className="text-text font-semibold">{t('footer.secure', 'Compra segura')}</p>
             <p className="mt-1">
-              Emails de contacto: <span className="text-text">admin@advancedretro.es</span>
+              {t(
+                'footer.secure_text',
+                'Seguimiento de pedidos, soporte por ticket y estado de envío actualizado.'
+              )}
+            </p>
+            <p className="mt-1">
+              {t('footer.contact_emails', 'Emails de contacto:')} <span className="text-text">admin@advancedretro.es</span>
             </p>
           </div>
         </div>
@@ -71,11 +86,11 @@ export default function Footer() {
 
       <div className="border-t border-line/80">
         <div className="container py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-textMuted">
-          <p>© {new Date().getFullYear()} ADVANCED RETRO. Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} ADVANCED RETRO. {t('footer.rights', 'Todos los derechos reservados.')}</p>
           <ul className="flex items-center gap-4">
-            <li><Link href="/terminos" className="hover:text-text">Condiciones</Link></li>
-            <li><Link href="/privacidad" className="hover:text-text">Privacidad</Link></li>
-            <li><Link href="/cookies" className="hover:text-text">Cookies</Link></li>
+            <li><Link href="/terminos" className="hover:text-text">{t('footer.conditions', 'Condiciones')}</Link></li>
+            <li><Link href="/privacidad" className="hover:text-text">{t('footer.privacy', 'Privacidad')}</Link></li>
+            <li><Link href="/cookies" className="hover:text-text">{t('footer.cookies', 'Cookies')}</Link></li>
           </ul>
         </div>
       </div>
