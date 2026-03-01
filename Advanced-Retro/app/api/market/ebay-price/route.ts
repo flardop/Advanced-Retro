@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchEbayMarketSnapshotByQuery } from '@/lib/ebayBrowse';
+import { fetchEbayMarketSnapshotByQueryWithOptions } from '@/lib/ebayBrowse';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,6 +7,9 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const query = String(url.searchParams.get('q') || '').trim();
+    const marketplaceId = String(url.searchParams.get('marketplace') || '').trim();
+    const fallbackRaw = String(url.searchParams.get('fallback') || '').trim().toLowerCase();
+    const allowFallback = !(fallbackRaw === '0' || fallbackRaw === 'false' || fallbackRaw === 'off');
 
     if (!query) {
       return NextResponse.json(
@@ -15,7 +18,11 @@ export async function GET(req: Request) {
       );
     }
 
-    const snapshot = await fetchEbayMarketSnapshotByQuery(query);
+    const snapshot = await fetchEbayMarketSnapshotByQueryWithOptions(query, {
+      marketplaceId: marketplaceId || undefined,
+      allowMarketplaceFallback: allowFallback,
+      targetSampleSize: 18,
+    });
     if (!snapshot.available) {
       return NextResponse.json({
         ...snapshot,

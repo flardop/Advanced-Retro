@@ -3,13 +3,22 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { toPriceChartingConsoleName, stripProductNameForExternalSearch } from '@/lib/catalogPlatform';
 import { fetchPriceChartingSnapshotByQuery } from '@/lib/priceCharting';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
-import { fetchEbayMarketSnapshotByQuery } from '@/lib/ebayBrowse';
+import { fetchEbayMarketSnapshotByQueryWithOptions } from '@/lib/ebayBrowse';
 
 export const dynamic = 'force-dynamic';
 
 type PricePoint = {
   date: string;
   price: number;
+};
+
+type ProductWithMarketOverrides = {
+  id: string;
+  name: string;
+  category: string | null;
+  price: number | null;
+  ebay_query?: string | null;
+  ebay_marketplace_id?: string | null;
 };
 
 function toSafePrice(value: unknown): number | null {
@@ -56,6 +65,157 @@ function parseLegacyOrderItems(productId: string, orders: any[]): PricePoint[] {
   return points;
 }
 
+function isMissingColumnError(error: any): boolean {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('column') && message.includes('does not exist');
+}
+
+async function loadProductWithMarketOverrides(productId: string): Promise<ProductWithMarketOverrides | null> {
+  if (!supabaseAdmin) return null;
+
+  const probe = await supabaseAdmin
+    .from('products')
+    .select('id,name,category,price,ebay_query,ebay_marketplace_id')
+    .eq('id', productId)
+    .maybeSingle();
+
+  if (!probe.error) return (probe.data as ProductWithMarketOverrides | null) || null;
+  if (!isMissingColumnError(probe.error)) throw new Error(probe.error.message || 'Error loading product');
+
+  const fallback = await supabaseAdmin
+    .from('products')
+    .select('id,name,category,price')
+    .eq('id', productId)
+    .maybeSingle();
+  if (fallback.error) throw new Error(fallback.error.message || 'Error loading product');
+  if (!fallback.data) return null;
+  return {
+    ...(fallback.data as ProductWithMarketOverrides),
+    ebay_query: null,
+    ebay_marketplace_id: null,
+  };
+}
+
+function normalizeConsoleForQuery(value: string): string {
+  return String(value || '')
+    .replace(/gameboy/gi, 'game boy')
+    .replace(/gamecube/gi, 'gamecube')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function withoutDiacritics(value: string): string {
+  try {
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  } catch {
+    return value;
+  }
+}
+
+function normalizeQueryToken(value: string): string {
+  return String(value || '')
+    .replace(/['"`]/g, ' ')
+    .replace(/[|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildEbayQueryCandidates(product: ProductWithMarketOverrides): string[] {
+  const explicit = normalizeQueryToken(String(product.ebay_query || ''));
+  const cleanName =
+    normalizeQueryToken(stripProductNameForExternalSearch(String(product.name || ''))) ||
+    normalizeQueryToken(String(product.name || ''));
+  const asciiName = normalizeQueryToken(withoutDiacritics(cleanName));
+  const consoleName = normalizeConsoleForQuery(
+    toPriceChartingConsoleName({
+      category: String(product.category || ''),
+      name: String(product.name || ''),
+    })
+  );
+
+  const seed: string[] = [];
+  if (explicit) seed.push(explicit);
+  if (cleanName && consoleName) {
+    seed.push(`${cleanName} ${consoleName}`);
+    seed.push(`${cleanName} ${consoleName} pal`);
+    seed.push(`${cleanName} ${consoleName} cartridge`);
+    seed.push(`${cleanName} ${consoleName} cib`);
+  }
+  if (asciiName && asciiName !== cleanName && consoleName) {
+    seed.push(`${asciiName} ${consoleName}`);
+  }
+  if (cleanName) {
+    seed.push(cleanName);
+    seed.push(`${cleanName} retro game`);
+  }
+
+  return [...new Set(seed.map((item) => normalizeQueryToken(item)).filter(Boolean))].slice(0, 8);
+}
+
+function ebaySnapshotScore(snapshot: any): number {
+  const availableBoost = snapshot?.available ? 1000 : 0;
+  const samples = Number(snapshot?.sampleSize || 0);
+  const total = Number(snapshot?.totalResults || 0);
+  return availableBoost + samples * 100 + total;
+}
+
+async function fetchBestEbaySnapshotForProduct(product: ProductWithMarketOverrides) {
+  const queries = buildEbayQueryCandidates(product);
+  if (queries.length === 0) {
+    return {
+      snapshot: await fetchEbayMarketSnapshotByQueryWithOptions(String(product.name || '')),
+      selectedQuery: String(product.name || ''),
+      attempts: [],
+    };
+  }
+
+  const attempts: Array<{
+    query: string;
+    available: boolean;
+    sampleSize: number;
+    totalResults: number;
+    marketplaceId: string;
+    note: string | null;
+  }> = [];
+  let best: any = null;
+  let selectedQuery = queries[0];
+
+  for (const query of queries) {
+    const snapshot = await fetchEbayMarketSnapshotByQueryWithOptions(query, {
+      marketplaceId: String(product.ebay_marketplace_id || '').trim() || undefined,
+      allowMarketplaceFallback: true,
+      targetSampleSize: 18,
+      searchLimit: 40,
+    });
+
+    attempts.push({
+      query,
+      available: Boolean(snapshot.available),
+      sampleSize: Number(snapshot.sampleSize || 0),
+      totalResults: Number(snapshot.totalResults || 0),
+      marketplaceId: String(snapshot.marketplaceId || ''),
+      note: snapshot.note || null,
+    });
+
+    if (!best || ebaySnapshotScore(snapshot) > ebaySnapshotScore(best)) {
+      best = snapshot;
+      selectedQuery = query;
+    }
+
+    if (snapshot.available && Number(snapshot.sampleSize || 0) >= 18) {
+      best = snapshot;
+      selectedQuery = query;
+      break;
+    }
+  }
+
+  return {
+    snapshot: best,
+    selectedQuery,
+    attempts,
+  };
+}
+
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   try {
     const productId = String(params?.id || '').trim();
@@ -67,15 +227,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }
 
-    const { data: product, error: productError } = await supabaseAdmin
-      .from('products')
-      .select('id,name,category,price')
-      .eq('id', productId)
-      .maybeSingle();
-
-    if (productError) {
-      return NextResponse.json({ error: productError.message }, { status: 500 });
-    }
+    const product = await loadProductWithMarketOverrides(productId);
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
@@ -131,6 +283,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
     let marketGuide: any = null;
     let marketGuideEbay: any = null;
+    let marketGuideEbayDebug: any = null;
     if (!isMysteryOrRouletteProduct(product as any)) {
       const externalName =
         stripProductNameForExternalSearch(String(product.name || '')) || String(product.name || '');
@@ -139,12 +292,20 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         name: String(product.name || ''),
       });
       const priceChartingQuery = `${externalName} ${externalConsole}`.trim();
-      const [priceChartingSnapshot, ebaySnapshot] = await Promise.all([
+      const [priceChartingSnapshot, ebayData] = await Promise.all([
         fetchPriceChartingSnapshotByQuery(priceChartingQuery),
-        fetchEbayMarketSnapshotByQuery(priceChartingQuery),
+        fetchBestEbaySnapshotForProduct(product),
       ]);
       marketGuide = priceChartingSnapshot;
-      marketGuideEbay = ebaySnapshot;
+      marketGuideEbay = ebayData.snapshot;
+      marketGuideEbayDebug = {
+        selectedQuery: ebayData.selectedQuery,
+        attempts: ebayData.attempts,
+        productOverride: {
+          ebay_query: String(product.ebay_query || '').trim() || null,
+          ebay_marketplace_id: String(product.ebay_marketplace_id || '').trim() || null,
+        },
+      };
     }
 
     if (sorted.length > 0) {
@@ -155,6 +316,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         points: sorted,
         marketGuide,
         marketGuideEbay,
+        marketGuideEbayDebug,
       });
     }
 
@@ -167,6 +329,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         points: [{ date: new Date().toISOString(), price: currentPrice }],
         marketGuide,
         marketGuideEbay,
+        marketGuideEbayDebug,
       });
     }
 
@@ -177,6 +340,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       points: [],
       marketGuide,
       marketGuideEbay,
+      marketGuideEbayDebug,
     });
   } catch (error: any) {
     return NextResponse.json(

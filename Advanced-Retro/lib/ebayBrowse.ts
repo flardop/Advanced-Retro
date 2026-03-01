@@ -4,6 +4,8 @@ const EBAY_BROWSE_SEARCH_PATH = '/buy/browse/v1/item_summary/search';
 const EBAY_OAUTH_PATH = '/identity/v1/oauth2/token';
 const EBAY_SCOPE = 'https://api.ebay.com/oauth/api_scope';
 const REQUEST_TIMEOUT_MS = 12_000;
+const DEFAULT_SEARCH_LIMIT = 30;
+const DEFAULT_MARKET_CACHE_TTL_MS = 15 * 60 * 1000;
 
 type EbayOAuthTokenPayload = {
   access_token?: string;
@@ -58,6 +60,7 @@ export type EbayMarketSnapshot = {
   note?: string;
   query?: string;
   marketplaceId: string;
+  attemptedMarketplaces?: string[];
   currency: string | null;
   sampleSize: number;
   totalResults: number;
@@ -66,6 +69,15 @@ export type EbayMarketSnapshot = {
   averagePrice: number | null;
   medianPrice: number | null;
   comparables: EbayComparableItem[];
+};
+
+export type EbayMarketSnapshotOptions = {
+  marketplaceId?: string;
+  fallbackMarketplaceIds?: string[];
+  allowMarketplaceFallback?: boolean;
+  cacheTtlMs?: number;
+  targetSampleSize?: number;
+  searchLimit?: number;
 };
 
 export type EbayDiagnostics = {
@@ -110,6 +122,7 @@ export type EbayDiagnostics = {
 };
 
 let cachedAccessToken: { value: string; expiresAtMs: number } | null = null;
+const marketSnapshotCache = new Map<string, { expiresAtMs: number; value: EbayMarketSnapshot }>();
 
 function normalizeString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
@@ -127,6 +140,25 @@ function getEbayBaseUrl(): string {
 function getMarketplaceId(): string {
   const fromEnv = normalizeString(process.env.EBAY_MARKETPLACE_ID);
   return fromEnv || 'EBAY_ES';
+}
+
+function getCacheTtlMs(): number {
+  const raw = Number(process.env.EBAY_MARKET_CACHE_TTL_MS || DEFAULT_MARKET_CACHE_TTL_MS);
+  if (!Number.isFinite(raw)) return DEFAULT_MARKET_CACHE_TTL_MS;
+  return Math.min(Math.max(Math.round(raw), 10_000), 24 * 60 * 60 * 1000);
+}
+
+function normalizeMarketplaceId(value: unknown): string {
+  const clean = normalizeString(value).toUpperCase();
+  return clean || getMarketplaceId();
+}
+
+function getFallbackMarketplacesFromEnv(primaryMarketplaceId: string): string[] {
+  const raw = normalizeString(process.env.EBAY_MARKETPLACE_FALLBACKS);
+  const values = raw
+    ? raw.split(',').map((item) => normalizeMarketplaceId(item))
+    : ['EBAY_GB', 'EBAY_US'];
+  return values.filter((item) => item && item !== primaryMarketplaceId);
 }
 
 function getCredentialSource(): 'client' | 'app' | 'mixed' | 'missing' {
@@ -326,49 +358,59 @@ function buildComparable(item: EbayItemSummary): EbayComparableItem {
 }
 
 export async function fetchEbayMarketSnapshotByQuery(query: string): Promise<EbayMarketSnapshot> {
+  return fetchEbayMarketSnapshotByQueryWithOptions(query);
+}
+
+function buildMarketSnapshotCacheKey(query: string, marketplaceId: string): string {
+  return `${normalizeString(query).toLowerCase()}::${normalizeMarketplaceId(marketplaceId)}`;
+}
+
+function getCachedMarketSnapshot(key: string): EbayMarketSnapshot | null {
+  const cached = marketSnapshotCache.get(key);
+  if (!cached) return null;
+  if (cached.expiresAtMs <= Date.now()) {
+    marketSnapshotCache.delete(key);
+    return null;
+  }
+  return cached.value;
+}
+
+function setCachedMarketSnapshot(key: string, snapshot: EbayMarketSnapshot, ttlMs: number): void {
+  marketSnapshotCache.set(key, {
+    value: snapshot,
+    expiresAtMs: Date.now() + Math.max(5_000, ttlMs),
+  });
+}
+
+function buildMarketplaceSequence(options?: EbayMarketSnapshotOptions): string[] {
+  const primary = normalizeMarketplaceId(options?.marketplaceId || getMarketplaceId());
+  const allowFallback = options?.allowMarketplaceFallback !== false;
+  const explicitFallbacks = Array.isArray(options?.fallbackMarketplaceIds)
+    ? options.fallbackMarketplaceIds.map((item) => normalizeMarketplaceId(item))
+    : [];
+  const envFallbacks = getFallbackMarketplacesFromEnv(primary);
+  const sequence = allowFallback ? [primary, ...explicitFallbacks, ...envFallbacks] : [primary];
+  return [...new Set(sequence.filter(Boolean))];
+}
+
+function snapshotScore(snapshot: EbayMarketSnapshot): number {
+  if (!snapshot.available) return snapshot.totalResults > 0 ? 1 : 0;
+  return Math.max(10, snapshot.sampleSize * 10 + snapshot.totalResults);
+}
+
+async function fetchSnapshotForMarketplace(params: {
+  query: string;
+  marketplaceId: string;
+  accessToken: string;
+  searchLimit: number;
+}): Promise<EbayMarketSnapshot> {
+  const { query, marketplaceId, accessToken, searchLimit } = params;
   const safeQuery = normalizeString(query);
-  const marketplaceId = getMarketplaceId();
-
-  if (!safeQuery) {
-    return {
-      available: false,
-      provider: 'ebay',
-      note: 'Query vacía',
-      query: '',
-      marketplaceId,
-      currency: null,
-      sampleSize: 0,
-      totalResults: 0,
-      minPrice: null,
-      maxPrice: null,
-      averagePrice: null,
-      medianPrice: null,
-      comparables: [],
-    };
-  }
-
-  const auth = await getAccessToken();
-  if (!auth.token) {
-    return {
-      available: false,
-      provider: 'ebay',
-      note: auth.note || 'No se pudo obtener token OAuth',
-      query: safeQuery,
-      marketplaceId,
-      currency: null,
-      sampleSize: 0,
-      totalResults: 0,
-      minPrice: null,
-      maxPrice: null,
-      averagePrice: null,
-      medianPrice: null,
-      comparables: [],
-    };
-  }
+  const safeMarketplaceId = normalizeMarketplaceId(marketplaceId);
 
   const searchParams = new URLSearchParams({
     q: safeQuery,
-    limit: '30',
+    limit: String(Math.min(Math.max(searchLimit, 1), 200)),
     filter: 'buyingOptions:{FIXED_PRICE|AUCTION}',
   });
 
@@ -377,8 +419,8 @@ export async function fetchEbayMarketSnapshotByQuery(query: string): Promise<Eba
       `${getEbayBaseUrl()}${EBAY_BROWSE_SEARCH_PATH}?${searchParams.toString()}`,
       {
         headers: {
-          Authorization: `Bearer ${auth.token}`,
-          'X-EBAY-C-MARKETPLACE-ID': marketplaceId,
+          Authorization: `Bearer ${accessToken}`,
+          'X-EBAY-C-MARKETPLACE-ID': safeMarketplaceId,
           Accept: 'application/json',
           'Accept-Language': 'es-ES',
         },
@@ -392,7 +434,8 @@ export async function fetchEbayMarketSnapshotByQuery(query: string): Promise<Eba
         provider: 'ebay',
         note: `HTTP ${response.status}`,
         query: safeQuery,
-        marketplaceId,
+        marketplaceId: safeMarketplaceId,
+        attemptedMarketplaces: [safeMarketplaceId],
         currency: null,
         sampleSize: 0,
         totalResults: 0,
@@ -424,7 +467,8 @@ export async function fetchEbayMarketSnapshotByQuery(query: string): Promise<Eba
         provider: 'ebay',
         note: 'Sin precios válidos en la búsqueda',
         query: safeQuery,
-        marketplaceId,
+        marketplaceId: safeMarketplaceId,
+        attemptedMarketplaces: [safeMarketplaceId],
         currency: marketCurrency,
         sampleSize: 0,
         totalResults: Number(payload?.total || comparables.length || 0),
@@ -440,7 +484,8 @@ export async function fetchEbayMarketSnapshotByQuery(query: string): Promise<Eba
       available: true,
       provider: 'ebay',
       query: safeQuery,
-      marketplaceId,
+      marketplaceId: safeMarketplaceId,
+      attemptedMarketplaces: [safeMarketplaceId],
       currency: marketCurrency,
       sampleSize: values.length,
       totalResults: Number(payload?.total || comparables.length || values.length),
@@ -456,7 +501,8 @@ export async function fetchEbayMarketSnapshotByQuery(query: string): Promise<Eba
       provider: 'ebay',
       note: error?.message || 'Error consultando eBay Browse API',
       query: safeQuery,
-      marketplaceId,
+      marketplaceId: safeMarketplaceId,
+      attemptedMarketplaces: [safeMarketplaceId],
       currency: null,
       sampleSize: 0,
       totalResults: 0,
@@ -467,6 +513,113 @@ export async function fetchEbayMarketSnapshotByQuery(query: string): Promise<Eba
       comparables: [],
     };
   }
+}
+
+export async function fetchEbayMarketSnapshotByQueryWithOptions(
+  query: string,
+  options?: EbayMarketSnapshotOptions
+): Promise<EbayMarketSnapshot> {
+  const safeQuery = normalizeString(query);
+  const sequence = buildMarketplaceSequence(options);
+  const primaryMarketplace = sequence[0] || getMarketplaceId();
+  const cacheTtlMs = Number.isFinite(Number(options?.cacheTtlMs))
+    ? Math.max(10_000, Number(options?.cacheTtlMs))
+    : getCacheTtlMs();
+  const targetSampleSize = Number.isFinite(Number(options?.targetSampleSize))
+    ? Math.max(1, Number(options?.targetSampleSize))
+    : 18;
+  const searchLimit = Number.isFinite(Number(options?.searchLimit))
+    ? Math.max(1, Math.min(200, Number(options?.searchLimit)))
+    : DEFAULT_SEARCH_LIMIT;
+
+  if (!safeQuery) {
+    return {
+      available: false,
+      provider: 'ebay',
+      note: 'Query vacía',
+      query: '',
+      marketplaceId: primaryMarketplace,
+      attemptedMarketplaces: sequence,
+      currency: null,
+      sampleSize: 0,
+      totalResults: 0,
+      minPrice: null,
+      maxPrice: null,
+      averagePrice: null,
+      medianPrice: null,
+      comparables: [],
+    };
+  }
+
+  const auth = await getAccessToken();
+  if (!auth.token) {
+    return {
+      available: false,
+      provider: 'ebay',
+      note: auth.note || 'No se pudo obtener token OAuth',
+      query: safeQuery,
+      marketplaceId: primaryMarketplace,
+      attemptedMarketplaces: sequence,
+      currency: null,
+      sampleSize: 0,
+      totalResults: 0,
+      minPrice: null,
+      maxPrice: null,
+      averagePrice: null,
+      medianPrice: null,
+      comparables: [],
+    };
+  }
+
+  let best: EbayMarketSnapshot | null = null;
+  const attempted: string[] = [];
+
+  for (const marketplaceId of sequence) {
+    const cacheKey = buildMarketSnapshotCacheKey(safeQuery, marketplaceId);
+    let snapshot = getCachedMarketSnapshot(cacheKey);
+    if (!snapshot) {
+      snapshot = await fetchSnapshotForMarketplace({
+        query: safeQuery,
+        marketplaceId,
+        accessToken: auth.token,
+        searchLimit,
+      });
+      setCachedMarketSnapshot(cacheKey, snapshot, cacheTtlMs);
+    }
+    attempted.push(marketplaceId);
+
+    if (!best || snapshotScore(snapshot) > snapshotScore(best)) {
+      best = snapshot;
+    }
+    if (snapshot.available && snapshot.sampleSize >= targetSampleSize) {
+      best = snapshot;
+      break;
+    }
+  }
+
+  const fallback = best || {
+    available: false,
+    provider: 'ebay' as const,
+    note: 'Sin respuesta de eBay',
+    query: safeQuery,
+    marketplaceId: primaryMarketplace,
+    attemptedMarketplaces: attempted,
+    currency: null,
+    sampleSize: 0,
+    totalResults: 0,
+    minPrice: null,
+    maxPrice: null,
+    averagePrice: null,
+    medianPrice: null,
+    comparables: [],
+  };
+
+  return {
+    ...fallback,
+    query: safeQuery,
+    marketplaceId: fallback.marketplaceId || primaryMarketplace,
+    attemptedMarketplaces: attempted.length > 0 ? attempted : sequence,
+  };
 }
 
 export async function runEbayDiagnostics(inputQuery?: string): Promise<EbayDiagnostics> {
@@ -544,7 +697,10 @@ export async function runEbayDiagnostics(inputQuery?: string): Promise<EbayDiagn
 
   let snapshot: EbayMarketSnapshot | null = null;
   if (oauthOk) {
-    snapshot = await fetchEbayMarketSnapshotByQuery(query);
+    snapshot = await fetchEbayMarketSnapshotByQueryWithOptions(query, {
+      allowMarketplaceFallback: false,
+      searchLimit: 30,
+    });
     checks.push({
       id: 'search',
       status: snapshot.available ? 'ok' : 'warning',
