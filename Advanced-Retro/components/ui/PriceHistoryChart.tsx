@@ -25,6 +25,14 @@ function formatEuro(cents: number): string {
   }).format(cents / 100);
 }
 
+function formatAxisEuro(cents: number): string {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
 function createLinePath(points: Array<{ x: number; y: number }>): string {
   if (points.length === 0) return '';
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
@@ -36,21 +44,19 @@ function createLinePath(points: Array<{ x: number; y: number }>): string {
   return d;
 }
 
-function createAreaPath(points: Array<{ x: number; y: number }>, chartBottom: number): string {
-  if (points.length === 0) return '';
-
-  const first = points[0];
-  const last = points[points.length - 1];
-  let d = `M ${first.x} ${chartBottom} L ${first.x} ${first.y}`;
-  for (let index = 1; index < points.length; index += 1) {
-    d += ` L ${points[index].x} ${points[index].y}`;
-  }
-  d += ` L ${last.x} ${chartBottom} Z`;
-  return d;
-}
-
 function isValidPrice(value: unknown): value is number {
   return Number.isFinite(Number(value)) && Number(value) > 0;
+}
+
+function chooseAxisStepCents(maxCents: number): number {
+  const maxEuro = Math.max(1, Math.ceil(maxCents / 100));
+
+  if (maxEuro <= 20) return 500; // 5€
+  if (maxEuro <= 100) return 1000; // 10€
+  if (maxEuro <= 300) return 2500; // 25€
+  if (maxEuro <= 800) return 5000; // 50€
+  if (maxEuro <= 1500) return 10000; // 100€
+  return 25000; // 250€
 }
 
 export default function PriceHistoryChart({
@@ -73,11 +79,17 @@ export default function PriceHistoryChart({
   }
 
   const width = 760;
-  const height = 240;
-  const paddingX = 34;
-  const paddingY = 24;
-  const chartWidth = width - paddingX * 2;
-  const chartHeight = height - paddingY * 2;
+  const height = 260;
+  const paddingLeft = 64;
+  const paddingRight = 24;
+  const paddingTop = 16;
+  const paddingBottom = 30;
+  const chartLeft = paddingLeft;
+  const chartRight = width - paddingRight;
+  const chartTop = paddingTop;
+  const chartBottom = height - paddingBottom;
+  const chartWidth = chartRight - chartLeft;
+  const chartHeight = chartBottom - chartTop;
 
   const prices = safePoints.map((point) => point.price);
   const marketValues = [
@@ -88,22 +100,35 @@ export default function PriceHistoryChart({
   ].filter(isValidPrice);
 
   const allPrices = [...prices, ...marketValues];
-  const minPrice = Math.min(...allPrices);
-  const maxPrice = Math.max(...allPrices);
-  const spread = Math.max(1, maxPrice - minPrice);
-  const toY = (price: number) => paddingY + (1 - (price - minPrice) / spread) * chartHeight;
+  const dataMaxPrice = Math.max(...allPrices);
+  const axisMinPrice = 0;
+  const axisStep = chooseAxisStepCents(dataMaxPrice);
+  const axisMaxPrice = Math.max(axisStep, Math.ceil(dataMaxPrice / axisStep) * axisStep);
+  const spread = Math.max(1, axisMaxPrice - axisMinPrice);
+  const toY = (price: number) => chartTop + (1 - (price - axisMinPrice) / spread) * chartHeight;
 
-  const coords = safePoints.map((point, index) => {
+  const yTicks: number[] = [];
+  for (let value = axisMinPrice; value <= axisMaxPrice; value += axisStep) {
+    yTicks.push(value);
+  }
+
+  const pointCoords = safePoints.map((point, index) => {
     const x =
       safePoints.length === 1
         ? width / 2
-        : paddingX + (index / (safePoints.length - 1)) * chartWidth;
+        : chartLeft + (index / (safePoints.length - 1)) * chartWidth;
     const y = toY(point.price);
     return { x, y, point };
   });
 
-  const linePath = createLinePath(coords);
-  const areaPath = createAreaPath(coords, height - paddingY);
+  const lineCoords =
+    pointCoords.length === 1
+      ? [
+          { x: chartLeft, y: pointCoords[0].y },
+          { x: chartRight, y: pointCoords[0].y },
+        ]
+      : pointCoords.map((coord) => ({ x: coord.x, y: coord.y }));
+  const linePath = createLinePath(lineCoords);
 
   const first = safePoints[0];
   const last = safePoints[safePoints.length - 1];
@@ -120,22 +145,27 @@ export default function PriceHistoryChart({
   return (
     <div className="border border-line bg-surface p-3">
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" role="img" aria-label="Historico de precios">
-        <defs>
-          <linearGradient id="price-area" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ff355e" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#ff355e" stopOpacity="0.02" />
-          </linearGradient>
-        </defs>
+        <rect x={chartLeft} y={chartTop} width={chartWidth} height={chartHeight} fill="transparent" stroke="#2d3039" />
 
-        <rect x={paddingX} y={paddingY} width={chartWidth} height={chartHeight} fill="transparent" stroke="#2d3039" />
+        {yTicks.map((tick) => {
+          const y = toY(tick);
+          return (
+            <g key={`tick-${tick}`}>
+              <line x1={chartLeft} x2={chartRight} y1={y} y2={y} stroke="#233045" strokeWidth="1" />
+              <text x={chartLeft - 8} y={y + 4} fill="#8f95a3" fontSize="10" textAnchor="end">
+                {formatAxisEuro(tick)}
+              </text>
+            </g>
+          );
+        })}
 
         {marketLines.map((line) => {
           const y = toY(Number(line.value));
           return (
             <g key={line.id}>
               <line
-                x1={paddingX}
-                x2={width - paddingX}
+                x1={chartLeft}
+                x2={chartRight}
                 y1={y}
                 y2={y}
                 stroke={line.color}
@@ -144,7 +174,7 @@ export default function PriceHistoryChart({
                 opacity="0.9"
               />
               <text
-                x={width - paddingX - 4}
+                x={chartRight - 4}
                 y={y - 4}
                 fill={line.color}
                 fontSize="10"
@@ -156,10 +186,9 @@ export default function PriceHistoryChart({
           );
         })}
 
-        {areaPath ? <path d={areaPath} fill="url(#price-area)" /> : null}
         {linePath ? <path d={linePath} fill="none" stroke="#ff355e" strokeWidth="2.5" /> : null}
 
-        {coords.map((coord, index) => (
+        {pointCoords.map((coord, index) => (
           <circle
             key={`${coord.point.date}-${index}`}
             cx={coord.x}
@@ -171,26 +200,22 @@ export default function PriceHistoryChart({
           />
         ))}
 
-        <text x={paddingX} y={height - 6} fill="#8f95a3" fontSize="11">
+        <text x={chartLeft} y={height - 6} fill="#8f95a3" fontSize="11">
           {new Date(first.date).toLocaleDateString('es-ES')}
         </text>
         <text x={width / 2} y={height - 6} fill="#8f95a3" fontSize="11" textAnchor="middle">
           {new Date(middle.date).toLocaleDateString('es-ES')}
         </text>
-        <text x={width - paddingX} y={height - 6} fill="#8f95a3" fontSize="11" textAnchor="end">
+        <text x={chartRight} y={height - 6} fill="#8f95a3" fontSize="11" textAnchor="end">
           {new Date(last.date).toLocaleDateString('es-ES')}
-        </text>
-
-        <text x={paddingX + 4} y={paddingY + 12} fill="#8f95a3" fontSize="11">
-          Max: {formatEuro(maxPrice)}
-        </text>
-        <text x={paddingX + 4} y={height - paddingY - 8} fill="#8f95a3" fontSize="11">
-          Min: {formatEuro(minPrice)}
         </text>
       </svg>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-textMuted">
         <span>Puntos: {safePoints.length}</span>
+        <span>
+          Rango: {formatAxisEuro(axisMinPrice)} - {formatAxisEuro(axisMaxPrice)}
+        </span>
         <span>
           Actual: <span className="text-primary">{formatEuro(last.price)}</span>
         </span>
