@@ -7,13 +7,13 @@ import {
   normalizeVisitorId,
   readProductSocialState,
   toVisitorStorageKey,
-  toggleLike,
   trackVisit,
   uploadReviewPhotoDataUrls,
   writeProductSocialState,
 } from '@/lib/productSocialStorage';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { getProductLikeSummary, toggleProductLike } from '@/lib/productLikesDb';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,7 +88,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const visitorId = resolveVisitorId(req.nextUrl.searchParams.get('visitorId'), user?.id);
     const visitorKey = visitorId ? toVisitorStorageKey(visitorId) : null;
     const state = await readProductSocialState(productId);
-    const summary = getProductSocialSummary(state, visitorKey);
+    const baseSummary = getProductSocialSummary(state, visitorKey);
+    const likeSummary = await getProductLikeSummary(productId, user?.id || null);
+    const summary = {
+      ...baseSummary,
+      likes: likeSummary.available ? likeSummary.likes : baseSummary.likes,
+      likedByCurrentVisitor: user?.id
+        ? likeSummary.available
+          ? likeSummary.likedByCurrentUser
+          : baseSummary.likedByCurrentVisitor
+        : false,
+    };
 
     let canReview = false;
     if (user?.id) {
@@ -155,13 +165,27 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     if (action === 'toggle_like') {
-      if (!visitorKey) return badRequest('visitorId is required');
-      const liked = toggleLike(state, visitorKey);
-      await writeProductSocialState(productId, state);
+      if (!user?.id) {
+        return NextResponse.json(
+          { error: 'Debes iniciar sesión para guardar favoritos' },
+          { status: 401 }
+        );
+      }
+
+      const likeResult = await toggleProductLike(productId, user.id);
+      const baseSummary = getProductSocialSummary(state, visitorKey);
+      const summary = {
+        ...baseSummary,
+        likes: likeResult.available ? likeResult.likes : baseSummary.likes,
+        likedByCurrentVisitor: likeResult.available
+          ? likeResult.likedByCurrentUser
+          : baseSummary.likedByCurrentVisitor,
+      };
+
       return NextResponse.json({
         success: true,
-        liked,
-        summary: getProductSocialSummary(state, visitorKey),
+        liked: summary.likedByCurrentVisitor,
+        summary,
       });
     }
 

@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import {
-  getProductSocialSummary,
-  normalizeVisitorId,
-  readProductSocialState,
-} from '@/lib/productSocialStorage';
+import { getProductSocialSummary, readProductSocialState } from '@/lib/productSocialStorage';
+import { getProductLikesSnapshot } from '@/lib/productLikesDb';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,9 +16,7 @@ export async function POST(req: Request) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const visitorId = user?.id
-      ? `auth-${user.id}`
-      : normalizeVisitorId(body?.visitorId);
+    const visitorId = user?.id ? `auth-${user.id}` : null;
 
     const productIds = rawIds
       .filter((id: unknown): id is string => typeof id === 'string' && id.trim().length > 0)
@@ -34,11 +29,23 @@ export async function POST(req: Request) {
 
     const uniqueIds = [...new Set<string>(productIds)];
     const metrics: Record<string, ReturnType<typeof getProductSocialSummary>> = {};
+    const likeSnapshot = await getProductLikesSnapshot(uniqueIds, user?.id || null);
 
     await Promise.all(
       uniqueIds.map(async (productId) => {
         const state = await readProductSocialState(productId);
-        metrics[productId] = getProductSocialSummary(state, visitorId);
+        const baseSummary = getProductSocialSummary(state, visitorId);
+        metrics[productId] = {
+          ...baseSummary,
+          likes: likeSnapshot.available
+            ? Number(likeSnapshot.likesByProduct[productId] || 0)
+            : baseSummary.likes,
+          likedByCurrentVisitor: user?.id
+            ? likeSnapshot.available
+              ? Boolean(likeSnapshot.likedByCurrentUser[productId])
+              : baseSummary.likedByCurrentVisitor
+            : false,
+        };
       })
     );
 

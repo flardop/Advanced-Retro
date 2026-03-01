@@ -420,7 +420,6 @@ export default function ProductDetail({
   const [visitorId, setVisitorId] = useState('');
   const [socialSummary, setSocialSummary] = useState<ProductSocialSummary>(EMPTY_SUMMARY);
   const [reviews, setReviews] = useState<ProductSocialReview[]>([]);
-  const [socialLoading, setSocialLoading] = useState(false);
   const [canReview, setCanReview] = useState(false);
   const [requiresPurchaseForReview, setRequiresPurchaseForReview] = useState(true);
 
@@ -429,6 +428,7 @@ export default function ProductDetail({
   const [reviewComment, setReviewComment] = useState('');
   const [reviewPhotos, setReviewPhotos] = useState<string[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
   const [priceSource, setPriceSource] = useState<'orders' | 'current' | 'none'>('none');
@@ -440,6 +440,28 @@ export default function ProductDetail({
 
   useEffect(() => {
     setVisitorId(getOrCreateVisitorId());
+  }, []);
+
+  useEffect(() => {
+    if (!supabaseClient) {
+      setIsLoggedIn(false);
+      return;
+    }
+
+    let mounted = true;
+    supabaseClient.auth.getUser().then(({ data }) => {
+      if (!mounted) return;
+      setIsLoggedIn(Boolean(data?.user));
+    });
+
+    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -540,12 +562,10 @@ export default function ProductDetail({
   }, [bundleOptions, selectedBundleIds, showCompleteGameOptions]);
 
   const refreshSocial = useCallback(async () => {
-    if (!productId || !visitorId) return;
-    setSocialLoading(true);
+    if (!productId) return;
     try {
-      const res = await fetch(
-        `/api/products/${encodeURIComponent(productId)}/social?visitorId=${encodeURIComponent(visitorId)}`
-      );
+      const visitorParam = visitorId ? `?visitorId=${encodeURIComponent(visitorId)}` : '';
+      const res = await fetch(`/api/products/${encodeURIComponent(productId)}/social${visitorParam}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar actividad');
 
@@ -555,25 +575,25 @@ export default function ProductDetail({
       setRequiresPurchaseForReview(Boolean(data?.requiresPurchaseForReview ?? true));
     } catch (error: any) {
       console.warn('Error loading social data:', error?.message || error);
-    } finally {
-      setSocialLoading(false);
     }
   }, [productId, visitorId]);
 
   useEffect(() => {
-    if (!visitorId || !productId) return;
+    if (!productId) return;
 
     refreshSocial();
-    fetch(`/api/products/${encodeURIComponent(productId)}/social`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'visit', visitorId }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.summary) setSocialSummary(data.summary);
+    if (visitorId) {
+      fetch(`/api/products/${encodeURIComponent(productId)}/social`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'visit', visitorId }),
       })
-      .catch(() => undefined);
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.summary) setSocialSummary(data.summary);
+        })
+        .catch(() => undefined);
+    }
   }, [productId, visitorId, refreshSocial]);
 
   const refreshPriceHistory = useCallback(async () => {
@@ -679,8 +699,40 @@ export default function ProductDetail({
     );
   }
 
+  const safeCuriosities = Array.isArray(product.curiosities)
+    ? product.curiosities
+        .map((item: unknown) => String(item || '').trim())
+        .filter((item: string) => item.length > 0)
+    : [];
+  const safeTips = Array.isArray(product.tips)
+    ? product.tips
+        .map((item: unknown) => String(item || '').trim())
+        .filter((item: string) => item.length > 0)
+    : [];
+  const editionLabel = EDITION_LABEL[detectEditionKind(product)];
+  const categoryLabel = String(product.category || 'coleccionismo retro');
+
+  const detailItems =
+    safeCuriosities.length > 0
+      ? safeCuriosities
+      : [
+          `${product.name} pertenece a la categoría ${categoryLabel}.`,
+          `Edición detectada: ${editionLabel}. Revisa fotos y descripción para confirmar estado exacto.`,
+        ];
+
+  const collectorTips =
+    safeTips.length > 0
+      ? safeTips
+      : [
+          'Guarda la pieza en funda libre de PVC y evita exposición directa al sol.',
+          'Conserva pruebas de compra y fotos de estado para mantener valor de colección.',
+        ];
+
   const toggleLike = async () => {
-    if (!visitorId) return;
+    if (!isLoggedIn) {
+      toast.error('Inicia sesión para guardar favoritos');
+      return;
+    }
 
     try {
       const res = await fetch(`/api/products/${encodeURIComponent(productId)}/social`, {
@@ -863,12 +915,11 @@ export default function ProductDetail({
               type="button"
               className={`chip ${socialSummary.likedByCurrentVisitor ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
               onClick={toggleLike}
+              disabled={!isLoggedIn}
             >
               {socialSummary.likedByCurrentVisitor ? 'Quitar me gusta' : 'Me gusta'}
             </button>
-            <button type="button" className="chip" onClick={refreshSocial} disabled={socialLoading}>
-              {socialLoading ? 'Actualizando...' : 'Actualizar actividad'}
-            </button>
+            {!isLoggedIn ? <span className="text-xs text-textMuted">Inicia sesión para usar favoritos.</span> : null}
           </div>
 
           {editionOptions.length > 1 ? (
@@ -902,7 +953,7 @@ export default function ProductDetail({
             <div>
               <p className="font-semibold text-lg">Detalles del producto</p>
               <ul className="list-disc list-inside text-textMuted mt-2 space-y-1">
-                {(product.curiosities || []).map((item: string) => (
+                {detailItems.map((item: string) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
@@ -910,7 +961,7 @@ export default function ProductDetail({
             <div>
               <p className="font-semibold text-lg">Tips de coleccionista</p>
               <ul className="list-disc list-inside text-textMuted mt-2 space-y-1">
-                {(product.tips || []).map((item: string) => (
+                {collectorTips.map((item: string) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>

@@ -64,21 +64,6 @@ function normalizeText(value: string): string {
     .trim();
 }
 
-function getOrCreateVisitorId(): string {
-  if (typeof window === 'undefined') return '';
-  const key = 'advanced-retro-visitor-id';
-  const existing = window.localStorage.getItem(key);
-  if (existing) return existing;
-
-  const nextId =
-    typeof window.crypto?.randomUUID === 'function'
-      ? window.crypto.randomUUID()
-      : `visitor-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-
-  window.localStorage.setItem(key, nextId);
-  return nextId;
-}
-
 function matchPlatform(product: any, filterId: string): boolean {
   const source = normalizeText(
     `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.category || '')}`
@@ -191,7 +176,7 @@ export default function Catalog() {
   const [products, setProducts] = useState<any[]>([]);
   const [active, setActive] = useState<string>('all');
   const [metrics, setMetrics] = useState<Record<string, ProductMetric>>({});
-  const [visitorId, setVisitorId] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -200,16 +185,13 @@ export default function Catalog() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
-  const loadMetrics = async (productIds: string[], currentVisitorId: string) => {
+  const loadMetrics = async (productIds: string[]) => {
     if (productIds.length === 0) return;
     try {
       const res = await fetch('/api/products/social/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productIds,
-          visitorId: currentVisitorId || undefined,
-        }),
+        body: JSON.stringify({ productIds }),
       });
       const data = await res.json();
       if (!res.ok) return;
@@ -229,14 +211,32 @@ export default function Catalog() {
   };
 
   useEffect(() => {
-    setVisitorId(getOrCreateVisitorId());
+    if (!supabaseClient) {
+      setIsLoggedIn(false);
+      return;
+    }
+
+    let mounted = true;
+    supabaseClient.auth.getUser().then(({ data }) => {
+      if (!mounted) return;
+      setIsLoggedIn(Boolean(data?.user));
+    });
+
+    const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(Boolean(session?.user));
+    });
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
     const load = async () => {
       if (!supabaseClient) {
         setProducts(sampleProducts);
-        loadMetrics(sampleProducts.map((product) => String(product.id)), visitorId);
+        loadMetrics(sampleProducts.map((product) => String(product.id)));
         return;
       }
       const { data: prods } = await supabaseClient
@@ -246,13 +246,16 @@ export default function Catalog() {
       const safeProducts = prods || [];
 
       setProducts(safeProducts);
-      loadMetrics(
-        safeProducts.map((product) => String(product.id)),
-        visitorId
-      );
+      loadMetrics(safeProducts.map((product) => String(product.id)));
     };
     load();
-  }, [visitorId]);
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn && favoritesOnly) {
+      setFavoritesOnly(false);
+    }
+  }, [isLoggedIn, favoritesOnly]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -570,8 +573,9 @@ export default function Catalog() {
             <button
               className={`chip ${favoritesOnly ? 'text-primary border-primary' : ''}`}
               onClick={() => setFavoritesOnly((prev) => !prev)}
+              disabled={!isLoggedIn}
             >
-              Solo favoritos
+              {isLoggedIn ? 'Solo favoritos' : 'Solo favoritos (login)'}
             </button>
 
             <button
