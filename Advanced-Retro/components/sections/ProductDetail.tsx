@@ -61,23 +61,6 @@ type ProductSocialSummary = {
   likedByCurrentVisitor: boolean;
 };
 
-type MarketGuide = {
-  available: boolean;
-  provider: 'pricecharting';
-  note?: string;
-  query?: string;
-  productId: string | null;
-  productName: string | null;
-  consoleName: string | null;
-  releaseDate: string | null;
-  loosePrice: number | null;
-  cibPrice: number | null;
-  newPrice: number | null;
-  boxOnlyPrice: number | null;
-  manualOnlyPrice: number | null;
-  gradedPrice: number | null;
-};
-
 type EbayComparable = {
   itemId: string | null;
   title: string | null;
@@ -94,6 +77,7 @@ type EbayMarketGuide = {
   note?: string;
   query?: string;
   marketplaceId: string;
+  attemptedMarketplaces?: string[];
   currency: string | null;
   sampleSize: number;
   totalResults: number;
@@ -448,7 +432,6 @@ export default function ProductDetail({
 
   const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
   const [priceSource, setPriceSource] = useState<'orders' | 'current' | 'none'>('none');
-  const [marketGuide, setMarketGuide] = useState<MarketGuide | null>(null);
   const [marketGuideEbay, setMarketGuideEbay] = useState<EbayMarketGuide | null>(null);
   const [loadingPriceHistory, setLoadingPriceHistory] = useState(false);
   const [priceHistoryError, setPriceHistoryError] = useState('');
@@ -598,7 +581,6 @@ export default function ProductDetail({
     if (!product) return;
     if (isMysteryOrRouletteProduct(product as any)) {
       setPriceHistory([]);
-      setMarketGuide(null);
       setMarketGuideEbay(null);
       setPriceSource('none');
       setPriceHistoryError('');
@@ -611,12 +593,6 @@ export default function ProductDetail({
       const res = await fetch(`/api/products/${encodeURIComponent(productId)}/price-history`);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar el historico de precios');
-
-      if (data?.marketGuide && typeof data.marketGuide === 'object') {
-        setMarketGuide(data.marketGuide as MarketGuide);
-      } else {
-        setMarketGuide(null);
-      }
 
       if (data?.marketGuideEbay && typeof data.marketGuideEbay === 'object') {
         setMarketGuideEbay(data.marketGuideEbay as EbayMarketGuide);
@@ -1057,7 +1033,7 @@ export default function ProductDetail({
                 </div>
 
                 {priceHistory.length > 0 ? (
-                  <PriceHistoryChart points={priceHistory} />
+                  <PriceHistoryChart points={priceHistory} marketOverlay={marketGuideEbay} />
                 ) : (
                   <p className="text-sm text-textMuted">Aun no hay datos suficientes para mostrar tendencia.</p>
                 )}
@@ -1071,111 +1047,16 @@ export default function ProductDetail({
                       : 'sin datos'}
                 </p>
                 {priceHistoryError ? <p className="text-xs text-red-400 mt-1">{priceHistoryError}</p> : null}
-              </div>
-
-              <div className="mt-6 border-t border-line pt-6">
-                <p className="font-semibold mb-2">Comparativa de mercado (PriceCharting)</p>
-                {!marketGuide ? (
-                  <p className="text-sm text-textMuted">Sin datos de mercado por ahora.</p>
-                ) : (
-                  <div className="space-y-2 text-sm">
-                    {marketGuide.available ? (
-                      <>
-                        <p className="text-textMuted">
-                          {marketGuide.productName || product.name}
-                          {marketGuide.consoleName ? ` · ${marketGuide.consoleName}` : ''}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                          <p className="chip">Loose: {marketGuide.loosePrice ? `${(marketGuide.loosePrice / 100).toFixed(2)} €` : '—'}</p>
-                          <p className="chip">CIB: {marketGuide.cibPrice ? `${(marketGuide.cibPrice / 100).toFixed(2)} €` : '—'}</p>
-                          <p className="chip">Nuevo: {marketGuide.newPrice ? `${(marketGuide.newPrice / 100).toFixed(2)} €` : '—'}</p>
-                          <p className="chip">Solo caja: {marketGuide.boxOnlyPrice ? `${(marketGuide.boxOnlyPrice / 100).toFixed(2)} €` : '—'}</p>
-                          <p className="chip">Solo manual: {marketGuide.manualOnlyPrice ? `${(marketGuide.manualOnlyPrice / 100).toFixed(2)} €` : '—'}</p>
-                          <p className="chip">Graded: {marketGuide.gradedPrice ? `${(marketGuide.gradedPrice / 100).toFixed(2)} €` : '—'}</p>
-                        </div>
-                        <p className="text-xs text-textMuted">
-                          PriceCharting no ofrece histórico de ventas por API; esta sección muestra valores actuales de mercado.
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-sm text-textMuted">
-                        No se pudo consultar PriceCharting{marketGuide.note ? `: ${marketGuide.note}` : '.'}
-                      </p>
-                    )}
+                {marketGuideEbay && !marketGuideEbay.available ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <a href={ebayDiagnosticHref} target="_blank" rel="noreferrer" className="chip text-xs">
+                      Abrir diagnóstico eBay
+                    </a>
+                    <button type="button" className="chip text-xs" onClick={refreshPriceHistory}>
+                      Reintentar comparativa
+                    </button>
                   </div>
-                )}
-              </div>
-
-              <div className="mt-6 border-t border-line pt-6">
-                <p className="font-semibold mb-2">Comparativa de mercado (eBay)</p>
-                {!marketGuideEbay ? (
-                  <p className="text-sm text-textMuted">Sin datos de eBay por ahora.</p>
-                ) : marketGuideEbay.available ? (
-                  <div className="space-y-2 text-sm">
-                    <p className="text-textMuted">
-                      Marketplace: {marketGuideEbay.marketplaceId} · Muestras: {marketGuideEbay.sampleSize}
-                      {marketGuideEbay.totalResults ? ` · Resultados: ${marketGuideEbay.totalResults}` : ''}
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-                      <p className="chip">
-                        Mínimo:{' '}
-                        {marketGuideEbay.minPrice ? `${(marketGuideEbay.minPrice / 100).toFixed(2)} €` : '—'}
-                      </p>
-                      <p className="chip">
-                        Mediana:{' '}
-                        {marketGuideEbay.medianPrice ? `${(marketGuideEbay.medianPrice / 100).toFixed(2)} €` : '—'}
-                      </p>
-                      <p className="chip">
-                        Media:{' '}
-                        {marketGuideEbay.averagePrice ? `${(marketGuideEbay.averagePrice / 100).toFixed(2)} €` : '—'}
-                      </p>
-                      <p className="chip">
-                        Máximo:{' '}
-                        {marketGuideEbay.maxPrice ? `${(marketGuideEbay.maxPrice / 100).toFixed(2)} €` : '—'}
-                      </p>
-                    </div>
-
-                    {Array.isArray(marketGuideEbay.comparables) && marketGuideEbay.comparables.length > 0 ? (
-                      <div className="mt-2 space-y-2">
-                        {marketGuideEbay.comparables.slice(0, 4).map((item, index) => (
-                          <a
-                            key={`${item.itemId || item.itemWebUrl || 'ebay'}-${index}`}
-                            href={item.itemWebUrl || '#'}
-                            target={item.itemWebUrl ? '_blank' : undefined}
-                            rel={item.itemWebUrl ? 'noreferrer noopener' : undefined}
-                            className={`flex items-center justify-between gap-2 border border-line p-2 ${
-                              item.itemWebUrl ? 'hover:border-primary' : ''
-                            }`}
-                          >
-                            <span className="text-xs text-textMuted line-clamp-1">
-                              {item.title || 'Producto eBay'}
-                            </span>
-                            <span className="text-xs text-primary">
-                              {item.price ? `${(item.price / 100).toFixed(2)} €` : '—'}
-                            </span>
-                          </a>
-                        ))}
-                      </div>
-                    ) : null}
-                    <p className="text-xs text-textMuted">
-                      eBay refleja listados activos del mercado, no ventas cerradas.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-sm text-textMuted">
-                      No se pudo consultar eBay{marketGuideEbay.note ? `: ${marketGuideEbay.note}` : '.'}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <a href={ebayDiagnosticHref} target="_blank" rel="noreferrer" className="chip text-xs">
-                        Abrir diagnóstico eBay
-                      </a>
-                      <button type="button" className="chip text-xs" onClick={refreshPriceHistory}>
-                        Reintentar comparativa
-                      </button>
-                    </div>
-                  </div>
-                )}
+                ) : null}
               </div>
             </>
           )}

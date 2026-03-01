@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { toPriceChartingConsoleName, stripProductNameForExternalSearch } from '@/lib/catalogPlatform';
-import { fetchPriceChartingSnapshotByQuery } from '@/lib/priceCharting';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
 import { fetchEbayMarketSnapshotByQueryWithOptions } from '@/lib/ebayBrowse';
 
@@ -281,22 +280,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
     const sorted = compactPoints(sortByDate(points), 80);
 
-    let marketGuide: any = null;
     let marketGuideEbay: any = null;
     let marketGuideEbayDebug: any = null;
     if (!isMysteryOrRouletteProduct(product as any)) {
-      const externalName =
-        stripProductNameForExternalSearch(String(product.name || '')) || String(product.name || '');
-      const externalConsole = toPriceChartingConsoleName({
-        category: String((product as any).category || ''),
-        name: String(product.name || ''),
-      });
-      const priceChartingQuery = `${externalName} ${externalConsole}`.trim();
-      const [priceChartingSnapshot, ebayData] = await Promise.all([
-        fetchPriceChartingSnapshotByQuery(priceChartingQuery),
-        fetchBestEbaySnapshotForProduct(product),
-      ]);
-      marketGuide = priceChartingSnapshot;
+      const ebayData = await fetchBestEbaySnapshotForProduct(product);
       marketGuideEbay = ebayData.snapshot;
       marketGuideEbayDebug = {
         selectedQuery: ebayData.selectedQuery,
@@ -314,7 +301,6 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         source: 'orders',
         salesCount: sorted.length,
         points: sorted,
-        marketGuide,
         marketGuideEbay,
         marketGuideEbayDebug,
       });
@@ -327,7 +313,6 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         source: 'current',
         salesCount: 0,
         points: [{ date: new Date().toISOString(), price: currentPrice }],
-        marketGuide,
         marketGuideEbay,
         marketGuideEbayDebug,
       });
@@ -338,7 +323,6 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       source: 'none',
       salesCount: 0,
       points: [],
-      marketGuide,
       marketGuideEbay,
       marketGuideEbayDebug,
     });

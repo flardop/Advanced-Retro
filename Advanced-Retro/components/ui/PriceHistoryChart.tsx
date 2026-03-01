@@ -5,6 +5,18 @@ export type PriceHistoryPoint = {
   price: number; // cents
 };
 
+export type PriceHistoryMarketOverlay = {
+  available: boolean;
+  marketplaceId?: string;
+  sampleSize?: number;
+  totalResults?: number;
+  minPrice?: number | null;
+  medianPrice?: number | null;
+  averagePrice?: number | null;
+  maxPrice?: number | null;
+  note?: string;
+};
+
 function formatEuro(cents: number): string {
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',
@@ -37,7 +49,17 @@ function createAreaPath(points: Array<{ x: number; y: number }>, chartBottom: nu
   return d;
 }
 
-export default function PriceHistoryChart({ points }: { points: PriceHistoryPoint[] }) {
+function isValidPrice(value: unknown): value is number {
+  return Number.isFinite(Number(value)) && Number(value) > 0;
+}
+
+export default function PriceHistoryChart({
+  points,
+  marketOverlay,
+}: {
+  points: PriceHistoryPoint[];
+  marketOverlay?: PriceHistoryMarketOverlay | null;
+}) {
   if (!Array.isArray(points) || points.length === 0) {
     return <p className="text-sm text-textMuted">No hay datos para la grafica.</p>;
   }
@@ -58,17 +80,25 @@ export default function PriceHistoryChart({ points }: { points: PriceHistoryPoin
   const chartHeight = height - paddingY * 2;
 
   const prices = safePoints.map((point) => point.price);
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
+  const marketValues = [
+    marketOverlay?.minPrice,
+    marketOverlay?.medianPrice,
+    marketOverlay?.averagePrice,
+    marketOverlay?.maxPrice,
+  ].filter(isValidPrice);
+
+  const allPrices = [...prices, ...marketValues];
+  const minPrice = Math.min(...allPrices);
+  const maxPrice = Math.max(...allPrices);
   const spread = Math.max(1, maxPrice - minPrice);
+  const toY = (price: number) => paddingY + (1 - (price - minPrice) / spread) * chartHeight;
 
   const coords = safePoints.map((point, index) => {
     const x =
       safePoints.length === 1
         ? width / 2
         : paddingX + (index / (safePoints.length - 1)) * chartWidth;
-    const normalized = (point.price - minPrice) / spread;
-    const y = paddingY + (1 - normalized) * chartHeight;
+    const y = toY(point.price);
     return { x, y, point };
   });
 
@@ -78,6 +108,14 @@ export default function PriceHistoryChart({ points }: { points: PriceHistoryPoin
   const first = safePoints[0];
   const last = safePoints[safePoints.length - 1];
   const middle = safePoints[Math.floor(safePoints.length / 2)];
+  const marketLines = marketOverlay?.available
+    ? [
+        { id: 'min', label: 'eBay mínimo', value: marketOverlay.minPrice, color: '#67e8f9' },
+        { id: 'median', label: 'eBay mediana', value: marketOverlay.medianPrice, color: '#4be4d6' },
+        { id: 'average', label: 'eBay media', value: marketOverlay.averagePrice, color: '#facc15' },
+        { id: 'max', label: 'eBay máximo', value: marketOverlay.maxPrice, color: '#f472b6' },
+      ].filter((item) => isValidPrice(item.value))
+    : [];
 
   return (
     <div className="border border-line bg-surface p-3">
@@ -90,6 +128,33 @@ export default function PriceHistoryChart({ points }: { points: PriceHistoryPoin
         </defs>
 
         <rect x={paddingX} y={paddingY} width={chartWidth} height={chartHeight} fill="transparent" stroke="#2d3039" />
+
+        {marketLines.map((line) => {
+          const y = toY(Number(line.value));
+          return (
+            <g key={line.id}>
+              <line
+                x1={paddingX}
+                x2={width - paddingX}
+                y1={y}
+                y2={y}
+                stroke={line.color}
+                strokeWidth="1.2"
+                strokeDasharray="4 4"
+                opacity="0.9"
+              />
+              <text
+                x={width - paddingX - 4}
+                y={y - 4}
+                fill={line.color}
+                fontSize="10"
+                textAnchor="end"
+              >
+                {line.label}
+              </text>
+            </g>
+          );
+        })}
 
         {areaPath ? <path d={areaPath} fill="url(#price-area)" /> : null}
         {linePath ? <path d={linePath} fill="none" stroke="#ff355e" strokeWidth="2.5" /> : null}
@@ -130,6 +195,29 @@ export default function PriceHistoryChart({ points }: { points: PriceHistoryPoin
           Actual: <span className="text-primary">{formatEuro(last.price)}</span>
         </span>
       </div>
+
+      {marketOverlay ? (
+        <div className="mt-3 rounded-lg border border-line bg-[rgba(10,18,30,0.45)] p-2.5 text-xs text-textMuted">
+          {marketOverlay.available ? (
+            <>
+              <p>
+                eBay · {marketOverlay.marketplaceId || 'Marketplace'} · Muestras: {Number(marketOverlay.sampleSize || 0)}
+                {Number(marketOverlay.totalResults || 0) > 0
+                  ? ` · Resultados: ${Number(marketOverlay.totalResults || 0)}`
+                  : ''}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className="chip">Mín: {isValidPrice(marketOverlay.minPrice) ? formatEuro(Number(marketOverlay.minPrice)) : '—'}</span>
+                <span className="chip">Mediana: {isValidPrice(marketOverlay.medianPrice) ? formatEuro(Number(marketOverlay.medianPrice)) : '—'}</span>
+                <span className="chip">Media: {isValidPrice(marketOverlay.averagePrice) ? formatEuro(Number(marketOverlay.averagePrice)) : '—'}</span>
+                <span className="chip">Máx: {isValidPrice(marketOverlay.maxPrice) ? formatEuro(Number(marketOverlay.maxPrice)) : '—'}</span>
+              </div>
+            </>
+          ) : (
+            <p>No se pudo cargar eBay{marketOverlay.note ? `: ${marketOverlay.note}` : ''}</p>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
