@@ -15,6 +15,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { getProductLikeSummary, toggleProductLike } from '@/lib/productLikesDb';
 import { getProductLikesSetupErrorMessage, isProductLikesSetupMissing } from '@/lib/productLikesSetup';
+import { grantXpToUser } from '@/lib/gamificationServer';
 
 export const dynamic = 'force-dynamic';
 
@@ -256,6 +257,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       review.photos = uploadedPhotos;
 
       await writeProductSocialState(productId, state);
+
+      void grantXpToUser({
+        userId: user.id,
+        actionKey: 'comment_posted',
+        dedupeKey: `product-review:${review.id}`,
+        metadata: {
+          product_id: productId,
+          review_id: review.id,
+          rating,
+        },
+      });
 
       return NextResponse.json({
         success: true,

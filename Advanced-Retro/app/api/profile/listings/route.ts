@@ -7,6 +7,7 @@ import {
   getUserListings,
   validateListingInput,
 } from '@/lib/userListings';
+import { grantXpToUser } from '@/lib/gamificationServer';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,17 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     const payload = validateListingInput(body);
     const listing = await createUserListing(user.id, payload);
+
+    void grantXpToUser({
+      userId: user.id,
+      actionKey: 'community_listing_created',
+      dedupeKey: `community-listing-created:${listing.id}`,
+      metadata: {
+        listing_id: listing.id,
+        title: listing.title,
+      },
+    });
+
     return NextResponse.json({
       policy: {
         listing_fee_cents: COMMUNITY_LISTING_FEE_CENTS,

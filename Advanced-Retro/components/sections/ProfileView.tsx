@@ -68,6 +68,51 @@ type ProfileState = {
   is_verified_seller: boolean;
 };
 
+type GamificationReward = {
+  reward_key: string;
+  reward_label: string;
+  reward_type: string;
+  level_required: number;
+  metadata?: Record<string, unknown> | null;
+  unlocked_at: string;
+};
+
+type GamificationRecentItem = {
+  type: 'xp' | 'reward';
+  title: string;
+  subtitle: string;
+  xp_delta?: number;
+  created_at: string;
+};
+
+type GamificationState = {
+  xp_total: number;
+  level: number;
+  progress: {
+    xpTotal: number;
+    level: number;
+    nextLevel: number;
+    currentLevelXp: number;
+    nextLevelXp: number;
+    xpToNextLevel: number;
+    progressInsideLevel: number;
+    progressPercent: number;
+  };
+  frame: {
+    id: string;
+    label: string;
+    ringClassName: string;
+    badgeClassName: string;
+  };
+  streak: {
+    current: number;
+    longest: number;
+    last_login_on: string | null;
+  };
+  rewards: GamificationReward[];
+  recent: GamificationRecentItem[];
+};
+
 type WalletTransaction = {
   id: string;
   amount_cents: number;
@@ -227,6 +272,7 @@ export default function ProfileView() {
 
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<ProfileState | null>(null);
+  const [gamification, setGamification] = useState<GamificationState | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
 
   const [name, setName] = useState('');
@@ -292,14 +338,16 @@ export default function ProfileView() {
     setTagline(String(nextProfile?.tagline || ''));
     setFavoriteConsole(String(nextProfile?.favorite_console || ''));
     setProfileTheme(String(nextProfile?.profile_theme || 'neon-grid'));
-    setShippingFullName(String(nextProfile?.shipping_address?.full_name || nextProfile?.name || ''));
-    setShippingLine1(String(nextProfile?.shipping_address?.line1 || ''));
-    setShippingLine2(String(nextProfile?.shipping_address?.line2 || ''));
-    setShippingCity(String(nextProfile?.shipping_address?.city || ''));
-    setShippingState(String(nextProfile?.shipping_address?.state || ''));
-    setShippingPostalCode(String(nextProfile?.shipping_address?.postal_code || ''));
-    setShippingCountry(String(nextProfile?.shipping_address?.country || 'España'));
-    setShippingPhone(String(nextProfile?.shipping_address?.phone || ''));
+    setShippingFullName(
+      String(nextProfile?.shipping_address?.full_name || nextProfile?.name || shippingFullName || '')
+    );
+    setShippingLine1(String(nextProfile?.shipping_address?.line1 || shippingLine1 || ''));
+    setShippingLine2(String(nextProfile?.shipping_address?.line2 || shippingLine2 || ''));
+    setShippingCity(String(nextProfile?.shipping_address?.city || shippingCity || ''));
+    setShippingState(String(nextProfile?.shipping_address?.state || shippingState || ''));
+    setShippingPostalCode(String(nextProfile?.shipping_address?.postal_code || shippingPostalCode || ''));
+    setShippingCountry(String(nextProfile?.shipping_address?.country || shippingCountry || 'España'));
+    setShippingPhone(String(nextProfile?.shipping_address?.phone || shippingPhone || ''));
   };
 
   const loadProfile = async () => {
@@ -313,6 +361,18 @@ export default function ProfileView() {
     setUser(data?.user || null);
     const nextProfile = data?.user?.profile || null;
     applyProfileSnapshot(nextProfile);
+    if (data?.gamification) {
+      setGamification(data.gamification);
+    }
+  };
+
+  const loadGamification = async () => {
+    const res = await fetch('/api/profile/gamification');
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.error || 'No se pudo cargar gamificación');
+    }
+    setGamification(data?.gamification || null);
   };
 
   const loadOrders = async (userId: string) => {
@@ -322,6 +382,7 @@ export default function ProfileView() {
       .from('orders')
       .select('*, order_items(*)')
       .eq('user_id', userId)
+      .in('status', ['processing', 'paid', 'shipped', 'delivered', 'cancelled'])
       .order('created_at', { ascending: false });
 
     setOrders(data || []);
@@ -413,11 +474,12 @@ export default function ProfileView() {
       if (authUserId) {
         await loadOrders(authUserId);
       }
-      const [ticketsResult, listingsResult, walletResult, withdrawalsResult] = await Promise.allSettled([
+      const [ticketsResult, listingsResult, walletResult, withdrawalsResult, gamificationResult] = await Promise.allSettled([
         loadTickets(),
         loadListings(),
         loadWallet(),
         loadWithdrawals(),
+        loadGamification(),
       ]);
 
       if (ticketsResult.status === 'rejected') {
@@ -432,6 +494,9 @@ export default function ProfileView() {
       if (withdrawalsResult.status === 'rejected') {
         setWithdrawalRequests([]);
         setWithdrawalsState(null);
+      }
+      if (gamificationResult.status === 'rejected') {
+        setGamification(null);
       }
     } catch (error: any) {
       toast.error(error?.message || 'Error cargando perfil');
@@ -561,6 +626,9 @@ export default function ProfileView() {
       }
 
       applyProfileSnapshot(data.profile || null);
+      if (data?.gamification) {
+        setGamification(data.gamification);
+      }
       toast.success('Perfil actualizado');
     } catch (error: any) {
       toast.error(error?.message || 'No se pudo guardar el perfil');
@@ -819,6 +887,14 @@ export default function ProfileView() {
     [profileTheme]
   );
 
+  const userLevel = Math.max(1, Number(gamification?.level || 1));
+  const avatarFrameRingClass = String(gamification?.frame?.ringClassName || 'border-white/40');
+  const avatarFrameBadgeClass = String(gamification?.frame?.badgeClassName || 'border-white/30 text-white/90');
+  const levelProgressPercent = Math.max(
+    0,
+    Math.min(100, Number(gamification?.progress?.progressPercent || 0))
+  );
+
   const profileBadges = useMemo(() => {
     if (!profile?.badges || !Array.isArray(profile.badges)) return [];
     return profile.badges
@@ -827,6 +903,18 @@ export default function ProfileView() {
       .filter(Boolean)
       .slice(0, 8);
   }, [profile?.badges]);
+
+  const formatRecentDate = (raw: string) => {
+    if (!raw) return '';
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   if (!supabaseClient) {
     return (
@@ -883,7 +971,9 @@ export default function ProfileView() {
             <div className="-mt-12 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
                 <div className="relative">
-                  <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/40 bg-slate-900 shadow-[0_0_32px_rgba(34,211,238,.32)]">
+                  <div
+                    className={`relative h-24 w-24 overflow-hidden rounded-2xl border-2 bg-slate-900 ${avatarFrameRingClass}`}
+                  >
                     {avatarUrl ? (
                       <div
                         className="h-full w-full bg-cover bg-center"
@@ -900,7 +990,12 @@ export default function ProfileView() {
                 </div>
 
                 <div className="pt-3 sm:pt-0">
-                  <p className="text-2xl font-black">{name || profile.name || 'Coleccionista'}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-2xl font-black">{name || profile.name || 'Coleccionista'}</p>
+                    <span className={`inline-flex items-center border px-2 py-1 text-xs ${avatarFrameBadgeClass}`}>
+                      Nivel {userLevel}
+                    </span>
+                  </div>
                   <p className="text-sm text-textMuted">{profile.email}</p>
                   <p className="text-xs text-textMuted mt-1">
                     Rol: {profile.role} · Vendedor verificado: {profile.is_verified_seller ? 'sí' : 'no'}
@@ -914,7 +1009,11 @@ export default function ProfileView() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-center text-xs sm:text-sm min-w-[260px]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs sm:text-sm min-w-[260px]">
+                <div className="border border-line px-3 py-2 bg-slate-950/35">
+                  <p className="text-textMuted">Nivel</p>
+                  <p className="font-semibold">{userLevel}</p>
+                </div>
                 <div className="border border-line px-3 py-2 bg-slate-950/35">
                   <p className="text-textMuted">Pedidos</p>
                   <p className="font-semibold">{orders.length}</p>
@@ -948,33 +1047,8 @@ export default function ProfileView() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                className="chip"
-                onClick={() => avatarInputRef.current?.click()}
-                disabled={uploadingAvatar}
-              >
-                {uploadingAvatar ? 'Subiendo avatar...' : 'Cambiar foto'}
-              </button>
-              <button
-                className="chip"
-                onClick={() => removeAvatar()}
-                disabled={uploadingAvatar || !avatarUrl}
-              >
-                Quitar foto
-              </button>
-              <button
-                className="chip"
-                onClick={() => bannerInputRef.current?.click()}
-                disabled={uploadingBanner}
-              >
-                {uploadingBanner ? 'Subiendo portada...' : 'Cambiar portada'}
-              </button>
-              <button
-                className="chip"
-                onClick={() => removeBanner()}
-                disabled={uploadingBanner || !bannerUrl}
-              >
-                Quitar portada
+              <button className="chip" onClick={() => setTab('profile')}>
+                Editar perfil
               </button>
               <button className="button-secondary" onClick={() => supabaseClient?.auth.signOut()}>
                 Cerrar sesión
@@ -1031,6 +1105,89 @@ export default function ProfileView() {
 
         {tab === 'profile' && (
           <div className="grid gap-6">
+            <div className="glass p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-primary">Progreso Advanced Retro</p>
+                  <h2 className="text-2xl font-black mt-1">Nivel Steam-style</h2>
+                  <p className="text-sm text-textMuted mt-1">
+                    Sube de nivel con compras, actividad en comunidad y constancia diaria.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="border border-line rounded-xl px-3 py-2 bg-slate-950/40">
+                    <p className="text-xs text-textMuted">XP total</p>
+                    <p className="font-semibold text-primary">{Number(gamification?.xp_total || 0)}</p>
+                  </div>
+                  <div className="border border-line rounded-xl px-3 py-2 bg-slate-950/40">
+                    <p className="text-xs text-textMuted">Racha actual</p>
+                    <p className="font-semibold">{Number(gamification?.streak?.current || 0)} días</p>
+                  </div>
+                  <div className="border border-line rounded-xl px-3 py-2 bg-slate-950/40">
+                    <p className="text-xs text-textMuted">Siguiente nivel</p>
+                    <p className="font-semibold">Nivel {Number(gamification?.progress?.nextLevel || userLevel + 1)}</p>
+                  </div>
+                  <div className="border border-line rounded-xl px-3 py-2 bg-slate-950/40">
+                    <p className="text-xs text-textMuted">XP restante</p>
+                    <p className="font-semibold">{Number(gamification?.progress?.xpToNextLevel || 0)}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <div className="flex items-center justify-between text-xs text-textMuted">
+                  <span>
+                    Nivel {userLevel} · Marco: {gamification?.frame?.label || 'Sin marco'}
+                  </span>
+                  <span>{levelProgressPercent.toFixed(1)}%</span>
+                </div>
+                <div className="mt-2 h-3 w-full rounded-full border border-line bg-slate-950/60 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-cyan-400 via-emerald-300 to-cyan-300 transition-all duration-500"
+                    style={{ width: `${levelProgressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr,0.9fr]">
+                <div className="border border-line rounded-2xl p-4 bg-[rgba(4,14,26,0.66)]">
+                  <p className="font-semibold">Expositor de recompensas</p>
+                  <p className="text-xs text-textMuted mt-1">Desbloqueadas por nivel</p>
+                  {Array.isArray(gamification?.rewards) && gamification.rewards.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {gamification.rewards.slice(0, 12).map((reward) => (
+                        <span key={reward.reward_key} className="chip border-primary/45 text-primary">
+                          N{reward.level_required} · {reward.reward_label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-textMuted mt-3">
+                      Aún no hay recompensas desbloqueadas. Sigue completando acciones.
+                    </p>
+                  )}
+                </div>
+
+                <div className="border border-line rounded-2xl p-4 bg-[rgba(4,14,26,0.66)]">
+                  <p className="font-semibold">Logros recientes</p>
+                  <p className="text-xs text-textMuted mt-1">Actividad XP + desbloqueos</p>
+                  <div className="mt-3 max-h-[220px] overflow-auto pr-1 space-y-2">
+                    {Array.isArray(gamification?.recent) && gamification.recent.length > 0 ? (
+                      gamification.recent.slice(0, 8).map((item, index) => (
+                        <div key={`${item.type}-${item.title}-${index}`} className="rounded-xl border border-line px-3 py-2 bg-slate-950/45">
+                          <p className="text-sm font-semibold">{item.title}</p>
+                          <p className="text-xs text-textMuted mt-1">{item.subtitle}</p>
+                          <p className="text-[11px] text-textMuted mt-1">{formatRecentDate(item.created_at)}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-textMuted">Todavía no hay actividad registrada.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
               <div className="glass p-6 space-y-4">
                 <div>
@@ -1088,13 +1245,20 @@ export default function ProfileView() {
                     />
                   </label>
 
-                  <div className="border border-line p-4 bg-slate-950/25 space-y-3">
-                    <p className="text-sm font-semibold">Dirección guardada para checkout</p>
-                    <p className="text-xs text-textMuted">
-                      Esta dirección se usará para autocompletar el pago y evitar que la escribas en cada compra.
-                    </p>
+                  <details className="group rounded-2xl border border-line bg-[linear-gradient(145deg,rgba(6,16,32,0.86),rgba(5,12,24,0.7))] p-4">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-primary">Dirección guardada para checkout</p>
+                        <p className="text-xs text-textMuted">
+                          Guarda una vez y se autocompleta en todos tus pedidos.
+                        </p>
+                      </div>
+                      <span className="chip text-[11px] group-open:border-primary/60 group-open:text-primary">
+                        Editar
+                      </span>
+                    </summary>
 
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
                       <input
                         className="bg-transparent border border-line px-3 py-2 sm:col-span-2"
                         value={shippingFullName}
@@ -1144,7 +1308,7 @@ export default function ProfileView() {
                         placeholder="Teléfono (opcional)"
                       />
                     </div>
-                  </div>
+                  </details>
                 </div>
 
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -1161,6 +1325,20 @@ export default function ProfileView() {
                     disabled={uploadingBanner}
                   >
                     {uploadingBanner ? 'Subiendo banner...' : 'Subir imagen de banner'}
+                  </button>
+                  <button
+                    className="chip w-full"
+                    onClick={() => removeAvatar()}
+                    disabled={uploadingAvatar || !avatarUrl}
+                  >
+                    Quitar avatar
+                  </button>
+                  <button
+                    className="chip w-full"
+                    onClick={() => removeBanner()}
+                    disabled={uploadingBanner || !bannerUrl}
+                  >
+                    Quitar banner
                   </button>
                 </div>
                 <p className="text-xs text-textMuted">

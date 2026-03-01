@@ -4,6 +4,7 @@ import { sendCommunityDeliveryEmail } from '@/lib/orderEmails';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getListingById, updateCommunityListingDelivery } from '@/lib/userListings';
 import { creditCommunitySaleToSellerIfDelivered } from '@/lib/wallet';
+import { grantXpToUser } from '@/lib/gamificationServer';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,6 +73,19 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         credited: false,
         error: walletError?.message || 'No se pudo procesar el abono en cartera',
       };
+    }
+
+    if (String(enriched?.delivery_status || '').toLowerCase() === 'delivered') {
+      void grantXpToUser({
+        userId: String(enriched?.user_id || ''),
+        actionKey: 'community_listing_sold',
+        dedupeKey: `community-listing-sold:${listing.id}`,
+        metadata: {
+          listing_id: listing.id,
+          title: enriched?.title || null,
+          price_cents: Number(enriched?.price || 0),
+        },
+      });
     }
 
     return NextResponse.json({ listing: enriched, wallet_credit: walletCredit });

@@ -1,4 +1,5 @@
 import Hero from '@/components/sections/Hero';
+import RetroPromoSlider from '@/components/sections/RetroPromoSlider';
 import FeaturedProducts from '@/components/sections/FeaturedProducts';
 import Collections from '@/components/sections/Collections';
 import Benefits from '@/components/sections/Benefits';
@@ -28,6 +29,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <>
       <Hero />
+      <RetroPromoSlider />
       <FeaturedProducts />
       <Collections />
       <Benefits />

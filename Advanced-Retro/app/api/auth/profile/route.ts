@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ApiError, requireUserContext } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { awardProfileMilestones, getGamificationSnapshot } from '@/lib/gamificationServer';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,12 +34,14 @@ function sanitizeShippingAddress(input: unknown) {
 export async function GET() {
   try {
     const { user, profile } = await requireUserContext();
+    const gamification = await getGamificationSnapshot(user.id);
     return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
         profile,
       },
+      gamification,
     });
   } catch (error: any) {
     return handleError(error);
@@ -139,37 +142,46 @@ export async function PUT(req: Request) {
             user_metadata: nextMetadata,
           });
           if (!authUpdateError) {
+            const fallbackProfile = {
+              ...currentProfile,
+              name: typeof metadataPatch.name === 'string' ? metadataPatch.name : currentProfile.name,
+              avatar_url: typeof metadataPatch.avatar_url === 'string' || metadataPatch.avatar_url === null
+                ? (metadataPatch.avatar_url as string | null)
+                : currentProfile.avatar_url,
+              banner_url: typeof metadataPatch.banner_url === 'string' || metadataPatch.banner_url === null
+                ? (metadataPatch.banner_url as string | null)
+                : currentProfile.banner_url,
+              bio: typeof metadataPatch.bio === 'string' || metadataPatch.bio === null
+                ? (metadataPatch.bio as string | null)
+                : currentProfile.bio,
+              tagline: typeof metadataPatch.tagline === 'string' || metadataPatch.tagline === null
+                ? (metadataPatch.tagline as string | null)
+                : currentProfile.tagline,
+              favorite_console:
+                typeof metadataPatch.favorite_console === 'string' || metadataPatch.favorite_console === null
+                  ? (metadataPatch.favorite_console as string | null)
+                  : currentProfile.favorite_console,
+              profile_theme:
+                typeof metadataPatch.profile_theme === 'string'
+                  ? metadataPatch.profile_theme
+                  : currentProfile.profile_theme,
+              badges: Array.isArray(metadataPatch.badges) ? metadataPatch.badges : currentProfile.badges,
+              shipping_address:
+                Object.prototype.hasOwnProperty.call(metadataPatch, 'shipping_address')
+                  ? ((metadataPatch.shipping_address as any) || null)
+                  : currentProfile.shipping_address,
+              updated_at: new Date().toISOString(),
+            };
+
+            await awardProfileMilestones({
+              userId: user.id,
+              profile: fallbackProfile as any,
+            });
+            const gamification = await getGamificationSnapshot(user.id);
+
             return NextResponse.json({
-              profile: {
-                ...currentProfile,
-                name: typeof metadataPatch.name === 'string' ? metadataPatch.name : currentProfile.name,
-                avatar_url: typeof metadataPatch.avatar_url === 'string' || metadataPatch.avatar_url === null
-                  ? (metadataPatch.avatar_url as string | null)
-                  : currentProfile.avatar_url,
-                banner_url: typeof metadataPatch.banner_url === 'string' || metadataPatch.banner_url === null
-                  ? (metadataPatch.banner_url as string | null)
-                  : currentProfile.banner_url,
-                bio: typeof metadataPatch.bio === 'string' || metadataPatch.bio === null
-                  ? (metadataPatch.bio as string | null)
-                  : currentProfile.bio,
-                tagline: typeof metadataPatch.tagline === 'string' || metadataPatch.tagline === null
-                  ? (metadataPatch.tagline as string | null)
-                  : currentProfile.tagline,
-                favorite_console:
-                  typeof metadataPatch.favorite_console === 'string' || metadataPatch.favorite_console === null
-                    ? (metadataPatch.favorite_console as string | null)
-                    : currentProfile.favorite_console,
-                profile_theme:
-                  typeof metadataPatch.profile_theme === 'string'
-                    ? metadataPatch.profile_theme
-                    : currentProfile.profile_theme,
-                badges: Array.isArray(metadataPatch.badges) ? metadataPatch.badges : currentProfile.badges,
-                shipping_address:
-                  Object.prototype.hasOwnProperty.call(metadataPatch, 'shipping_address')
-                    ? ((metadataPatch.shipping_address as any) || null)
-                    : currentProfile.shipping_address,
-                updated_at: new Date().toISOString(),
-              },
+              profile: fallbackProfile,
+              gamification,
               fallback: 'auth_user_metadata',
             });
           }
@@ -186,7 +198,13 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: message }, { status: 500 });
     }
 
-    return NextResponse.json({ profile: updated });
+    await awardProfileMilestones({
+      userId: user.id,
+      profile: updated,
+    });
+
+    const gamification = await getGamificationSnapshot(user.id);
+    return NextResponse.json({ profile: updated, gamification });
   } catch (error: any) {
     return handleError(error);
   }

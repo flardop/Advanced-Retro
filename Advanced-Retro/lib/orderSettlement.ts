@@ -3,6 +3,7 @@ import { ensureTicketForOrder } from '@/lib/supportTickets';
 import { redeemCouponForOrder } from '@/lib/coupons';
 import { grantMysteryTicketsFromOrder } from '@/lib/mysteryBox';
 import { sendOrderPaidEmail } from '@/lib/orderEmails';
+import { grantXpToUser } from '@/lib/gamificationServer';
 
 type StockUpdate = {
   productId: string;
@@ -235,6 +236,37 @@ export async function applyPaidOrderWithStockUpdate(options: {
       });
     } catch (couponError) {
       console.warn('Coupon redemption skipped:', couponError);
+    }
+  }
+
+  try {
+    await grantXpToUser({
+      userId: claimedOrder.user_id,
+      actionKey: 'order_paid',
+      dedupeKey: `order-paid:${orderId}`,
+      metadata: {
+        order_id: orderId,
+        total_cents: Number(claimedOrder.total || 0),
+      },
+    });
+  } catch (xpError) {
+    console.warn('XP order grant skipped:', xpError);
+  }
+
+  if (claimedOrder.mystery_box_id && Number(claimedOrder.mystery_ticket_units || 0) > 0) {
+    try {
+      await grantXpToUser({
+        userId: claimedOrder.user_id,
+        actionKey: 'mystery_box_purchased',
+        dedupeKey: `mystery-order:${orderId}`,
+        metadata: {
+          order_id: orderId,
+          mystery_box_id: claimedOrder.mystery_box_id,
+          mystery_ticket_units: Number(claimedOrder.mystery_ticket_units || 0),
+        },
+      });
+    } catch (xpError) {
+      console.warn('XP mystery grant skipped:', xpError);
     }
   }
 

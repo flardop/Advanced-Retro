@@ -79,6 +79,9 @@ alter table if exists public.users add column if not exists profile_theme text;
 alter table if exists public.users add column if not exists badges text[];
 alter table if exists public.users add column if not exists shipping_address jsonb;
 alter table if exists public.users add column if not exists is_verified_seller boolean;
+alter table if exists public.users add column if not exists xp_total integer;
+alter table if exists public.users add column if not exists level integer;
+alter table if exists public.users add column if not exists xp_updated_at timestamptz;
 alter table if exists public.users add column if not exists phone text;
 alter table if exists public.users add column if not exists address text;
 alter table if exists public.users add column if not exists city text;
@@ -91,6 +94,9 @@ update public.users set name = coalesce(nullif(trim(name), ''), split_part(email
 update public.users set profile_theme = coalesce(nullif(profile_theme, ''), 'neon-grid') where true;
 update public.users set badges = coalesce(badges, '{}') where badges is null;
 update public.users set is_verified_seller = coalesce(is_verified_seller, false) where is_verified_seller is null;
+update public.users set xp_total = coalesce(xp_total, 0) where true;
+update public.users set level = greatest(1, coalesce(level, 1)) where true;
+update public.users set xp_updated_at = coalesce(xp_updated_at, now()) where xp_updated_at is null;
 update public.users set created_at = coalesce(created_at, now()) where created_at is null;
 update public.users set updated_at = coalesce(updated_at, now()) where updated_at is null;
 
@@ -145,6 +151,8 @@ create index if not exists idx_users_role on public.users(role);
 create index if not exists idx_users_email on public.users(email);
 create index if not exists idx_users_verified_seller on public.users(is_verified_seller);
 create index if not exists idx_users_profile_theme on public.users(profile_theme);
+create index if not exists idx_users_xp_total on public.users(xp_total desc);
+create index if not exists idx_users_level on public.users(level desc);
 
 -- Trigger alta usuario auth -> profile row
 create or replace function public.handle_new_user()
@@ -917,6 +925,50 @@ create table if not exists public.notification_queue (
 create index if not exists idx_notification_queue_status_time
   on public.notification_queue(status, created_at desc);
 
+-- 6) Gamificación XP / niveles
+create table if not exists public.user_xp_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  action_key text not null,
+  xp_delta integer not null,
+  dedupe_key text unique,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_user_xp_events_user_created
+  on public.user_xp_events(user_id, created_at desc);
+create index if not exists idx_user_xp_events_action
+  on public.user_xp_events(action_key);
+
+create table if not exists public.user_login_streaks (
+  user_id uuid primary key references public.users(id) on delete cascade,
+  streak_count integer not null default 0,
+  longest_streak integer not null default 0,
+  last_login_on date,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_user_login_streaks_last_login
+  on public.user_login_streaks(last_login_on desc nulls last);
+
+create table if not exists public.user_level_rewards (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  reward_key text not null,
+  reward_label text not null,
+  reward_type text not null,
+  level_required integer not null,
+  metadata jsonb not null default '{}'::jsonb,
+  unlocked_at timestamptz not null default now(),
+  unique(user_id, reward_key)
+);
+
+create index if not exists idx_user_level_rewards_user_unlocked
+  on public.user_level_rewards(user_id, unlocked_at desc);
+create index if not exists idx_user_level_rewards_level
+  on public.user_level_rewards(level_required desc);
+
 -- -----------------------------------------------------------------------------
 -- RLS + POLÍTICAS
 -- -----------------------------------------------------------------------------
@@ -950,6 +1002,9 @@ alter table if exists public.admin_saved_filters enable row level security;
 alter table if exists public.admin_audit_logs enable row level security;
 alter table if exists public.analytics_events enable row level security;
 alter table if exists public.notification_queue enable row level security;
+alter table if exists public.user_xp_events enable row level security;
+alter table if exists public.user_login_streaks enable row level security;
+alter table if exists public.user_level_rewards enable row level security;
 
 -- USERS
  drop policy if exists "users own read" on public.users;
@@ -961,6 +1016,22 @@ using (auth.uid() = id);
 create policy "users own insert"
 on public.users for insert
 with check (auth.uid() = id);
+
+-- GAMIFICATION
+drop policy if exists "user_xp_events own read" on public.user_xp_events;
+create policy "user_xp_events own read"
+on public.user_xp_events for select
+using (auth.uid() = user_id);
+
+drop policy if exists "user_login_streaks own read" on public.user_login_streaks;
+create policy "user_login_streaks own read"
+on public.user_login_streaks for select
+using (auth.uid() = user_id);
+
+drop policy if exists "user_level_rewards own read" on public.user_level_rewards;
+create policy "user_level_rewards own read"
+on public.user_level_rewards for select
+using (auth.uid() = user_id);
 
  drop policy if exists "users own update" on public.users;
 create policy "users own update"

@@ -16,6 +16,9 @@ alter table if exists public.users add column if not exists profile_theme text d
 alter table if exists public.users add column if not exists badges text[] default '{}';
 alter table if exists public.users add column if not exists shipping_address jsonb;
 alter table if exists public.users add column if not exists is_verified_seller boolean default false;
+alter table if exists public.users add column if not exists xp_total integer default 0;
+alter table if exists public.users add column if not exists level integer default 1;
+alter table if exists public.users add column if not exists xp_updated_at timestamptz default now();
 alter table if exists public.users add column if not exists updated_at timestamptz default now();
 
 update public.users
@@ -24,6 +27,9 @@ set
   profile_theme = coalesce(nullif(profile_theme, ''), 'neon-grid'),
   badges = coalesce(badges, '{}'),
   is_verified_seller = coalesce(is_verified_seller, false),
+  xp_total = coalesce(xp_total, 0),
+  level = greatest(1, coalesce(level, 1)),
+  xp_updated_at = coalesce(xp_updated_at, now()),
   updated_at = coalesce(updated_at, now())
 where true;
 

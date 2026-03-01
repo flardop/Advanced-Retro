@@ -62,6 +62,7 @@ const NON_GAME_SUFFIX_RE = new RegExp(
 const GENERIC_NON_GAME_TOKENS = new Set([
   'game',
   'boy',
+  'gameboy',
   'color',
   'advance',
   'universal',
@@ -82,6 +83,21 @@ const LIBRETRO_REGION_BONUS: Array<{ regex: RegExp; score: number }> = [
 
 const libretroIndexCache = new Map<string, string[]>();
 let igdbTokenCache: { token: string; expiresAtMs: number } | null = null;
+const MATCH_STOPWORDS = new Set([
+  'game',
+  'boy',
+  'gameboy',
+  'color',
+  'advance',
+  'super',
+  'nintendo',
+  'entertainment',
+  'system',
+  'the',
+  'and',
+  'for',
+  'edition',
+]);
 
 export interface GameImageResult {
   url: string;
@@ -136,8 +152,10 @@ function reorderTrailingThe(value: string): string {
 function removeCatalogWords(gameName: string): string {
   const cleaned = gameName
     .trim()
+    .replace(/\((game\s*boy|gameboy|game\s*boy\s*color|gameboy\s*color|game\s*boy\s*advance|gameboy\s*advance|super\s*nintendo|snes|game\s*cube|gamecube)\)/gi, ' ')
     .replace(NON_GAME_PREFIX_RE, '')
     .replace(NON_GAME_SUFFIX_RE, '')
+    .replace(/\b(game\s*boy|gameboy|game\s*boy\s*color|gameboy\s*color|game\s*boy\s*advance|gameboy\s*advance|super\s*nintendo|snes|game\s*cube|gamecube)\b/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -261,8 +279,18 @@ function escapeRegex(value: string): string {
 }
 
 function calcTokenOverlapScore(a: string, b: string): number {
-  const aTokens = new Set(a.split(/\s+/).filter((token) => token.length >= 3));
-  const bTokens = new Set(b.split(/\s+/).filter((token) => token.length >= 3));
+  const aTokens = new Set(
+    a
+      .split(/\s+/)
+      .filter((token) => token.length >= 3)
+      .filter((token) => !MATCH_STOPWORDS.has(token))
+  );
+  const bTokens = new Set(
+    b
+      .split(/\s+/)
+      .filter((token) => token.length >= 3)
+      .filter((token) => !MATCH_STOPWORDS.has(token))
+  );
   if (aTokens.size === 0 || bTokens.size === 0) {
     return 0;
   }
@@ -450,7 +478,7 @@ async function searchLibRetro(
       }
     }
 
-    if (!best || best.score < 60) {
+    if (!best || best.score < 72) {
       return null;
     }
 
