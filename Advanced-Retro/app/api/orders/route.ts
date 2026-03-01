@@ -184,8 +184,23 @@ export async function POST(req: Request) {
 
   const total = Math.max(0, checkoutSubtotal - couponDiscount);
 
+  const legacyItems = [...itemQuantities.entries()]
+    .map(([productId, quantity]) => {
+      const product = productById.get(productId);
+      if (!product) return null;
+      return {
+        product_id: product.id,
+        product_name: product.name,
+        quantity,
+        unit_price: product.price,
+        price: product.price,
+      };
+    })
+    .filter(Boolean);
+
   const orderPayload: Record<string, unknown> = {
     user_id: user.id,
+    items: legacyItems,
     total,
     status: 'pending',
     shipping_address: shippingAddress,
@@ -214,6 +229,7 @@ export async function POST(req: Request) {
       .from('orders')
       .insert({
         user_id: user.id,
+        items: legacyItems,
         total,
         status: 'pending',
       })

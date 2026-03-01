@@ -841,48 +841,13 @@ export default function ProfileView() {
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,.32),transparent_60%)]" />
             <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_20%,rgba(2,6,23,0.65)_100%)]" />
-            <div className="absolute right-4 top-4 flex flex-wrap justify-end gap-2">
-              <button
-                className="chip"
-                onClick={() => bannerInputRef.current?.click()}
-                disabled={uploadingBanner}
-              >
-                {uploadingBanner ? 'Subiendo banner...' : 'Subir imagen de banner'}
-              </button>
-              <button
-                className="chip"
-                onClick={() => removeBanner()}
-                disabled={uploadingBanner || !bannerUrl}
-              >
-                Quitar portada
-              </button>
-              <button className="button-secondary" onClick={() => supabaseClient?.auth.signOut()}>
-                Cerrar sesión
-              </button>
-            </div>
-            <input
-              ref={bannerInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,image/bmp"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void uploadBanner(file);
-                e.currentTarget.value = '';
-              }}
-            />
           </div>
 
           <div className="p-6 pt-0">
             <div className="-mt-12 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
                 <div className="relative">
-                  <button
-                    type="button"
-                    className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/40 bg-slate-900 shadow-[0_0_32px_rgba(34,211,238,.32)]"
-                    onClick={() => avatarInputRef.current?.click()}
-                    disabled={uploadingAvatar}
-                  >
+                  <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/40 bg-slate-900 shadow-[0_0_32px_rgba(34,211,238,.32)]">
                     {avatarUrl ? (
                       <div
                         className="h-full w-full bg-cover bg-center"
@@ -895,29 +860,8 @@ export default function ProfileView() {
                         {(name || 'C').slice(0, 1).toUpperCase()}
                       </div>
                     )}
-                    <span className="absolute inset-x-0 bottom-0 bg-black/60 py-1 text-[11px]">
-                      {uploadingAvatar ? 'Subiendo...' : 'Cambiar'}
-                    </span>
-                  </button>
-                  <button
-                    className="chip absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px]"
-                    onClick={() => removeAvatar()}
-                    disabled={uploadingAvatar || !avatarUrl}
-                  >
-                    Quitar foto
-                  </button>
+                  </div>
                 </div>
-                <input
-                  ref={avatarInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,image/bmp"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void uploadAvatar(file);
-                    e.currentTarget.value = '';
-                  }}
-                />
 
                 <div className="pt-3 sm:pt-0">
                   <p className="text-2xl font-black">{name || profile.name || 'Coleccionista'}</p>
@@ -966,6 +910,66 @@ export default function ProfileView() {
                 </span>
               )}
             </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                className="chip"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+              >
+                {uploadingAvatar ? 'Subiendo avatar...' : 'Cambiar foto'}
+              </button>
+              <button
+                className="chip"
+                onClick={() => removeAvatar()}
+                disabled={uploadingAvatar || !avatarUrl}
+              >
+                Quitar foto
+              </button>
+              <button
+                className="chip"
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={uploadingBanner}
+              >
+                {uploadingBanner ? 'Subiendo portada...' : 'Cambiar portada'}
+              </button>
+              <button
+                className="chip"
+                onClick={() => removeBanner()}
+                disabled={uploadingBanner || !bannerUrl}
+              >
+                Quitar portada
+              </button>
+              <button className="button-secondary" onClick={() => supabaseClient?.auth.signOut()}>
+                Cerrar sesión
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-textMuted">
+              Formatos: JPG, PNG, WEBP, GIF, AVIF o HEIC. Avatar hasta 10 MB, portada hasta 15 MB.
+            </p>
+
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,image/bmp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void uploadAvatar(file);
+                e.currentTarget.value = '';
+              }}
+            />
+            <input
+              ref={bannerInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,image/bmp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void uploadBanner(file);
+                e.currentTarget.value = '';
+              }}
+            />
           </div>
         </div>
 

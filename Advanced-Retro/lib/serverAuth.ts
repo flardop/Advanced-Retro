@@ -56,6 +56,13 @@ function userAvatarFromAuth(user: User): string | null {
   return null;
 }
 
+function userBannerFromAuth(user: User): string | null {
+  if (typeof user.user_metadata?.banner_url === 'string') {
+    return user.user_metadata.banner_url;
+  }
+  return null;
+}
+
 function requiresLegacyPasswordHash(error: any): boolean {
   const message = String(error?.message || '').toLowerCase();
   return (
@@ -137,6 +144,8 @@ export async function requireAuthUser(): Promise<User> {
 export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
   if (!supabaseAdmin) throw new ApiError(503, 'Supabase not configured');
   const { safeEmail, safeName, safeAvatar } = await syncAuthUserProfileRow(user);
+  const safeBanner = userBannerFromAuth(user);
+  const metadata = user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {};
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('users')
@@ -154,15 +163,41 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
     role: profile.role === 'admin' ? 'admin' : 'user',
     name: typeof profile.name === 'string' ? profile.name : safeName,
     avatar_url: typeof profile.avatar_url === 'string' ? profile.avatar_url : safeAvatar,
-    banner_url: typeof profile.banner_url === 'string' ? profile.banner_url : null,
-    bio: typeof profile.bio === 'string' ? profile.bio : null,
-    tagline: typeof profile.tagline === 'string' ? profile.tagline : null,
+    banner_url:
+      typeof profile.banner_url === 'string'
+        ? profile.banner_url
+        : typeof metadata.banner_url === 'string'
+          ? metadata.banner_url
+          : safeBanner,
+    bio:
+      typeof profile.bio === 'string'
+        ? profile.bio
+        : typeof metadata.bio === 'string'
+          ? metadata.bio
+          : null,
+    tagline:
+      typeof profile.tagline === 'string'
+        ? profile.tagline
+        : typeof metadata.tagline === 'string'
+          ? metadata.tagline
+          : null,
     favorite_console:
-      typeof profile.favorite_console === 'string' ? profile.favorite_console : null,
-    profile_theme: typeof profile.profile_theme === 'string' ? profile.profile_theme : 'neon-grid',
+      typeof profile.favorite_console === 'string'
+        ? profile.favorite_console
+        : typeof metadata.favorite_console === 'string'
+          ? metadata.favorite_console
+          : null,
+    profile_theme:
+      typeof profile.profile_theme === 'string'
+        ? profile.profile_theme
+        : typeof metadata.profile_theme === 'string'
+          ? metadata.profile_theme
+          : 'neon-grid',
     badges: Array.isArray(profile.badges)
       ? profile.badges.filter((value: unknown) => typeof value === 'string')
-      : [],
+      : Array.isArray(metadata.badges)
+        ? metadata.badges.filter((value: unknown) => typeof value === 'string')
+        : [],
     is_verified_seller: Boolean(profile.is_verified_seller),
     created_at: profile.created_at,
     updated_at: profile.updated_at,

@@ -1,4 +1,6 @@
 -- Likes por usuario autenticado para productos
+create extension if not exists pgcrypto;
+
 create table if not exists public.product_likes (
   id uuid primary key default gen_random_uuid(),
   product_id uuid not null references public.products(id) on delete cascade,

@@ -47,11 +47,22 @@ export async function POST(req: Request) {
     }
 
     const ticketPrice = Math.max(1, Math.round(Number(box.ticket_price || 0)));
+    const legacyItems = [
+      {
+        type: 'mystery_ticket',
+        mystery_box_id: box.id,
+        product_name: `Tirada ${box.name}`,
+        quantity: 1,
+        unit_price: ticketPrice,
+        price: ticketPrice,
+      },
+    ];
 
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
         user_id: user.id,
+        items: legacyItems,
         total: ticketPrice,
         status: 'pending',
         mystery_box_id: box.id,

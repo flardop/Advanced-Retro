@@ -163,13 +163,25 @@ export async function POST(req: Request) {
 
     if (updateError || !profile) {
       if (isMissingColumnError(updateError)) {
-        return NextResponse.json(
-          {
-            error:
-              'Faltan columnas de personalización. Ejecuta SQL: database/admin_chat_seller_features.sql y database/profile_customization_upgrade.sql',
-          },
-          { status: 400 }
-        );
+        const nextMetadata = {
+          ...(user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {}),
+          banner_url: bannerUrl,
+        };
+        const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+          user_metadata: nextMetadata,
+        });
+        if (authUpdateError) {
+          return NextResponse.json(
+            { error: `No se pudo guardar la portada en metadata: ${authUpdateError.message}` },
+            { status: 500 }
+          );
+        }
+        return NextResponse.json({
+          success: true,
+          banner_url: bannerUrl,
+          profile: null,
+          fallback: 'auth_user_metadata',
+        });
       }
       return NextResponse.json(
         { error: updateError?.message || 'No se pudo guardar la portada' },

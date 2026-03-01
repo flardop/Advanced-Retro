@@ -14,6 +14,7 @@ import {
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { getProductLikeSummary, toggleProductLike } from '@/lib/productLikesDb';
+import { getProductLikesSetupErrorMessage, isProductLikesSetupMissing } from '@/lib/productLikesSetup';
 
 export const dynamic = 'force-dynamic';
 
@@ -266,6 +267,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     return badRequest('Unsupported action');
   } catch (error: any) {
+    if (isProductLikesSetupMissing(error)) {
+      return NextResponse.json(
+        { error: getProductLikesSetupErrorMessage(), setupRequired: true },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: error?.message || 'Failed to update product social data' },
       { status: 500 }

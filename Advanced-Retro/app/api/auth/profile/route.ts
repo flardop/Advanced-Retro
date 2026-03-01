@@ -28,7 +28,7 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const { user } = await requireUserContext();
+    const { user, profile: currentProfile } = await requireUserContext();
     if (!supabaseAdmin) {
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }
@@ -95,10 +95,61 @@ export async function PUT(req: Request) {
     if (updateError || !updated) {
       const message = updateError?.message || 'Could not update profile';
       if (message.toLowerCase().includes('column')) {
+        const metadataPatch: Record<string, unknown> = {};
+        if (typeof body?.name === 'string') metadataPatch.name = body.name.trim().slice(0, 80) || null;
+        if (typeof body?.avatar_url === 'string') metadataPatch.avatar_url = body.avatar_url.trim().slice(0, 500) || null;
+        if (typeof body?.banner_url === 'string') metadataPatch.banner_url = body.banner_url.trim().slice(0, 500) || null;
+        if (typeof body?.bio === 'string') metadataPatch.bio = body.bio.trim().slice(0, 1200) || null;
+        if (typeof body?.tagline === 'string') metadataPatch.tagline = body.tagline.trim().slice(0, 120) || null;
+        if (typeof body?.favorite_console === 'string') metadataPatch.favorite_console = body.favorite_console.trim().slice(0, 120) || null;
+        if (typeof body?.profile_theme === 'string') metadataPatch.profile_theme = body.profile_theme.trim().slice(0, 40) || null;
+        if (Array.isArray(body?.badges)) metadataPatch.badges = sanitizeBadges(body.badges);
+
+        if (Object.keys(metadataPatch).length > 0) {
+          const nextMetadata = {
+            ...(user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {}),
+            ...metadataPatch,
+          };
+          const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+            user_metadata: nextMetadata,
+          });
+          if (!authUpdateError) {
+            return NextResponse.json({
+              profile: {
+                ...currentProfile,
+                name: typeof metadataPatch.name === 'string' ? metadataPatch.name : currentProfile.name,
+                avatar_url: typeof metadataPatch.avatar_url === 'string' || metadataPatch.avatar_url === null
+                  ? (metadataPatch.avatar_url as string | null)
+                  : currentProfile.avatar_url,
+                banner_url: typeof metadataPatch.banner_url === 'string' || metadataPatch.banner_url === null
+                  ? (metadataPatch.banner_url as string | null)
+                  : currentProfile.banner_url,
+                bio: typeof metadataPatch.bio === 'string' || metadataPatch.bio === null
+                  ? (metadataPatch.bio as string | null)
+                  : currentProfile.bio,
+                tagline: typeof metadataPatch.tagline === 'string' || metadataPatch.tagline === null
+                  ? (metadataPatch.tagline as string | null)
+                  : currentProfile.tagline,
+                favorite_console:
+                  typeof metadataPatch.favorite_console === 'string' || metadataPatch.favorite_console === null
+                    ? (metadataPatch.favorite_console as string | null)
+                    : currentProfile.favorite_console,
+                profile_theme:
+                  typeof metadataPatch.profile_theme === 'string'
+                    ? metadataPatch.profile_theme
+                    : currentProfile.profile_theme,
+                badges: Array.isArray(metadataPatch.badges) ? metadataPatch.badges : currentProfile.badges,
+                updated_at: new Date().toISOString(),
+              },
+              fallback: 'auth_user_metadata',
+            });
+          }
+        }
+
         return NextResponse.json(
           {
             error:
-              'Faltan columnas de personalización. Ejecuta SQL: database/admin_chat_seller_features.sql y database/profile_customization_upgrade.sql',
+              'Faltan columnas de personalización. Ejecuta SQL: database/profile_columns_hotfix.sql',
           },
           { status: 400 }
         );

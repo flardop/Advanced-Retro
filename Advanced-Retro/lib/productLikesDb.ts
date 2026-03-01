@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getProductLikesSetupErrorMessage, isProductLikesSetupMissing } from '@/lib/productLikesSetup';
 
 type LikesSnapshot = {
   likesByProduct: Record<string, number>;
@@ -7,14 +8,7 @@ type LikesSnapshot = {
 };
 
 function isMissingTableError(error: any): boolean {
-  const message = String(error?.message || '').toLowerCase();
-  const code = String(error?.code || '').toLowerCase();
-
-  return (
-    code === '42p01' ||
-    message.includes('relation') && message.includes('does not exist') ||
-    message.includes('could not find the table')
-  );
+  return isProductLikesSetupMissing(error);
 }
 
 export async function getProductLikesSnapshot(
@@ -126,7 +120,7 @@ export async function toggleProductLike(
 
     if (insert.error) {
       if (isMissingTableError(insert.error)) {
-        throw new Error('Falta crear tabla product_likes. Ejecuta database/product_likes_auth.sql');
+        throw new Error(getProductLikesSetupErrorMessage());
       }
       const message = String(insert.error.message || '').toLowerCase();
       if (!message.includes('duplicate')) {
