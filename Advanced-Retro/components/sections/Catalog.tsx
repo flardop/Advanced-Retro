@@ -39,7 +39,7 @@ const SORT_OPTIONS = [
   { id: 'name_desc', label: 'Z-A' },
   { id: 'price_asc', label: 'Precio: menor a mayor' },
   { id: 'price_desc', label: 'Precio: mayor a menor' },
-  { id: 'likes_desc', label: 'Más me gusta' },
+  { id: 'likes_desc', label: 'Más favoritos' },
   { id: 'visits_desc', label: 'Más visitas' },
   { id: 'stock_desc', label: 'Más stock' },
 ];
@@ -255,9 +255,14 @@ export default function Catalog() {
 
     const requestIds = pendingIds.slice(0, MAX_METRICS_BATCH_IDS);
     try {
+      const session = await supabaseClient?.auth.getSession();
+      const accessToken = session?.data?.session?.access_token || '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
       const res = await fetch('/api/products/social/batch', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ productIds: requestIds }),
       });
       const data = await res.json();
@@ -817,7 +822,7 @@ export default function Catalog() {
                     {!isMysteryView ? (
                       <div className="mt-2 flex flex-wrap gap-2 text-xs">
                         <span className="chip">Visitas: {productMetrics?.visits ?? 0}</span>
-                        <span className="chip">Me gusta: {productMetrics?.likes ?? 0}</span>
+                        <span className="chip">Favoritos: {productMetrics?.likes ?? 0}</span>
                         {productMetrics?.likedByCurrentVisitor ? (
                           <span className="chip border-primary text-primary">Favorito</span>
                         ) : null}

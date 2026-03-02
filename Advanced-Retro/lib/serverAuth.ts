@@ -1,6 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { normalizeFavoritesVisibility, type FavoritesVisibility } from '@/lib/profileFavorites';
 
 type AppUserProfile = {
   id: string;
@@ -13,6 +14,7 @@ type AppUserProfile = {
   tagline: string | null;
   favorite_console: string | null;
   profile_theme: string | null;
+  favorites_visibility: FavoritesVisibility;
   badges: string[];
   shipping_address: {
     full_name: string;
@@ -223,6 +225,11 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
         : typeof metadata.profile_theme === 'string'
           ? metadata.profile_theme
           : 'neon-grid',
+    favorites_visibility: normalizeFavoritesVisibility(
+      typeof (profile as any).favorites_visibility === 'string'
+        ? (profile as any).favorites_visibility
+        : (metadata as any).favorites_visibility
+    ),
     badges: Array.isArray(profile.badges)
       ? profile.badges.filter((value: unknown) => typeof value === 'string')
       : Array.isArray(metadata.badges)

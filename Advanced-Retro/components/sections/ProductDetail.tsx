@@ -666,11 +666,28 @@ export default function ProductDetail({
     });
   }, [bundleOptions, selectedBundleIds, showCompleteGameOptions]);
 
+  const getAuthHeaders = useCallback(
+    async (includeJson = false): Promise<Record<string, string>> => {
+      const headers: Record<string, string> = {};
+      if (includeJson) headers['Content-Type'] = 'application/json';
+
+      const session = await supabaseClient?.auth.getSession();
+      const accessToken = session?.data?.session?.access_token || '';
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+      }
+      return headers;
+    },
+    []
+  );
+
   const refreshSocial = useCallback(async () => {
     if (!productId) return;
     try {
       const visitorParam = visitorId ? `?visitorId=${encodeURIComponent(visitorId)}` : '';
-      const res = await fetch(`/api/products/${encodeURIComponent(productId)}/social${visitorParam}`);
+      const res = await fetch(`/api/products/${encodeURIComponent(productId)}/social${visitorParam}`, {
+        headers: await getAuthHeaders(false),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar actividad');
 
@@ -681,25 +698,28 @@ export default function ProductDetail({
     } catch (error: any) {
       console.warn('Error loading social data:', error?.message || error);
     }
-  }, [productId, visitorId]);
+  }, [productId, visitorId, getAuthHeaders]);
 
   useEffect(() => {
     if (!productId) return;
 
     refreshSocial();
     if (visitorId) {
-      fetch(`/api/products/${encodeURIComponent(productId)}/social`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'visit', visitorId }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.summary) setSocialSummary(data.summary);
+      void (async () => {
+        const headers = await getAuthHeaders(true);
+        fetch(`/api/products/${encodeURIComponent(productId)}/social`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ action: 'visit', visitorId }),
         })
-        .catch(() => undefined);
+          .then((res) => res.json())
+          .then((data) => {
+            if (data?.summary) setSocialSummary(data.summary);
+          })
+          .catch(() => undefined);
+      })();
     }
-  }, [productId, visitorId, refreshSocial]);
+  }, [productId, visitorId, refreshSocial, getAuthHeaders]);
 
   const refreshPriceHistory = useCallback(async () => {
     if (!productId) return;
@@ -849,16 +869,17 @@ export default function ProductDetail({
     }
 
     try {
+      const headers = await getAuthHeaders(true);
       const res = await fetch(`/api/products/${encodeURIComponent(productId)}/social`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ action: 'toggle_like', visitorId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'No se pudo actualizar me gusta');
+      if (!res.ok) throw new Error(data?.error || 'No se pudo actualizar favorito');
       if (data?.summary) setSocialSummary(data.summary);
     } catch (error: any) {
-      toast.error(error?.message || 'No se pudo actualizar me gusta');
+      toast.error(error?.message || 'No se pudo actualizar favorito');
     }
   };
 
@@ -879,9 +900,10 @@ export default function ProductDetail({
 
     setSubmittingReview(true);
     try {
+      const headers = await getAuthHeaders(true);
       const res = await fetch(`/api/products/${encodeURIComponent(productId)}/social`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           action: 'add_review',
           visitorId,
@@ -993,7 +1015,7 @@ export default function ProductDetail({
             <p className="text-xs text-textMuted font-mono">Stock: {product.stock}</p>
             <div className="flex items-center gap-2 text-xs text-textMuted">
               <span className="chip">Visitas: {socialSummary.visits}</span>
-              <span className="chip">Me gusta: {socialSummary.likes}</span>
+              <span className="chip">Favoritos: {socialSummary.likes}</span>
               <span className="chip">Valoraciones: {socialSummary.reviewsCount}</span>
             </div>
           </div>
@@ -1040,7 +1062,7 @@ export default function ProductDetail({
               onClick={toggleLike}
               disabled={!isLoggedIn}
             >
-              {socialSummary.likedByCurrentVisitor ? 'Quitar me gusta' : 'Me gusta'}
+              {socialSummary.likedByCurrentVisitor ? 'Quitar favorito' : 'Añadir a favoritos'}
             </button>
             {!isLoggedIn ? <span className="text-xs text-textMuted">Inicia sesión para usar favoritos.</span> : null}
           </div>

@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublicSellerProfileByUserId } from '@/lib/userListings';
 import CommunitySellerProfileSocial from '@/components/sections/CommunitySellerProfileSocial';
+import SafeImage from '@/components/SafeImage';
+import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
+import { supabaseServer } from '@/lib/supabaseServer';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,10 +79,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CommunitySellerPage({ params }: PageProps) {
   const { id } = params;
+  const supabase = supabaseServer();
+  const {
+    data: { user: viewerUser },
+  } = await supabase.auth.getUser();
 
   let data: Awaited<ReturnType<typeof getPublicSellerProfileByUserId>>;
   try {
-    data = await getPublicSellerProfileByUserId(id);
+    data = await getPublicSellerProfileByUserId(id, viewerUser?.id || null);
   } catch (error: any) {
     if (String(error?.message || '').toLowerCase().includes('no encontrado')) {
       notFound();
@@ -98,7 +105,7 @@ export default async function CommunitySellerPage({ params }: PageProps) {
     );
   }
 
-  const { seller, stats, listings } = data;
+  const { seller, stats, listings, favorites } = data;
   const bannerUrl = seller.banner_url || '';
   const avatarUrl = seller.avatar_url || '';
 
@@ -194,6 +201,48 @@ export default async function CommunitySellerPage({ params }: PageProps) {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="glass p-5">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-primary">Favoritos públicos</p>
+              <h2 className="title-display text-2xl mt-1">Juegos favoritos del vendedor</h2>
+            </div>
+            <span className="chip">
+              {favorites?.total || 0} favoritos
+            </span>
+          </div>
+
+          {!favorites?.can_view ? (
+            <p className="text-textMuted">
+              Este usuario mantiene sus favoritos en modo privado.
+            </p>
+          ) : Array.isArray(favorites?.items) && favorites.items.length > 0 ? (
+            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
+              {favorites.items.map((item) => (
+                <Link
+                  key={`fav-${item.id}`}
+                  href={`/producto/${item.id}`}
+                  className="min-w-[220px] max-w-[220px] snap-start rounded-2xl border border-line bg-[rgba(8,16,28,0.52)] p-3 hover:shadow-glow transition-shadow"
+                >
+                  <div className="relative h-36 rounded-xl border border-line bg-surface overflow-hidden">
+                    <SafeImage
+                      src={getProductImageUrl(item)}
+                      fallbackSrc={getProductFallbackImageUrl(item)}
+                      alt={item.name}
+                      fill
+                      className="object-contain p-2"
+                    />
+                  </div>
+                  <p className="mt-3 text-sm font-semibold line-clamp-2">{item.name}</p>
+                  <p className="text-xs text-textMuted mt-1">{toEuro(Number(item.price || 0))}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-textMuted">Este usuario todavía no tiene favoritos marcados.</p>
+          )}
         </div>
 
         <div className="glass p-5">

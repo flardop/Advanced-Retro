@@ -9,6 +9,7 @@ import {
   getCommunityListingSocialSummary,
   readCommunityListingSocialState,
 } from '@/lib/communityListingSocial';
+import { getFavoriteProductsForViewer } from '@/lib/profileFavorites';
 
 export type ListingStatus = 'pending_review' | 'approved' | 'rejected';
 export type ListingDeliveryStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
@@ -314,7 +315,7 @@ export async function getListingById(listingId: string) {
   return withCommunityDefaults(data);
 }
 
-export async function getPublicSellerProfileByUserId(userId: string) {
+export async function getPublicSellerProfileByUserId(userId: string, viewerUserId?: string | null) {
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const safeUserId = String(userId || '').trim();
@@ -441,6 +442,12 @@ export async function getPublicSellerProfileByUserId(userId: string) {
     .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
     .slice(0, 20);
 
+  const favorites = await getFavoriteProductsForViewer({
+    targetUserId: safeUserId,
+    viewerUserId: viewerUserId || null,
+    limit: 30,
+  });
+
   return {
     seller: {
       id: String(user.id),
@@ -466,6 +473,7 @@ export async function getPublicSellerProfileByUserId(userId: string) {
     },
     activity: recentActivity,
     listings: normalizedListings,
+    favorites,
   };
 }
 

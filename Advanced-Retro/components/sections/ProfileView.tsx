@@ -4,6 +4,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { supabaseClient } from '@/lib/supabaseClient';
+import { AVATAR_FRAMES } from '@/lib/gamification';
+import SafeImage from '@/components/SafeImage';
+import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
+import {
+  BADGE_RARITY_LABELS,
+  BADGE_RARITY_ORDER,
+  BADGE_RARITY_STYLES,
+  getBadgeDefinition,
+} from '@/lib/gamificationBadges';
 
 type Ticket = {
   id: string;
@@ -54,6 +63,7 @@ type ProfileState = {
   tagline: string | null;
   favorite_console: string | null;
   profile_theme: string | null;
+  favorites_visibility: FavoritesVisibility;
   badges: string[];
   shipping_address: {
     full_name: string;
@@ -160,6 +170,19 @@ type WalletWithdrawalsState = {
 };
 
 type Tab = 'profile' | 'wallet' | 'orders' | 'tickets' | 'sell';
+type FavoritesVisibility = 'public' | 'members' | 'private';
+
+type FavoriteProduct = {
+  id: string;
+  name: string;
+  price: number;
+  image: string | null;
+  images: string[];
+  stock: number;
+  category: string | null;
+  platform: string | null;
+  liked_at: string | null;
+};
 
 const PROFILE_THEMES = [
   {
@@ -190,6 +213,60 @@ const PROFILE_THEMES = [
     previewClass: 'from-emerald-400/35 via-slate-950 to-teal-600/35',
     accentClass: 'border-emerald-300/50 bg-emerald-400/10 text-emerald-100',
   },
+  {
+    id: 'obsidian-ember',
+    label: 'Obsidian Ember',
+    description: 'Carbón oscuro con acentos ámbar',
+    previewClass: 'from-amber-500/30 via-zinc-950 to-orange-700/35',
+    accentClass: 'border-amber-300/55 bg-amber-500/12 text-amber-100',
+  },
+  {
+    id: 'aurora-scanline',
+    label: 'Aurora Scanline',
+    description: 'Neón frío con contraste arcade',
+    previewClass: 'from-sky-400/35 via-indigo-950 to-cyan-500/35',
+    accentClass: 'border-sky-300/55 bg-sky-500/12 text-sky-100',
+  },
+  {
+    id: 'platinum-grid',
+    label: 'Platinum Grid',
+    description: 'Acabado limpio premium en plata',
+    previewClass: 'from-slate-200/35 via-slate-900 to-slate-500/30',
+    accentClass: 'border-slate-300/60 bg-slate-200/10 text-slate-100',
+  },
+] as const;
+
+const BANNER_PRESETS = [
+  {
+    id: 'none',
+    label: 'Sin portada personalizada',
+    url: '',
+    description: 'Solo gradiente del tema actual.',
+  },
+  {
+    id: 'neon-grid',
+    label: 'Banner Neon Grid',
+    url: '/images/profile-banners/neon-grid.svg',
+    description: 'Rejilla retro azul para perfil de coleccionista.',
+  },
+  {
+    id: 'sunset-glow',
+    label: 'Banner Sunset Glow',
+    url: '/images/profile-banners/sunset-glow.svg',
+    description: 'Tono cálido para destacar tu cabecera.',
+  },
+  {
+    id: 'arcade-purple',
+    label: 'Banner Arcade Purple',
+    url: '/images/profile-banners/arcade-purple.svg',
+    description: 'Estilo arcade nocturno en púrpura.',
+  },
+  {
+    id: 'mint-wave',
+    label: 'Banner Mint Wave',
+    url: '/images/profile-banners/mint-wave.svg',
+    description: 'Look mint limpio y moderno.',
+  },
 ] as const;
 
 const FAVORITE_CONSOLES = [
@@ -204,17 +281,6 @@ const FAVORITE_CONSOLES = [
   'Sega Mega Drive',
   'Otra',
 ] as const;
-
-const BADGE_LABELS: Record<string, string> = {
-  founder: 'Fundador',
-  collector: 'Coleccionista',
-  trusted_buyer: 'Comprador fiable',
-  trusted_seller: 'Vendedor verificado',
-  mystery_champion: 'Campeón ruleta',
-  premium_member: 'Miembro premium',
-  retro_master: 'Retro Master',
-  ambassador: 'Embajador',
-};
 
 function parseImageLines(input: string): string[] {
   const list = input
@@ -282,6 +348,7 @@ export default function ProfileView() {
   const [tagline, setTagline] = useState('');
   const [favoriteConsole, setFavoriteConsole] = useState('');
   const [profileTheme, setProfileTheme] = useState('neon-grid');
+  const [favoritesVisibility, setFavoritesVisibility] = useState<FavoritesVisibility>('public');
   const [shippingFullName, setShippingFullName] = useState('');
   const [shippingLine1, setShippingLine1] = useState('');
   const [shippingLine2, setShippingLine2] = useState('');
@@ -328,6 +395,8 @@ export default function ProfileView() {
   const [withdrawalIban, setWithdrawalIban] = useState('');
   const [withdrawalBankName, setWithdrawalBankName] = useState('');
   const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
+  const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
 
   const applyProfileSnapshot = (nextProfile: ProfileState | null) => {
     setProfile(nextProfile);
@@ -338,6 +407,13 @@ export default function ProfileView() {
     setTagline(String(nextProfile?.tagline || ''));
     setFavoriteConsole(String(nextProfile?.favorite_console || ''));
     setProfileTheme(String(nextProfile?.profile_theme || 'neon-grid'));
+    setFavoritesVisibility(
+      nextProfile?.favorites_visibility === 'private'
+        ? 'private'
+        : nextProfile?.favorites_visibility === 'members'
+          ? 'members'
+          : 'public'
+    );
     setShippingFullName(
       String(nextProfile?.shipping_address?.full_name || nextProfile?.name || shippingFullName || '')
     );
@@ -348,6 +424,47 @@ export default function ProfileView() {
     setShippingPostalCode(String(nextProfile?.shipping_address?.postal_code || shippingPostalCode || ''));
     setShippingCountry(String(nextProfile?.shipping_address?.country || shippingCountry || 'España'));
     setShippingPhone(String(nextProfile?.shipping_address?.phone || shippingPhone || ''));
+  };
+
+  const loadFavorites = async () => {
+    setFavoritesLoading(true);
+    try {
+      const res = await fetch('/api/profile/favorites');
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudieron cargar tus favoritos');
+      }
+
+      const favorites = data?.favorites || {};
+      const nextVisibility =
+        favorites?.visibility === 'private'
+          ? 'private'
+          : favorites?.visibility === 'members'
+            ? 'members'
+            : 'public';
+      setFavoritesVisibility(nextVisibility);
+
+      const list = Array.isArray(favorites?.items) ? favorites.items : [];
+      setFavoriteProducts(
+        list.map((item: any) => ({
+          id: String(item?.id || ''),
+          name: String(item?.name || 'Producto'),
+          price: Number(item?.price || 0),
+          image: typeof item?.image === 'string' ? item.image : null,
+          images: Array.isArray(item?.images)
+            ? item.images.map((entry: unknown) => String(entry || '')).filter(Boolean)
+            : [],
+          stock: Number(item?.stock || 0),
+          category: typeof item?.category === 'string' ? item.category : null,
+          platform: typeof item?.platform === 'string' ? item.platform : null,
+          liked_at: typeof item?.liked_at === 'string' ? item.liked_at : null,
+        }))
+      );
+    } catch {
+      setFavoriteProducts([]);
+    } finally {
+      setFavoritesLoading(false);
+    }
   };
 
   const loadProfile = async () => {
@@ -474,12 +591,20 @@ export default function ProfileView() {
       if (authUserId) {
         await loadOrders(authUserId);
       }
-      const [ticketsResult, listingsResult, walletResult, withdrawalsResult, gamificationResult] = await Promise.allSettled([
+      const [
+        ticketsResult,
+        listingsResult,
+        walletResult,
+        withdrawalsResult,
+        gamificationResult,
+        favoritesResult,
+      ] = await Promise.allSettled([
         loadTickets(),
         loadListings(),
         loadWallet(),
         loadWithdrawals(),
         loadGamification(),
+        loadFavorites(),
       ]);
 
       if (ticketsResult.status === 'rejected') {
@@ -497,6 +622,9 @@ export default function ProfileView() {
       }
       if (gamificationResult.status === 'rejected') {
         setGamification(null);
+      }
+      if (favoritesResult.status === 'rejected') {
+        setFavoriteProducts([]);
       }
     } catch (error: any) {
       toast.error(error?.message || 'Error cargando perfil');
@@ -603,6 +731,7 @@ export default function ProfileView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
+          banner_url: bannerUrl,
           bio,
           tagline,
           favorite_console: favoriteConsole,
@@ -629,6 +758,26 @@ export default function ProfileView() {
       if (data?.gamification) {
         setGamification(data.gamification);
       }
+
+      const visibilityRes = await fetch('/api/profile/favorites', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          favorites_visibility: favoritesVisibility,
+        }),
+      });
+      const visibilityData = await visibilityRes.json().catch(() => null);
+      if (!visibilityRes.ok) {
+        throw new Error(visibilityData?.error || 'No se pudo guardar la privacidad de favoritos');
+      }
+      setFavoritesVisibility(
+        visibilityData?.favorites_visibility === 'private'
+          ? 'private'
+          : visibilityData?.favorites_visibility === 'members'
+            ? 'members'
+            : 'public'
+      );
+
       toast.success('Perfil actualizado');
     } catch (error: any) {
       toast.error(error?.message || 'No se pudo guardar el perfil');
@@ -901,8 +1050,66 @@ export default function ProfileView() {
       .filter((value): value is string => typeof value === 'string')
       .map((value) => value.trim().toLowerCase())
       .filter(Boolean)
-      .slice(0, 8);
+      .slice(0, 160);
   }, [profile?.badges]);
+
+  const selectedBannerPresetId = useMemo(() => {
+    const normalizedBanner = String(bannerUrl || '').trim();
+    const matchedPreset = BANNER_PRESETS.find((preset) => preset.url === normalizedBanner);
+    if (matchedPreset) return matchedPreset.id;
+    if (!normalizedBanner) return 'none';
+    return 'custom-upload';
+  }, [bannerUrl]);
+
+  const profileBadgesDetailed = useMemo(() => {
+    const normalized = profileBadges
+      .map((badgeKey) => {
+        const definition = getBadgeDefinition(badgeKey);
+        if (!definition) {
+          return {
+            key: badgeKey,
+            label: badgeKey,
+            description: 'Insignia personalizada',
+            howToEarn: 'Asignada manualmente por el equipo.',
+            rarity: 'common' as const,
+            animated: false,
+          };
+        }
+        return {
+          key: definition.key,
+          label: definition.label,
+          description: definition.description,
+          howToEarn: definition.howToEarn,
+          rarity: definition.rarity,
+          animated: Boolean(definition.animated),
+        };
+      })
+      .sort((a, b) => {
+        const rarityDiff =
+          Number(BADGE_RARITY_ORDER[b.rarity]) - Number(BADGE_RARITY_ORDER[a.rarity]);
+        if (rarityDiff !== 0) return rarityDiff;
+        return a.label.localeCompare(b.label, 'es');
+      });
+
+    return normalized;
+  }, [profileBadges]);
+
+  const frameRoadmap = useMemo(() => {
+    return AVATAR_FRAMES.map((frame) => {
+      const maxLabel = frame.maxLevel == null ? '+' : `${frame.maxLevel}`;
+      const range = `${frame.minLevel}-${maxLabel}`;
+      const unlocked = userLevel >= frame.minLevel;
+      const active =
+        userLevel >= frame.minLevel &&
+        (frame.maxLevel == null || userLevel <= frame.maxLevel);
+      return {
+        ...frame,
+        range,
+        unlocked,
+        active,
+      };
+    });
+  }, [userLevel]);
 
   const formatRecentDate = (raw: string) => {
     if (!raw) return '';
@@ -1030,18 +1237,25 @@ export default function ProfileView() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              {profileBadges.length > 0 ? (
-                profileBadges.map((badge) => (
-                  <span
-                    key={badge}
-                    className={`inline-flex items-center border px-2 py-1 text-xs ${activeTheme.accentClass}`}
-                  >
-                    {BADGE_LABELS[badge] || badge}
-                  </span>
-                ))
+              {profileBadgesDetailed.length > 0 ? (
+                profileBadgesDetailed.slice(0, 8).map((badge) => {
+                  const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
+                  const isExclusive = badge.animated || badge.rarity === 'legendary' || badge.rarity === 'mythic';
+                  return (
+                    <span
+                      key={badge.key}
+                      className={`inline-flex items-center border px-2 py-1 text-xs ${rarityStyle.chipClass} ${
+                        isExclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
+                      }`}
+                      title={`${badge.description} · ${badge.howToEarn}`}
+                    >
+                      {badge.label}
+                    </span>
+                  );
+                })
               ) : (
                 <span className="text-xs text-textMuted">
-                  Aún no tienes insignias. El admin puede asignártelas.
+                  Aun no tienes insignias desbloqueadas.
                 </span>
               )}
             </div>
@@ -1149,6 +1363,42 @@ export default function ProfileView() {
                 </div>
               </div>
 
+              <div className="mt-5 rounded-2xl border border-line bg-[rgba(4,14,26,0.66)] p-4">
+                <p className="font-semibold">Marcos desbloqueables por nivel</p>
+                <p className="text-xs text-textMuted mt-1">
+                  El marco activo cambia automáticamente según tu nivel.
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  {frameRoadmap.map((frame) => (
+                    <div
+                      key={frame.id}
+                      className={`rounded-xl border p-3 ${
+                        frame.active
+                          ? 'border-primary bg-primary/10'
+                          : frame.unlocked
+                            ? 'border-line bg-slate-950/45'
+                            : 'border-line/70 bg-slate-950/20'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">{frame.label}</span>
+                        <span className="text-[11px] text-textMuted">Niveles {frame.range}</span>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className={`inline-flex h-8 w-8 rounded-full border-2 ${frame.ringClassName}`} />
+                        <span className="text-[11px] text-textMuted">
+                          {frame.active
+                            ? 'Activo'
+                            : frame.unlocked
+                              ? 'Desbloqueado'
+                              : 'Bloqueado'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr,0.9fr]">
                 <div className="border border-line rounded-2xl p-4 bg-[rgba(4,14,26,0.66)]">
                   <p className="font-semibold">Expositor de recompensas</p>
@@ -1186,6 +1436,65 @@ export default function ProfileView() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="glass p-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-primary">Favoritos del perfil</p>
+                  <h2 className="text-2xl font-black mt-1">Carrusel de juegos favoritos</h2>
+                  <p className="text-sm text-textMuted mt-1">
+                    Estos favoritos se comparten según tu configuración de privacidad.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="chip">{favoriteProducts.length} favoritos</span>
+                  <button className="chip" onClick={() => void loadFavorites()} disabled={favoritesLoading}>
+                    {favoritesLoading ? 'Actualizando...' : 'Actualizar'}
+                  </button>
+                </div>
+              </div>
+
+              {favoritesLoading ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={`favorite-skeleton-${index}`} className="rounded-2xl border border-line p-3 bg-slate-950/40">
+                      <div className="h-28 rounded-xl bg-surface animate-pulse" />
+                      <div className="mt-3 h-4 rounded bg-surface animate-pulse" />
+                      <div className="mt-2 h-3 w-2/3 rounded bg-surface animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              ) : favoriteProducts.length > 0 ? (
+                <div className="mt-4 flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
+                  {favoriteProducts.map((favorite) => (
+                    <Link
+                      key={`favorite-${favorite.id}`}
+                      href={`/producto/${favorite.id}`}
+                      className="min-w-[220px] max-w-[220px] snap-start rounded-2xl border border-line bg-[rgba(8,16,28,0.56)] p-3 hover:shadow-glow transition-shadow"
+                    >
+                      <div className="relative h-32 rounded-xl border border-line bg-surface overflow-hidden">
+                        <SafeImage
+                          src={getProductImageUrl(favorite)}
+                          fallbackSrc={getProductFallbackImageUrl(favorite)}
+                          alt={favorite.name}
+                          fill
+                          className="object-contain p-2"
+                        />
+                      </div>
+                      <p className="mt-3 line-clamp-2 font-semibold">{favorite.name}</p>
+                      <p className="text-primary text-sm mt-1">{toEuro(Math.max(0, Number(favorite.price || 0)))}</p>
+                      <p className="text-xs text-textMuted mt-1">
+                        {favorite.stock > 0 ? `Stock ${favorite.stock}` : 'Sin stock'}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-textMuted mt-4">
+                  Todavía no tienes favoritos guardados. Entra en un producto y pulsa “Me gusta” para añadirlo.
+                </p>
+              )}
             </div>
 
             <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
@@ -1233,6 +1542,76 @@ export default function ProfileView() {
                         <option key={consoleName} value={consoleName} />
                       ))}
                     </datalist>
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-sm text-textMuted">Tema del perfil</span>
+                    <select
+                      className="bg-transparent border border-line px-3 py-2"
+                      value={profileTheme}
+                      onChange={(e) => setProfileTheme(e.target.value)}
+                    >
+                      {PROFILE_THEMES.map((theme) => (
+                        <option key={theme.id} value={theme.id}>
+                          {theme.label} · {theme.description}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-sm text-textMuted">Privacidad de favoritos</span>
+                    <select
+                      className="bg-transparent border border-line px-3 py-2"
+                      value={favoritesVisibility}
+                      onChange={(e) =>
+                        setFavoritesVisibility(
+                          e.target.value === 'private'
+                            ? 'private'
+                            : e.target.value === 'members'
+                              ? 'members'
+                              : 'public'
+                        )
+                      }
+                    >
+                      <option value="public">Todo el mundo</option>
+                      <option value="members">Solo usuarios con sesión (modo amigos)</option>
+                      <option value="private">Solo yo (privado)</option>
+                    </select>
+                    <p className="text-xs text-textMuted">
+                      Controla si otros usuarios pueden ver tu carrusel de favoritos.
+                    </p>
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-sm text-textMuted">Portada del perfil</span>
+                    <select
+                      className="bg-transparent border border-line px-3 py-2"
+                      value={selectedBannerPresetId}
+                      onChange={(event) => {
+                        const nextId = event.target.value;
+                        if (nextId === 'custom-upload') return;
+                        const preset = BANNER_PRESETS.find((item) => item.id === nextId);
+                        if (preset) {
+                          setBannerUrl(preset.url);
+                        }
+                      }}
+                    >
+                      {selectedBannerPresetId === 'custom-upload' ? (
+                        <option value="custom-upload">Imagen personalizada (subida)</option>
+                      ) : null}
+                      {BANNER_PRESETS.map((preset) => (
+                        <option key={preset.id} value={preset.id}>
+                          {preset.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-textMuted">
+                      {selectedBannerPresetId === 'custom-upload'
+                        ? 'Tienes una imagen subida manualmente.'
+                        : BANNER_PRESETS.find((item) => item.id === selectedBannerPresetId)?.description ||
+                          'Selecciona una portada.'}
+                    </p>
                   </label>
 
                   <label className="grid gap-2">
@@ -1317,14 +1696,14 @@ export default function ProfileView() {
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={uploadingAvatar}
                   >
-                    {uploadingAvatar ? 'Subiendo avatar...' : 'Subir imagen de perfil'}
+                    {uploadingAvatar ? 'Subiendo avatar...' : 'Subir avatar personalizado'}
                   </button>
                   <button
                     className="button-secondary w-full"
                     onClick={() => bannerInputRef.current?.click()}
                     disabled={uploadingBanner}
                   >
-                    {uploadingBanner ? 'Subiendo banner...' : 'Subir imagen de banner'}
+                    {uploadingBanner ? 'Subiendo banner...' : 'Subir imagen de portada'}
                   </button>
                   <button
                     className="chip w-full"
@@ -1338,7 +1717,7 @@ export default function ProfileView() {
                     onClick={() => removeBanner()}
                     disabled={uploadingBanner || !bannerUrl}
                   >
-                    Quitar banner
+                    Quitar portada
                   </button>
                 </div>
                 <p className="text-xs text-textMuted">
@@ -1348,61 +1727,78 @@ export default function ProfileView() {
 
               <div className="glass p-6 space-y-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-primary">Tema de perfil</p>
-                  <h3 className="text-xl font-semibold mt-1">Estilo visual</h3>
-                </div>
-
-                <div className="grid gap-3">
-                  {PROFILE_THEMES.map((theme) => (
-                    <button
-                      key={theme.id}
-                      type="button"
-                      className={`w-full border p-3 text-left transition ${
-                        profileTheme === theme.id
-                          ? 'border-primary bg-primary/10'
-                          : 'border-line bg-slate-950/30 hover:border-primary/40'
-                      }`}
-                      onClick={() => setProfileTheme(theme.id)}
-                    >
-                      <div className={`h-10 bg-gradient-to-r ${theme.previewClass} border border-line`} />
-                      <p className="mt-2 font-semibold">{theme.label}</p>
-                      <p className="text-xs text-textMuted">{theme.description}</p>
-                    </button>
-                  ))}
+                  <p className="text-xs uppercase tracking-[0.22em] text-primary">Vista del perfil</p>
+                  <h3 className="text-xl font-semibold mt-1">Tema + insignias desbloqueadas</h3>
                 </div>
 
                 <div className="border border-line p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-textMuted">Vista previa</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-textMuted">Vista previa final</p>
                   <div
-                    className={`mt-2 min-h-[130px] rounded-xl border border-line bg-gradient-to-r p-4 ${activeTheme.previewClass}`}
+                    className={`mt-2 min-h-[150px] rounded-xl border border-line bg-gradient-to-r p-4 ${activeTheme.previewClass}`}
+                    style={
+                      bannerUrl
+                        ? {
+                            backgroundImage: `linear-gradient(145deg, rgba(2,6,23,0.78), rgba(2,6,23,0.38)), url('${bannerUrl.replace(/'/g, '%27')}')`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }
+                        : undefined
+                    }
                   >
                     <p className="text-lg font-black">{name || 'Tu nombre'}</p>
                     <p className="text-xs opacity-80 mt-1">
                       {tagline || 'Tu vitrina de coleccionismo retro'}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {(profileBadges.length > 0 ? profileBadges : ['collector']).slice(0, 3).map((badge) => (
-                        <span key={`preview-${badge}`} className={`inline-flex border px-2 py-1 text-[11px] ${activeTheme.accentClass}`}>
-                          {BADGE_LABELS[badge] || badge}
-                        </span>
-                      ))}
+                      {(profileBadgesDetailed.length > 0 ? profileBadgesDetailed : []).slice(0, 4).map((badge) => {
+                        const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
+                        const exclusive = badge.animated || badge.rarity === 'legendary' || badge.rarity === 'mythic';
+                        return (
+                          <span
+                            key={`preview-${badge.key}`}
+                            className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass} ${
+                              exclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
+                            }`}
+                          >
+                            {badge.label}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
 
                 <div className="border border-line p-4">
                   <p className="font-semibold">Insignias del perfil</p>
-                  {profileBadges.length > 0 ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {profileBadges.map((badge) => (
-                        <span key={`badge-${badge}`} className={`inline-flex border px-2 py-1 text-xs ${activeTheme.accentClass}`}>
-                          {BADGE_LABELS[badge] || badge}
-                        </span>
-                      ))}
+                  {profileBadgesDetailed.length > 0 ? (
+                    <div className="mt-2 grid gap-2">
+                      {profileBadgesDetailed.slice(0, 18).map((badge) => {
+                        const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
+                        const exclusive = badge.animated || badge.rarity === 'legendary' || badge.rarity === 'mythic';
+                        return (
+                          <div
+                            key={`badge-${badge.key}`}
+                            className={`rounded-xl border px-3 py-2 ${rarityStyle.panelClass} ${
+                              exclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="font-semibold">{badge.label}</p>
+                              <span className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass}`}>
+                                {BADGE_RARITY_LABELS[badge.rarity]}
+                              </span>
+                            </div>
+                            <p className="text-xs text-textMuted mt-1">{badge.description}</p>
+                            <p className="text-[11px] text-primary mt-1">
+                              Como conseguirla: {badge.howToEarn}
+                            </p>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-sm text-textMuted mt-2">
-                      Aún no tienes insignias. Un admin puede asignarlas desde el panel.
+                      Aun no tienes insignias desbloqueadas.
                     </p>
                   )}
                 </div>
@@ -1413,7 +1809,7 @@ export default function ProfileView() {
               <div>
                 <p className="font-semibold">Guardar cambios del perfil</p>
                 <p className="text-xs text-textMuted">
-                  Se actualizan nombre, bio, frase, consola favorita y tema visual.
+                  Se actualizan nombre, bio, frase, portada, consola favorita, tema visual y privacidad de favoritos.
                 </p>
               </div>
               <button

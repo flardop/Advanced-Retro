@@ -16,12 +16,17 @@ import { checkRateLimit } from '@/lib/rateLimit';
 import { getProductLikeSummary, toggleProductLike } from '@/lib/productLikesDb';
 import { getProductLikesSetupErrorMessage, isProductLikesSetupMissing } from '@/lib/productLikesSetup';
 import { grantXpToUser } from '@/lib/gamificationServer';
+import { getRequestDurationMs, getRequestStartTimeMs, logApiPerformanceEvent } from '@/lib/performanceMetrics';
+import {
+  addReviewSql,
+  getProductReviewsSql,
+  getProductSocialSummarySql,
+  isProductSocialSqlAvailable,
+  trackVisitSql,
+} from '@/lib/productSocialSql';
 
 export const dynamic = 'force-dynamic';
-
-function badRequest(message: string) {
-  return NextResponse.json({ error: message }, { status: 400 });
-}
+const ENDPOINT = '/api/products/[id]/social';
 
 async function getOptionalAuthUser() {
   const supabase = createRouteHandlerClient({ cookies });
@@ -29,6 +34,19 @@ async function getOptionalAuthUser() {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
+}
+
+async function getOptionalAuthUserFromRequest(req: NextRequest) {
+  const cookieUser = await getOptionalAuthUser();
+  if (cookieUser) return cookieUser;
+
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : '';
+  if (!token || !supabaseAdmin) return null;
+
+  const authRes = await supabaseAdmin.auth.getUser(token);
+  if (authRes.error || !authRes.data?.user) return null;
+  return authRes.data.user;
 }
 
 function resolveVisitorId(raw: unknown, authUserId?: string): string | null {
@@ -82,15 +100,34 @@ async function hasPurchasedProduct(userId: string, productId: string): Promise<b
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const startMs = getRequestStartTimeMs();
+  const respond = (body: unknown, status = 200, cacheHit: boolean | null = null) => {
+    void logApiPerformanceEvent({
+      endpoint: ENDPOINT,
+      method: 'GET',
+      statusCode: status,
+      durationMs: getRequestDurationMs(startMs),
+      cacheHit,
+      metadata: {
+        productId: String(params?.id || ''),
+      },
+    });
+    return NextResponse.json(body, { status });
+  };
+  const respondBadRequest = (message: string) => respond({ error: message }, 400, null);
+
   try {
     const productId = params.id;
-    if (!productId) return badRequest('Product id is required');
+    if (!productId) return respondBadRequest('Product id is required');
 
-    const user = await getOptionalAuthUser();
+    const user = await getOptionalAuthUserFromRequest(req);
     const visitorId = resolveVisitorId(req.nextUrl.searchParams.get('visitorId'), user?.id);
     const visitorKey = visitorId ? toVisitorStorageKey(visitorId) : null;
-    const state = await readProductSocialState(productId);
-    const baseSummary = getProductSocialSummary(state, visitorKey);
+    const socialSqlAvailable = await isProductSocialSqlAvailable();
+    const state = socialSqlAvailable ? null : await readProductSocialState(productId);
+    const baseSummary = socialSqlAvailable
+      ? await getProductSocialSummarySql(productId, false)
+      : getProductSocialSummary(state!, visitorKey);
     const likeSummary = await getProductLikeSummary(productId, user?.id || null);
     const summary = {
       ...baseSummary,
@@ -107,35 +144,54 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       canReview = await hasPurchasedProduct(user.id, productId);
     }
 
-    return NextResponse.json({
+    const reviews = socialSqlAvailable ? await getProductReviewsSql(productId) : state!.reviews;
+
+    return respond({
       success: true,
       productId,
       summary,
       canReview,
       requiresPurchaseForReview: true,
-      reviews: state.reviews,
-      updatedAt: state.updatedAt,
-    });
+      reviews,
+      updatedAt: socialSqlAvailable ? new Date().toISOString() : state!.updatedAt,
+    }, 200, socialSqlAvailable ? true : null);
   } catch (error: any) {
-    return NextResponse.json(
+    return respond(
       { error: error?.message || 'Failed to load product social data' },
-      { status: 500 }
+      500,
+      null
     );
   }
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const startMs = getRequestStartTimeMs();
+  const respond = (body: unknown, status = 200, cacheHit: boolean | null = null) => {
+    void logApiPerformanceEvent({
+      endpoint: ENDPOINT,
+      method: 'POST',
+      statusCode: status,
+      durationMs: getRequestDurationMs(startMs),
+      cacheHit,
+      metadata: {
+        productId: String(params?.id || ''),
+      },
+    });
+    return NextResponse.json(body, { status });
+  };
+  const respondBadRequest = (message: string) => respond({ error: message }, 400, null);
+
   try {
     const productId = params.id;
-    if (!productId) return badRequest('Product id is required');
+    if (!productId) return respondBadRequest('Product id is required');
 
     const body = await req.json().catch(() => null);
-    if (!body || typeof body !== 'object') return badRequest('Invalid payload');
+    if (!body || typeof body !== 'object') return respondBadRequest('Invalid payload');
 
     const action = String((body as any).action || '').trim();
-    if (!action) return badRequest('action is required');
+    if (!action) return respondBadRequest('action is required');
 
-    const user = await getOptionalAuthUser();
+    const user = await getOptionalAuthUserFromRequest(req);
     const ip =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       req.headers.get('x-real-ip')?.trim() ||
@@ -146,36 +202,58 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       windowMs: 60_000,
     });
     if (!rl.allowed) {
-      return NextResponse.json(
+      return respond(
         { error: 'Demasiadas acciones en poco tiempo. Inténtalo de nuevo en un minuto.' },
-        { status: 429 }
+        429,
+        null
       );
     }
 
     const visitorId = resolveVisitorId((body as any).visitorId, user?.id);
     const visitorKey = visitorId ? toVisitorStorageKey(visitorId) : null;
-    const state = await readProductSocialState(productId);
+    const socialSqlAvailable = await isProductSocialSqlAvailable();
+    const state = socialSqlAvailable ? null : await readProductSocialState(productId);
 
     if (action === 'visit') {
-      if (!visitorKey) return badRequest('visitorId is required');
-      const changed = trackVisit(state, visitorKey);
-      if (changed) await writeProductSocialState(productId, state);
-      return NextResponse.json({
+      if (!visitorKey) return respondBadRequest('visitorId is required');
+      if (socialSqlAvailable) {
+        const baseSummary = await trackVisitSql(productId, visitorKey);
+        const likeSummary = await getProductLikeSummary(productId, user?.id || null);
+        return respond({
+          success: true,
+          summary: {
+            ...baseSummary,
+            likes: likeSummary.available ? likeSummary.likes : baseSummary.likes,
+            likedByCurrentVisitor: user?.id
+              ? likeSummary.available
+                ? likeSummary.likedByCurrentUser
+                : false
+              : false,
+          },
+        }, 200, true);
+      }
+
+      const changed = trackVisit(state!, visitorKey);
+      if (changed) await writeProductSocialState(productId, state!);
+      return respond({
         success: true,
-        summary: getProductSocialSummary(state, visitorKey),
-      });
+        summary: getProductSocialSummary(state!, visitorKey),
+      }, 200, false);
     }
 
     if (action === 'toggle_like') {
       if (!user?.id) {
-        return NextResponse.json(
+        return respond(
           { error: 'Debes iniciar sesión para guardar favoritos' },
-          { status: 401 }
+          401,
+          null
         );
       }
 
       const likeResult = await toggleProductLike(productId, user.id);
-      const baseSummary = getProductSocialSummary(state, visitorKey);
+      const baseSummary = socialSqlAvailable
+        ? await getProductSocialSummarySql(productId, false)
+        : getProductSocialSummary(state!, visitorKey);
       const summary = {
         ...baseSummary,
         likes: likeResult.available ? likeResult.likes : baseSummary.likes,
@@ -184,41 +262,43 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           : baseSummary.likedByCurrentVisitor,
       };
 
-      return NextResponse.json({
+      return respond({
         success: true,
         liked: summary.likedByCurrentVisitor,
         summary,
-      });
+      }, 200, socialSqlAvailable ? true : null);
     }
 
     if (action === 'add_review') {
       if (!user?.id) {
-        return NextResponse.json(
+        return respond(
           { error: 'Debes iniciar sesión para valorar productos' },
-          { status: 401 }
+          401,
+          null
         );
       }
 
       if (!visitorKey) {
-        return NextResponse.json({ error: 'No se pudo validar tu sesión' }, { status: 401 });
+        return respond({ error: 'No se pudo validar tu sesión' }, 401, null);
       }
 
       const purchased = await hasPurchasedProduct(user.id, productId);
       if (!purchased) {
-        return NextResponse.json(
+        return respond(
           { error: 'Solo pueden valorar usuarios que compraron este producto' },
-          { status: 403 }
+          403,
+          null
         );
       }
 
       const rating = Number((body as any).rating);
       if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-        return badRequest('rating must be an integer from 1 to 5');
+        return respondBadRequest('rating must be an integer from 1 to 5');
       }
 
       const rawComment = typeof (body as any).comment === 'string' ? (body as any).comment.trim() : '';
       if (rawComment.length < 2 || rawComment.length > 1000) {
-        return badRequest('comment must be between 2 and 1000 chars');
+        return respondBadRequest('comment must be between 2 and 1000 chars');
       }
 
       const authorName =
@@ -226,37 +306,82 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           ? (body as any).authorName.trim().slice(0, 60)
           : 'Coleccionista';
 
-      const duplicate = state.reviews.find(
-        (review) =>
-          review.visitorId === visitorKey &&
-          review.comment === rawComment &&
-          review.rating === rating
-      );
+      const duplicate = !socialSqlAvailable
+        ? state!.reviews.find(
+            (review) =>
+              review.visitorId === visitorKey &&
+              review.comment === rawComment &&
+              review.rating === rating
+          )
+        : null;
       if (duplicate) {
-        return NextResponse.json({
+        return respond({
           success: true,
           review: duplicate,
-          summary: getProductSocialSummary(state, visitorKey),
-          reviews: state.reviews,
+          summary: getProductSocialSummary(state!, visitorKey),
+          reviews: state!.reviews,
           duplicate: true,
-        });
+        }, 200, false);
       }
 
-      const review = addReview(state, {
+      if (socialSqlAvailable) {
+        const tempReviewId = crypto.randomUUID();
+        const uploadedPhotos = await uploadReviewPhotoDataUrls(
+          productId,
+          tempReviewId,
+          (body as any).photos
+        );
+
+        const sqlResult = await addReviewSql({
+          productId,
+          userId: user.id,
+          visitorKey,
+          authorName,
+          rating,
+          comment: rawComment,
+          photos: uploadedPhotos,
+        });
+
+        const likeSummary = await getProductLikeSummary(productId, user.id);
+        const summary = {
+          ...sqlResult.summary,
+          likes: likeSummary.available ? likeSummary.likes : sqlResult.summary.likes,
+          likedByCurrentVisitor: likeSummary.available
+            ? likeSummary.likedByCurrentUser
+            : sqlResult.summary.likedByCurrentVisitor,
+        };
+
+        void grantXpToUser({
+          userId: user.id,
+          actionKey: 'comment_posted',
+          dedupeKey: `product-review:${sqlResult.review.id}`,
+          metadata: {
+            product_id: productId,
+            review_id: sqlResult.review.id,
+            rating,
+          },
+        });
+
+        return respond({
+          success: true,
+          review: sqlResult.review,
+          summary,
+          reviews: sqlResult.reviews,
+          duplicate: sqlResult.duplicate,
+        }, 200, true);
+      }
+
+      const review = addReview(state!, {
         visitorId: visitorKey,
         authorName,
         rating,
         comment: rawComment,
       });
 
-      const uploadedPhotos = await uploadReviewPhotoDataUrls(
-        productId,
-        review.id,
-        (body as any).photos
-      );
+      const uploadedPhotos = await uploadReviewPhotoDataUrls(productId, review.id, (body as any).photos);
       review.photos = uploadedPhotos;
 
-      await writeProductSocialState(productId, state);
+      await writeProductSocialState(productId, state!);
 
       void grantXpToUser({
         userId: user.id,
@@ -269,25 +394,27 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         },
       });
 
-      return NextResponse.json({
+      return respond({
         success: true,
         review,
-        summary: getProductSocialSummary(state, visitorKey),
-        reviews: state.reviews,
-      });
+        summary: getProductSocialSummary(state!, visitorKey),
+        reviews: state!.reviews,
+      }, 200, false);
     }
 
-    return badRequest('Unsupported action');
+    return respondBadRequest('Unsupported action');
   } catch (error: any) {
     if (isProductLikesSetupMissing(error)) {
-      return NextResponse.json(
+      return respond(
         { error: getProductLikesSetupErrorMessage(), setupRequired: true },
-        { status: 503 }
+        503,
+        null
       );
     }
-    return NextResponse.json(
+    return respond(
       { error: error?.message || 'Failed to update product social data' },
-      { status: 500 }
+      500,
+      null
     );
   }
 }
