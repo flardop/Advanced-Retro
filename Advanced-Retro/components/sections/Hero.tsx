@@ -1,6 +1,3 @@
-'use client';
-
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -10,11 +7,7 @@ export default function Hero() {
       <div className="absolute inset-0 bg-grid opacity-25" />
       <div className="absolute inset-0 bg-radial" />
       <div className="container relative grid gap-10 lg:grid-cols-2 items-center">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
+        <div>
           <div className="flex flex-wrap gap-3 mb-6">
             <span className="chip">Retro verificado</span>
             <span className="chip">Catálogo multiconsola</span>
@@ -85,14 +78,9 @@ export default function Hero() {
               <p className="text-xs text-textMuted mt-1">Tickets por precio y premios gestionados desde tu perfil.</p>
             </Link>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="glass p-6 sm:p-8 shadow-deep"
-        >
+        <div className="glass p-6 sm:p-8 shadow-deep">
           <div className="space-y-5">
             <div className="flex items-center justify-between text-xs font-mono uppercase tracking-[0.12em]">
               <span className="text-primary">Colección destacada</span>
@@ -141,7 +129,7 @@ export default function Hero() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
