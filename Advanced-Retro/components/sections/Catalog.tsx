@@ -241,6 +241,7 @@ export default function Catalog() {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [visibleCount, setVisibleCount] = useState(24);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const loadedMetricIdsRef = useRef<Set<string>>(new Set());
 
   const loadMetrics = useCallback(async (productIds: string[], force = false) => {
@@ -351,6 +352,22 @@ export default function Catalog() {
 
     const q = String(params.get('q') || '').trim();
     if (q) setSearch(q);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const apply = () => setIsMobileFiltersOpen(mediaQuery.matches);
+    apply();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', apply);
+      return () => mediaQuery.removeEventListener('change', apply);
+    }
+
+    mediaQuery.addListener(apply);
+    return () => mediaQuery.removeListener(apply);
   }, []);
 
   const completeProductIds = useMemo(() => {
@@ -516,13 +533,13 @@ export default function Catalog() {
     setVisibleCount(24);
   }, [active, search, sortBy, favoritesOnly, stockOnly, minPrice, maxPrice]);
 
-  const renderMiniProduct = (product: any, label: string) => {
+  const renderMiniProduct = (product: any, label: string, className = '') => {
     const productId = String(product.id);
     return (
       <Link
         key={`${label}-${productId}`}
         href={`/producto/${productId}`}
-        className="glass p-3 hover:shadow-glow transition-shadow group"
+        className={`glass p-3 hover:shadow-glow transition-shadow group ${className}`.trim()}
       >
         <div className="relative w-full h-36 bg-surface border border-line rounded-xl overflow-hidden">
           <SafeImage
@@ -544,22 +561,24 @@ export default function Catalog() {
   return (
     <section className="section">
       <div className="container">
-        <div className="glass p-5 mb-6 grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-            <p className="text-primary text-sm font-semibold">Envíos desde España</p>
-            <p className="text-xs text-textMuted mt-1">Preparación y salida en 24-48h laborables.</p>
-          </div>
-          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-            <p className="text-primary text-sm font-semibold">Revisado y testado</p>
-            <p className="text-xs text-textMuted mt-1">Cada pieza se comprueba antes de publicarse.</p>
-          </div>
-          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-            <p className="text-primary text-sm font-semibold">Garantía coleccionista</p>
-            <p className="text-xs text-textMuted mt-1">Soporte por ticket y seguimiento real del pedido.</p>
+        <div className="glass p-4 sm:p-5 mb-6">
+          <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
+            <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+              <p className="text-primary text-sm font-semibold">Envíos desde España</p>
+              <p className="text-xs text-textMuted mt-1">Preparación y salida en 24-48h laborables.</p>
+            </div>
+            <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+              <p className="text-primary text-sm font-semibold">Revisado y testado</p>
+              <p className="text-xs text-textMuted mt-1">Cada pieza se comprueba antes de publicarse.</p>
+            </div>
+            <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+              <p className="text-primary text-sm font-semibold">Garantía coleccionista</p>
+              <p className="text-xs text-textMuted mt-1">Soporte por ticket y seguimiento real del pedido.</p>
+            </div>
           </div>
         </div>
 
-        <div className="glass p-5 mb-8">
+        <div className="glass p-4 sm:p-5 mb-8">
           <p className="text-sm text-textMuted leading-relaxed">
             Cada cartucho tiene historia. Mystery Box es azar con tiradas y premios; Ruleta es el panel de giro; Encargos es compra asistida 1 a 1.
           </p>
@@ -601,15 +620,27 @@ export default function Catalog() {
           <div className="grid gap-4 md:grid-cols-3 mb-8">
             <div>
               <h2 className="font-semibold mb-2 text-lg">Trending retro</h2>
-              <div className="grid gap-3">{featuredTrending.map((product) => renderMiniProduct(product, 'Trending'))}</div>
+              <div className="grid gap-3">
+                {featuredTrending.map((product, index) =>
+                  renderMiniProduct(product, 'Trending', index > 0 ? 'hidden md:block' : '')
+                )}
+              </div>
             </div>
             <div>
               <h2 className="font-semibold mb-2 text-lg">Más valorados</h2>
-              <div className="grid gap-3">{featuredBestRated.map((product) => renderMiniProduct(product, 'Top'))}</div>
+              <div className="grid gap-3">
+                {featuredBestRated.map((product, index) =>
+                  renderMiniProduct(product, 'Top', index > 0 ? 'hidden md:block' : '')
+                )}
+              </div>
             </div>
             <div>
               <h2 className="font-semibold mb-2 text-lg">Últimas entradas</h2>
-              <div className="grid gap-3">{featuredLatest.map((product) => renderMiniProduct(product, 'Nuevo'))}</div>
+              <div className="grid gap-3">
+                {featuredLatest.map((product, index) =>
+                  renderMiniProduct(product, 'Nuevo', index > 0 ? 'hidden md:block' : '')
+                )}
+              </div>
             </div>
           </div>
         ) : null}
@@ -632,56 +663,69 @@ export default function Catalog() {
             </div>
           </div>
         ) : (
-          <div className="glass p-5 mb-6">
-            <div className="grid gap-3 lg:grid-cols-[1.55fr,1fr,1fr,1fr,1fr]">
-            <input
-              className="w-full bg-transparent border border-line px-3 py-2"
-              placeholder="Buscar por nombre o descripción"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-
-            <select
-              className="w-full bg-transparent border border-line px-3 py-2"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                className="w-full bg-transparent border border-line px-3 py-2"
-                placeholder="Min €"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
-              />
-              <input
-                className="w-full bg-transparent border border-line px-3 py-2"
-                placeholder="Max €"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-              />
+          <div className="glass p-4 sm:p-5 mb-6">
+            <div className="lg:hidden flex items-center justify-between gap-3 mb-3">
+              <div>
+                <p className="text-sm font-semibold">Filtros de tienda</p>
+                <p className="text-xs text-textMuted">{activeFilterCount} filtros activos</p>
+              </div>
+              <button
+                className={`chip ${isMobileFiltersOpen ? 'text-primary border-primary' : ''}`}
+                onClick={() => setIsMobileFiltersOpen((value) => !value)}
+              >
+                {isMobileFiltersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
+              </button>
             </div>
 
-            <button
-              className={`chip ${favoritesOnly ? 'text-primary border-primary' : ''}`}
-              onClick={() => setFavoritesOnly((prev) => !prev)}
-              disabled={!isLoggedIn}
-            >
-              {isLoggedIn ? 'Solo favoritos' : 'Solo favoritos (login)'}
-            </button>
+            <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-3 lg:grid lg:grid-cols-[1.55fr,1fr,1fr,1fr,1fr]`}>
+              <input
+                className="w-full bg-transparent border border-line px-3 py-2"
+                placeholder="Buscar por nombre o descripción"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
 
-            <button
-              className={`chip ${stockOnly ? 'text-primary border-primary' : ''}`}
-              onClick={() => setStockOnly((prev) => !prev)}
-            >
-              Solo con stock
-            </button>
+              <select
+                className="w-full bg-transparent border border-line px-3 py-2"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  className="w-full bg-transparent border border-line px-3 py-2"
+                  placeholder="Min €"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                />
+                <input
+                  className="w-full bg-transparent border border-line px-3 py-2"
+                  placeholder="Max €"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                />
+              </div>
+
+              <button
+                className={`chip ${favoritesOnly ? 'text-primary border-primary' : ''}`}
+                onClick={() => setFavoritesOnly((prev) => !prev)}
+                disabled={!isLoggedIn}
+              >
+                {isLoggedIn ? 'Solo favoritos' : 'Solo favoritos (login)'}
+              </button>
+
+              <button
+                className={`chip ${stockOnly ? 'text-primary border-primary' : ''}`}
+                onClick={() => setStockOnly((prev) => !prev)}
+              >
+                Solo con stock
+              </button>
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -736,7 +780,7 @@ export default function Catalog() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visibleProducts.map((product) => {
               const productId = String(product.id);
               const isComplete = completeProductIds.has(productId);
@@ -748,9 +792,9 @@ export default function Catalog() {
                 <Link
                   key={product.id}
                   href={href}
-                  className="glass p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5"
+                  className="glass p-3 sm:p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5"
                 >
-                  <div className="relative w-full h-56 bg-surface border border-line rounded-xl overflow-hidden">
+                  <div className="relative w-full h-44 sm:h-56 bg-surface border border-line rounded-xl overflow-hidden">
                     <SafeImage
                       src={getProductImageUrl(product)}
                       fallbackSrc={getProductFallbackImageUrl(product)}

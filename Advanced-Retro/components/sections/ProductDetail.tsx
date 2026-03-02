@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { sampleProducts } from '@/lib/sampleData';
@@ -114,6 +114,48 @@ const EDITION_LABEL: Record<EditionKind, string> = {
 
 const EDITION_ORDER: EditionKind[] = ['original', 'repro', 'sin-especificar'];
 const PLACEHOLDER = '/placeholder.svg';
+const PRODUCT_DETAIL_COLUMNS = [
+  'id',
+  'name',
+  'description',
+  'long_description',
+  'price',
+  'stock',
+  'image',
+  'images',
+  'status',
+  'category',
+  'component_type',
+  'edition',
+  'collection_key',
+  'curiosities',
+  'tips',
+].join(',');
+const RELATED_PRODUCTS_COLUMNS_MODERN = [
+  'id',
+  'name',
+  'price',
+  'image',
+  'images',
+  'stock',
+  'category',
+  'description',
+  'component_type',
+  'edition',
+  'collection_key',
+  'created_at',
+].join(',');
+const RELATED_PRODUCTS_COLUMNS_LEGACY = [
+  'id',
+  'name',
+  'price',
+  'image',
+  'images',
+  'stock',
+  'category',
+  'description',
+  'created_at',
+].join(',');
 
 function normalizeText(value: string): string {
   return value
@@ -210,6 +252,18 @@ function uniqueStrings(values: string[]): string[] {
     result.push(value);
   }
   return result;
+}
+
+function dedupeById(input: any[]): any[] {
+  const output: any[] = [];
+  const seen = new Set<string>();
+  for (const item of input) {
+    const id = String(item?.id || '').trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    output.push(item);
+  }
+  return output;
 }
 
 function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[] {
@@ -411,6 +465,8 @@ export default function ProductDetail({
   const [product, setProduct] = useState<any | null>(null);
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const buySectionRef = useRef<HTMLDivElement | null>(null);
+  const reviewsSectionRef = useRef<HTMLDivElement | null>(null);
 
   const [bundleOptions, setBundleOptions] = useState<BundleOption[]>([]);
   const [selectedBundleIds, setSelectedBundleIds] = useState<Record<string, boolean>>({});
@@ -478,32 +534,81 @@ export default function ProductDetail({
         return;
       }
 
-      const { data } = await supabaseClient.from('products').select('*').eq('id', productId).single();
+      const { data } = await supabaseClient
+        .from('products')
+        .select(PRODUCT_DETAIL_COLUMNS)
+        .eq('id', productId)
+        .single();
       setProduct(data || null);
 
       if (!data) return;
 
-      let candidates: any[] | null = null;
-      const modernQuery = await supabaseClient
-        .from('products')
-        .select('id,name,price,image,images,stock,category,description,component_type,edition,collection_key')
-        .order('created_at', { ascending: false })
-        .limit(1200);
+      const pool: any[] = [data];
+      const pushCandidates = (items: any[] | null | undefined) => {
+        if (!Array.isArray(items) || items.length === 0) return;
+        pool.push(...items);
+      };
 
-      if (!modernQuery.error && Array.isArray(modernQuery.data)) {
-        candidates = modernQuery.data;
-      } else {
-        const legacyQuery = await supabaseClient
-          .from('products')
-          .select('id,name,price,image,images,stock,category,description')
-          .order('created_at', { ascending: false })
-          .limit(1200);
-        candidates = Array.isArray(legacyQuery.data) ? legacyQuery.data : null;
+      const collectionKey = String((data as any)?.collection_key || '').trim();
+      const category = String((data as any)?.category || '').trim();
+      const baseToken =
+        cleanBaseTitle(String((data as any)?.name || ''))
+          .split(' ')
+          .find((token) => token.length >= 4) || '';
+
+      const relatedByCollection = collectionKey
+        ? await supabaseClient
+            .from('products')
+            .select(RELATED_PRODUCTS_COLUMNS_MODERN)
+            .eq('collection_key', collectionKey)
+            .order('created_at', { ascending: false })
+            .limit(180)
+        : null;
+
+      if (relatedByCollection && !relatedByCollection.error) {
+        pushCandidates(relatedByCollection.data);
       }
 
-      const pool = candidates && candidates.length > 0 ? candidates : [data];
-      setBundleOptions(buildBundleOptions(data, pool));
-      setEditionOptions(buildEditionOptions(data, pool));
+      if (pool.length < 40 && category) {
+        const relatedByCategory = await supabaseClient
+          .from('products')
+          .select(RELATED_PRODUCTS_COLUMNS_MODERN)
+          .eq('category', category)
+          .order('created_at', { ascending: false })
+          .limit(260);
+
+        if (!relatedByCategory.error) {
+          pushCandidates(relatedByCategory.data);
+        }
+      }
+
+      if (pool.length < 80 && baseToken) {
+        const relatedByName = await supabaseClient
+          .from('products')
+          .select(RELATED_PRODUCTS_COLUMNS_MODERN)
+          .ilike('name', `%${baseToken}%`)
+          .order('created_at', { ascending: false })
+          .limit(220);
+
+        if (!relatedByName.error) {
+          pushCandidates(relatedByName.data);
+        }
+      }
+
+      if (pool.length <= 1) {
+        const legacyPool = await supabaseClient
+          .from('products')
+          .select(RELATED_PRODUCTS_COLUMNS_LEGACY)
+          .order('created_at', { ascending: false })
+          .limit(240);
+        if (!legacyPool.error) {
+          pushCandidates(legacyPool.data);
+        }
+      }
+
+      const dedupedPool = dedupeById(pool).slice(0, 420);
+      setBundleOptions(buildBundleOptions(data, dedupedPool));
+      setEditionOptions(buildEditionOptions(data, dedupedPool));
     };
 
     load();
@@ -686,8 +791,17 @@ export default function ProductDetail({
     prefillComplete ? `/producto/${id}?complete=1` : `/producto/${id}`;
 
   const selectedTotalPrice = selectedUnitPrice * Math.max(1, qty);
+  const purchasableSelectedCount = selectedBundleOptions.filter((option) => option.stock > 0 && !option.isVirtual).length;
   const hideMarketPricing = isMysteryOrRouletteProduct(product as any);
   const ebayDiagnosticHref = `/api/market/ebay-diagnostic?q=${encodeURIComponent(String(product?.name || ''))}`;
+
+  const scrollToBuySection = () => {
+    buySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const scrollToReviewsSection = () => {
+    reviewsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   if (!product) {
     return (
@@ -843,7 +957,7 @@ export default function ProductDetail({
   };
 
   return (
-    <section className="section">
+    <section className="section pb-28 lg:pb-14">
       <div className="container grid gap-8 lg:grid-cols-2">
         <div className="glass p-5 sm:p-6">
           <div className="relative w-full h-[420px] sm:h-[500px] bg-surface border border-line rounded-2xl flex items-center justify-center overflow-hidden">
@@ -888,16 +1002,25 @@ export default function ProductDetail({
           <p className="text-primary text-3xl mt-4 font-semibold">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
           <p className="text-textMuted mt-4 leading-relaxed">{product.long_description || product.description}</p>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+          <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
+            <button type="button" className="button-primary !px-4 !py-2" onClick={scrollToBuySection}>
+              Comprar ahora
+            </button>
+            <button type="button" className="chip" onClick={scrollToReviewsSection}>
+              Ver valoraciones
+            </button>
+          </div>
+
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
+            <div className="min-w-[240px] sm:min-w-0 rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
               <p className="text-xs text-textMuted">Compra segura</p>
               <p className="text-sm mt-1">Soporte por ticket y seguimiento del pedido</p>
             </div>
-            <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+            <div className="min-w-[240px] sm:min-w-0 rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
               <p className="text-xs text-textMuted">Opciones de compra</p>
               <p className="text-sm mt-1">Cartucho, caja, manual, insert y protectores</p>
             </div>
-            <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+            <div className="min-w-[240px] sm:min-w-0 rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
               <p className="text-xs text-textMuted">Ayuda personalizada</p>
               <div className="mt-1 flex flex-wrap gap-2">
                 <Link href="/perfil?tab=tickets" className="chip border-primary text-primary">
@@ -968,7 +1091,7 @@ export default function ProductDetail({
             </div>
           </div>
 
-          <div className="mt-8 border-t border-line pt-6">
+          <div ref={buySectionRef} className="mt-8 border-t border-line pt-6">
             <p className="font-semibold mb-2">Opciones adicionales al comprar (caja, manual, insert, protector)</p>
             <p className="text-sm text-textMuted mb-3">
               La caja puede ser original o repro según el producto enlazado. Marca solo lo que quieras añadir.
@@ -1000,7 +1123,7 @@ export default function ProductDetail({
                 return (
                   <div
                     key={option.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2 bg-[rgba(12,22,36,0.64)]"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-line px-3 py-2 bg-[rgba(12,22,36,0.64)]"
                   >
                     <div className="flex items-start gap-3">
                       <input
@@ -1045,7 +1168,7 @@ export default function ProductDetail({
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       <p className="text-sm text-primary">{(option.price / 100).toFixed(2)} €</p>
                       <p className="text-xs text-textMuted">Stock {option.stock}</p>
                     </div>
@@ -1054,16 +1177,32 @@ export default function ProductDetail({
               })}
             </div>
 
-            <div className="mt-4 flex items-center gap-3">
-              <input
-                className="w-20 bg-transparent border border-line px-3 py-2"
-                type="number"
-                min={1}
-                value={qty}
-                onChange={(e) => setQty(Number(e.target.value))}
-              />
-              <button className="button-primary" onClick={addSelectedToCart}>
-                {prefillComplete ? 'Añadir pack completo al carrito' : 'Añadir seleccion al carrito'}
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center rounded-xl border border-line overflow-hidden w-fit">
+                <button
+                  type="button"
+                  className="px-3 py-2 text-sm border-r border-line hover:bg-[rgba(75,228,214,0.08)]"
+                  onClick={() => setQty((value) => Math.max(1, Number(value || 1) - 1))}
+                >
+                  -
+                </button>
+                <input
+                  className="w-16 text-center bg-transparent px-2 py-2"
+                  type="number"
+                  min={1}
+                  value={qty}
+                  onChange={(e) => setQty(Number(e.target.value))}
+                />
+                <button
+                  type="button"
+                  className="px-3 py-2 text-sm border-l border-line hover:bg-[rgba(75,228,214,0.08)]"
+                  onClick={() => setQty((value) => Math.max(1, Number(value || 1) + 1))}
+                >
+                  +
+                </button>
+              </div>
+              <button className="button-primary w-full sm:w-auto" onClick={addSelectedToCart}>
+                {prefillComplete ? 'Añadir pack completo al carrito' : 'Añadir selección al carrito'}
               </button>
             </div>
 
@@ -1114,20 +1253,43 @@ export default function ProductDetail({
         </div>
       </div>
 
-      <div className="container lg:hidden mt-4">
-        <div className="glass p-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs text-textMuted">Selección actual</p>
-            <p className="text-primary font-semibold">{(selectedTotalPrice / 100).toFixed(2)} €</p>
-            <p className="text-xs text-textMuted">{Math.max(1, qty)} ud · {selectedBundleOptions.filter((o) => o.stock > 0 && !o.isVirtual).length} items</p>
+      <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-[rgba(7,13,22,0.95)] backdrop-blur-md">
+        <div className="container py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] text-textMuted uppercase tracking-[0.08em]">Selección actual</p>
+              <p className="text-primary font-semibold">{(selectedTotalPrice / 100).toFixed(2)} €</p>
+              <p className="text-[11px] text-textMuted">
+                {Math.max(1, qty)} ud · {purchasableSelectedCount} items
+              </p>
+            </div>
+
+            <div className="flex items-center rounded-xl border border-line overflow-hidden">
+              <button
+                type="button"
+                className="px-3 py-2 text-sm border-r border-line"
+                onClick={() => setQty((value) => Math.max(1, Number(value || 1) - 1))}
+              >
+                -
+              </button>
+              <span className="px-3 py-2 text-sm">{Math.max(1, qty)}</span>
+              <button
+                type="button"
+                className="px-3 py-2 text-sm border-l border-line"
+                onClick={() => setQty((value) => Math.max(1, Number(value || 1) + 1))}
+              >
+                +
+              </button>
+            </div>
           </div>
-          <button className="button-primary" onClick={addSelectedToCart}>
+
+          <button className="button-primary w-full mt-3" onClick={addSelectedToCart}>
             Añadir al carrito
           </button>
         </div>
       </div>
 
-      <div className="container mt-10">
+      <div ref={reviewsSectionRef} className="container mt-10">
         <div className="glass p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="title-display text-2xl">Valoraciones</h2>
