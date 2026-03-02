@@ -898,6 +898,11 @@ export default function ProductDetail({
   const selectedTotalPrice = selectedUnitPrice * Math.max(1, qty);
   const purchasableSelectedCount = selectedBundleOptions.filter((option) => option.stock > 0 && !option.isVirtual).length;
   const hideMarketPricing = isMysteryOrRouletteProduct(product as any);
+  const shouldLabelAsEbaySource =
+    priceSource === 'ebay' ||
+    (priceSource === 'current' &&
+      Boolean(marketGuideEbay?.available) &&
+      Number(marketGuideEbay?.sampleSize || 0) >= 2);
   const ebayDiagnosticHref = `/api/market/ebay-diagnostic?q=${encodeURIComponent(String(product?.name || ''))}`;
 
   const scrollToBuySection = () => {
@@ -1339,7 +1344,7 @@ export default function ProductDetail({
                   Fuente:{' '}
                   {priceSource === 'orders'
                     ? 'ventas reales de la tienda'
-                    : priceSource === 'ebay'
+                    : shouldLabelAsEbaySource
                       ? 'muestras de mercado eBay (listados activos)'
                     : priceSource === 'current'
                       ? 'precio actual del catalogo'

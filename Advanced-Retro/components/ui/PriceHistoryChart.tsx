@@ -15,6 +15,10 @@ export type PriceHistoryMarketOverlay = {
   averagePrice?: number | null;
   maxPrice?: number | null;
   note?: string;
+  comparables?: Array<{
+    price?: number | null;
+    listingDate?: string | null;
+  }>;
 };
 
 function formatEuro(cents: number): string {
@@ -78,6 +82,67 @@ export default function PriceHistoryChart({
     return <p className="text-sm text-textMuted">No hay datos validos para la grafica.</p>;
   }
 
+  const overlayComparablePoints = (() => {
+    if (!marketOverlay?.available || !Array.isArray(marketOverlay.comparables)) return [] as PriceHistoryPoint[];
+
+    const comparableRows = marketOverlay.comparables
+      .map((item) => ({
+        price: Number(item?.price || 0),
+        date:
+          typeof item?.listingDate === 'string' && item.listingDate
+            ? String(item.listingDate)
+            : null,
+      }))
+      .filter((row) => Number.isFinite(row.price) && row.price > 0);
+
+    if (comparableRows.length < 2) return [] as PriceHistoryPoint[];
+
+    return comparableRows
+      .map((row, index) => ({
+        date:
+          row.date && Number.isFinite(new Date(row.date).getTime())
+            ? new Date(row.date).toISOString()
+            : new Date(
+                Date.now() - (comparableRows.length - 1 - index) * 24 * 60 * 60 * 1000
+              ).toISOString(),
+        price: Math.round(row.price),
+      }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  })();
+
+  const overlayStatPoints = (() => {
+    if (!marketOverlay?.available) return [] as PriceHistoryPoint[];
+
+    const statValues = [
+      Number(marketOverlay.minPrice || 0),
+      Number(marketOverlay.medianPrice || 0),
+      Number(marketOverlay.averagePrice || 0),
+      Number(marketOverlay.maxPrice || 0),
+    ]
+      .filter((value) => Number.isFinite(value) && value > 0)
+      .map((value) => Math.round(value));
+
+    const uniqueSorted = [...new Set(statValues)].sort((a, b) => a - b);
+    if (uniqueSorted.length < 2) return [] as PriceHistoryPoint[];
+
+    const now = Date.now();
+    const start = now - (uniqueSorted.length - 1) * 24 * 60 * 60 * 1000;
+    return uniqueSorted.map((price, index) => ({
+      date: new Date(start + index * 24 * 60 * 60 * 1000).toISOString(),
+      price,
+    }));
+  })();
+
+  // Safety net: if backend returns a single current point, render eBay trend with comparables/stats.
+  const displayPoints =
+    safePoints.length <= 1
+      ? overlayComparablePoints.length >= 2
+        ? overlayComparablePoints
+        : overlayStatPoints.length >= 2
+          ? overlayStatPoints
+          : safePoints
+      : safePoints;
+
   const width = 760;
   const height = 280;
   const paddingLeft = 64;
@@ -91,7 +156,7 @@ export default function PriceHistoryChart({
   const chartWidth = chartRight - chartLeft;
   const chartHeight = chartBottom - chartTop;
 
-  const prices = safePoints.map((point) => point.price);
+  const prices = displayPoints.map((point) => point.price);
   const marketValues = [
     marketOverlay?.minPrice,
     marketOverlay?.medianPrice,
@@ -112,11 +177,11 @@ export default function PriceHistoryChart({
     yTicks.push(value);
   }
 
-  const pointCoords = safePoints.map((point, index) => {
+  const pointCoords = displayPoints.map((point, index) => {
     const x =
-      safePoints.length === 1
+      displayPoints.length === 1
         ? width / 2
-        : chartLeft + (index / (safePoints.length - 1)) * chartWidth;
+        : chartLeft + (index / (displayPoints.length - 1)) * chartWidth;
     const y = toY(point.price);
     return { x, y, point };
   });
@@ -132,7 +197,7 @@ export default function PriceHistoryChart({
         );
   const xTickIndexes = [...new Set(xTickIndexesRaw)];
   const xTicks = xTickIndexes.map((index) => {
-    const point = safePoints[index];
+    const point = displayPoints[index];
     const coord = pointCoords[index];
     const label = new Date(point.date).toLocaleDateString('es-ES', {
       month: 'short',
@@ -141,7 +206,7 @@ export default function PriceHistoryChart({
     return { x: coord.x, label };
   });
 
-  const last = safePoints[safePoints.length - 1];
+  const last = displayPoints[displayPoints.length - 1];
   const marketLines = marketOverlay?.available
     ? [
         { id: 'min', label: 'eBay mínimo', value: marketOverlay.minPrice, color: '#67e8f9' },
@@ -227,7 +292,7 @@ export default function PriceHistoryChart({
       </svg>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-textMuted">
-        <span>Puntos: {safePoints.length}</span>
+        <span>Puntos: {displayPoints.length}</span>
         <span>
           Rango: {formatAxisEuro(axisMinPrice)} - {formatAxisEuro(axisMaxPrice)}
         </span>
