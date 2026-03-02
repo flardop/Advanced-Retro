@@ -69,6 +69,8 @@ type EbayComparable = {
   condition: string | null;
   currency: string | null;
   price: number | null;
+  listingDate?: string | null;
+  endDate?: string | null;
 };
 
 type EbayMarketGuide = {
@@ -87,6 +89,63 @@ type EbayMarketGuide = {
   medianPrice: number | null;
   comparables: EbayComparable[];
 };
+
+function toValidCents(value: unknown): number | null {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return null;
+  return Math.round(num);
+}
+
+function buildEbayFallbackPoints(market: EbayMarketGuide | null): PriceHistoryPoint[] {
+  if (!market?.available) return [];
+
+  const comparableRows = Array.isArray(market.comparables)
+    ? market.comparables
+        .map((item) => ({
+          price: toValidCents(item?.price),
+          listingDate: typeof item?.listingDate === 'string' ? String(item.listingDate) : null,
+        }))
+        .filter((item): item is { price: number; listingDate: string | null } => typeof item.price === 'number' && item.price > 0)
+        .slice(0, 40)
+    : [];
+
+  const datedRows = comparableRows
+    .filter((item) => Boolean(item.listingDate) && Number.isFinite(new Date(String(item.listingDate)).getTime()))
+    .sort((a, b) => new Date(String(a.listingDate)).getTime() - new Date(String(b.listingDate)).getTime());
+
+  if (datedRows.length >= 2) {
+    return datedRows.map((item) => ({
+      date: new Date(String(item.listingDate)).toISOString(),
+      price: item.price,
+    }));
+  }
+
+  if (comparableRows.length >= 2) {
+    const now = Date.now();
+    const start = now - (comparableRows.length - 1) * 24 * 60 * 60 * 1000;
+    return comparableRows.map((item, index) => ({
+      date: new Date(start + index * 24 * 60 * 60 * 1000).toISOString(),
+      price: item.price,
+    }));
+  }
+
+  const statPrices = [
+    toValidCents(market.minPrice),
+    toValidCents(market.medianPrice),
+    toValidCents(market.averagePrice),
+    toValidCents(market.maxPrice),
+  ].filter((value): value is number => typeof value === 'number' && value > 0);
+
+  const uniqueStats = [...new Set(statPrices)].sort((a, b) => a - b);
+  if (uniqueStats.length < 2) return [];
+
+  const now = Date.now();
+  const start = now - (uniqueStats.length - 1) * 24 * 60 * 60 * 1000;
+  return uniqueStats.map((price, index) => ({
+    date: new Date(start + index * 24 * 60 * 60 * 1000).toISOString(),
+    price,
+  }));
+}
 
 const EMPTY_SUMMARY: ProductSocialSummary = {
   visits: 0,
@@ -742,11 +801,11 @@ export default function ProductDetail({
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar el historico de precios');
 
-      if (data?.marketGuideEbay && typeof data.marketGuideEbay === 'object') {
-        setMarketGuideEbay(data.marketGuideEbay as EbayMarketGuide);
-      } else {
-        setMarketGuideEbay(null);
-      }
+      const nextMarketGuideEbay =
+        data?.marketGuideEbay && typeof data.marketGuideEbay === 'object'
+          ? (data.marketGuideEbay as EbayMarketGuide)
+          : null;
+      setMarketGuideEbay(nextMarketGuideEbay);
 
       const nextPoints = Array.isArray(data?.points)
         ? data.points
@@ -757,7 +816,18 @@ export default function ProductDetail({
             .filter((point: PriceHistoryPoint) => point.date && Number.isFinite(point.price) && point.price > 0)
         : [];
 
-      if (nextPoints.length > 0) {
+      const fallbackFromEbay = nextMarketGuideEbay?.available
+        ? buildEbayFallbackPoints(nextMarketGuideEbay)
+        : [];
+      const canPromoteEbaySeries =
+        fallbackFromEbay.length >= 2 &&
+        (nextPoints.length <= 1 ||
+          (data?.source === 'current' && nextPoints.length < fallbackFromEbay.length));
+
+      if (canPromoteEbaySeries) {
+        setPriceHistory(fallbackFromEbay);
+        setPriceSource('ebay');
+      } else if (nextPoints.length > 0) {
         setPriceHistory(nextPoints);
         setPriceSource(
           data?.source === 'orders'
@@ -766,6 +836,12 @@ export default function ProductDetail({
               ? 'ebay'
               : 'current'
         );
+      } else if (nextMarketGuideEbay?.available) {
+        if (fallbackFromEbay.length > 0) {
+          setPriceHistory(fallbackFromEbay);
+          setPriceSource('ebay');
+          return;
+        }
       } else if (Number.isFinite(Number(product?.price)) && Number(product.price) > 0) {
         setPriceHistory([{ date: new Date().toISOString(), price: Number(product.price) }]);
         setPriceSource('current');
