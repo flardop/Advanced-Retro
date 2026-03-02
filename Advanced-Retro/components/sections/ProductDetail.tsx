@@ -487,7 +487,7 @@ export default function ProductDetail({
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
-  const [priceSource, setPriceSource] = useState<'orders' | 'current' | 'none'>('none');
+  const [priceSource, setPriceSource] = useState<'orders' | 'ebay' | 'current' | 'none'>('none');
   const [marketGuideEbay, setMarketGuideEbay] = useState<EbayMarketGuide | null>(null);
   const [loadingPriceHistory, setLoadingPriceHistory] = useState(false);
   const [priceHistoryError, setPriceHistoryError] = useState('');
@@ -756,7 +756,13 @@ export default function ProductDetail({
 
       if (nextPoints.length > 0) {
         setPriceHistory(nextPoints);
-        setPriceSource(data?.source === 'orders' ? 'orders' : 'current');
+        setPriceSource(
+          data?.source === 'orders'
+            ? 'orders'
+            : data?.source === 'ebay'
+              ? 'ebay'
+              : 'current'
+        );
       } else if (Number.isFinite(Number(product?.price)) && Number(product.price) > 0) {
         setPriceHistory([{ date: new Date().toISOString(), price: Number(product.price) }]);
         setPriceSource('current');
@@ -1254,6 +1260,8 @@ export default function ProductDetail({
                   Fuente:{' '}
                   {priceSource === 'orders'
                     ? 'ventas reales de la tienda'
+                    : priceSource === 'ebay'
+                      ? 'muestras de mercado eBay (listados activos)'
                     : priceSource === 'current'
                       ? 'precio actual del catalogo'
                       : 'sin datos'}

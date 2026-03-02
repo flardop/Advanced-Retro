@@ -2,9 +2,22 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { toPriceChartingConsoleName, stripProductNameForExternalSearch } from '@/lib/catalogPlatform';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
-import { fetchEbayMarketSnapshotByQueryWithOptions } from '@/lib/ebayBrowse';
+import {
+  fetchEbayMarketSnapshotByQueryWithOptions,
+  type EbayMarketSnapshot,
+} from '@/lib/ebayBrowse';
+import { getRequestDurationMs, getRequestStartTimeMs, logApiPerformanceEvent } from '@/lib/performanceMetrics';
 
 export const dynamic = 'force-dynamic';
+const RAW_MARKET_SNAPSHOT_TTL_MS = Number(
+  process.env.MARKET_SNAPSHOT_TTL_MS || 6 * 60 * 60 * 1000
+);
+const MARKET_SNAPSHOT_TTL_MS = Number.isFinite(RAW_MARKET_SNAPSHOT_TTL_MS)
+  ? Math.max(30_000, Math.round(RAW_MARKET_SNAPSHOT_TTL_MS))
+  : 6 * 60 * 60 * 1000;
+const MARKET_SNAPSHOT_PROVIDER = 'ebay';
+const PRICE_HISTORY_CACHE_HEADER = 'public, s-maxage=180, stale-while-revalidate=1800';
+const ENDPOINT = '/api/products/[id]/price-history';
 
 type PricePoint = {
   date: string;
@@ -20,6 +33,23 @@ type ProductWithMarketOverrides = {
   ebay_marketplace_id?: string | null;
 };
 
+type MarketSnapshotRow = {
+  id: string;
+  product_id: string;
+  provider: string;
+  marketplace_id: string | null;
+  query: string | null;
+  currency: string | null;
+  sample_size: number;
+  total_results: number;
+  min_price_cents: number | null;
+  median_price_cents: number | null;
+  average_price_cents: number | null;
+  max_price_cents: number | null;
+  payload: any;
+  collected_at: string;
+};
+
 function toSafePrice(value: unknown): number | null {
   const num = Number(value);
   if (!Number.isFinite(num) || num <= 0) return null;
@@ -33,6 +63,26 @@ function sortByDate(points: PricePoint[]): PricePoint[] {
 function compactPoints(points: PricePoint[], max = 80): PricePoint[] {
   if (points.length <= max) return points;
   return points.slice(points.length - max);
+}
+
+function buildPricePointsFromEbayComparables(snapshot: EbayMarketSnapshot | null): PricePoint[] {
+  if (!snapshot?.available || !Array.isArray(snapshot.comparables)) return [];
+
+  const priced = snapshot.comparables
+    .map((item) => ({
+      cents: toSafePrice((item as any)?.price),
+    }))
+    .filter((item): item is { cents: number } => typeof item.cents === 'number' && item.cents > 0)
+    .slice(0, 40);
+
+  if (priced.length < 2) return [];
+
+  const now = Date.now();
+  const startMs = now - (priced.length - 1) * 24 * 60 * 60 * 1000;
+  return priced.map((item, index) => ({
+    date: new Date(startMs + index * 24 * 60 * 60 * 1000).toISOString(),
+    price: item.cents,
+  }));
 }
 
 function parseLegacyOrderItems(productId: string, orders: any[]): PricePoint[] {
@@ -69,6 +119,17 @@ function isMissingColumnError(error: any): boolean {
   return message.includes('column') && message.includes('does not exist');
 }
 
+function isMissingRelationError(error: any): boolean {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('relation') && message.includes('does not exist');
+}
+
+function toValidCents(value: unknown): number | null {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < 0) return null;
+  return Math.round(num);
+}
+
 async function loadProductWithMarketOverrides(productId: string): Promise<ProductWithMarketOverrides | null> {
   if (!supabaseAdmin) return null;
 
@@ -93,6 +154,92 @@ async function loadProductWithMarketOverrides(productId: string): Promise<Produc
     ebay_query: null,
     ebay_marketplace_id: null,
   };
+}
+
+function snapshotRowToMarketGuide(row: MarketSnapshotRow): EbayMarketSnapshot {
+  const payload = row.payload && typeof row.payload === 'object' ? row.payload : {};
+  return {
+    available: Boolean(payload.available),
+    provider: 'ebay',
+    note: typeof payload.note === 'string' ? payload.note : undefined,
+    query: row.query || undefined,
+    marketplaceId: String(row.marketplace_id || payload.marketplaceId || 'EBAY_ES'),
+    attemptedMarketplaces: Array.isArray(payload.attemptedMarketplaces)
+      ? payload.attemptedMarketplaces.map((item: unknown) => String(item))
+      : undefined,
+    currency: row.currency || (typeof payload.currency === 'string' ? payload.currency : null),
+    sampleSize: Number.isFinite(Number(row.sample_size)) ? Number(row.sample_size) : 0,
+    totalResults: Number.isFinite(Number(row.total_results)) ? Number(row.total_results) : 0,
+    minPrice: toValidCents(row.min_price_cents),
+    maxPrice: toValidCents(row.max_price_cents),
+    averagePrice: toValidCents(row.average_price_cents),
+    medianPrice: toValidCents(row.median_price_cents),
+    comparables: Array.isArray(payload.comparables)
+      ? payload.comparables.slice(0, 20)
+      : [],
+  };
+}
+
+async function loadLatestMarketSnapshot(productId: string): Promise<MarketSnapshotRow | null> {
+  if (!supabaseAdmin) return null;
+  const res = await supabaseAdmin
+    .from('product_market_snapshots')
+    .select(
+      'id,product_id,provider,marketplace_id,query,currency,sample_size,total_results,min_price_cents,median_price_cents,average_price_cents,max_price_cents,payload,collected_at'
+    )
+    .eq('provider', MARKET_SNAPSHOT_PROVIDER)
+    .eq('product_id', productId)
+    .order('collected_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (res.error) {
+    if (isMissingRelationError(res.error)) return null;
+    throw new Error(res.error.message || 'Error loading market cache');
+  }
+  return (res.data as MarketSnapshotRow | null) || null;
+}
+
+function isFreshSnapshot(collectedAtIso: string): boolean {
+  const collectedAtMs = new Date(collectedAtIso).getTime();
+  if (!Number.isFinite(collectedAtMs)) return false;
+  return Date.now() - collectedAtMs <= Math.max(30_000, MARKET_SNAPSHOT_TTL_MS);
+}
+
+async function saveMarketSnapshot(
+  productId: string,
+  query: string,
+  snapshot: EbayMarketSnapshot
+): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const { error } = await supabaseAdmin.from('product_market_snapshots').insert({
+    product_id: productId,
+    provider: MARKET_SNAPSHOT_PROVIDER,
+    marketplace_id: snapshot.marketplaceId,
+    query,
+    currency: snapshot.currency,
+    sample_size: Number(snapshot.sampleSize || 0),
+    total_results: Number(snapshot.totalResults || 0),
+    min_price_cents: toValidCents(snapshot.minPrice),
+    median_price_cents: toValidCents(snapshot.medianPrice),
+    average_price_cents: toValidCents(snapshot.averagePrice),
+    max_price_cents: toValidCents(snapshot.maxPrice),
+    payload: {
+      available: snapshot.available,
+      note: snapshot.note || null,
+      attemptedMarketplaces: Array.isArray(snapshot.attemptedMarketplaces)
+        ? snapshot.attemptedMarketplaces
+        : [],
+      marketplaceId: snapshot.marketplaceId,
+      currency: snapshot.currency,
+      comparables: Array.isArray(snapshot.comparables) ? snapshot.comparables.slice(0, 20) : [],
+    },
+  });
+
+  if (error && !isMissingRelationError(error)) {
+    console.warn('Error saving product_market_snapshots cache:', error.message || error);
+  }
 }
 
 function normalizeConsoleForQuery(value: string): string {
@@ -216,19 +363,60 @@ async function fetchBestEbaySnapshotForProduct(product: ProductWithMarketOverrid
 }
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
+  const startMs = getRequestStartTimeMs();
+  let marketCacheHit: boolean | null = null;
+  const respond = (
+    body: unknown,
+    status = 200,
+    cacheControl = 'no-store',
+    cacheHit: boolean | null = marketCacheHit
+  ) => {
+    void logApiPerformanceEvent({
+      endpoint: ENDPOINT,
+      method: 'GET',
+      statusCode: status,
+      durationMs: getRequestDurationMs(startMs),
+      cacheHit,
+      metadata: {
+        productId: String(params?.id || ''),
+      },
+    });
+    return NextResponse.json(body, {
+      status,
+      headers: {
+        'Cache-Control': cacheControl,
+      },
+    });
+  };
+
   try {
     const productId = String(params?.id || '').trim();
     if (!productId) {
-      return NextResponse.json({ error: 'Product id is required' }, { status: 400 });
+      return respond(
+        { error: 'Product id is required' },
+        400,
+        'no-store',
+        null
+      );
     }
 
     if (!supabaseAdmin) {
-      return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
+      return respond(
+        { error: 'Supabase not configured' },
+        503,
+        'no-store',
+        null
+      );
     }
 
     const product = await loadProductWithMarketOverrides(productId);
     if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      return respond(
+        { error: 'Product not found' },
+        404,
+        'no-store',
+        null
+      );
     }
 
     let points: PricePoint[] = [];
@@ -283,53 +471,118 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     let marketGuideEbay: any = null;
     let marketGuideEbayDebug: any = null;
     if (!isMysteryOrRouletteProduct(product as any)) {
-      const ebayData = await fetchBestEbaySnapshotForProduct(product);
-      marketGuideEbay = ebayData.snapshot;
-      marketGuideEbayDebug = {
-        selectedQuery: ebayData.selectedQuery,
-        attempts: ebayData.attempts,
-        productOverride: {
-          ebay_query: String(product.ebay_query || '').trim() || null,
-          ebay_marketplace_id: String(product.ebay_marketplace_id || '').trim() || null,
-        },
-      };
+      const cachedSnapshot = await loadLatestMarketSnapshot(productId);
+      if (cachedSnapshot && isFreshSnapshot(cachedSnapshot.collected_at)) {
+        marketGuideEbay = snapshotRowToMarketGuide(cachedSnapshot);
+        marketCacheHit = true;
+        marketGuideEbayDebug = {
+          selectedQuery: cachedSnapshot.query || String(product.name || ''),
+          attempts: [],
+          cache: {
+            source: 'db',
+            collectedAt: cachedSnapshot.collected_at,
+            fresh: true,
+          },
+          productOverride: {
+            ebay_query: String(product.ebay_query || '').trim() || null,
+            ebay_marketplace_id: String(product.ebay_marketplace_id || '').trim() || null,
+          },
+        };
+      } else {
+        const ebayData = await fetchBestEbaySnapshotForProduct(product);
+        marketGuideEbay = ebayData.snapshot;
+        marketCacheHit = false;
+        marketGuideEbayDebug = {
+          selectedQuery: ebayData.selectedQuery,
+          attempts: ebayData.attempts,
+          cache: {
+            source: 'network',
+            fallbackFromStale:
+              Boolean(cachedSnapshot) && !Boolean(ebayData.snapshot?.available),
+            staleCollectedAt: cachedSnapshot?.collected_at || null,
+          },
+          productOverride: {
+            ebay_query: String(product.ebay_query || '').trim() || null,
+            ebay_marketplace_id: String(product.ebay_marketplace_id || '').trim() || null,
+          },
+        };
+
+        if (ebayData.snapshot) {
+          await saveMarketSnapshot(productId, ebayData.selectedQuery, ebayData.snapshot);
+        }
+
+        if (
+          cachedSnapshot &&
+          (!ebayData.snapshot || (!ebayData.snapshot.available && Number(ebayData.snapshot.sampleSize || 0) === 0))
+        ) {
+          marketGuideEbay = snapshotRowToMarketGuide(cachedSnapshot);
+          marketCacheHit = true;
+          marketGuideEbayDebug.cache = {
+            source: 'db-stale',
+            collectedAt: cachedSnapshot.collected_at,
+            reusedBecause: 'network_result_not_useful',
+          };
+        }
+      }
     }
 
     if (sorted.length > 0) {
-      return NextResponse.json({
-        success: true,
-        source: 'orders',
-        salesCount: sorted.length,
-        points: sorted,
-        marketGuideEbay,
-        marketGuideEbayDebug,
-      });
+      return respond(
+        {
+          success: true,
+          source: 'orders',
+          salesCount: sorted.length,
+          points: sorted,
+          marketGuideEbay,
+          marketGuideEbayDebug,
+        },
+        200,
+        PRICE_HISTORY_CACHE_HEADER
+      );
+    }
+
+    const marketPoints = compactPoints(sortByDate(buildPricePointsFromEbayComparables(marketGuideEbay)), 80);
+    if (marketPoints.length > 0) {
+      return respond(
+        {
+          success: true,
+          source: 'ebay',
+          salesCount: 0,
+          points: marketPoints,
+          marketGuideEbay,
+          marketGuideEbayDebug,
+        },
+        200,
+        PRICE_HISTORY_CACHE_HEADER
+      );
     }
 
     const currentPrice = toSafePrice(product.price);
     if (currentPrice) {
-      return NextResponse.json({
+      return respond({
         success: true,
         source: 'current',
         salesCount: 0,
         points: [{ date: new Date().toISOString(), price: currentPrice }],
         marketGuideEbay,
         marketGuideEbayDebug,
-      });
+      }, 200, PRICE_HISTORY_CACHE_HEADER);
     }
 
-    return NextResponse.json({
+    return respond({
       success: true,
       source: 'none',
       salesCount: 0,
       points: [],
       marketGuideEbay,
       marketGuideEbayDebug,
-    });
+    }, 200, PRICE_HISTORY_CACHE_HEADER);
   } catch (error: any) {
-    return NextResponse.json(
+    return respond(
       { error: error?.message || 'Failed to load product price history' },
-      { status: 500 }
+      500,
+      'no-store',
+      null
     );
   }
 }

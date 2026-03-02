@@ -121,13 +121,7 @@ export default function PriceHistoryChart({
     return { x, y, point };
   });
 
-  const lineCoords =
-    pointCoords.length === 1
-      ? [
-          { x: chartLeft, y: pointCoords[0].y },
-          { x: chartRight, y: pointCoords[0].y },
-        ]
-      : pointCoords.map((coord) => ({ x: coord.x, y: coord.y }));
+  const lineCoords = pointCoords.map((coord) => ({ x: coord.x, y: coord.y }));
   const linePath = createLinePath(lineCoords);
 
   const xTickIndexesRaw =
