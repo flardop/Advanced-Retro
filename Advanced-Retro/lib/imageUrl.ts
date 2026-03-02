@@ -9,10 +9,13 @@ function isValidImageUrl(url: unknown): url is string {
   }
 
   const lower = value.toLowerCase();
+  // Fuentes históricas inestables o que apuntan a HTML en vez de imagen.
+  if (lower.includes('splash.games.directory')) return false;
+  if (lower.includes('gbxtreme.com/product/')) return false;
+
   const hasImageExt = /\.(jpg|jpeg|png|webp|gif|avif|heic|heif)(\?|$)/.test(lower);
   const knownImageHost =
     lower.includes('images.unsplash.com') ||
-    lower.includes('splash.games.directory') ||
     lower.includes('/storage/v1/object/') ||
     lower.includes('/object/public/');
 
@@ -49,8 +52,11 @@ export function getProductImageUrl(product: any): string {
   const fromArray = parseImageCollection(product?.images);
   const fromSingle = parseImageCollection(product?.image);
   const fromLegacy = parseImageCollection(product?.gallery_images);
-  const candidate = [...fromArray, ...fromSingle, ...fromLegacy][0];
-  return isValidImageUrl(candidate) ? candidate : getProductFallbackImageUrl(product);
+  const candidates = [...fromArray, ...fromSingle, ...fromLegacy];
+  for (const candidate of candidates) {
+    if (isValidImageUrl(candidate)) return candidate;
+  }
+  return getProductFallbackImageUrl(product);
 }
 
 export function getProductImageUrls(product: any): string[] {
@@ -69,6 +75,29 @@ export function getProductFallbackImageUrl(product: any): string {
   const name = String(product?.name || '').toLowerCase();
   const category = String(product?.category || product?.category_id || '').toLowerCase();
   const platform = String(product?.platform || '').toLowerCase();
+
+  const has = (token: string) => name.includes(token) || category.includes(token) || platform.includes(token);
+  const hasAny = (tokens: string[]) => tokens.some((token) => has(token));
+
+  // Fallbacks específicos para componentes (evita placeholders en manuales/protectores/inserts).
+  if (hasAny(['manual', 'manuales'])) {
+    return '/images/fallbacks/manual.svg';
+  }
+  if (hasAny(['insert', 'inlay', 'interior'])) {
+    return '/images/fallbacks/insert.svg';
+  }
+  if (has('protector') && hasAny(['caja', 'box'])) {
+    return '/images/fallbacks/protector-caja.svg';
+  }
+  if (has('protector') || has('funda')) {
+    return '/images/fallbacks/protector-juego.svg';
+  }
+  if (has('cartucho')) {
+    return '/images/fallbacks/cartucho.svg';
+  }
+  if (has('caja')) {
+    return '/images/fallbacks/caja.svg';
+  }
 
   if (category.includes('misterios') || category.includes('mystery') || Boolean(product?.is_mystery_box)) {
     return '/images/mystery-box-5.png';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import SafeImage from '@/components/SafeImage';
@@ -43,6 +43,27 @@ const SORT_OPTIONS = [
   { id: 'visits_desc', label: 'Más visitas' },
   { id: 'stock_desc', label: 'Más stock' },
 ];
+
+const CATALOG_QUERY_COLUMNS = [
+  'id',
+  'name',
+  'description',
+  'long_description',
+  'price',
+  'stock',
+  'image',
+  'images',
+  'status',
+  'created_at',
+  'category',
+  'category_id',
+  'is_mystery_box',
+  'component_type',
+  'collection_key',
+  'edition',
+  'platform',
+].join(',');
+const MAX_METRICS_BATCH_IDS = 180;
 
 type ProductMetric = {
   visits: number;
@@ -172,6 +193,41 @@ function sortProducts(input: any[], sortBy: string, metrics: Record<string, Prod
   return list;
 }
 
+function hasRealCardImage(product: any): boolean {
+  const selected = getProductImageUrl(product);
+  const fallback = getProductFallbackImageUrl(product);
+  return selected !== fallback && selected !== '/placeholder.svg';
+}
+
+function getEngagementScore(product: any, metrics: Record<string, ProductMetric>): number {
+  const metric = metrics[String(product?.id)] || { visits: 0, likes: 0, likedByCurrentVisitor: false };
+  return Number(metric.visits || 0) + Number(metric.likes || 0) * 2;
+}
+
+function pickFeaturedColumn(source: any[], take: number, used: Set<string>): any[] {
+  const picked: any[] = [];
+
+  for (const product of source) {
+    if (picked.length >= take) break;
+    const id = String(product?.id || '');
+    if (!id || used.has(id)) continue;
+    picked.push(product);
+    used.add(id);
+  }
+
+  if (picked.length >= take) return picked;
+
+  for (const product of source) {
+    if (picked.length >= take) break;
+    const id = String(product?.id || '');
+    if (!id) continue;
+    if (picked.some((item) => String(item?.id) === id)) continue;
+    picked.push(product);
+  }
+
+  return picked;
+}
+
 export default function Catalog() {
   const [products, setProducts] = useState<any[]>([]);
   const [active, setActive] = useState<string>('all');
@@ -184,14 +240,24 @@ export default function Catalog() {
   const [stockOnly, setStockOnly] = useState(false);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [visibleCount, setVisibleCount] = useState(24);
+  const loadedMetricIdsRef = useRef<Set<string>>(new Set());
 
-  const loadMetrics = async (productIds: string[]) => {
-    if (productIds.length === 0) return;
+  const loadMetrics = useCallback(async (productIds: string[], force = false) => {
+    const uniqueProductIds = [...new Set(productIds.map((id) => String(id || '').trim()).filter(Boolean))];
+    if (uniqueProductIds.length === 0) return;
+
+    const pendingIds = force
+      ? uniqueProductIds
+      : uniqueProductIds.filter((id) => !loadedMetricIdsRef.current.has(id));
+    if (pendingIds.length === 0) return;
+
+    const requestIds = pendingIds.slice(0, MAX_METRICS_BATCH_IDS);
     try {
       const res = await fetch('/api/products/social/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productIds }),
+        body: JSON.stringify({ productIds: requestIds }),
       });
       const data = await res.json();
       if (!res.ok) return;
@@ -204,11 +270,19 @@ export default function Catalog() {
           likedByCurrentVisitor: Boolean(summary?.likedByCurrentVisitor),
         };
       }
-      setMetrics(next);
+
+      setMetrics((prev) => ({
+        ...prev,
+        ...next,
+      }));
+
+      for (const id of requestIds) {
+        loadedMetricIdsRef.current.add(id);
+      }
     } catch {
-      setMetrics({});
+      // Keep existing metrics if a refresh fails.
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!supabaseClient) {
@@ -236,20 +310,32 @@ export default function Catalog() {
     const load = async () => {
       if (!supabaseClient) {
         setProducts(sampleProducts);
-        loadMetrics(sampleProducts.map((product) => String(product.id)));
         return;
       }
       const { data: prods } = await supabaseClient
         .from('products')
-        .select('*')
+        .select(CATALOG_QUERY_COLUMNS)
         .order('created_at', { ascending: false });
       const safeProducts = prods || [];
 
       setProducts(safeProducts);
-      loadMetrics(safeProducts.map((product) => String(product.id)));
     };
-    load();
+    void load();
+  }, []);
+
+  useEffect(() => {
+    loadedMetricIdsRef.current.clear();
+    setMetrics({});
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (products.length === 0) return;
+    const metricTargetIds = products
+      .filter((product) => isPrimaryStoreProduct(product) || isMysteryBoxProduct(product))
+      .map((product) => String(product.id))
+      .slice(0, MAX_METRICS_BATCH_IDS);
+    void loadMetrics(metricTargetIds, true);
+  }, [products, isLoggedIn, loadMetrics]);
 
   useEffect(() => {
     if (!isLoggedIn && favoritesOnly) {
@@ -369,37 +455,42 @@ export default function Catalog() {
   const usingFallbackCatalog = filtered.length === 0 && sorted.length > 0;
   const hasNoProducts = sorted.length === 0;
 
-  const featuredTrending = useMemo(
-    () =>
-      [...sorted]
-        .sort(
-          (a, b) =>
-            Number(metrics[String(b.id)]?.visits || 0) +
-            Number(metrics[String(b.id)]?.likes || 0) -
-            (Number(metrics[String(a.id)]?.visits || 0) + Number(metrics[String(a.id)]?.likes || 0))
-        )
-        .slice(0, 3),
-    [sorted, metrics]
-  );
+  const { featuredTrending, featuredBestRated, featuredLatest } = useMemo(() => {
+    const withImagePriority = (a: any, b: any) => Number(hasRealCardImage(b)) - Number(hasRealCardImage(a));
+    const byNewest = (a: any, b: any) =>
+      new Date(String(b?.created_at || 0)).getTime() - new Date(String(a?.created_at || 0)).getTime();
 
-  const featuredBestRated = useMemo(
-    () =>
-      [...sorted]
-        .sort((a, b) => Number(metrics[String(b.id)]?.likes || 0) - Number(metrics[String(a.id)]?.likes || 0))
-        .slice(0, 3),
-    [sorted, metrics]
-  );
+    const engagementSorted = [...sorted].sort((a, b) => {
+      const scoreDiff = getEngagementScore(b, metrics) - getEngagementScore(a, metrics);
+      if (scoreDiff !== 0) return scoreDiff;
+      const imageDiff = withImagePriority(a, b);
+      if (imageDiff !== 0) return imageDiff;
+      return byNewest(a, b);
+    });
 
-  const featuredLatest = useMemo(
-    () =>
-      [...sorted]
-        .sort(
-          (a, b) =>
-            new Date(String(b?.created_at || 0)).getTime() - new Date(String(a?.created_at || 0)).getTime()
-        )
-        .slice(0, 3),
-    [sorted]
-  );
+    const bestRatedSorted = [...sorted].sort((a, b) => {
+      const likesDiff = Number(metrics[String(b?.id)]?.likes || 0) - Number(metrics[String(a?.id)]?.likes || 0);
+      if (likesDiff !== 0) return likesDiff;
+      const visitsDiff = Number(metrics[String(b?.id)]?.visits || 0) - Number(metrics[String(a?.id)]?.visits || 0);
+      if (visitsDiff !== 0) return visitsDiff;
+      const imageDiff = withImagePriority(a, b);
+      if (imageDiff !== 0) return imageDiff;
+      return byNewest(a, b);
+    });
+
+    const latestSorted = [...sorted].sort((a, b) => {
+      const newestDiff = byNewest(a, b);
+      if (newestDiff !== 0) return newestDiff;
+      return withImagePriority(a, b);
+    });
+
+    const used = new Set<string>();
+    return {
+      featuredTrending: pickFeaturedColumn(engagementSorted, 3, used),
+      featuredBestRated: pickFeaturedColumn(bestRatedSorted, 3, used),
+      featuredLatest: pickFeaturedColumn(latestSorted, 3, used),
+    };
+  }, [sorted, metrics]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -417,6 +508,13 @@ export default function Catalog() {
     () => sorted.reduce((sum, product) => sum + Math.max(0, Number(product?.stock || 0)), 0),
     [sorted]
   );
+
+  const visibleProducts = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount]);
+  const hasMoreProducts = visibleCount < sorted.length;
+
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [active, search, sortBy, favoritesOnly, stockOnly, minPrice, maxPrice]);
 
   const renderMiniProduct = (product: any, label: string) => {
     const productId = String(product.id);
@@ -639,7 +737,7 @@ export default function Catalog() {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {sorted.map((product) => {
+            {visibleProducts.map((product) => {
               const productId = String(product.id);
               const isComplete = completeProductIds.has(productId);
               const isCompleteView = String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY;
@@ -689,6 +787,14 @@ export default function Catalog() {
             })}
           </div>
         )}
+
+        {!hasNoProducts && hasMoreProducts ? (
+          <div className="mt-6 flex justify-center">
+            <button className="button-secondary" onClick={() => setVisibleCount((count) => count + 24)}>
+              Cargar más productos
+            </button>
+          </div>
+        ) : null}
       </div>
     </section>
   );
