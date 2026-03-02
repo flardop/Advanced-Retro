@@ -66,22 +66,43 @@ function compactPoints(points: PricePoint[], max = 80): PricePoint[] {
 }
 
 function buildPricePointsFromEbayComparables(snapshot: EbayMarketSnapshot | null): PricePoint[] {
-  if (!snapshot?.available || !Array.isArray(snapshot.comparables)) return [];
+  if (!snapshot?.available) return [];
 
-  const priced = snapshot.comparables
-    .map((item) => ({
-      cents: toSafePrice((item as any)?.price),
-    }))
-    .filter((item): item is { cents: number } => typeof item.cents === 'number' && item.cents > 0)
-    .slice(0, 40);
+  const pricedFromComparables = Array.isArray(snapshot.comparables)
+    ? snapshot.comparables
+        .map((item) => ({
+          cents: toSafePrice((item as any)?.price),
+        }))
+        .filter((item): item is { cents: number } => typeof item.cents === 'number' && item.cents > 0)
+        .slice(0, 40)
+    : [];
 
-  if (priced.length < 2) return [];
+  if (pricedFromComparables.length >= 2) {
+    const now = Date.now();
+    const startMs = now - (pricedFromComparables.length - 1) * 24 * 60 * 60 * 1000;
+    return pricedFromComparables.map((item, index) => ({
+      date: new Date(startMs + index * 24 * 60 * 60 * 1000).toISOString(),
+      price: item.cents,
+    }));
+  }
 
+  // Fallback: algunos snapshots cacheados traen min/mediana/media/max pero no comparables.
+  const statValues = [
+    toSafePrice(snapshot.minPrice),
+    toSafePrice(snapshot.medianPrice),
+    toSafePrice(snapshot.averagePrice),
+    toSafePrice(snapshot.maxPrice),
+  ].filter((value): value is number => typeof value === 'number' && value > 0);
+
+  const uniqueStats = [...new Set(statValues)];
+  if (uniqueStats.length < 2) return [];
+
+  const sortedStats = [...uniqueStats].sort((a, b) => a - b);
   const now = Date.now();
-  const startMs = now - (priced.length - 1) * 24 * 60 * 60 * 1000;
-  return priced.map((item, index) => ({
+  const startMs = now - (sortedStats.length - 1) * 24 * 60 * 60 * 1000;
+  return sortedStats.map((price, index) => ({
     date: new Date(startMs + index * 24 * 60 * 60 * 1000).toISOString(),
-    price: item.cents,
+    price,
   }));
 }
 
