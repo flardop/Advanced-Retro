@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const SOCIAL_BUCKET = 'product-social';
+const SOCIAL_SUMMARY_TABLE = 'product_social_summary';
 // Count page openings again without long cooldown so the UI reflects visits in real time.
 const VISIT_COOLDOWN_MS = 0;
 const MAX_REVIEWS_PER_PRODUCT = 250;
@@ -37,6 +38,14 @@ export type ProductSocialSummary = {
   reviewsCount: number;
   ratingAverage: number;
   likedByCurrentVisitor: boolean;
+};
+
+type ProductSocialSummaryRow = {
+  product_id: string;
+  visits: number;
+  likes_count: number;
+  reviews_count: number;
+  rating_average: number;
 };
 
 const defaultState = (): ProductSocialState => ({
@@ -154,6 +163,13 @@ function sanitizeState(raw: any): ProductSocialState {
   return safe;
 }
 
+function isMissingRelationError(error: any): boolean {
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    message.includes('relation') && message.includes('does not exist')
+  );
+}
+
 export async function ensureSocialBucket(): Promise<void> {
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
@@ -206,6 +222,12 @@ export async function writeProductSocialState(productId: string, state: ProductS
 
   if (error) {
     throw new Error(`Error writing social state: ${error.message}`);
+  }
+
+  try {
+    await syncProductSocialSummary(productId, payload);
+  } catch (summaryError) {
+    console.warn('Error syncing social summary table:', summaryError);
   }
 }
 
@@ -361,4 +383,67 @@ export function getProductSocialSummary(
     ratingAverage,
     likedByCurrentVisitor: Boolean(visitorKey && state.likeByVisitor[visitorKey]),
   };
+}
+
+export async function syncProductSocialSummary(
+  productId: string,
+  state: ProductSocialState
+): Promise<void> {
+  if (!supabaseAdmin) return;
+
+  const summary = getProductSocialSummary(state, null);
+  const payload: ProductSocialSummaryRow = {
+    product_id: productId,
+    visits: Number(summary.visits || 0),
+    likes_count: Number(summary.likes || 0),
+    reviews_count: Number(summary.reviewsCount || 0),
+    rating_average: Number(summary.ratingAverage || 0),
+  };
+
+  const { error } = await supabaseAdmin
+    .from(SOCIAL_SUMMARY_TABLE)
+    .upsert(payload, { onConflict: 'product_id' });
+
+  if (error && !isMissingRelationError(error)) {
+    throw new Error(`Error syncing social summary: ${error.message}`);
+  }
+}
+
+export async function getProductSocialSummariesFromDb(
+  productIds: string[]
+): Promise<{
+  available: boolean;
+  rowsByProductId: Record<string, ProductSocialSummaryRow>;
+}> {
+  if (!supabaseAdmin) return { available: false, rowsByProductId: {} };
+
+  const uniqueIds = [...new Set(productIds.map((id) => String(id || '').trim()).filter(Boolean))];
+  if (uniqueIds.length === 0) return { available: true, rowsByProductId: {} };
+
+  const { data, error } = await supabaseAdmin
+    .from(SOCIAL_SUMMARY_TABLE)
+    .select('product_id,visits,likes_count,reviews_count,rating_average')
+    .in('product_id', uniqueIds);
+
+  if (error) {
+    if (isMissingRelationError(error)) {
+      return { available: false, rowsByProductId: {} };
+    }
+    throw new Error(error.message || 'No se pudo cargar resumen social');
+  }
+
+  const rowsByProductId: Record<string, ProductSocialSummaryRow> = {};
+  for (const row of data || []) {
+    const productId = String((row as any)?.product_id || '').trim();
+    if (!productId) continue;
+    rowsByProductId[productId] = {
+      product_id: productId,
+      visits: Number((row as any)?.visits || 0),
+      likes_count: Number((row as any)?.likes_count || 0),
+      reviews_count: Number((row as any)?.reviews_count || 0),
+      rating_average: Number((row as any)?.rating_average || 0),
+    };
+  }
+
+  return { available: true, rowsByProductId };
 }
