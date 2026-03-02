@@ -68,19 +68,34 @@ function compactPoints(points: PricePoint[], max = 80): PricePoint[] {
 function buildPricePointsFromEbayComparables(snapshot: EbayMarketSnapshot | null): PricePoint[] {
   if (!snapshot?.available) return [];
 
-  const pricedFromComparables = Array.isArray(snapshot.comparables)
+  const comparableRows = Array.isArray(snapshot.comparables)
     ? snapshot.comparables
         .map((item) => ({
           cents: toSafePrice((item as any)?.price),
+          date:
+            typeof (item as any)?.listingDate === 'string'
+              ? String((item as any).listingDate)
+              : null,
         }))
-        .filter((item): item is { cents: number } => typeof item.cents === 'number' && item.cents > 0)
+        .filter((item): item is { cents: number; date: string | null } => typeof item.cents === 'number' && item.cents > 0)
         .slice(0, 40)
     : [];
 
-  if (pricedFromComparables.length >= 2) {
+  const datedComparables = comparableRows
+    .filter((item) => Boolean(item.date) && Number.isFinite(new Date(String(item.date)).getTime()))
+    .sort((a, b) => new Date(String(a.date)).getTime() - new Date(String(b.date)).getTime());
+
+  if (datedComparables.length >= 2) {
+    return datedComparables.map((item) => ({
+      date: new Date(String(item.date)).toISOString(),
+      price: item.cents,
+    }));
+  }
+
+  if (comparableRows.length >= 2) {
     const now = Date.now();
-    const startMs = now - (pricedFromComparables.length - 1) * 24 * 60 * 60 * 1000;
-    return pricedFromComparables.map((item, index) => ({
+    const startMs = now - (comparableRows.length - 1) * 24 * 60 * 60 * 1000;
+    return comparableRows.map((item, index) => ({
       date: new Date(startMs + index * 24 * 60 * 60 * 1000).toISOString(),
       price: item.cents,
     }));

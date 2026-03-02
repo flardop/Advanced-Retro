@@ -37,6 +37,8 @@ type EbayItemSummary = {
   price?: EbayPriceValue;
   convertedPrice?: EbayPriceValue;
   image?: EbayImageValue;
+  itemCreationDate?: string;
+  itemEndDate?: string;
 } & EbayConditionValue;
 
 type EbaySearchPayload = {
@@ -52,6 +54,8 @@ type EbayComparableItem = {
   condition: string | null;
   currency: string | null;
   price: number | null;
+  listingDate: string | null;
+  endDate: string | null;
 };
 
 export type EbayMarketSnapshot = {
@@ -346,6 +350,13 @@ function average(values: number[]): number | null {
 
 function buildComparable(item: EbayItemSummary): EbayComparableItem {
   const priceInfo = toComparablePrice(item);
+  const listingDateRaw =
+    normalizeString((item as any)?.itemCreationDate) ||
+    normalizeString((item as any)?.itemOriginDate) ||
+    normalizeString((item as any)?.listingDate);
+  const endDateRaw =
+    normalizeString((item as any)?.itemEndDate) ||
+    normalizeString((item as any)?.endDate);
   return {
     itemId: normalizeString(item.itemId) || null,
     title: normalizeString(item.title) || null,
@@ -354,6 +365,8 @@ function buildComparable(item: EbayItemSummary): EbayComparableItem {
     condition: normalizeString(item.condition) || null,
     currency: priceInfo.currency,
     price: priceInfo.cents,
+    listingDate: listingDateRaw || null,
+    endDate: endDateRaw || null,
   };
 }
 

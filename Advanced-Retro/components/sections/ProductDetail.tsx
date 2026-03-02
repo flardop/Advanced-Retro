@@ -735,7 +735,10 @@ export default function ProductDetail({
     setPriceHistoryError('');
 
     try {
-      const res = await fetch(`/api/products/${encodeURIComponent(productId)}/price-history`);
+      const res = await fetch(
+        `/api/products/${encodeURIComponent(productId)}/price-history?refresh=${Date.now()}`,
+        { cache: 'no-store' }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar el historico de precios');
 
