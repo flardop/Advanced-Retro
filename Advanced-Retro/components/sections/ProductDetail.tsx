@@ -1173,7 +1173,6 @@ export default function ProductDetail({
               </button>
             ))}
           </div>
-          <p className="text-xs text-textMuted mt-2">Sin recortes: la imagen se muestra completa.</p>
         </div>
 
         <div className="glass p-5 sm:p-6">
