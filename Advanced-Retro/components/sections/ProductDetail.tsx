@@ -395,7 +395,7 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
 
   for (const product of allProducts) {
     if (!product || String(product.id) === String(baseProduct.id)) continue;
-    if (!Number.isFinite(Number(product.price))) continue;
+    if (!Number.isFinite(Number(product.price)) || Number(product.price || 0) <= 0) continue;
     if (Number(product.stock || 0) <= 0) continue;
 
     const type = detectOptionType(product);
