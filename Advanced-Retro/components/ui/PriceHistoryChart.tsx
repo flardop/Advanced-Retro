@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 
 export type PriceHistoryPoint = {
   date: string;
@@ -42,7 +43,7 @@ function formatPointDateLabel(dateIso: string): string {
   if (!Number.isFinite(date.getTime())) return '';
   return date.toLocaleDateString('es-ES', {
     day: '2-digit',
-    month: 'short',
+    month: '2-digit',
   });
 }
 
@@ -91,6 +92,8 @@ export default function PriceHistoryChart({
   points: PriceHistoryPoint[];
   marketOverlay?: PriceHistoryMarketOverlay | null;
 }) {
+  const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
+
   if (!Array.isArray(points) || points.length === 0) {
     return <p className="text-sm text-textMuted">No hay datos para la grafica.</p>;
   }
@@ -306,20 +309,38 @@ export default function PriceHistoryChart({
             stroke="#d9e5ff"
             strokeWidth="1"
             style={{ cursor: 'crosshair' }}
+            onMouseEnter={() => setHoveredPointIndex(index)}
+            onMouseLeave={() => setHoveredPointIndex((current) => (current === index ? null : current))}
           />
         ))}
-        {pointCoords.map((coord, index) => (
-          <circle
-            key={`hover-${coord.point.date}-${index}`}
-            cx={coord.x}
-            cy={coord.y}
-            r={9}
-            fill="transparent"
-            style={{ cursor: 'crosshair' }}
-          >
-            <title>{`${formatPointDateTime(coord.point.date)} · ${formatEuro(coord.point.price)}`}</title>
-          </circle>
-        ))}
+        {hoveredPointIndex !== null && pointCoords[hoveredPointIndex] ? (
+          (() => {
+            const point = pointCoords[hoveredPointIndex];
+            const boxWidth = 200;
+            const boxHeight = 44;
+            const x = Math.min(Math.max(point.x + 10, chartLeft), chartRight - boxWidth);
+            const y = Math.min(Math.max(point.y - boxHeight - 10, chartTop + 6), chartBottom - boxHeight - 6);
+            return (
+              <g>
+                <rect
+                  x={x}
+                  y={y}
+                  width={boxWidth}
+                  height={boxHeight}
+                  rx={8}
+                  fill="#0a1424"
+                  stroke="#2d4f73"
+                />
+                <text x={x + 10} y={y + 18} fill="#dbe7ff" fontSize="11">
+                  {formatPointDateTime(point.point.date)}
+                </text>
+                <text x={x + 10} y={y + 34} fill="#4be4d6" fontSize="12" fontWeight="700">
+                  {formatEuro(point.point.price)}
+                </text>
+              </g>
+            );
+          })()
+        ) : null}
       </svg>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-textMuted">

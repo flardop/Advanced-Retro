@@ -42,6 +42,7 @@ type EditionOption = {
   image?: string;
   score: number;
 };
+type PlatformKey = 'gameboy' | 'gbc' | 'gba' | 'snes' | 'gamecube' | 'retro';
 
 type ProductSocialReview = {
   id: string;
@@ -170,6 +171,23 @@ const EDITION_LABEL: Record<EditionKind, string> = {
   repro: 'Repro 1:1',
   'sin-especificar': 'Sin etiqueta',
 };
+const PLATFORM_LABEL: Record<PlatformKey, string> = {
+  gameboy: 'Game Boy',
+  gbc: 'Game Boy Color',
+  gba: 'Game Boy Advance',
+  snes: 'Super Nintendo',
+  gamecube: 'GameCube',
+  retro: 'Retro',
+};
+const COMPONENT_DEFAULT_PRICE: Record<BundleOptionType, number> = {
+  cartucho: 0,
+  caja: 700,
+  manual: 800,
+  insert: 300,
+  protector_juego: 300,
+  protector_caja: 350,
+  protector: 300,
+};
 
 const EDITION_ORDER: EditionKind[] = ['original', 'repro', 'sin-especificar'];
 const PLACEHOLDER = '/placeholder.svg';
@@ -260,6 +278,34 @@ function isGameCategory(category: unknown): boolean {
   if (!key) return false;
   if (key.startsWith('juegos-')) return true;
   return key === 'consolas-retro';
+}
+
+function detectPlatformKey(product: any): PlatformKey {
+  const category = normalizeText(String(product?.category || ''));
+  const name = normalizeText(String(product?.name || ''));
+  const source = `${category} ${name}`;
+
+  if (source.includes('gamecube')) return 'gamecube';
+  if (source.includes('super nintendo') || source.includes('snes')) return 'snes';
+  if (source.includes('game boy color') || source.includes('gameboy color') || source.includes('gbc')) return 'gbc';
+  if (source.includes('game boy advance') || source.includes('gameboy advance') || source.includes('gba')) return 'gba';
+  if (source.includes('game boy') || source.includes('gameboy')) return 'gameboy';
+  return 'retro';
+}
+
+function toComponentTypeSlug(type: BundleOptionType): string {
+  switch (type) {
+    case 'protector_juego':
+      return 'protector-juego';
+    case 'protector_caja':
+      return 'protector-caja';
+    default:
+      return type;
+  }
+}
+
+function getComponentDefaultImage(platform: PlatformKey, type: BundleOptionType): string {
+  return `/images/components/${platform}-${toComponentTypeSlug(type)}.svg`;
 }
 
 function detectOptionType(product: any): BundleOptionType | null {
@@ -379,6 +425,7 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
     'protector_juego',
     'protector_caja',
   ];
+  const basePlatform = detectPlatformKey(baseProduct);
 
   const extras: BundleOption[] = [];
   for (const type of requiredTypes) {
@@ -387,35 +434,41 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
       (item): item is { product: any; score: number } => Boolean(item)
     );
 
-    if (variants.length === 0) {
-      extras.push({
-        id: `virtual-${base.id}-${type}`,
-        name: `${BUNDLE_TYPE_LABEL[type]} (no disponible)`,
-        price: 0,
-        image: PLACEHOLDER,
-        images: [PLACEHOLDER],
-        stock: 0,
-        type,
-        defaultSelected: false,
-        isVirtual: true,
-      });
-      continue;
-    }
+    const candidates =
+      variants.length > 0
+        ? variants.map((item) => item.product)
+        : allProducts.filter((candidate) => {
+            if (!candidate || String(candidate.id) === String(baseProduct.id)) return false;
+            if (detectOptionType(candidate) !== type) return false;
+            if (Number(candidate.stock || 0) <= 0) return false;
+            if (Number(candidate.price || 0) <= 0) return false;
+            return detectPlatformKey(candidate) === basePlatform;
+          });
 
-    for (const found of variants) {
-      const edition = detectEditionKind(found.product);
-      const editionLabel = EDITION_LABEL[edition];
-      extras.push({
-        id: String(found.product.id),
-        name: `${String(found.product.name || BUNDLE_TYPE_LABEL[type])} · ${editionLabel}`,
-        price: Number(found.product.price || 0),
-        image: getProductImageUrl(found.product),
-        images: getProductImageUrls(found.product),
-        stock: Number(found.product.stock || 0),
-        type,
-        defaultSelected: false,
-      });
-    }
+    if (candidates.length === 0) continue;
+
+    const selected = candidates[0];
+    const selectedEdition = detectEditionKind(selected);
+    const selectedEditionLabel = EDITION_LABEL[selectedEdition];
+    const platformLabel = PLATFORM_LABEL[basePlatform];
+    const rawImage = getProductImageUrl(selected);
+    const fallbackImage = getComponentDefaultImage(basePlatform, type);
+    const resolvedImage = rawImage === PLACEHOLDER ? fallbackImage : rawImage;
+    const resolvedImages = uniqueStrings([resolvedImage, ...getProductImageUrls(selected)]);
+
+    extras.push({
+      id: String(selected.id),
+      name: `${String(selected.name || `${BUNDLE_TYPE_LABEL[type]} ${platformLabel}`)} · ${selectedEditionLabel}`,
+      price:
+        Number(selected.price || 0) > 0
+          ? Number(selected.price || 0)
+          : COMPONENT_DEFAULT_PRICE[type],
+      image: resolvedImage,
+      images: resolvedImages.length > 0 ? resolvedImages : [fallbackImage],
+      stock: Number(selected.stock || 0),
+      type,
+      defaultSelected: false,
+    });
   }
 
   return [base, ...extras];
@@ -652,6 +705,24 @@ export default function ProductDetail({
         if (!relatedByName.error) {
           pushCandidates(relatedByName.data);
         }
+      }
+
+      const componentCatalog = await supabaseClient
+        .from('products')
+        .select(RELATED_PRODUCTS_COLUMNS_MODERN)
+        .or('name.ilike.%manual%,name.ilike.%insert%,name.ilike.%protector%,name.ilike.%caja%')
+        .gt('stock', 0)
+        .gt('price', 0)
+        .limit(320);
+
+      if (!componentCatalog.error) {
+        const basePlatform = detectPlatformKey(data);
+        const componentCandidates = (componentCatalog.data || []).filter((item: any) => {
+          const type = detectOptionType(item);
+          if (!type || type === 'cartucho') return false;
+          return detectPlatformKey(item) === basePlatform;
+        });
+        pushCandidates(componentCandidates);
       }
 
       if (pool.length <= 1) {
@@ -1231,6 +1302,11 @@ export default function ProductDetail({
               {displayedBundleOptions.map((option) => {
                 const isCurrentProduct = String(option.id) === String(product.id);
                 const canOpenProduct = !option.isVirtual && !isCurrentProduct;
+                const optionImage =
+                  option.image && option.image !== PLACEHOLDER
+                    ? option.image
+                    : getComponentDefaultImage(detectPlatformKey(product), option.type);
+                const showStockForOption = option.type === 'cartucho' && option.stock > 0;
 
                 return (
                   <div
@@ -1256,6 +1332,15 @@ export default function ProductDetail({
                         }
                         disabled={option.stock <= 0}
                       />
+                      <div className="relative h-14 w-14 overflow-hidden rounded-lg border border-line bg-[rgba(9,18,30,0.75)] shrink-0">
+                        <Image
+                          src={optionImage}
+                          alt={`${BUNDLE_TYPE_LABEL[option.type]} ${option.name}`}
+                          fill
+                          className="object-contain p-1"
+                          sizes="56px"
+                        />
+                      </div>
                       <div>
                         <p className="text-sm">
                           <span className="text-textMuted">{BUNDLE_TYPE_LABEL[option.type]}:</span>{' '}
@@ -1274,7 +1359,7 @@ export default function ProductDetail({
                             Abrir producto
                           </Link>
                         ) : null}
-                        {option.isVirtual ? (
+                        {option.isVirtual && option.stock <= 0 ? (
                           <p className="text-xs text-textMuted mt-1">No disponible todavía para este juego.</p>
                         ) : null}
                       </div>
@@ -1282,7 +1367,7 @@ export default function ProductDetail({
 
                     <div className="sm:text-right">
                       <p className="text-sm text-primary">{(option.price / 100).toFixed(2)} €</p>
-                      <p className="text-xs text-textMuted">Stock {option.stock}</p>
+                      {showStockForOption ? <p className="text-xs text-textMuted">Stock {option.stock}</p> : null}
                     </div>
                   </div>
                 );
