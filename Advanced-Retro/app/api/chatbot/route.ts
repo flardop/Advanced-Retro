@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getProductHref } from '@/lib/productUrl';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,7 @@ type ChatbotProductHint = {
   price_cents: number;
   category: string;
   stock: number;
+  href: string;
 };
 
 type ChatbotContext = {
@@ -186,6 +188,7 @@ async function findProductHints(userText: string): Promise<ChatbotProductHint[]>
         price_cents: Math.max(0, Math.round(Number(row?.price || 0))),
         category: String(row?.category || ''),
         stock: Math.max(0, Math.round(Number(row?.stock || 0))),
+        href: getProductHref(row),
         score,
       };
     })
@@ -209,7 +212,7 @@ function buildContextPrompt(context: ChatbotContext): string {
       'Productos relacionados encontrados en catálogo:',
       ...context.productHints.map(
         (item) =>
-          `- ${item.name} | ${formatPrice(item.price_cents)} | stock ${item.stock} | enlace /producto/${item.id}`
+          `- ${item.name} | ${formatPrice(item.price_cents)} | stock ${item.stock} | enlace ${item.href}`
       )
     );
   }
@@ -361,7 +364,7 @@ export async function POST(req: Request) {
         ...productHints
           .map((item) => ({
             label: `Producto: ${item.name}`,
-            href: `/producto/${item.id}`,
+            href: item.href,
           }))
           .filter((link, index, arr) => arr.findIndex((x) => x.href === link.href) === index),
       ].slice(0, 6),

@@ -5,6 +5,7 @@ import { getPublicSellerProfileByUserId } from '@/lib/userListings';
 import CommunitySellerProfileSocial from '@/components/sections/CommunitySellerProfileSocial';
 import SafeImage from '@/components/SafeImage';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
+import { getProductHref } from '@/lib/productUrl';
 import { supabaseServer } from '@/lib/supabaseServer';
 
 export const dynamic = 'force-dynamic';
@@ -223,7 +224,7 @@ export default async function CommunitySellerPage({ params }: PageProps) {
               {favorites.items.map((item) => (
                 <Link
                   key={`fav-${item.id}`}
-                  href={`/producto/${item.id}`}
+                  href={getProductHref(item)}
                   className="min-w-[220px] max-w-[220px] snap-start rounded-2xl border border-line bg-[rgba(8,16,28,0.52)] p-3 hover:shadow-glow transition-shadow"
                 >
                   <div className="relative h-36 rounded-xl border border-line bg-surface overflow-hidden">

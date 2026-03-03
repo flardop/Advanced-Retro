@@ -7,6 +7,7 @@ import { supabaseClient } from '@/lib/supabaseClient';
 import { AVATAR_FRAMES } from '@/lib/gamification';
 import SafeImage from '@/components/SafeImage';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
+import { getProductHref } from '@/lib/productUrl';
 import {
   BADGE_RARITY_LABELS,
   BADGE_RARITY_ORDER,
@@ -1470,7 +1471,7 @@ export default function ProfileView() {
                   {favoriteProducts.map((favorite) => (
                     <Link
                       key={`favorite-${favorite.id}`}
-                      href={`/producto/${favorite.id}`}
+                      href={getProductHref(favorite)}
                       className="min-w-[220px] max-w-[220px] snap-start rounded-2xl border border-line bg-[rgba(8,16,28,0.56)] p-3 hover:shadow-glow transition-shadow"
                     >
                       <div className="relative h-32 rounded-xl border border-line bg-surface overflow-hidden">

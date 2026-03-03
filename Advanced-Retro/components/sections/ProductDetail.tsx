@@ -8,6 +8,7 @@ import { supabaseClient } from '@/lib/supabaseClient';
 import { sampleProducts } from '@/lib/sampleData';
 import { useCartStore } from '@/store/cartStore';
 import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
+import { getProductHref } from '@/lib/productUrl';
 import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
 
@@ -963,8 +964,12 @@ export default function ProductDetail({
     [selectedBundleOptions]
   );
 
-  const buildProductHref = (id: string | number): string =>
-    prefillComplete ? `/producto/${id}?complete=1` : `/producto/${id}`;
+  const buildProductHref = (target: { id: string | number; name?: string; slug?: string } | string | number): string => {
+    if (typeof target === 'string' || typeof target === 'number') {
+      return getProductHref({ id: String(target) }, { complete: prefillComplete });
+    }
+    return getProductHref(target, { complete: prefillComplete });
+  };
 
   const selectedTotalPrice = selectedUnitPrice * Math.max(1, qty);
   const purchasableSelectedCount = selectedBundleOptions.filter((option) => option.stock > 0 && !option.isVirtual).length;
@@ -1243,7 +1248,7 @@ export default function ProductDetail({
                   return (
                     <Link
                       key={`${edition.id}-${edition.edition}`}
-                      href={buildProductHref(edition.id)}
+                      href={buildProductHref({ id: edition.id, name: edition.name })}
                       className={`chip ${isCurrent ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
                     >
                       {label} · {labelPrice}
@@ -1347,7 +1352,7 @@ export default function ProductDetail({
                           {isCurrentProduct ? (
                             <span className="font-semibold">{option.name}</span>
                           ) : canOpenProduct ? (
-                            <Link href={buildProductHref(option.id)} className="text-primary hover:underline">
+                            <Link href={buildProductHref({ id: option.id, name: option.name })} className="text-primary hover:underline">
                               {option.name}
                             </Link>
                           ) : (
@@ -1355,7 +1360,7 @@ export default function ProductDetail({
                           )}
                         </p>
                         {canOpenProduct ? (
-                          <Link href={buildProductHref(option.id)} className="text-xs text-textMuted hover:text-primary">
+                          <Link href={buildProductHref({ id: option.id, name: option.name })} className="text-xs text-textMuted hover:text-primary">
                             Abrir producto
                           </Link>
                         ) : null}

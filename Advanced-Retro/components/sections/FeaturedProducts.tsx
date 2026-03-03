@@ -7,6 +7,21 @@ import Link from 'next/link';
 import SafeImage from '@/components/SafeImage';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { isManualProduct } from '@/lib/productClassification';
+import { getProductHref } from '@/lib/productUrl';
+
+const FEATURED_COLUMNS = [
+  'id',
+  'name',
+  'description',
+  'price',
+  'stock',
+  'image',
+  'images',
+  'status',
+  'created_at',
+  'category',
+  'component_type',
+].join(',');
 
 function filterFeaturedProducts(input: any[]): any[] {
   return input.filter((product) => !isManualProduct(product)).slice(0, 8);
@@ -51,7 +66,7 @@ export default function FeaturedProducts() {
       try {
         const { data, error } = await supabaseClient
           .from('products')
-          .select('*')
+          .select(FEATURED_COLUMNS)
           .order('created_at', { ascending: false })
           .limit(8);
         if (error) {
@@ -118,7 +133,7 @@ export default function FeaturedProducts() {
           {products.map((product: any) => (
             <Link
               key={product.id}
-              href={`/producto/${product.id}`}
+              href={getProductHref(product)}
               className="glass p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5"
             >
               <div className="relative w-full h-48 bg-surface border border-line rounded-xl overflow-hidden">

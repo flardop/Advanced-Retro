@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getSiteUrl } from '@/lib/siteConfig';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getProductHref } from '@/lib/productUrl';
 
 const STATIC_ROUTES = [
   '/',
@@ -33,12 +34,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: products } = await supabaseAdmin
     .from('products')
-    .select('id, updated_at')
+    .select('*')
     .order('updated_at', { ascending: false })
     .limit(5000);
 
   const productEntries: MetadataRoute.Sitemap = (products || []).map((product: any) => ({
-    url: `${siteUrl}/producto/${product.id}`,
+    url: `${siteUrl}${getProductHref(product)}`,
     lastModified: product.updated_at ? new Date(product.updated_at) : now,
     changeFrequency: 'weekly',
     priority: 0.8,

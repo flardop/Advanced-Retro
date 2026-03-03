@@ -6,6 +6,7 @@ import Link from 'next/link';
 import SafeImage from '@/components/SafeImage';
 import { sampleProducts } from '@/lib/sampleData';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
+import { getProductHref } from '@/lib/productUrl';
 import {
   buildBaseGameTitle,
   isBoxProduct,
@@ -540,10 +541,11 @@ export default function Catalog() {
 
   const renderMiniProduct = (product: any, label: string, className = '') => {
     const productId = String(product.id);
+    const productHref = getProductHref(product);
     return (
       <Link
         key={`${label}-${productId}`}
-        href={`/producto/${productId}`}
+        href={productHref}
         className={`glass p-3 hover:shadow-glow transition-shadow group ${className}`.trim()}
       >
         <div className="relative w-full h-36 bg-surface border border-line rounded-xl overflow-hidden">
@@ -790,7 +792,7 @@ export default function Catalog() {
               const productId = String(product.id);
               const isComplete = completeProductIds.has(productId);
               const isCompleteView = String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY;
-              const href = isCompleteView ? `/producto/${productId}?complete=1` : `/producto/${productId}`;
+              const href = getProductHref(product, { complete: isCompleteView });
               const productMetrics = metrics[productId];
 
               return (
