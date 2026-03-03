@@ -6,6 +6,7 @@ const EBAY_SCOPE = 'https://api.ebay.com/oauth/api_scope';
 const REQUEST_TIMEOUT_MS = 12_000;
 const DEFAULT_SEARCH_LIMIT = 30;
 const DEFAULT_MARKET_CACHE_TTL_MS = 15 * 60 * 1000;
+const MAX_COMPARABLES_RETURNED = 40;
 
 type EbayOAuthTokenPayload = {
   access_token?: string;
@@ -489,7 +490,7 @@ async function fetchSnapshotForMarketplace(params: {
         maxPrice: null,
         averagePrice: null,
         medianPrice: null,
-        comparables: comparables.slice(0, 8),
+        comparables: comparables.slice(0, MAX_COMPARABLES_RETURNED),
       };
     }
 
@@ -506,7 +507,7 @@ async function fetchSnapshotForMarketplace(params: {
       maxPrice: Math.max(...values),
       averagePrice: average(values),
       medianPrice: median(values),
-      comparables: comparables.slice(0, 8),
+      comparables: comparables.slice(0, MAX_COMPARABLES_RETURNED),
     };
   } catch (error: any) {
     return {

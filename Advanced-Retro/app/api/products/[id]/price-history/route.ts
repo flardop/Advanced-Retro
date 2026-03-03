@@ -18,6 +18,7 @@ const MARKET_SNAPSHOT_TTL_MS = Number.isFinite(RAW_MARKET_SNAPSHOT_TTL_MS)
 const MARKET_SNAPSHOT_PROVIDER = 'ebay';
 const PRICE_HISTORY_CACHE_HEADER = 'public, s-maxage=180, stale-while-revalidate=1800';
 const ENDPOINT = '/api/products/[id]/price-history';
+const MAX_MARKET_COMPARABLES = 40;
 
 type PricePoint = {
   date: string;
@@ -211,7 +212,7 @@ function snapshotRowToMarketGuide(row: MarketSnapshotRow): EbayMarketSnapshot {
     averagePrice: toValidCents(row.average_price_cents),
     medianPrice: toValidCents(row.median_price_cents),
     comparables: Array.isArray(payload.comparables)
-      ? payload.comparables.slice(0, 20)
+      ? payload.comparables.slice(0, MAX_MARKET_COMPARABLES)
       : [],
   };
 }
@@ -269,7 +270,9 @@ async function saveMarketSnapshot(
         : [],
       marketplaceId: snapshot.marketplaceId,
       currency: snapshot.currency,
-      comparables: Array.isArray(snapshot.comparables) ? snapshot.comparables.slice(0, 20) : [],
+      comparables: Array.isArray(snapshot.comparables)
+        ? snapshot.comparables.slice(0, MAX_MARKET_COMPARABLES)
+        : [],
     },
   });
 

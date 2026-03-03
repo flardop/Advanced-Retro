@@ -37,6 +37,27 @@ function formatAxisEuro(cents: number): string {
   }).format(cents / 100);
 }
 
+function formatPointDateLabel(dateIso: string): string {
+  const date = new Date(dateIso);
+  if (!Number.isFinite(date.getTime())) return '';
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+  });
+}
+
+function formatPointDateTime(dateIso: string): string {
+  const date = new Date(dateIso);
+  if (!Number.isFinite(date.getTime())) return dateIso;
+  return date.toLocaleString('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function createLinePath(points: Array<{ x: number; y: number }>): string {
   if (points.length === 0) return '';
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
@@ -144,11 +165,11 @@ export default function PriceHistoryChart({
       : safePoints;
 
   const width = 760;
-  const height = 280;
+  const height = 320;
   const paddingLeft = 64;
   const paddingRight = 24;
   const paddingTop = 16;
-  const paddingBottom = 52;
+  const paddingBottom = 72;
   const chartLeft = paddingLeft;
   const chartRight = width - paddingRight;
   const chartTop = paddingTop;
@@ -189,20 +210,18 @@ export default function PriceHistoryChart({
   const lineCoords = pointCoords.map((coord) => ({ x: coord.x, y: coord.y }));
   const linePath = createLinePath(lineCoords);
 
+  const maxXTicks = Math.min(8, Math.max(2, pointCoords.length));
   const xTickIndexesRaw =
-    pointCoords.length <= 12
+    pointCoords.length <= maxXTicks
       ? pointCoords.map((_, index) => index)
-      : Array.from({ length: 6 }, (_, index) =>
-          Math.round((index * Math.max(0, pointCoords.length - 1)) / 5)
+      : Array.from({ length: maxXTicks }, (_, index) =>
+          Math.round((index * Math.max(0, pointCoords.length - 1)) / Math.max(1, maxXTicks - 1))
         );
   const xTickIndexes = [...new Set(xTickIndexesRaw)];
   const xTicks = xTickIndexes.map((index) => {
     const point = displayPoints[index];
     const coord = pointCoords[index];
-    const label = new Date(point.date).toLocaleDateString('es-ES', {
-      month: 'short',
-      day: '2-digit',
-    });
+    const label = formatPointDateLabel(point.date);
     return { x: coord.x, label };
   });
 
@@ -237,12 +256,11 @@ export default function PriceHistoryChart({
           <g key={`xtick-${index}`}>
             <line x1={tick.x} x2={tick.x} y1={chartTop} y2={chartBottom} stroke="#233045" strokeWidth="1" />
             <text
-              x={tick.x - 2}
-              y={height - 8}
+              x={tick.x}
+              y={height - 14}
               fill="#8f95a3"
-              fontSize="10"
-              textAnchor="end"
-              transform={`rotate(-35 ${tick.x - 2} ${height - 8})`}
+              fontSize="11"
+              textAnchor="middle"
             >
               {tick.label}
             </text>
@@ -283,11 +301,24 @@ export default function PriceHistoryChart({
             key={`${coord.point.date}-${index}`}
             cx={coord.x}
             cy={coord.y}
-            r={3.1}
+            r={4.2}
             fill="#5d8bff"
             stroke="#d9e5ff"
             strokeWidth="1"
+            style={{ cursor: 'crosshair' }}
           />
+        ))}
+        {pointCoords.map((coord, index) => (
+          <circle
+            key={`hover-${coord.point.date}-${index}`}
+            cx={coord.x}
+            cy={coord.y}
+            r={9}
+            fill="transparent"
+            style={{ cursor: 'crosshair' }}
+          >
+            <title>{`${formatPointDateTime(coord.point.date)} · ${formatEuro(coord.point.price)}`}</title>
+          </circle>
         ))}
       </svg>
 
