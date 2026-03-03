@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { toPriceChartingConsoleName, stripProductNameForExternalSearch } from '@/lib/catalogPlatform';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
+import { parseProductRouteParam } from '@/lib/productUrl';
 import {
   fetchEbayMarketSnapshotByQueryWithOptions,
   type EbayMarketSnapshot,
@@ -50,6 +51,11 @@ type MarketSnapshotRow = {
   payload: any;
   collected_at: string;
 };
+
+function parseBooleanLike(value: string | null): boolean {
+  const safe = String(value || '').trim().toLowerCase();
+  return safe === '1' || safe === 'true' || safe === 'yes' || safe === 'on';
+}
 
 function toSafePrice(value: unknown): number | null {
   const num = Number(value);
@@ -191,6 +197,34 @@ async function loadProductWithMarketOverrides(productId: string): Promise<Produc
     ebay_query: null,
     ebay_marketplace_id: null,
   };
+}
+
+async function resolveProductByIdentifier(identifier: string): Promise<ProductWithMarketOverrides | null> {
+  const parsed = parseProductRouteParam(identifier);
+  const idCandidate = String(parsed.idCandidate || '').trim();
+  const slugCandidate = String(parsed.slugCandidate || '').trim();
+
+  if (idCandidate) {
+    const byId = await loadProductWithMarketOverrides(idCandidate);
+    if (byId) return byId;
+  }
+
+  if (!slugCandidate || !supabaseAdmin) return null;
+
+  const probe = await supabaseAdmin
+    .from('products')
+    .select('id,name,category,price,ebay_query,ebay_marketplace_id')
+    .eq('slug', slugCandidate)
+    .maybeSingle();
+
+  if (!probe.error && probe.data) {
+    return probe.data as ProductWithMarketOverrides;
+  }
+  if (probe.error && !isMissingColumnError(probe.error)) {
+    throw new Error(probe.error.message || 'Error loading product by slug');
+  }
+
+  return null;
 }
 
 function snapshotRowToMarketGuide(row: MarketSnapshotRow): EbayMarketSnapshot {
@@ -401,9 +435,16 @@ async function fetchBestEbaySnapshotForProduct(product: ProductWithMarketOverrid
   };
 }
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: { id: string } }) {
   const startMs = getRequestStartTimeMs();
   let marketCacheHit: boolean | null = null;
+  let resolvedProductIdForMetrics: string | null = null;
+  const reqUrl = new URL(req.url);
+  const forceRefresh =
+    parseBooleanLike(reqUrl.searchParams.get('refresh')) ||
+    parseBooleanLike(reqUrl.searchParams.get('forceRefresh')) ||
+    parseBooleanLike(reqUrl.searchParams.get('noCache'));
+
   const respond = (
     body: unknown,
     status = 200,
@@ -417,7 +458,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       durationMs: getRequestDurationMs(startMs),
       cacheHit,
       metadata: {
-        productId: String(params?.id || ''),
+        productId: resolvedProductIdForMetrics || String(params?.id || ''),
+        productParam: String(params?.id || ''),
+        forceRefresh,
       },
     });
     return NextResponse.json(body, {
@@ -429,8 +472,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   };
 
   try {
-    const productId = String(params?.id || '').trim();
-    if (!productId) {
+    const productParam = String(params?.id || '').trim();
+    if (!productParam) {
       return respond(
         { error: 'Product id is required' },
         400,
@@ -448,7 +491,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       );
     }
 
-    const product = await loadProductWithMarketOverrides(productId);
+    const product = await resolveProductByIdentifier(productParam);
     if (!product) {
       return respond(
         { error: 'Product not found' },
@@ -457,6 +500,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         null
       );
     }
+    const productId = String(product.id || '').trim();
+    resolvedProductIdForMetrics = productId || null;
 
     let points: PricePoint[] = [];
 
@@ -510,7 +555,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     let marketGuideEbay: any = null;
     let marketGuideEbayDebug: any = null;
     if (!isMysteryOrRouletteProduct(product as any)) {
-      const cachedSnapshot = await loadLatestMarketSnapshot(productId);
+      const cachedSnapshot = forceRefresh ? null : await loadLatestMarketSnapshot(productId);
       if (cachedSnapshot && isFreshSnapshot(cachedSnapshot.collected_at)) {
         marketGuideEbay = snapshotRowToMarketGuide(cachedSnapshot);
         marketCacheHit = true;
@@ -521,6 +566,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
             source: 'db',
             collectedAt: cachedSnapshot.collected_at,
             fresh: true,
+            forcedRefresh: forceRefresh,
           },
           productOverride: {
             ebay_query: String(product.ebay_query || '').trim() || null,
@@ -536,6 +582,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
           attempts: ebayData.attempts,
           cache: {
             source: 'network',
+            forcedRefresh: forceRefresh,
             fallbackFromStale:
               Boolean(cachedSnapshot) && !Boolean(ebayData.snapshot?.available),
             staleCollectedAt: cachedSnapshot?.collected_at || null,
