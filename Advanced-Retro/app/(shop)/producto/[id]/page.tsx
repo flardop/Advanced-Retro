@@ -4,7 +4,7 @@ import { absoluteUrl } from '@/lib/siteConfig';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getProductHref, getProductRouteSegment, parseProductRouteParam } from '@/lib/productUrl';
 import { sampleProducts } from '@/lib/sampleData';
-import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
+import { buildBreadcrumbJsonLd, buildPageMetadata, buildProductSeoDescription } from '@/lib/seo';
 import { permanentRedirect } from 'next/navigation';
 
 function parseBooleanQuery(value: string | string[] | undefined): boolean {
@@ -75,6 +75,24 @@ async function getProductByIdentifier(identifier: string) {
   return null;
 }
 
+async function getProductSocialSummary(productId: string) {
+  if (!supabaseAdmin || !productId) return null;
+  const { data, error } = await supabaseAdmin
+    .from('product_social_summary')
+    .select('reviews_count,rating_average')
+    .eq('product_id', productId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  const reviewsCount = Number((data as any).reviews_count || 0);
+  const ratingAverage = Number((data as any).rating_average || 0);
+  if (!Number.isFinite(reviewsCount) || !Number.isFinite(ratingAverage)) return null;
+  return {
+    reviewsCount: Math.max(0, Math.round(reviewsCount)),
+    ratingAverage: Math.max(0, Number(ratingAverage.toFixed(2))),
+  };
+}
+
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const resolvedParams = await params;
   const product = await getProductByIdentifier(resolvedParams.id);
@@ -87,8 +105,17 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     });
   }
 
-  const title = `${String(product.name || '').trim()} | Producto retro`;
-  const description = String(product.description || 'Producto de coleccionismo retro disponible en AdvancedRetro.es.');
+  const title = `${String(product.name || '').trim()} | Comprar producto retro`;
+  const description = buildProductSeoDescription({
+    name: String(product.name || ''),
+    shortDescription:
+      String((product as any)?.long_description || '').trim() ||
+      String(product.description || '').trim(),
+    category: String((product as any)?.category || ''),
+    platform: String((product as any)?.platform || ''),
+    priceCents: Number((product as any)?.price || 0),
+    stock: Number((product as any)?.stock || 0),
+  });
   const imageUrl = String(product.image || absoluteUrl('/logo.png'));
   const canonicalPath = getProductHref(product);
 
@@ -135,6 +162,9 @@ export default async function ProductPage({
   const productImage = absoluteUrl(String(product?.image || '/logo.png'));
   const priceCents = Number(product?.price || 0);
   const availability = Number(product?.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+  const socialSummary = await getProductSocialSummary(String((product as any)?.id || ''));
+  const reviewCount = Number(socialSummary?.reviewsCount || 0);
+  const ratingAverage = Number(socialSummary?.ratingAverage || 0);
 
   const productSchema = {
     '@context': 'https://schema.org',
@@ -155,7 +185,19 @@ export default async function ProductPage({
       price: (Math.max(0, priceCents) / 100).toFixed(2),
       availability,
       itemCondition: 'https://schema.org/UsedCondition',
+      seller: {
+        '@type': 'Organization',
+        name: 'AdvancedRetro.es',
+      },
     },
+    aggregateRating:
+      reviewCount > 0 && ratingAverage > 0
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: Number(ratingAverage.toFixed(2)),
+            reviewCount,
+          }
+        : undefined,
   };
 
   const breadcrumbSchema = buildBreadcrumbJsonLd([

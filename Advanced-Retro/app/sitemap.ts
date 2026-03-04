@@ -9,7 +9,6 @@ const STATIC_ROUTES = [
   '/subastas',
   '/ruleta',
   '/comunidad',
-  '/comunidad/publicar',
   '/servicio-compra',
   '/contacto',
   '/terminos',
@@ -24,8 +23,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
     url: `${siteUrl}${path}`,
     lastModified: now,
-    changeFrequency: path === '/' ? 'daily' : 'weekly',
-    priority: path === '/' ? 1 : 0.7,
+    changeFrequency: path === '/' || path === '/tienda' ? 'daily' : 'weekly',
+    priority: path === '/' ? 1 : path === '/tienda' ? 0.95 : path === '/comunidad' ? 0.85 : 0.7,
   }));
 
   if (!supabaseAdmin) {

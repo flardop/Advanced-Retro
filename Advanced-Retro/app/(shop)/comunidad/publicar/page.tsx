@@ -8,6 +8,7 @@ export const metadata: Metadata = buildPageMetadata({
     'Publica anuncios en la comunidad retro con mínimo de imágenes, descripción completa y opciones de destacado o vitrina.',
   path: '/comunidad/publicar',
   keywords: ['publicar anuncio retro', 'vender videojuego retro', 'crear anuncio comunidad retro'],
+  noIndex: true,
 });
 
 export default function CommunityPublishPage() {

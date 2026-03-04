@@ -21,6 +21,33 @@ export const SEO_BASE_KEYWORDS = [
   'advanced retro',
 ];
 
+const TITLE_MAX = 68;
+const DESCRIPTION_MAX = 170;
+
+function cleanText(value: string): string {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function clampText(value: string, max: number): string {
+  const text = cleanText(value);
+  if (text.length <= max) return text;
+  return `${text.slice(0, Math.max(0, max - 1)).trimEnd()}…`;
+}
+
+function uniqueKeywords(values: string[]): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
+  for (const entry of values) {
+    const clean = cleanText(entry).toLowerCase();
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    output.push(clean);
+  }
+  return output;
+}
+
 type BuildPageMetadataInput = {
   title: string;
   description: string;
@@ -36,14 +63,17 @@ export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
   const canonicalPath = input.path.startsWith('/') ? input.path : `/${input.path}`;
   const noIndex = Boolean(input.noIndex);
   const type = input.type || 'website';
+  const title = clampText(input.title, TITLE_MAX);
+  const description = clampText(input.description, DESCRIPTION_MAX);
+  const keywords = uniqueKeywords([...SEO_BASE_KEYWORDS, ...(input.keywords || [])]);
 
   return {
-    title: input.title,
-    description: input.description,
+    title,
+    description,
     alternates: {
       canonical: canonicalPath,
     },
-    keywords: [...SEO_BASE_KEYWORDS, ...(input.keywords || [])],
+    keywords,
     robots: noIndex
       ? {
           index: false,
@@ -68,18 +98,25 @@ export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
           },
         },
     openGraph: {
-      title: input.title,
-      description: input.description,
+      title,
+      description,
       url: canonicalPath,
       siteName: SEO_BRAND_NAME,
       type,
       locale: 'es_ES',
-      images: [absoluteUrl(image)],
+      images: [
+        {
+          url: absoluteUrl(image),
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: input.title,
-      description: input.description,
+      title,
+      description,
       images: [absoluteUrl(image)],
     },
   };
@@ -111,4 +148,52 @@ export function buildBreadcrumbJsonLd(items: Array<{ name: string; path: string 
       item: absoluteUrl(item.path),
     })),
   };
+}
+
+export function buildItemListJsonLd(
+  items: Array<{ name: string; path: string; image?: string; description?: string }>,
+  listName = 'Listado'
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: listName,
+    itemListOrder: 'https://schema.org/ItemListOrderAscending',
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      url: absoluteUrl(item.path),
+      name: cleanText(item.name),
+      image: item.image ? absoluteUrl(item.image) : undefined,
+      description: item.description ? clampText(item.description, 160) : undefined,
+    })),
+  };
+}
+
+export function buildProductSeoDescription(input: {
+  name: string;
+  shortDescription?: string;
+  category?: string;
+  platform?: string;
+  priceCents?: number;
+  stock?: number;
+}) {
+  const parts: string[] = [];
+  const name = cleanText(input.name);
+  const category = cleanText(input.category || '');
+  const platform = cleanText(input.platform || '');
+  const short = cleanText(input.shortDescription || '');
+  const price = Number(input.priceCents || 0);
+  const stock = Number(input.stock || 0);
+
+  if (name) parts.push(name);
+  if (platform) parts.push(platform);
+  if (category) parts.push(category);
+  if (short) parts.push(short);
+  if (price > 0) parts.push(`Precio: ${(price / 100).toFixed(2)}€`);
+  if (stock > 0) parts.push(`Stock disponible: ${stock}`);
+  if (stock <= 0) parts.push('Sin stock temporal');
+
+  return clampText(parts.join(' · '), DESCRIPTION_MAX);
 }

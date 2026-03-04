@@ -51,8 +51,14 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   applicationName: 'AdvancedRetro.es',
+  manifest: '/manifest.webmanifest',
   category: 'shopping',
   keywords: SEO_BASE_KEYWORDS,
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
     icon: '/favicon.png',
     apple: '/favicon.png',

@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import Catalog from '@/components/sections/Catalog';
 import HypeLockboard from '@/components/sections/HypeLockboard';
-import { buildFaqJsonLd, buildPageMetadata } from '@/lib/seo';
+import { buildFaqJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { sampleProducts } from '@/lib/sampleData';
+import { getProductHref } from '@/lib/productUrl';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Tienda retro | Catálogo completo de juegos y consolas',
@@ -17,7 +20,7 @@ export const metadata: Metadata = buildPageMetadata({
   ],
 });
 
-export default function StorePage() {
+export default async function StorePage() {
   const faqSchema = buildFaqJsonLd([
     {
       question: '¿Cómo filtrar juegos retro en la tienda?',
@@ -36,11 +39,49 @@ export default function StorePage() {
     },
   ]);
 
+  const featuredProducts = (() => {
+    const mapItem = (product: any) => ({
+      name: String(product?.name || 'Producto retro'),
+      path: getProductHref(product),
+      image: String(product?.image || '/logo.png'),
+      description: String(product?.description || '').slice(0, 180),
+    });
+
+    if (!supabaseAdmin) {
+      return sampleProducts.slice(0, 12).map(mapItem);
+    }
+
+    return null;
+  })();
+
+  let itemListItems = featuredProducts;
+  if (!itemListItems && supabaseAdmin) {
+    const { data } = await supabaseAdmin
+      .from('products')
+      .select('id,name,slug,price,image,description,stock,status,category,platform,is_mystery_box')
+      .gt('price', 0)
+      .order('updated_at', { ascending: false })
+      .limit(24);
+
+    itemListItems = (data || []).map((product: any) => ({
+      name: String(product?.name || 'Producto retro'),
+      path: getProductHref(product),
+      image: String(product?.image || '/logo.png'),
+      description: String(product?.description || '').slice(0, 180),
+    }));
+  }
+
+  const itemListSchema = buildItemListJsonLd(itemListItems || [], 'Catálogo de tienda retro');
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
       <HypeLockboard compact />
       <Catalog />
