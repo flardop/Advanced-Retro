@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getProductLikesSetupErrorMessage, isProductLikesSetupMissing } from '@/lib/productLikesSetup';
+import { syncProductLikeCountIntoSummarySql } from '@/lib/productSocialSql';
 
 type LikesSnapshot = {
   likesByProduct: Record<string, number>;
@@ -131,6 +132,7 @@ export async function toggleProductLike(
   }
 
   const summary = await getProductLikeSummary(productId, userId);
+  void syncProductLikeCountIntoSummarySql(productId, summary.likes);
 
   return {
     liked,

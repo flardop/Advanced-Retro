@@ -1,3 +1,13 @@
+import type { Metadata } from 'next';
+import { buildPageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Política de privacidad',
+  description: 'Política de privacidad y tratamiento de datos personales en AdvancedRetro.es.',
+  path: '/privacidad',
+  keywords: ['privacidad tienda online', 'proteccion de datos advanced retro'],
+});
+
 export default function PrivacyPage() {
   return (
     <section className="section">

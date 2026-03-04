@@ -7,6 +7,7 @@ import SafeImage from '@/components/SafeImage';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { getProductHref } from '@/lib/productUrl';
 import { supabaseServer } from '@/lib/supabaseServer';
+import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,21 +61,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const { id } = params;
     const data = await getPublicSellerProfileByUserId(id);
     const name = data?.seller?.name || 'Vendedor';
-    return {
+    return buildPageMetadata({
       title: `Comunidad · ${name}`,
       description: `Perfil público de vendedor en Advanced Retro con anuncios activos y estadísticas de comunidad.`,
-      alternates: {
-        canonical: `/comunidad/vendedor/${id}`,
-      },
-    };
+      path: `/comunidad/vendedor/${id}`,
+      keywords: ['perfil vendedor retro', name, 'comunidad advanced retro'],
+    });
   } catch {
-    return {
+    return buildPageMetadata({
       title: 'Vendedor comunidad',
       description: 'Perfil público de vendedor en Advanced Retro.',
-      alternates: {
-        canonical: '/comunidad',
-      },
-    };
+      path: '/comunidad',
+      keywords: ['vendedor comunidad retro'],
+    });
   }
 }
 
@@ -107,12 +106,28 @@ export default async function CommunitySellerPage({ params }: PageProps) {
   }
 
   const { seller, stats, listings, favorites } = data;
+  const showcaseListings = Array.isArray(listings)
+    ? listings.filter((listing: any) => Boolean(listing?.is_showcase)).slice(0, 12)
+    : [];
   const bannerUrl = seller.banner_url || '';
   const avatarUrl = seller.avatar_url || '';
+  const sellerSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: seller.name,
+    url: `https://advancedretro.es/comunidad/vendedor/${seller.id}`,
+    image: avatarUrl || undefined,
+    description: seller.bio || seller.tagline || 'Perfil público de vendedor en AdvancedRetro.es',
+  };
 
   return (
-    <section className="section">
-      <div className="container space-y-6">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(sellerSchema) }}
+      />
+      <section className="section">
+        <div className="container space-y-6">
         <div className="glass overflow-hidden">
           <div className={`relative min-h-[180px] sm:min-h-[220px] border-b border-line ${themeBannerClass(seller.profile_theme)}`}>
             {bannerUrl ? (
@@ -272,6 +287,34 @@ export default async function CommunitySellerPage({ params }: PageProps) {
             </div>
           ) : null}
 
+          {showcaseListings.length > 0 ? (
+            <div className="mb-6 rounded-2xl border border-primary/30 bg-[rgba(75,228,214,0.06)] p-4">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-primary">Vitrina del vendedor</p>
+                <span className="chip border-primary text-primary">{showcaseListings.length} anuncio(s)</span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {showcaseListings.map((listing: any) => {
+                  const cover = Array.isArray(listing.images) && listing.images.length > 0 ? String(listing.images[0]) : '/logo.png';
+                  return (
+                    <Link
+                      key={`showcase-${listing.id}`}
+                      href={`/comunidad/anuncio/${listing.id}`}
+                      className="rounded-xl border border-line bg-[rgba(8,16,28,0.5)] p-2 hover:shadow-glow transition-shadow"
+                    >
+                      <div className="relative h-28 rounded-lg border border-line bg-surface overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={cover} alt={listing.title} className="h-full w-full object-contain p-2" loading="lazy" />
+                      </div>
+                      <p className="mt-2 text-xs font-semibold line-clamp-2">{String(listing.title || '')}</p>
+                      <p className="text-xs text-primary mt-1">{toEuro(Number(listing.price || 0))}</p>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
           {listings.length === 0 ? (
             <div className="border border-line p-4 text-textMuted">
               Este vendedor aún no tiene anuncios aprobados visibles.
@@ -310,6 +353,8 @@ export default async function CommunitySellerPage({ params }: PageProps) {
                         <span className="chip">{String(listing.condition || 'used')}</span>
                         <span className="chip">{String(listing.originality_status || 'sin-definir')}</span>
                         <span className="chip">{String(listing.delivery_status || 'pending')}</span>
+                        {listing.is_featured ? <span className="chip border-primary text-primary">Destacado</span> : null}
+                        {listing.is_showcase ? <span className="chip border-primary text-primary">Vitrina</span> : null}
                       </div>
                       <p className="text-xs text-textMuted mt-3">Publicado {relativeDate(String(listing.created_at || ''))}</p>
                       <Link href={`/comunidad/anuncio/${listing.id}`} className="chip mt-3 inline-flex">
@@ -357,7 +402,8 @@ export default async function CommunitySellerPage({ params }: PageProps) {
             <p className="text-textMuted">Aún no hay actividad pública registrada.</p>
           )}
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   );
 }

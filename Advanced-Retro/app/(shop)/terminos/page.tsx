@@ -1,3 +1,13 @@
+import type { Metadata } from 'next';
+import { buildPageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Términos y condiciones',
+  description: 'Condiciones de compra, soporte, publicaciones y envíos de AdvancedRetro.es.',
+  path: '/terminos',
+  keywords: ['terminos tienda retro', 'condiciones advanced retro'],
+});
+
 export default function TermsPage() {
   return (
     <section className="section">

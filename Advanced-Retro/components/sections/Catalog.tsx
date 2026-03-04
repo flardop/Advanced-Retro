@@ -20,9 +20,12 @@ const COMPLETE_GAMES_CATEGORY = 'juego-completo';
 const GAMES_FILTER = 'juegos';
 const BOXES_FILTER = 'cajas';
 const MYSTERY_FILTER = 'cajas-misteriosas';
+const SPECIAL_CONSOLES_FILTER = 'special-consoles';
 const PLATFORM_PREFIX = 'platform:';
 const QUICK_FILTERS = [
   { id: 'all', label: 'Todos' },
+  { id: `${PLATFORM_PREFIX}consolas`, label: 'Consolas y hardware' },
+  { id: SPECIAL_CONSOLES_FILTER, label: 'Ediciones especiales' },
   { id: MYSTERY_FILTER, label: 'Mystery Box' },
 ];
 const PLATFORM_FILTERS = [
@@ -32,6 +35,37 @@ const PLATFORM_FILTERS = [
   { id: `${PLATFORM_PREFIX}super-nintendo`, label: 'Super Nintendo' },
   { id: `${PLATFORM_PREFIX}gamecube`, label: 'GameCube' },
   { id: `${PLATFORM_PREFIX}consolas`, label: 'Consolas' },
+];
+const PLATFORM_FACET_OPTIONS = [
+  { id: 'game-boy', label: 'Game Boy' },
+  { id: 'game-boy-color', label: 'Game Boy Color' },
+  { id: 'game-boy-advance', label: 'Game Boy Advance' },
+  { id: 'super-nintendo', label: 'Super Nintendo' },
+  { id: 'gamecube', label: 'GameCube' },
+  { id: 'consolas', label: 'Consolas' },
+];
+const TYPE_FACET_OPTIONS = [
+  { id: 'juego', label: 'Juegos' },
+  { id: 'juego-completo', label: 'Juego completo' },
+  { id: 'consola', label: 'Consolas' },
+  { id: 'caja', label: 'Cajas' },
+  { id: 'manual', label: 'Manuales' },
+  { id: 'insert', label: 'Inserts' },
+  { id: 'protector', label: 'Protectores' },
+  { id: 'mystery', label: 'Mystery Box' },
+];
+const EDITION_FACET_OPTIONS = [
+  { id: 'original', label: 'Original' },
+  { id: 'repro', label: 'Repro 1:1' },
+  { id: 'sin-etiqueta', label: 'Sin etiqueta' },
+];
+const PRICE_RANGE_PRESETS = [
+  { id: 'all', label: 'Todo' },
+  { id: 'lt25', label: 'Hasta 25€' },
+  { id: '25_50', label: '25€ - 50€' },
+  { id: '50_100', label: '50€ - 100€' },
+  { id: '100_200', label: '100€ - 200€' },
+  { id: 'gt200', label: 'Más de 200€' },
 ];
 
 const SORT_OPTIONS = [
@@ -87,12 +121,23 @@ function normalizeText(value: string): string {
 }
 
 function matchPlatform(product: any, filterId: string): boolean {
-  const source = normalizeText(
-    `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.category || '')}`
-  );
+  const name = normalizeText(String(product?.name || ''));
+  const description = normalizeText(String(product?.description || ''));
+  const category = normalizeText(String(product?.category || product?.category_id || ''));
+  const platform = normalizeText(String(product?.platform || ''));
+  const componentType = normalizeText(String(product?.component_type || ''));
+  const source = `${name} ${description} ${category} ${platform} ${componentType}`.trim();
 
   if (filterId === 'consolas') {
-    return source.includes('consola');
+    return (
+      category.includes('consolas retro') ||
+      category.includes('consola') ||
+      name.startsWith('consola ') ||
+      name.includes(' consola ') ||
+      name.includes('dmg 01') ||
+      componentType === 'consola' ||
+      componentType === 'console'
+    );
   }
   if (filterId === 'game-boy-color') {
     return source.includes('game boy color') || source.includes('gameboy color');
@@ -126,7 +171,41 @@ function isMysteryBoxProduct(product: any): boolean {
 
 function isConsoleBaseProduct(product: any): boolean {
   const name = normalizeText(String(product?.name || ''));
-  return name.startsWith('consola ');
+  const category = normalizeText(String(product?.category || product?.category_id || ''));
+  const componentType = normalizeText(String(product?.component_type || ''));
+  return (
+    category.includes('consolas retro') ||
+    category.includes('consola') ||
+    componentType === 'consola' ||
+    componentType === 'console' ||
+    name.startsWith('consola ') ||
+    name.includes(' consola ') ||
+    name.includes('dmg 01')
+  );
+}
+
+function isSpecialConsoleEditionProduct(product: any): boolean {
+  if (!isConsoleBaseProduct(product)) return false;
+  if (isMysteryBoxProduct(product)) return false;
+
+  const source = normalizeText(
+    `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')} ${String(product?.collection_key || '')}`
+  );
+
+  return (
+    source.includes('edicion especial') ||
+    source.includes('edicion limitada') ||
+    source.includes('limited edition') ||
+    source.includes('collector') ||
+    source.includes('coleccionista') ||
+    source.includes('rare') ||
+    source.includes('panasonic q') ||
+    source.includes('game boy light') ||
+    source.includes('pokemon center') ||
+    source.includes('nes classic') ||
+    source.includes('famicom jr') ||
+    source.includes('snes jr')
+  );
 }
 
 function isPrimaryStoreProduct(product: any): boolean {
@@ -152,6 +231,72 @@ function isLikelyComponentProduct(product: any): boolean {
     source.includes('protector') ||
     source.includes('pegatina')
   );
+}
+
+function normalizeEditionFacet(value: unknown): string {
+  const source = normalizeText(String(value || ''));
+  if (!source) return 'sin-etiqueta';
+  if (source.includes('original')) return 'original';
+  if (source.includes('repro') || source.includes('replica') || source.includes('reproduccion')) return 'repro';
+  return 'sin-etiqueta';
+}
+
+function normalizeStatusFacet(value: unknown): string {
+  const source = normalizeText(String(value || ''));
+  return source || 'sin-estado';
+}
+
+function prettifyStatusLabel(value: string): string {
+  const normalized = value.replace(/[-_]+/g, ' ').trim();
+  if (!normalized) return 'Sin estado';
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function getProductTypeFacets(product: any, completeProductIds: Set<string>): string[] {
+  const facets = new Set<string>();
+  const id = String(product?.id || '');
+  const component = normalizeText(String(product?.component_type || ''));
+  const name = normalizeText(String(product?.name || ''));
+  const description = normalizeText(String(product?.description || ''));
+  const source = `${name} ${description} ${component}`.trim();
+
+  if (isMysteryBoxProduct(product)) facets.add('mystery');
+  if (isConsoleBaseProduct(product)) facets.add('consola');
+  if (isMainGameProduct(product)) facets.add('juego');
+  if (completeProductIds.has(id)) facets.add('juego-completo');
+  if (isBoxProduct(product) || component === 'caja') facets.add('caja');
+  if (isManualProduct(product) || component === 'manual') facets.add('manual');
+  if (component === 'insert' || source.includes('insert') || source.includes('inlay')) facets.add('insert');
+  if (
+    component.includes('protector') ||
+    source.includes('protector')
+  ) {
+    facets.add('protector');
+  }
+
+  if (facets.size === 0) {
+    facets.add('juego');
+  }
+
+  return Array.from(facets);
+}
+
+function getPresetRangeCents(preset: string): { min: number; max: number } {
+  switch (preset) {
+    case 'lt25':
+      return { min: 0, max: 2500 };
+    case '25_50':
+      return { min: 2500, max: 5000 };
+    case '50_100':
+      return { min: 5000, max: 10000 };
+    case '100_200':
+      return { min: 10000, max: 20000 };
+    case 'gt200':
+      return { min: 20000, max: 0 };
+    case 'all':
+    default:
+      return { min: 0, max: 0 };
+  }
 }
 
 function sortProducts(input: any[], sortBy: string, metrics: Record<string, ProductMetric>): any[] {
@@ -241,8 +386,16 @@ export default function Catalog() {
   const [stockOnly, setStockOnly] = useState(false);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [pricePreset, setPricePreset] = useState('all');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedEditions, setSelectedEditions] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [hasRealImageOnly, setHasRealImageOnly] = useState(false);
+  const [completePackOnly, setCompletePackOnly] = useState(false);
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(true);
   const [visibleCount, setVisibleCount] = useState(24);
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(true);
   const loadedMetricIdsRef = useRef<Set<string>>(new Set());
 
   const loadMetrics = useCallback(async (productIds: string[], force = false) => {
@@ -364,7 +517,7 @@ export default function Catalog() {
     if (typeof window === 'undefined') return;
 
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    const apply = () => setIsMobileFiltersOpen(mediaQuery.matches);
+    const apply = () => setIsMobileFiltersOpen(true);
     apply();
 
     if (typeof mediaQuery.addEventListener === 'function') {
@@ -386,6 +539,26 @@ export default function Catalog() {
     return set;
   }, [products]);
 
+  const statusFacetOptions = useMemo(() => {
+    const raw = Array.from(
+      new Set(
+        products
+          .map((product) => normalizeStatusFacet(product?.status))
+          .filter(Boolean)
+      )
+    );
+    return raw
+      .sort((a, b) => a.localeCompare(b, 'es'))
+      .map((value) => ({
+        id: value,
+        label: prettifyStatusLabel(value),
+      }));
+  }, [products]);
+
+  const toggleMultiFilter = useCallback((value: string, setter: (next: (prev: string[]) => string[]) => void) => {
+    setter((prev) => (prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]));
+  }, []);
+
   const isMysteryView = String(active).toLowerCase() === MYSTERY_FILTER;
 
   const filtered = useMemo(() => {
@@ -394,6 +567,8 @@ export default function Catalog() {
 
     if (active === 'all') {
       list = list.filter((product) => isPrimaryStoreProduct(product));
+    } else if (String(active).toLowerCase() === SPECIAL_CONSOLES_FILTER) {
+      list = list.filter((product) => isSpecialConsoleEditionProduct(product) && hasRealCardImage(product));
     } else if (String(active).toLowerCase() === MYSTERY_FILTER) {
       list = list.filter((product) => isMysteryBoxProduct(product));
     } else if (String(active).toLowerCase() === MANUALS_CATEGORY) {
@@ -416,14 +591,41 @@ export default function Catalog() {
     }
 
     if (!mysteryView) {
-      const searchQuery = normalizeText(search);
-      if (searchQuery) {
+      const searchTerms = normalizeText(search)
+        .split(' ')
+        .map((term) => term.trim())
+        .filter((term) => term.length >= 2);
+      if (searchTerms.length > 0) {
         list = list.filter((product) => {
           const haystack = normalizeText(
             `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')}`
           );
-          return haystack.includes(searchQuery);
+          return searchTerms.every((term) => haystack.includes(term));
         });
+      }
+
+      if (selectedPlatforms.length > 0) {
+        list = list.filter((product) =>
+          selectedPlatforms.some((platformKey) => matchPlatform(product, platformKey))
+        );
+      }
+
+      if (selectedTypes.length > 0) {
+        list = list.filter((product) => {
+          const typeFacets = getProductTypeFacets(product, completeProductIds);
+          return selectedTypes.some((typeKey) => typeFacets.includes(typeKey));
+        });
+      }
+
+      if (selectedEditions.length > 0) {
+        list = list.filter((product) => {
+          const editionFacet = normalizeEditionFacet(product?.edition);
+          return selectedEditions.includes(editionFacet);
+        });
+      }
+
+      if (selectedStatuses.length > 0) {
+        list = list.filter((product) => selectedStatuses.includes(normalizeStatusFacet(product?.status)));
       }
 
       if (favoritesOnly) {
@@ -434,8 +636,20 @@ export default function Catalog() {
         list = list.filter((product) => Number(product?.stock || 0) > 0);
       }
 
-      const minCents = minPrice.trim() ? Math.max(0, Math.round(Number(minPrice) * 100)) : 0;
-      const maxCents = maxPrice.trim() ? Math.max(0, Math.round(Number(maxPrice) * 100)) : 0;
+      if (hasRealImageOnly) {
+        list = list.filter((product) => hasRealCardImage(product));
+      }
+
+      if (completePackOnly) {
+        list = list.filter((product) => completeProductIds.has(String(product.id)));
+      }
+
+      const presetRange = getPresetRangeCents(pricePreset);
+      const manualMinCents = minPrice.trim() ? Math.max(0, Math.round(Number(minPrice) * 100)) : 0;
+      const manualMaxCents = maxPrice.trim() ? Math.max(0, Math.round(Number(maxPrice) * 100)) : 0;
+      const minCents = Math.max(presetRange.min, manualMinCents);
+      const maxCandidates = [presetRange.max, manualMaxCents].filter((value) => value > 0);
+      const maxCents = maxCandidates.length > 0 ? Math.min(...maxCandidates) : 0;
 
       if (minCents > 0) {
         list = list.filter((product) => Number(product?.price || 0) >= minCents);
@@ -452,10 +666,17 @@ export default function Catalog() {
     active,
     completeProductIds,
     search,
+    selectedPlatforms,
+    selectedTypes,
+    selectedEditions,
+    selectedStatuses,
     favoritesOnly,
     stockOnly,
+    hasRealImageOnly,
+    completePackOnly,
     minPrice,
     maxPrice,
+    pricePreset,
     metrics,
   ]);
 
@@ -515,17 +736,51 @@ export default function Catalog() {
     };
   }, [sorted, metrics]);
 
+  const consoleHighlights = useMemo(() => {
+    const consoleList = products.filter((product) => matchPlatform(product, 'consolas') && !isMysteryBoxProduct(product));
+    return sortProducts(consoleList, 'newest', metrics).slice(0, 4);
+  }, [products, metrics]);
+
+  const specialConsoleHighlights = useMemo(() => {
+    const specials = products.filter(
+      (product) => isSpecialConsoleEditionProduct(product) && hasRealCardImage(product)
+    );
+    return sortProducts(specials, 'newest', metrics).slice(0, 4);
+  }, [products, metrics]);
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (search.trim()) count += 1;
     if (sortBy !== 'newest') count += 1;
+    if (pricePreset !== 'all') count += 1;
+    if (selectedPlatforms.length > 0) count += selectedPlatforms.length;
+    if (selectedTypes.length > 0) count += selectedTypes.length;
+    if (selectedEditions.length > 0) count += selectedEditions.length;
+    if (selectedStatuses.length > 0) count += selectedStatuses.length;
     if (favoritesOnly) count += 1;
     if (stockOnly) count += 1;
+    if (hasRealImageOnly) count += 1;
+    if (completePackOnly) count += 1;
     if (minPrice.trim()) count += 1;
     if (maxPrice.trim()) count += 1;
     if (active !== 'all') count += 1;
     return count;
-  }, [search, sortBy, favoritesOnly, stockOnly, minPrice, maxPrice, active]);
+  }, [
+    search,
+    sortBy,
+    pricePreset,
+    selectedPlatforms,
+    selectedTypes,
+    selectedEditions,
+    selectedStatuses,
+    favoritesOnly,
+    stockOnly,
+    hasRealImageOnly,
+    completePackOnly,
+    minPrice,
+    maxPrice,
+    active,
+  ]);
 
   const totalVisibleStock = useMemo(
     () => sorted.reduce((sum, product) => sum + Math.max(0, Number(product?.stock || 0)), 0),
@@ -537,7 +792,22 @@ export default function Catalog() {
 
   useEffect(() => {
     setVisibleCount(24);
-  }, [active, search, sortBy, favoritesOnly, stockOnly, minPrice, maxPrice]);
+  }, [
+    active,
+    search,
+    sortBy,
+    pricePreset,
+    selectedPlatforms,
+    selectedTypes,
+    selectedEditions,
+    selectedStatuses,
+    favoritesOnly,
+    stockOnly,
+    hasRealImageOnly,
+    completePackOnly,
+    minPrice,
+    maxPrice,
+  ]);
 
   const renderMiniProduct = (product: any, label: string, className = '') => {
     const productId = String(product.id);
@@ -565,11 +835,261 @@ export default function Catalog() {
     );
   };
 
+  const filterPanel = isMysteryView ? (
+    <div className="glass p-5 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div>
+        <p className="font-semibold text-primary">Vista mystery simplificada</p>
+        <p className="text-sm text-textMuted mt-1">
+          Sin filtros extra. Elige caja y compra tirada directamente.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Link href="/ruleta" className="button-primary">
+          Ir a ruleta
+        </Link>
+        <Link href="/perfil" className="button-secondary">
+          Ver mis tickets
+        </Link>
+      </div>
+    </div>
+  ) : (
+    <div className="glass p-4 sm:p-5 mb-6">
+      <div className="lg:hidden flex items-center justify-between gap-3 mb-3">
+        <div>
+          <p className="text-sm font-semibold">Filtros de tienda</p>
+          <p className="text-xs text-textMuted">{activeFilterCount} filtros activos</p>
+        </div>
+        <button
+          className={`chip ${isMobileFiltersOpen ? 'text-primary border-primary' : ''}`}
+          onClick={() => setIsMobileFiltersOpen((value) => !value)}
+        >
+          {isMobileFiltersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
+        </button>
+      </div>
+
+      <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-4 lg:grid`}>
+        <div className="grid gap-3 lg:grid-cols-[1.55fr,1fr,1fr,1fr,1fr]">
+          <input
+            className="w-full bg-transparent border border-line px-3 py-2"
+            placeholder="Buscar por nombre, descripción o palabras clave"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            className="w-full bg-transparent border border-line px-3 py-2"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              className="w-full bg-transparent border border-line px-3 py-2"
+              placeholder="Min €"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+            />
+            <input
+              className="w-full bg-transparent border border-line px-3 py-2"
+              placeholder="Max €"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+            />
+          </div>
+
+          <button
+            className={`chip justify-center ${favoritesOnly ? 'text-primary border-primary' : ''}`}
+            onClick={() => setFavoritesOnly((prev) => !prev)}
+            disabled={!isLoggedIn}
+          >
+            {isLoggedIn ? 'Solo favoritos' : 'Solo favoritos (login)'}
+          </button>
+
+          <button
+            className={`chip justify-center ${stockOnly ? 'text-primary border-primary' : ''}`}
+            onClick={() => setStockOnly((prev) => !prev)}
+          >
+            Solo con stock
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-primary">Búsqueda avanzada</p>
+            <p className="text-xs text-textMuted mt-1">Combina plataforma, tipo, edición, estado y rango.</p>
+          </div>
+          <button
+            className={`chip ${isAdvancedFiltersOpen ? 'text-primary border-primary' : ''}`}
+            onClick={() => setIsAdvancedFiltersOpen((prev) => !prev)}
+          >
+            {isAdvancedFiltersOpen ? 'Ocultar avanzado' : 'Mostrar avanzado'}
+          </button>
+        </div>
+
+        {isAdvancedFiltersOpen ? (
+          <div className="grid gap-3">
+            <div>
+              <p className="text-xs text-textMuted mb-2">Rango rápido de precio</p>
+              <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+                {PRICE_RANGE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={`chip shrink-0 ${pricePreset === preset.id ? 'text-primary border-primary' : ''}`}
+                    onClick={() => setPricePreset(preset.id)}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-textMuted mb-2">Plataforma</p>
+              <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+                {PLATFORM_FACET_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`chip shrink-0 ${selectedPlatforms.includes(option.id) ? 'text-primary border-primary' : ''}`}
+                    onClick={() => toggleMultiFilter(option.id, setSelectedPlatforms)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-textMuted mb-2">Tipo de artículo</p>
+              <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+                {TYPE_FACET_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`chip shrink-0 ${selectedTypes.includes(option.id) ? 'text-primary border-primary' : ''}`}
+                    onClick={() => toggleMultiFilter(option.id, setSelectedTypes)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div>
+                <p className="text-xs text-textMuted mb-2">Edición</p>
+                <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+                  {EDITION_FACET_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={`chip shrink-0 ${selectedEditions.includes(option.id) ? 'text-primary border-primary' : ''}`}
+                      onClick={() => toggleMultiFilter(option.id, setSelectedEditions)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-textMuted mb-2">Estado</p>
+                <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+                  {statusFacetOptions.length > 0 ? (
+                    statusFacetOptions.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={`chip shrink-0 ${selectedStatuses.includes(option.id) ? 'text-primary border-primary' : ''}`}
+                        onClick={() => toggleMultiFilter(option.id, setSelectedStatuses)}
+                      >
+                        {option.label}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="text-xs text-textMuted">Sin estados disponibles</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-textMuted mb-2">Extras visuales</p>
+              <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+                <button
+                  type="button"
+                  className={`chip shrink-0 ${hasRealImageOnly ? 'text-primary border-primary' : ''}`}
+                  onClick={() => setHasRealImageOnly((prev) => !prev)}
+                >
+                  Solo con imagen real
+                </button>
+                <button
+                  type="button"
+                  className={`chip shrink-0 ${completePackOnly ? 'text-primary border-primary' : ''}`}
+                  onClick={() => setCompletePackOnly((prev) => !prev)}
+                >
+                  Solo juego completo
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+          <p className="text-xs text-textMuted">Resultados visibles</p>
+          <p className="text-primary text-lg font-semibold mt-1">{sorted.length}</p>
+          <p className="text-xs text-textMuted mt-1">{activeFilterCount} filtros activos</p>
+        </div>
+        <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+          <p className="text-xs text-textMuted">Stock total visible</p>
+          <p className="text-primary text-lg font-semibold mt-1">{totalVisibleStock}</p>
+          <p className="text-xs text-textMuted mt-1">Suma de stock en esta vista</p>
+        </div>
+        <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)] flex flex-col justify-between">
+          <div>
+            <p className="text-xs text-textMuted">Acción rápida</p>
+            <p className="text-sm mt-1">Restablecer filtros y volver al catálogo general</p>
+          </div>
+          <button
+            className="chip mt-2 self-start"
+            onClick={() => {
+              setActive('all');
+              setSearch('');
+              setSortBy('newest');
+              setPricePreset('all');
+              setSelectedPlatforms([]);
+              setSelectedTypes([]);
+              setSelectedEditions([]);
+              setSelectedStatuses([]);
+              setFavoritesOnly(false);
+              setStockOnly(false);
+              setHasRealImageOnly(false);
+              setCompletePackOnly(false);
+              setMinPrice('');
+              setMaxPrice('');
+            }}
+          >
+            Limpiar filtros
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <section className="section">
       <div className="container">
         <div className="glass p-4 sm:p-5 mb-6">
-          <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
+          <div className="mobile-scroll-row no-scrollbar md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
             <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
               <p className="text-primary text-sm font-semibold">Envíos desde España</p>
               <p className="text-xs text-textMuted mt-1">Preparación y salida en 24-48h laborables.</p>
@@ -598,22 +1118,22 @@ export default function Catalog() {
             <p className="text-textMuted">Retro revisado por coleccionistas y listo para tu vitrina.</p>
           </div>
           <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-2">
+            <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
               {QUICK_FILTERS.map((filter) => (
                 <button
                   key={filter.id}
-                  className={`chip ${active === filter.id ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
+                  className={`chip shrink-0 ${active === filter.id ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
                   onClick={() => setActive(filter.id)}
                 >
                   {filter.label}
                 </button>
               ))}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
               {PLATFORM_FILTERS.map((filter) => (
                 <button
                   key={filter.id}
-                  className={`chip ${active === filter.id ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
+                  className={`chip shrink-0 ${active === filter.id ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
                   onClick={() => setActive(filter.id)}
                 >
                   {filter.label}
@@ -623,152 +1143,109 @@ export default function Catalog() {
           </div>
         </div>
 
-        {!hasNoProducts && !isMysteryView ? (
-          <div className="grid gap-4 md:grid-cols-3 mb-8">
-            <div>
-              <h2 className="font-semibold mb-2 text-lg">Trending retro</h2>
-              <div className="grid gap-3">
-                {featuredTrending.map((product, index) =>
-                  renderMiniProduct(product, 'Trending', index > 0 ? 'hidden md:block' : '')
-                )}
+        {filterPanel}
+
+        {active === 'all' && consoleHighlights.length > 0 ? (
+          <div className="glass p-4 sm:p-5 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-primary">Acceso rápido</p>
+                <h2 className="title-display text-2xl mt-1">Consolas y cosas de consola</h2>
+                <p className="text-sm text-textMuted mt-1">
+                  Apartado dedicado para hardware, cajas, manuales y protectores de consola.
+                </p>
               </div>
+              <button
+                className="button-secondary self-start"
+                onClick={() => setActive(`${PLATFORM_PREFIX}consolas`)}
+              >
+                Ver apartado consolas
+              </button>
             </div>
-            <div>
-              <h2 className="font-semibold mb-2 text-lg">Más valorados</h2>
-              <div className="grid gap-3">
-                {featuredBestRated.map((product, index) =>
-                  renderMiniProduct(product, 'Top', index > 0 ? 'hidden md:block' : '')
-                )}
-              </div>
-            </div>
-            <div>
-              <h2 className="font-semibold mb-2 text-lg">Últimas entradas</h2>
-              <div className="grid gap-3">
-                {featuredLatest.map((product, index) =>
-                  renderMiniProduct(product, 'Nuevo', index > 0 ? 'hidden md:block' : '')
-                )}
-              </div>
+            <div className="mobile-scroll-row no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:pb-0">
+              {consoleHighlights.map((product) => (
+                <Link
+                  key={`console-highlight-${String(product.id)}`}
+                  href={getProductHref(product)}
+                  className="w-[230px] shrink-0 sm:w-auto rounded-xl border border-line bg-[rgba(10,20,34,0.82)] p-3 hover:border-primary/40 transition-colors"
+                >
+                  <div className="relative h-32 rounded-lg border border-line bg-surface overflow-hidden">
+                    <SafeImage
+                      src={getProductImageUrl(product)}
+                      fallbackSrc={getProductFallbackImageUrl(product)}
+                      alt={String(product?.name || 'Producto de consola')}
+                      fill
+                      className="object-contain p-2"
+                    />
+                  </div>
+                  <p className="text-sm font-semibold mt-3 line-clamp-2">{String(product?.name || '')}</p>
+                  <p className="text-xs text-textMuted mt-1">{(Number(product?.price || 0) / 100).toFixed(2)} €</p>
+                </Link>
+              ))}
             </div>
           </div>
         ) : null}
 
-        {isMysteryView ? (
-          <div className="glass p-5 mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <p className="font-semibold text-primary">Vista mystery simplificada</p>
-              <p className="text-sm text-textMuted mt-1">
-                Sin filtros extra. Elige caja y compra tirada directamente.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/ruleta" className="button-primary">
-                Ir a ruleta
-              </Link>
-              <Link href="/perfil" className="button-secondary">
-                Ver mis tickets
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="glass p-4 sm:p-5 mb-6">
-            <div className="lg:hidden flex items-center justify-between gap-3 mb-3">
+        {active === 'all' && specialConsoleHighlights.length > 0 ? (
+          <div className="glass p-4 sm:p-5 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div>
-                <p className="text-sm font-semibold">Filtros de tienda</p>
-                <p className="text-xs text-textMuted">{activeFilterCount} filtros activos</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-primary">Coleccionismo</p>
+                <h2 className="title-display text-2xl mt-1">Ediciones especiales de consolas</h2>
+                <p className="text-sm text-textMuted mt-1">
+                  Solo hardware especial o raro de Game Boy, GBC, GBA, SNES y GameCube.
+                </p>
               </div>
-              <button
-                className={`chip ${isMobileFiltersOpen ? 'text-primary border-primary' : ''}`}
-                onClick={() => setIsMobileFiltersOpen((value) => !value)}
-              >
-                {isMobileFiltersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
+              <button className="button-secondary self-start" onClick={() => setActive(SPECIAL_CONSOLES_FILTER)}>
+                Ver ediciones especiales
               </button>
             </div>
-
-            <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-3 lg:grid lg:grid-cols-[1.55fr,1fr,1fr,1fr,1fr]`}>
-              <input
-                className="w-full bg-transparent border border-line px-3 py-2"
-                placeholder="Buscar por nombre o descripción"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-
-              <select
-                className="w-full bg-transparent border border-line px-3 py-2"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  className="w-full bg-transparent border border-line px-3 py-2"
-                  placeholder="Min €"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                />
-                <input
-                  className="w-full bg-transparent border border-line px-3 py-2"
-                  placeholder="Max €"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                />
-              </div>
-
-              <button
-                className={`chip ${favoritesOnly ? 'text-primary border-primary' : ''}`}
-                onClick={() => setFavoritesOnly((prev) => !prev)}
-                disabled={!isLoggedIn}
-              >
-                {isLoggedIn ? 'Solo favoritos' : 'Solo favoritos (login)'}
-              </button>
-
-              <button
-                className={`chip ${stockOnly ? 'text-primary border-primary' : ''}`}
-                onClick={() => setStockOnly((prev) => !prev)}
-              >
-                Solo con stock
-              </button>
-            </div>
-
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-                <p className="text-xs text-textMuted">Resultados visibles</p>
-                <p className="text-primary text-lg font-semibold mt-1">{sorted.length}</p>
-                <p className="text-xs text-textMuted mt-1">{activeFilterCount} filtros activos</p>
-              </div>
-              <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-                <p className="text-xs text-textMuted">Stock total visible</p>
-                <p className="text-primary text-lg font-semibold mt-1">{totalVisibleStock}</p>
-                <p className="text-xs text-textMuted mt-1">Suma de stock en esta vista</p>
-              </div>
-              <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)] flex flex-col justify-between">
-                <div>
-                  <p className="text-xs text-textMuted">Acción rápida</p>
-                  <p className="text-sm mt-1">Restablecer filtros y volver al catálogo general</p>
-                </div>
-                <button
-                  className="chip mt-2 self-start"
-                  onClick={() => {
-                    setActive('all');
-                    setSearch('');
-                    setSortBy('newest');
-                    setFavoritesOnly(false);
-                    setStockOnly(false);
-                    setMinPrice('');
-                    setMaxPrice('');
-                  }}
+            <div className="mobile-scroll-row no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:pb-0">
+              {specialConsoleHighlights.map((product) => (
+                <Link
+                  key={`special-console-highlight-${String(product.id)}`}
+                  href={getProductHref(product)}
+                  className="w-[230px] shrink-0 sm:w-auto rounded-xl border border-line bg-[rgba(10,20,34,0.82)] p-3 hover:border-primary/40 transition-colors"
                 >
-                  Limpiar filtros
-                </button>
+                  <div className="relative h-32 rounded-lg border border-line bg-surface overflow-hidden">
+                    <SafeImage
+                      src={getProductImageUrl(product)}
+                      fallbackSrc={getProductFallbackImageUrl(product)}
+                      alt={String(product?.name || 'Edición especial')}
+                      fill
+                      className="object-contain p-2"
+                    />
+                  </div>
+                  <p className="text-sm font-semibold mt-3 line-clamp-2">{String(product?.name || '')}</p>
+                  <p className="text-xs text-textMuted mt-1">{(Number(product?.price || 0) / 100).toFixed(2)} €</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {!hasNoProducts && !isMysteryView ? (
+          <div className="grid gap-4 md:grid-cols-3 mb-8">
+            <div>
+              <h2 className="font-semibold mb-2 text-lg">Trending retro</h2>
+              <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
+                {featuredTrending.map((product) => renderMiniProduct(product, 'Trending', 'w-[230px] shrink-0 md:w-auto'))}
+              </div>
+            </div>
+            <div>
+              <h2 className="font-semibold mb-2 text-lg">Más valorados</h2>
+              <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
+                {featuredBestRated.map((product) => renderMiniProduct(product, 'Top', 'w-[230px] shrink-0 md:w-auto'))}
+              </div>
+            </div>
+            <div>
+              <h2 className="font-semibold mb-2 text-lg">Últimas entradas</h2>
+              <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
+                {featuredLatest.map((product) => renderMiniProduct(product, 'Nuevo', 'w-[230px] shrink-0 md:w-auto'))}
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
         <p className="text-sm text-textMuted mb-4">
           Resultados: {sorted.length}{isMysteryView ? ' · Cajas misteriosas activas' : ''}
@@ -799,9 +1276,9 @@ export default function Catalog() {
                 <Link
                   key={product.id}
                   href={href}
-                  className="glass p-3 sm:p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5"
+                  className="glass p-3 sm:p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5 flex gap-3 sm:block"
                 >
-                  <div className="relative w-full h-44 sm:h-56 bg-surface border border-line rounded-xl overflow-hidden">
+                  <div className="relative h-28 w-[116px] shrink-0 sm:w-full sm:h-56 bg-surface border border-line rounded-xl overflow-hidden">
                     <SafeImage
                       src={getProductImageUrl(product)}
                       fallbackSrc={getProductFallbackImageUrl(product)}
@@ -816,10 +1293,10 @@ export default function Catalog() {
                       ) : null}
                     </div>
                   </div>
-                  <div className="mt-4">
-                    <h3 className="font-semibold text-text leading-tight min-h-[42px]">{product.name}</h3>
-                    <p className="text-textMuted text-sm line-clamp-2 mt-2 min-h-[40px]">{product.description}</p>
-                    <p className="text-primary font-semibold mt-3 text-lg">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
+                  <div className="mt-0 sm:mt-4 min-w-0 flex-1">
+                    <h3 className="font-semibold text-text leading-tight line-clamp-2 sm:min-h-[42px]">{product.name}</h3>
+                    <p className="text-textMuted text-sm line-clamp-2 mt-2 sm:min-h-[40px]">{product.description}</p>
+                    <p className="text-primary font-semibold mt-2 sm:mt-3 text-base sm:text-lg">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
                     <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
                     {!isMysteryView ? (
                       <div className="mt-2 flex flex-wrap gap-2 text-xs">
@@ -831,7 +1308,9 @@ export default function Catalog() {
                       </div>
                     ) : null}
                     {isComplete ? <p className="text-xs text-primary mt-1">Pack completo disponible</p> : null}
-                    <p className="text-xs text-primary mt-3 group-hover:underline">Abrir ficha del producto</p>
+                    <span className="mt-3 inline-flex items-center rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors group-hover:border-primary group-hover:bg-primary/20">
+                      Abrir ficha del producto
+                    </span>
                   </div>
                 </Link>
               );

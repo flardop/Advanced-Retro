@@ -6,21 +6,21 @@ export default function Hero() {
     <section className="section relative overflow-hidden pt-8 sm:pt-10">
       <div className="absolute inset-0 bg-grid opacity-25" />
       <div className="absolute inset-0 bg-radial" />
-      <div className="container relative grid gap-10 lg:grid-cols-2 items-center">
+      <div className="container relative grid gap-7 sm:gap-10 lg:grid-cols-2 items-center">
         <div>
-          <div className="flex flex-wrap gap-3 mb-6">
-            <span className="chip">Retro verificado</span>
-            <span className="chip">Catálogo multiconsola</span>
-            <span className="chip">Envío protegido</span>
+          <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-3 sm:mb-6">
+            <span className="chip shrink-0">Retro verificado</span>
+            <span className="chip shrink-0">Catálogo multiconsola</span>
+            <span className="chip shrink-0">Envío protegido</span>
           </div>
-          <h1 className="title-display text-4xl sm:text-5xl lg:text-6xl">
+          <h1 className="title-display text-3xl sm:text-5xl lg:text-6xl">
             Tu tienda retro profesional para comprar, completar y coleccionar.
           </h1>
-          <p className="text-textMuted mt-4 text-lg">
+          <p className="text-textMuted mt-4 text-base sm:text-lg">
             Juegos y consolas revisados con detalle real de estado, opciones por componentes
             y atención directa por ticket en cada pedido.
           </p>
-          <div className="mt-7 flex flex-col sm:flex-row gap-3">
+          <div className="mt-6 sm:mt-7 flex flex-col sm:flex-row gap-3">
             <Link href="/tienda" className="button-primary text-center">
               Explorar tienda
             </Link>
@@ -28,20 +28,20 @@ export default function Hero() {
             <Link href="/servicio-compra" className="button-secondary text-center">Encargo 1:1</Link>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            <Link href="/tienda?category=platform:game-boy" className="chip hover:border-primary/60">
+          <div className="mt-4 mobile-scroll-row no-scrollbar text-xs sm:flex sm:flex-wrap sm:gap-2 sm:pb-0">
+            <Link href="/tienda?category=platform:game-boy" className="chip shrink-0 hover:border-primary/60">
               Game Boy
             </Link>
-            <Link href="/tienda?category=platform:game-boy-color" className="chip hover:border-primary/60">
+            <Link href="/tienda?category=platform:game-boy-color" className="chip shrink-0 hover:border-primary/60">
               Game Boy Color
             </Link>
-            <Link href="/tienda?category=platform:game-boy-advance" className="chip hover:border-primary/60">
+            <Link href="/tienda?category=platform:game-boy-advance" className="chip shrink-0 hover:border-primary/60">
               Game Boy Advance
             </Link>
-            <Link href="/tienda?category=cajas-misteriosas" className="chip hover:border-primary/60">
+            <Link href="/tienda?category=cajas-misteriosas" className="chip shrink-0 hover:border-primary/60">
               Mystery Box
             </Link>
-            <Link href="/ruleta" className="chip hover:border-primary/60">
+            <Link href="/ruleta" className="chip shrink-0 hover:border-primary/60">
               Ruleta
             </Link>
           </div>
@@ -80,19 +80,19 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="glass p-6 sm:p-8 shadow-deep">
+        <div className="glass p-5 sm:p-8 shadow-deep">
           <div className="space-y-5">
             <div className="flex items-center justify-between text-xs font-mono uppercase tracking-[0.12em]">
               <span className="text-primary">Colección destacada</span>
               <span className="text-accent">Actualizada</span>
             </div>
 
-            <div className="relative h-72 rounded-2xl border border-line overflow-hidden bg-gradient-to-br from-[#0f1f33] via-[#12243b] to-[#141f31]">
+            <div className="relative h-56 sm:h-72 rounded-2xl border border-line overflow-hidden bg-gradient-to-br from-[#0f1f33] via-[#12243b] to-[#141f31]">
               <Image
                 src="/logo.png"
                 alt="Advanced Retro colección destacada"
                 fill
-                className="object-contain p-8 opacity-90"
+                className="object-contain p-6 sm:p-8 opacity-90"
                 priority
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#09101a] to-transparent p-4">

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#101a2e"/>
+      <stop offset="46%" stop-color="#1f304c"/>
+      <stop offset="100%" stop-color="#53311d"/>
+    </linearGradient>
+    <radialGradient id="spot" cx="50%" cy="42%" r="45%">
+      <stop offset="0%" stop-color="#9cf7ff" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#9cf7ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1400" height="800" fill="url(#bg)"/>
+  <rect width="1400" height="800" fill="url(#spot)"/>
+  <g opacity="0.2" fill="#ffffff">
+    <circle cx="90" cy="120" r="2"/>
+    <circle cx="260" cy="72" r="2"/>
+    <circle cx="480" cy="140" r="1.5"/>
+    <circle cx="780" cy="95" r="2"/>
+    <circle cx="1040" cy="150" r="1.6"/>
+    <circle cx="1280" cy="100" r="2"/>
+  </g>
+  <g transform="translate(250 210)">
+    <rect x="0" y="0" width="900" height="380" rx="28" fill="#0f1929" stroke="#4be4d6" stroke-width="4"/>
+    <rect x="40" y="40" width="380" height="300" rx="20" fill="#14243b" stroke="#2b4f76" stroke-width="3"/>
+    <text x="230" y="165" text-anchor="middle" fill="#4be4d6" font-size="88" font-family="Arial, sans-serif" font-weight="700">30d</text>
+    <text x="230" y="220" text-anchor="middle" fill="#b4c3e2" font-size="24" font-family="Arial, sans-serif">Cuenta atrás</text>
+
+    <g transform="translate(500 70)">
+      <rect x="0" y="0" width="300" height="230" rx="16" fill="#1f2d45" stroke="#ffc86f" stroke-width="4"/>
+      <rect x="120" y="30" width="60" height="100" fill="#ffc86f"/>
+      <circle cx="150" cy="155" r="42" fill="none" stroke="#ffc86f" stroke-width="10"/>
+      <line x1="74" y1="205" x2="226" y2="205" stroke="#ffc86f" stroke-width="10"/>
+    </g>
+  </g>
+  <text x="700" y="118" text-anchor="middle" fill="#eaf2ff" font-size="62" font-family="Arial, sans-serif" font-weight="700">SUBASTAS ADVANCED RETRO</text>
+  <text x="700" y="700" text-anchor="middle" fill="#ffc86f" font-size="72" font-family="Arial, sans-serif" font-weight="700">TEMPORADA 1 · BLOQUEADA</text>
+  <text x="700" y="752" text-anchor="middle" fill="#c5d3ef" font-size="34" font-family="Arial, sans-serif">Reserva tu plaza antes del desbloqueo</text>
+</svg>
+

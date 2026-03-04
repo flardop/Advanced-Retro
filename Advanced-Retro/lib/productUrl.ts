@@ -1,5 +1,6 @@
 const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SHORT_ID_REGEX = /^[0-9a-f]{6,12}$/i;
 
 function toSafeString(value: unknown): string {
   return String(value ?? '').trim();
@@ -23,15 +24,17 @@ export function isUuidLike(value: string): boolean {
 export function parseProductRouteParam(raw: string): {
   raw: string;
   idCandidate: string | null;
+  idPrefixCandidate: string | null;
   slugCandidate: string | null;
 } {
   const safe = decodeURIComponent(toSafeString(raw));
-  if (!safe) return { raw: '', idCandidate: null, slugCandidate: null };
+  if (!safe) return { raw: '', idCandidate: null, idPrefixCandidate: null, slugCandidate: null };
 
   if (isUuidLike(safe)) {
-    return { raw: safe, idCandidate: safe, slugCandidate: null };
+    return { raw: safe, idCandidate: safe, idPrefixCandidate: null, slugCandidate: null };
   }
 
+  // Legacy format: slug--<uuid>
   const withIdSuffix = safe.match(/^(.*)--([0-9a-f-]{36})$/i);
   if (withIdSuffix) {
     const slugCandidate = slugify(withIdSuffix[1] || '');
@@ -39,11 +42,38 @@ export function parseProductRouteParam(raw: string): {
     return {
       raw: safe,
       idCandidate: isUuidLike(idCandidate) ? idCandidate : null,
+      idPrefixCandidate: null,
       slugCandidate: slugCandidate || null,
     };
   }
 
-  return { raw: safe, idCandidate: null, slugCandidate: slugify(safe) || null };
+  // New short format: slug-p-<idPrefix>
+  const withShortId = safe.match(/^(.*)-p-([0-9a-f]{6,12})$/i);
+  if (withShortId) {
+    const slugCandidate = slugify(withShortId[1] || '');
+    const idPrefixCandidate = toSafeString(withShortId[2] || '').toLowerCase();
+    return {
+      raw: safe,
+      idCandidate: null,
+      idPrefixCandidate: SHORT_ID_REGEX.test(idPrefixCandidate) ? idPrefixCandidate : null,
+      slugCandidate: slugCandidate || null,
+    };
+  }
+
+  // Optional compatibility: slug--<idPrefix>
+  const withLegacyShortId = safe.match(/^(.*)--([0-9a-f]{6,12})$/i);
+  if (withLegacyShortId) {
+    const slugCandidate = slugify(withLegacyShortId[1] || '');
+    const idPrefixCandidate = toSafeString(withLegacyShortId[2] || '').toLowerCase();
+    return {
+      raw: safe,
+      idCandidate: null,
+      idPrefixCandidate: SHORT_ID_REGEX.test(idPrefixCandidate) ? idPrefixCandidate : null,
+      slugCandidate: slugCandidate || null,
+    };
+  }
+
+  return { raw: safe, idCandidate: null, idPrefixCandidate: null, slugCandidate: slugify(safe) || null };
 }
 
 function getRawSlug(product: any): string {
@@ -52,15 +82,25 @@ function getRawSlug(product: any): string {
   return slugify(toSafeString(product?.name));
 }
 
+function getShortIdPrefix(value: unknown): string {
+  const id = toSafeString(value).toLowerCase();
+  if (!id) return '';
+  if (isUuidLike(id)) {
+    return id.split('-')[0] || '';
+  }
+  return id.replace(/[^a-z0-9]/g, '').slice(0, 8);
+}
+
 export function getProductRouteSegment(product: any): string {
   const id = toSafeString(product?.id);
   const slug = getRawSlug(product);
+  const explicitSlug = toSafeString(product?.slug);
 
   if (slug && id) {
-    // If real slug exists in DB, keep cleaner URL. For generated slug fallback,
-    // append id so routes always resolve even without slug column.
-    if (toSafeString(product?.slug)) return slug;
-    return `${slug}--${id}`;
+    if (explicitSlug) return slug;
+    const shortPrefix = getShortIdPrefix(id);
+    if (shortPrefix) return `${slug}-p-${shortPrefix}`;
+    return slug;
   }
   if (slug) return slug;
   return id;
@@ -72,4 +112,3 @@ export function getProductHref(product: any, options?: { complete?: boolean }): 
   const base = `/producto/${encodeURIComponent(segment)}`;
   return options?.complete ? `${base}?complete=1` : base;
 }
-

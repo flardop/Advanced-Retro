@@ -11,6 +11,7 @@ import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
 import { getProductHref } from '@/lib/productUrl';
 import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
+import { parseVideoEmbed } from '@/lib/videoEmbed';
 
 type BundleOptionType =
   | 'cartucho'
@@ -180,6 +181,22 @@ const PLATFORM_LABEL: Record<PlatformKey, string> = {
   gamecube: 'GameCube',
   retro: 'Retro',
 };
+
+function normalizePlatformKey(value: string): PlatformKey | '' {
+  const source = normalizeText(value);
+  if (!source) return '';
+  if (source === 'gameboy' || source === 'game boy' || source === 'game-boy') return 'gameboy';
+  if (source === 'gbc' || source === 'gameboy color' || source === 'game boy color' || source === 'game-boy-color') {
+    return 'gbc';
+  }
+  if (source === 'gba' || source === 'gameboy advance' || source === 'game boy advance' || source === 'game-boy-advance') {
+    return 'gba';
+  }
+  if (source === 'snes' || source === 'super nintendo' || source === 'super-nintendo') return 'snes';
+  if (source === 'gamecube' || source === 'game cube' || source === 'game-cube') return 'gamecube';
+  if (source === 'retro') return 'retro';
+  return '';
+}
 const COMPONENT_DEFAULT_PRICE: Record<BundleOptionType, number> = {
   cartucho: 0,
   caja: 700,
@@ -206,6 +223,7 @@ const PRODUCT_DETAIL_COLUMNS = [
   'component_type',
   'edition',
   'collection_key',
+  'trailer_url',
   'curiosities',
   'tips',
 ].join(',');
@@ -282,6 +300,9 @@ function isGameCategory(category: unknown): boolean {
 }
 
 function detectPlatformKey(product: any): PlatformKey {
+  const explicit = normalizePlatformKey(String(product?.platform || ''));
+  if (explicit) return explicit;
+
   const category = normalizeText(String(product?.category || ''));
   const name = normalizeText(String(product?.name || ''));
   const source = `${category} ${name}`;
@@ -292,6 +313,59 @@ function detectPlatformKey(product: any): PlatformKey {
   if (source.includes('game boy advance') || source.includes('gameboy advance') || source.includes('gba')) return 'gba';
   if (source.includes('game boy') || source.includes('gameboy')) return 'gameboy';
   return 'retro';
+}
+
+function getPlatformGenericInsertLabel(platform: PlatformKey): string {
+  switch (platform) {
+    case 'gameboy':
+      return 'Insert Game Boy';
+    case 'gbc':
+      return 'Insert Game Boy Color';
+    case 'gba':
+      return 'Insert Game Boy Advance';
+    case 'snes':
+      return 'Insert Super Nintendo';
+    case 'gamecube':
+      return 'Insert GameCube';
+    default:
+      return 'Insert Retro';
+  }
+}
+
+function scoreGenericInsertCandidate(platform: PlatformKey, product: any): number {
+  const source = normalizeText(
+    `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.collection_key || '')}`
+  );
+  if (!source) return 0;
+
+  let score = 0;
+  if (source.includes('insert') || source.includes('inlay') || source.includes('interior')) score += 10;
+  if (source.includes('universal')) score += 8;
+  if (normalizeText(String(product?.component_type || '')) === 'insert') score += 6;
+
+  if (platform === 'gameboy' && source.includes('game boy')) score += 7;
+  if (platform === 'gbc' && (source.includes('game boy color') || source.includes('gbc'))) score += 7;
+  if (platform === 'gba' && (source.includes('game boy advance') || source.includes('gba'))) score += 7;
+  if (platform === 'snes' && (source.includes('super nintendo') || source.includes('snes'))) score += 7;
+  if (platform === 'gamecube' && source.includes('gamecube')) score += 7;
+
+  if (source.includes('consola')) score -= 2;
+  return score;
+}
+
+function pickGenericInsertCandidate(basePlatform: PlatformKey, baseProductId: string, allProducts: any[]): any | null {
+  const insertCandidates = allProducts.filter((candidate) => {
+    if (!candidate || String(candidate.id) === baseProductId) return false;
+    if (Number(candidate.stock || 0) <= 0) return false;
+    if (Number(candidate.price || 0) <= 0) return false;
+    if (detectOptionType(candidate) !== 'insert') return false;
+    return detectPlatformKey(candidate) === basePlatform;
+  });
+  if (insertCandidates.length === 0) return null;
+
+  return insertCandidates
+    .map((candidate) => ({ candidate, score: scoreGenericInsertCandidate(basePlatform, candidate) }))
+    .sort((a, b) => b.score - a.score)[0]?.candidate || null;
 }
 
 function toComponentTypeSlug(type: BundleOptionType): string {
@@ -430,25 +504,32 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
 
   const extras: BundleOption[] = [];
   for (const type of requiredTypes) {
-    const byEdition = matchesByTypeEdition[type] || {};
-    const variants = EDITION_ORDER.map((edition) => byEdition[edition]).filter(
-      (item): item is { product: any; score: number } => Boolean(item)
-    );
+    let selected: any | null = null;
+    if (type === 'insert') {
+      selected = pickGenericInsertCandidate(basePlatform, String(baseProduct.id), allProducts);
+    }
 
-    const candidates =
-      variants.length > 0
-        ? variants.map((item) => item.product)
-        : allProducts.filter((candidate) => {
-            if (!candidate || String(candidate.id) === String(baseProduct.id)) return false;
-            if (detectOptionType(candidate) !== type) return false;
-            if (Number(candidate.stock || 0) <= 0) return false;
-            if (Number(candidate.price || 0) <= 0) return false;
-            return detectPlatformKey(candidate) === basePlatform;
-          });
+    if (!selected) {
+      const byEdition = matchesByTypeEdition[type] || {};
+      const variants = EDITION_ORDER.map((edition) => byEdition[edition]).filter(
+        (item): item is { product: any; score: number } => Boolean(item)
+      );
 
-    if (candidates.length === 0) continue;
+      const candidates =
+        variants.length > 0
+          ? variants.map((item) => item.product)
+          : allProducts.filter((candidate) => {
+              if (!candidate || String(candidate.id) === String(baseProduct.id)) return false;
+              if (detectOptionType(candidate) !== type) return false;
+              if (Number(candidate.stock || 0) <= 0) return false;
+              if (Number(candidate.price || 0) <= 0) return false;
+              return detectPlatformKey(candidate) === basePlatform;
+            });
 
-    const selected = candidates[0];
+      if (candidates.length === 0) continue;
+      selected = candidates[0];
+    }
+
     const selectedEdition = detectEditionKind(selected);
     const selectedEditionLabel = EDITION_LABEL[selectedEdition];
     const platformLabel = PLATFORM_LABEL[basePlatform];
@@ -459,7 +540,10 @@ function buildBundleOptions(baseProduct: any, allProducts: any[]): BundleOption[
 
     extras.push({
       id: String(selected.id),
-      name: `${String(selected.name || `${BUNDLE_TYPE_LABEL[type]} ${platformLabel}`)} · ${selectedEditionLabel}`,
+      name:
+        type === 'insert'
+          ? getPlatformGenericInsertLabel(basePlatform)
+          : `${String(selected.name || `${BUNDLE_TYPE_LABEL[type]} ${platformLabel}`)} · ${selectedEditionLabel}`,
       price:
         Number(selected.price || 0) > 0
           ? Number(selected.price || 0)
@@ -578,6 +662,7 @@ export default function ProductDetail({
   const [product, setProduct] = useState<any | null>(null);
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const buySectionRef = useRef<HTMLDivElement | null>(null);
   const reviewsSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -945,6 +1030,10 @@ export default function ProductDetail({
     }
   }, [images, selectedImage]);
 
+  useEffect(() => {
+    setShowVideoPlayer(false);
+  }, [productId]);
+
   const selectedBundleOptions = useMemo(
     () => bundleOptions.filter((option) => selectedBundleIds[option.id]),
     [bundleOptions, selectedBundleIds]
@@ -980,6 +1069,10 @@ export default function ProductDetail({
       Boolean(marketGuideEbay?.available) &&
       Number(marketGuideEbay?.sampleSize || 0) >= 2);
   const ebayDiagnosticHref = `/api/market/ebay-diagnostic?q=${encodeURIComponent(String(product?.name || ''))}`;
+  const videoEmbed = useMemo(
+    () => parseVideoEmbed((product as any)?.trailer_url),
+    [product]
+  );
 
   const scrollToBuySection = () => {
     buySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1145,21 +1238,21 @@ export default function ProductDetail({
   };
 
   return (
-    <section className="section pb-28 lg:pb-14">
-      <div className="container grid gap-8 lg:grid-cols-2">
-        <div className="glass p-5 sm:p-6">
-          <div className="relative w-full h-[420px] sm:h-[500px] bg-surface border border-line rounded-2xl flex items-center justify-center overflow-hidden">
+    <section className="section pb-32 lg:pb-14">
+      <div className="container grid gap-6 sm:gap-8 lg:grid-cols-2">
+        <div className="glass p-4 sm:p-6">
+          <div className="relative w-full h-[320px] sm:h-[500px] bg-surface border border-line rounded-2xl flex items-center justify-center overflow-hidden">
             <Image
               src={images[selectedImage] || images[0] || PLACEHOLDER}
               alt={product.name}
               fill
               className="object-contain p-4"
             />
-            {product.status ? <span className="absolute top-4 left-4 chip text-xs">{product.status}</span> : null}
-            <span className="absolute bottom-4 right-4 chip text-xs">Foto {selectedImage + 1} / {images.length}</span>
+            {product.status ? <span className="absolute top-3 left-3 chip text-[11px]">{product.status}</span> : null}
+            <span className="absolute bottom-3 right-3 chip text-[11px]">Foto {selectedImage + 1} / {images.length}</span>
           </div>
 
-          <div className="mt-4 flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-4">
+          <div className="mt-4 mobile-scroll-row no-scrollbar sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
             {images.slice(0, 12).map((img: string, index: number) => (
               <button
                 type="button"
@@ -1175,30 +1268,99 @@ export default function ProductDetail({
           </div>
         </div>
 
-        <div className="glass p-5 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="glass p-4 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <p className="text-xs text-textMuted font-mono">Stock: {product.stock}</p>
-            <div className="flex items-center gap-2 text-xs text-textMuted">
+            <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:items-center sm:gap-2 sm:overflow-visible sm:pb-0 text-xs text-textMuted">
               <span className="chip">Visitas: {socialSummary.visits}</span>
               <span className="chip">Favoritos: {socialSummary.likes}</span>
               <span className="chip">Valoraciones: {socialSummary.reviewsCount}</span>
             </div>
           </div>
 
-          <h1 className="title-display text-3xl sm:text-4xl mt-3">{product.name}</h1>
-          <p className="text-primary text-3xl mt-4 font-semibold">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
-          <p className="text-textMuted mt-4 leading-relaxed">{product.long_description || product.description}</p>
+          <h1 className="title-display text-[1.85rem] sm:text-4xl mt-3 leading-[1.1]">{product.name}</h1>
+          <p className="text-primary text-[1.9rem] sm:text-3xl mt-3 sm:mt-4 font-semibold">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
+          <p className="text-textMuted mt-3 sm:mt-4 leading-relaxed text-[0.94rem] sm:text-base">{product.long_description || product.description}</p>
 
-          <div className="mt-4 flex flex-wrap gap-2 lg:hidden">
-            <button type="button" className="button-primary !px-4 !py-2" onClick={scrollToBuySection}>
+          {/* Bloque de vídeo ligero:
+              - Miniatura primero
+              - iframe solo tras click (ahorro de carga en móvil y desktop) */}
+          {videoEmbed ? (
+            <div className="mt-5 rounded-xl border border-line bg-[rgba(10,18,30,0.56)] p-3">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-sm font-semibold">Gameplay / tráiler</p>
+                <span className="chip text-[11px]">{videoEmbed.provider === 'youtube' ? 'YouTube' : 'Vimeo'}</span>
+              </div>
+
+              {!showVideoPlayer ? (
+                <button
+                  type="button"
+                  onClick={() => setShowVideoPlayer(true)}
+                  className="group relative block w-full overflow-hidden rounded-lg border border-line bg-surface"
+                  aria-label="Reproducir vídeo del producto"
+                >
+                  {videoEmbed.thumbnailUrl ? (
+                    <Image
+                      src={videoEmbed.thumbnailUrl}
+                      alt={`Previsualización de vídeo de ${product.name}`}
+                      width={1280}
+                      height={720}
+                      className="h-auto w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
+                    />
+                  ) : (
+                    <div className="flex h-44 w-full items-center justify-center text-sm text-textMuted">
+                      Cargar vídeo
+                    </div>
+                  )}
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <span className="rounded-full border border-primary/50 bg-[rgba(7,13,22,0.78)] px-4 py-2 text-sm text-primary">
+                      Ver vídeo
+                    </span>
+                  </span>
+                </button>
+              ) : (
+                <div className="relative overflow-hidden rounded-lg border border-line">
+                  <div className="aspect-video w-full">
+                    <iframe
+                      src={videoEmbed.embedUrl}
+                      title={`Video de ${product.name}`}
+                      className="h-full w-full"
+                      loading="lazy"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-xl border border-line bg-[rgba(10,18,30,0.56)] p-3">
+              <p className="text-sm text-textMuted">
+                Vídeo no disponible todavía para este juego.
+              </p>
+              <a
+                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
+                  `${String(product?.name || '')} gameplay trailer`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
+              >
+                Buscar gameplay en YouTube
+              </a>
+            </div>
+          )}
+
+          <div className="mt-4 grid grid-cols-2 gap-2 lg:hidden">
+            <button type="button" className="button-primary !px-4 !py-2 !w-full" onClick={scrollToBuySection}>
               Comprar ahora
             </button>
-            <button type="button" className="chip" onClick={scrollToReviewsSection}>
+            <button type="button" className="button-secondary !px-4 !py-2 !w-full" onClick={scrollToReviewsSection}>
               Ver valoraciones
             </button>
           </div>
 
-          <div className="mt-4 flex gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
+          <div className="mt-4 mobile-scroll-row no-scrollbar sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
             <div className="min-w-[240px] sm:min-w-0 rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
               <p className="text-xs text-textMuted">Compra segura</p>
               <p className="text-sm mt-1">Soporte por ticket y seguimiento del pedido</p>
@@ -1220,7 +1382,7 @@ export default function ProductDetail({
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
             <button
               type="button"
               className={`chip ${socialSummary.likedByCurrentVisitor ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
@@ -1278,7 +1440,7 @@ export default function ProductDetail({
             </div>
           </div>
 
-          <div ref={buySectionRef} className="mt-8 border-t border-line pt-6">
+          <div ref={buySectionRef} className="mt-7 border-t border-line pt-5 sm:mt-8 sm:pt-6">
             <p className="font-semibold mb-2">Opciones adicionales al comprar (caja, manual, insert, protector)</p>
             <p className="text-sm text-textMuted mb-3">
               La caja puede ser original o repro según el producto enlazado. Marca solo lo que quieras añadir.
@@ -1359,8 +1521,11 @@ export default function ProductDetail({
                           )}
                         </p>
                         {canOpenProduct ? (
-                          <Link href={buildProductHref({ id: option.id, name: option.name })} className="text-xs text-textMuted hover:text-primary">
-                            Abrir producto
+                          <Link
+                            href={buildProductHref({ id: option.id, name: option.name })}
+                            className="mt-1 inline-flex items-center rounded-lg border border-primary/45 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
+                          >
+                            Ver componente
                           </Link>
                         ) : null}
                         {option.isVirtual && option.stock <= 0 ? (
@@ -1378,7 +1543,7 @@ export default function ProductDetail({
               })}
             </div>
 
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex items-center rounded-xl border border-line overflow-hidden w-fit">
                 <button
                   type="button"
@@ -1413,48 +1578,49 @@ export default function ProductDetail({
             </p>
           </div>
 
-          {hideMarketPricing ? null : (
-            <>
-              <div className="mt-8 border-t border-line pt-6">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <p className="font-semibold">Historico de precio del producto</p>
-                  <button type="button" className="chip" onClick={refreshPriceHistory} disabled={loadingPriceHistory}>
-                    {loadingPriceHistory ? 'Cargando...' : 'Actualizar grafica'}
-                  </button>
-                </div>
-
-                {priceHistory.length > 0 ? (
-                  <PriceHistoryChart points={priceHistory} marketOverlay={marketGuideEbay} />
-                ) : (
-                  <p className="text-sm text-textMuted">Aun no hay datos suficientes para mostrar tendencia.</p>
-                )}
-
-                <p className="text-xs text-textMuted mt-2">
-                  Fuente:{' '}
-                  {priceSource === 'orders'
-                    ? 'ventas reales de la tienda'
-                    : shouldLabelAsEbaySource
-                      ? 'muestras de mercado eBay (listados activos)'
-                    : priceSource === 'current'
-                      ? 'precio actual del catalogo'
-                      : 'sin datos'}
-                </p>
-                {priceHistoryError ? <p className="text-xs text-red-400 mt-1">{priceHistoryError}</p> : null}
-                {marketGuideEbay && !marketGuideEbay.available ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <a href={ebayDiagnosticHref} target="_blank" rel="noreferrer" className="chip text-xs">
-                      Abrir diagnóstico eBay
-                    </a>
-                    <button type="button" className="chip text-xs" onClick={refreshPriceHistory}>
-                      Reintentar comparativa
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            </>
-          )}
         </div>
       </div>
+
+      {hideMarketPricing ? null : (
+        <div className="container mt-8">
+          <div className="glass p-4 sm:p-6">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 mb-3">
+              <p className="font-semibold">Historico de precio del producto</p>
+              <button type="button" className="chip" onClick={refreshPriceHistory} disabled={loadingPriceHistory}>
+                {loadingPriceHistory ? 'Cargando...' : 'Actualizar grafica'}
+              </button>
+            </div>
+
+            {priceHistory.length > 0 ? (
+              <PriceHistoryChart points={priceHistory} marketOverlay={marketGuideEbay} />
+            ) : (
+              <p className="text-sm text-textMuted">Aun no hay datos suficientes para mostrar tendencia.</p>
+            )}
+
+            <p className="text-xs text-textMuted mt-2">
+              Fuente:{' '}
+              {priceSource === 'orders'
+                ? 'ventas reales de la tienda'
+                : shouldLabelAsEbaySource
+                  ? 'muestras de mercado eBay (listados activos)'
+                : priceSource === 'current'
+                  ? 'precio actual del catalogo'
+                  : 'sin datos'}
+            </p>
+            {priceHistoryError ? <p className="text-xs text-red-400 mt-1">{priceHistoryError}</p> : null}
+            {marketGuideEbay && !marketGuideEbay.available ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a href={ebayDiagnosticHref} target="_blank" rel="noreferrer" className="chip text-xs">
+                  Abrir diagnóstico eBay
+                </a>
+                <button type="button" className="chip text-xs" onClick={refreshPriceHistory}>
+                  Reintentar comparativa
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-[rgba(7,13,22,0.95)] backdrop-blur-md">
         <div className="container py-3">
@@ -1467,7 +1633,7 @@ export default function ProductDetail({
               </p>
             </div>
 
-            <div className="flex items-center rounded-xl border border-line overflow-hidden">
+            <div className="flex items-center rounded-xl border border-line overflow-hidden shrink-0">
               <button
                 type="button"
                 className="px-3 py-2 text-sm border-r border-line"
@@ -1486,7 +1652,7 @@ export default function ProductDetail({
             </div>
           </div>
 
-          <button className="button-primary w-full mt-3" onClick={addSelectedToCart}>
+          <button className="button-primary w-full mt-3 !text-base" onClick={addSelectedToCart}>
             Añadir al carrito
           </button>
         </div>

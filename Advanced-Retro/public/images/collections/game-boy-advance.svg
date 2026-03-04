@@ -1,24 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#111827"/>
-      <stop offset="45%" stop-color="#0f766e"/>
-      <stop offset="100%" stop-color="#0b1020"/>
+    <linearGradient id="bgGba" x1="0" y1="0" x2="1200" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#070B18"/>
+      <stop offset="0.5" stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#0B1020"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(720 360) rotate(20) scale(430 230)">
-      <stop stop-color="#34d399" stop-opacity="0.45"/>
-      <stop offset="1" stop-color="#34d399" stop-opacity="0"/>
+    <radialGradient id="glowGba" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(880 360) rotate(25) scale(420 220)">
+      <stop stop-color="#34D399" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#34D399" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="1200" height="700" fill="url(#bg)"/>
-  <rect width="1200" height="700" fill="url(#glow)"/>
-  <rect x="620" y="260" width="420" height="220" rx="100" fill="#6366f1" opacity="0.92"/>
-  <rect x="730" y="300" width="200" height="110" rx="16" fill="#111827"/>
+  <rect width="1200" height="700" fill="url(#bgGba)"/>
+  <rect width="1200" height="700" fill="url(#glowGba)"/>
+  <rect x="605" y="250" width="440" height="235" rx="112" fill="#6366F1" fill-opacity="0.92"/>
+  <rect x="725" y="296" width="200" height="114" rx="16" fill="#0B1220"/>
+  <rect x="736" y="307" width="178" height="92" rx="12" fill="#22D3EE" fill-opacity="0.18"/>
+  <rect x="658" y="350" width="66" height="10" rx="5" fill="#111827"/>
+  <rect x="686" y="322" width="10" height="66" rx="5" fill="#111827"/>
   <circle cx="690" cy="365" r="17" fill="#111827"/>
-  <circle cx="980" cy="355" r="16" fill="#f97316"/>
-  <circle cx="1015" cy="385" r="16" fill="#ef4444"/>
-  <rect x="660" y="350" width="60" height="10" rx="5" fill="#111827"/>
-  <rect x="685" y="325" width="10" height="60" rx="5" fill="#111827"/>
-  <text x="90" y="250" fill="#e5e7eb" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700">Game Boy Advance</text>
-  <text x="90" y="320" fill="#9ca3af" font-family="Arial, Helvetica, sans-serif" font-size="34">Colección GBA retro</text>
+  <circle cx="980" cy="355" r="16" fill="#F97316"/>
+  <circle cx="1015" cy="385" r="16" fill="#EF4444"/>
+  <text x="90" y="240" fill="#F1F5F9" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700">Game Boy Advance</text>
+  <text x="90" y="315" fill="#99F6E4" font-family="Arial, Helvetica, sans-serif" font-size="34">Juegos y variantes de GBA</text>
 </svg>

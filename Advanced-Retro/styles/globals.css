@@ -162,6 +162,73 @@ body::before {
   backdrop-filter: blur(10px);
 }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-scroll-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.65rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-scroll-row > * {
+  scroll-snap-align: start;
+}
+
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  min-width: max-content;
+  animation: marquee-left 26s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes hype-card-pulse {
+  0% {
+    box-shadow:
+      0 12px 26px rgba(4, 12, 24, 0.3),
+      0 0 0 rgba(75, 228, 214, 0);
+  }
+  50% {
+    box-shadow:
+      0 16px 36px rgba(4, 12, 24, 0.44),
+      0 0 26px rgba(75, 228, 214, 0.2);
+  }
+  100% {
+    box-shadow:
+      0 12px 26px rgba(4, 12, 24, 0.3),
+      0 0 0 rgba(75, 228, 214, 0);
+  }
+}
+
+.hype-card {
+  animation: hype-card-pulse 3.4s ease-in-out infinite;
+}
+
 input,
 textarea,
 select {
@@ -196,4 +263,34 @@ a {
 ::selection {
   background: rgba(75, 228, 214, 0.28);
   color: #e9fbff;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .section {
+    padding-top: 2.5rem;
+    padding-bottom: 2.75rem;
+  }
+
+  .glass {
+    border-radius: 1rem;
+    backdrop-filter: blur(10px);
+  }
+
+  .chip {
+    padding: 0.36rem 0.68rem;
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  .button-primary,
+  .button-secondary {
+    min-height: 44px;
+    padding: 0.68rem 0.95rem;
+    font-size: 0.84rem;
+  }
 }

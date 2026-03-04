@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublicApprovedListingWithSellerById } from '@/lib/userListings';
 import CommunityListingSocialPanel from '@/components/sections/CommunityListingSocialPanel';
+import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,19 +45,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const data = await getPublicApprovedListingWithSellerById(params.id);
     const listing = data.listing;
-    return {
+    return buildPageMetadata({
       title: `Comunidad · ${listing.title}`,
       description: `${listing.description || 'Anuncio de comunidad'} · ${toEuro(Number(listing.price || 0))}`,
-      alternates: {
-        canonical: `/comunidad/anuncio/${params.id}`,
-      },
-    };
+      path: `/comunidad/anuncio/${params.id}`,
+      image: Array.isArray(listing.images) && listing.images.length > 0 ? String(listing.images[0]) : '/logo.png',
+      keywords: ['anuncio retro', String(listing.title || '').trim(), 'comunidad advanced retro'],
+      type: 'article',
+    });
   } catch {
-    return {
+    return buildPageMetadata({
       title: 'Anuncio de comunidad',
       description: 'Detalle de anuncio de comunidad en Advanced Retro.',
-      alternates: { canonical: '/comunidad' },
-    };
+      path: '/comunidad',
+      keywords: ['anuncio comunidad retro'],
+    });
   }
 }
 
@@ -82,10 +85,33 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
 
   const { listing, relatedBySeller } = data;
   const images = Array.isArray(listing.images) && listing.images.length > 0 ? listing.images : ['/logo.png'];
+  const listingSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: String(listing.title || 'Anuncio retro'),
+    description: String(listing.description || 'Anuncio de comunidad retro'),
+    image: images.slice(0, 5),
+    category: String(listing.category || 'retro-gaming'),
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'EUR',
+      price: (Math.max(0, Number(listing.price || 0)) / 100).toFixed(2),
+      availability:
+        String(listing.delivery_status || '').toLowerCase() === 'delivered'
+          ? 'https://schema.org/OutOfStock'
+          : 'https://schema.org/InStock',
+      url: `https://advancedretro.es/comunidad/anuncio/${listing.id}`,
+    },
+  };
 
   return (
-    <section className="section">
-      <div className="container space-y-6">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(listingSchema) }}
+      />
+      <section className="section">
+        <div className="container space-y-6">
         <div className="glass p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
@@ -133,7 +159,7 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
                 <p className="text-xs text-textMuted">Precio anunciado</p>
                 <p className="text-3xl font-semibold text-primary mt-2">{toEuro(Number(listing.price || 0))}</p>
                 <p className="text-xs text-textMuted mt-2">
-                  Comisión tienda: {Number(listing.commission_rate || 10).toFixed(0)}% · {toEuro(Number(listing.commission_cents || 0))}
+                  Comisión tienda: {Number(listing.commission_rate || 5).toFixed(0)}% · {toEuro(Number(listing.commission_cents || 0))}
                 </p>
               </div>
 
@@ -144,6 +170,20 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
                   <span className="chip">{String(listing.condition || 'used')}</span>
                   <span className="chip">{labelForOriginality(String(listing.originality_status || ''))}</span>
                   <span className="chip">Entrega: {String(listing.delivery_status || 'pending')}</span>
+                  {String((listing as any).pegi_rating || 'none') !== 'none' ? (
+                    <span className="chip">PEGI {(listing as any).pegi_rating}</span>
+                  ) : null}
+                  {String((listing as any).genre || '').trim() ? (
+                    <span className="chip">{String((listing as any).genre)}</span>
+                  ) : null}
+                  {String((listing as any).package_size || '').trim() ? (
+                    <span className="chip">Paquete: {String((listing as any).package_size)}</span>
+                  ) : null}
+                  {String((listing as any).item_color || '').trim() ? (
+                    <span className="chip">Color: {String((listing as any).item_color)}</span>
+                  ) : null}
+                  {(listing as any).is_featured ? <span className="chip border-primary text-primary">Destacado</span> : null}
+                  {(listing as any).is_showcase ? <span className="chip border-primary text-primary">Vitrina</span> : null}
                 </div>
                 {listing.originality_notes ? (
                   <div className="rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
@@ -248,7 +288,8 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
             </div>
           </div>
         ) : null}
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   );
 }

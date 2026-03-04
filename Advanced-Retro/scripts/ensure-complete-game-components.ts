@@ -2,7 +2,7 @@
  * Garantiza que cada juego principal tenga componentes comprables:
  * - Caja
  * - Manual
- * - Insert (Inlay)
+ * - Insert universal por plataforma (no por juego)
  * - Protector juego
  * - Protector caja
  *
@@ -54,6 +54,35 @@ async function main() {
   );
 
   let created = 0;
+  const genericInsert = {
+    name: 'Insert Game Boy',
+    category: 'accesorios',
+    description: 'Insert interior universal para juegos/cajas Game Boy.',
+    price: 300,
+    stock: 120,
+    image: '/images/components/gameboy-insert.svg',
+  };
+  const genericInsertKey = `${genericInsert.name.toLowerCase()}||${genericInsert.category.toLowerCase()}`;
+  if (!existingKey.has(genericInsertKey)) {
+    const { error: insertError } = await (supabase.from('products') as any).insert({
+      name: genericInsert.name,
+      category: genericInsert.category,
+      description: genericInsert.description,
+      price: genericInsert.price,
+      stock: genericInsert.stock,
+      is_mystery_box: false,
+      component_type: 'insert',
+      edition: 'sin-especificar',
+      platform: 'game-boy',
+      image: genericInsert.image,
+      images: [genericInsert.image],
+    });
+    if (!insertError) {
+      existingKey.add(genericInsertKey);
+      created += 1;
+    }
+  }
+
   for (const game of mainGames) {
     const gameName = String(game.name || '').trim();
     if (!gameName) continue;
@@ -80,13 +109,6 @@ async function main() {
         description: `Manual para ${gameName}.`,
         price: Math.max(700, Math.round((gamePrice * 0.16) / 50) * 50),
         stock: Math.max(4, Math.round(gameStock * 1.4)),
-      },
-      {
-        name: `Insert (Inlay) ${gameName}`,
-        category: 'accesorios',
-        description: `Insert interior para ${gameName}.`,
-        price: 250,
-        stock: Math.max(6, Math.round(gameStock * 1.5)),
       },
       {
         name: `Protector juego ${gameName}`,

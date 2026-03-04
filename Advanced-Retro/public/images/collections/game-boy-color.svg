@@ -1,23 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0b1020"/>
-      <stop offset="50%" stop-color="#1e3a8a"/>
-      <stop offset="100%" stop-color="#0f172a"/>
+    <linearGradient id="bgGbc" x1="0" y1="0" x2="1200" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#060B18"/>
+      <stop offset="0.46" stop-color="#1E3A8A"/>
+      <stop offset="1" stop-color="#0F172A"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(950 180) rotate(140) scale(440 260)">
-      <stop stop-color="#22d3ee" stop-opacity="0.5"/>
-      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    <radialGradient id="glowGbc" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(980 170) rotate(142) scale(500 260)">
+      <stop stop-color="#22D3EE" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="1200" height="700" fill="url(#bg)"/>
-  <rect width="1200" height="700" fill="url(#glow)"/>
-  <rect x="680" y="160" width="320" height="390" rx="52" fill="#8b5cf6" opacity="0.9"/>
-  <rect x="735" y="225" width="210" height="145" rx="14" fill="#111827"/>
-  <circle cx="810" cy="445" r="19" fill="#f59e0b"/>
-  <circle cx="875" cy="475" r="19" fill="#38bdf8"/>
-  <rect x="755" y="420" width="80" height="10" rx="5" fill="#111827"/>
-  <rect x="755" y="460" width="80" height="10" rx="5" fill="#111827"/>
-  <text x="90" y="250" fill="#e5e7eb" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700">Game Boy Color</text>
-  <text x="90" y="320" fill="#9ca3af" font-family="Arial, Helvetica, sans-serif" font-size="34">Colección GBC multicolor</text>
+  <rect width="1200" height="700" fill="url(#bgGbc)"/>
+  <rect width="1200" height="700" fill="url(#glowGbc)"/>
+  <rect x="665" y="145" width="340" height="415" rx="54" fill="#8B5CF6" fill-opacity="0.92"/>
+  <rect x="724" y="212" width="222" height="154" rx="15" fill="#0B1220"/>
+  <rect x="736" y="224" width="198" height="130" rx="12" fill="#38BDF8" fill-opacity="0.22"/>
+  <rect x="750" y="420" width="90" height="10" rx="5" fill="#111827"/>
+  <rect x="750" y="460" width="90" height="10" rx="5" fill="#111827"/>
+  <circle cx="816" cy="448" r="19" fill="#FB7185"/>
+  <circle cx="884" cy="478" r="19" fill="#22D3EE"/>
+  <text x="90" y="240" fill="#F1F5F9" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="700">Game Boy Color</text>
+  <text x="90" y="315" fill="#A5B4FC" font-family="Arial, Helvetica, sans-serif" font-size="34">Colección GBC y variantes multicolor</text>
 </svg>

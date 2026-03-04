@@ -175,7 +175,7 @@ export async function sendCommunityListingReviewEmail(options: {
       <p><strong>Estado:</strong> ${safeStatusLabel}</p>
       <p><strong>Precio:</strong> ${safePrice}</p>
       <p><strong>Publicar:</strong> ${safeListingFee}</p>
-      <p><strong>Comisión tienda al vender:</strong> ${safeCommission} (10%)</p>
+      <p><strong>Comisión tienda al vender:</strong> ${safeCommission} (5%)</p>
       ${notesBlock}
       <p>Si necesitas ayuda, abre un ticket desde tu perfil.</p>
     </div>

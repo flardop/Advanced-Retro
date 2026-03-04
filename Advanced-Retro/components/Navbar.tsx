@@ -18,6 +18,7 @@ export default function Navbar() {
     { href: '/tienda', label: t('nav.shop', 'Tienda') },
     { href: '/comunidad', label: t('nav.community', 'Comunidad') },
     { href: '/tienda?category=cajas-misteriosas', label: t('nav.mystery', 'Mystery') },
+    { href: '/subastas', label: t('nav.auctions', 'Subastas') },
     { href: '/ruleta', label: t('nav.roulette', 'Ruleta') },
     { href: '/servicio-compra', label: t('nav.concierge', 'Encargos') },
     { href: '/contacto', label: t('nav.contact', 'Contacto') },
@@ -52,7 +53,7 @@ export default function Navbar() {
           : 'border-line/70 bg-[rgba(8,15,26,0.74)] backdrop-blur-lg'
       }`}
     >
-      <div className="container h-[72px] flex items-center justify-between gap-4">
+      <div className="container h-[64px] sm:h-[72px] flex items-center justify-between gap-3">
         <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
           <Image
             src="/logo.png"
@@ -83,6 +84,9 @@ export default function Navbar() {
           <Link href="/carrito" className="chip hover:border-primary/50 hover:text-text">
             {t('nav.cart', 'Carrito')}
           </Link>
+          <Link href={user ? '/perfil' : '/login'} className="chip lg:hidden hover:border-primary/50 hover:text-text">
+            {user ? t('nav.profile', 'Perfil') : t('nav.login', 'Entrar')}
+          </Link>
           <Link href={user ? '/perfil' : '/login'} className="button-secondary hidden sm:inline-flex">
             {user ? t('nav.profile', 'Mi perfil') : t('nav.login', 'Entrar')}
           </Link>
@@ -97,37 +101,59 @@ export default function Navbar() {
         </div>
       </div>
 
-      {open && (
-        <div className="lg:hidden border-t border-line">
-          <div className="container py-4">
-            <div className="glass p-4 space-y-3 text-sm">
-              {navItems.map((item) => (
+      <div className="lg:hidden border-t border-line/80">
+        <div className="container py-2">
+          <div className="mobile-scroll-row no-scrollbar">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              return (
                 <Link
-                  key={`mobile-${item.href}`}
+                  key={`mobile-quick-${item.href}`}
                   href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="block rounded-lg border border-transparent px-3 py-2 text-textMuted hover:border-line hover:bg-white/5 hover:text-text"
+                  className={`chip shrink-0 ${isActive ? 'text-primary border-primary' : ''}`}
                 >
                   {item.label}
                 </Link>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                <Link
-                  href={user ? '/perfil' : '/login'}
-                  onClick={() => setOpen(false)}
-                  className="button-secondary w-full"
-                >
-                  {user ? t('nav.profile', 'Mi perfil') : t('nav.login_mobile', 'Iniciar sesión')}
-                </Link>
-                <Link href="/carrito" onClick={() => setOpen(false)} className="button-primary w-full">
-                  {t('nav.go_cart_mobile', 'Ir al carrito')}
-                </Link>
+      {open && (
+        <div className="lg:hidden fixed inset-0 z-[70] bg-[rgba(2,8,16,0.72)] backdrop-blur-sm" onClick={() => setOpen(false)}>
+          <div className="absolute inset-x-0 bottom-0 border-t border-line bg-[rgba(7,14,24,0.98)] rounded-t-2xl">
+            <div className="container py-4" onClick={(event) => event.stopPropagation()}>
+              <div className="glass p-4 space-y-3 text-sm">
+                <div className="mx-auto h-1.5 w-10 rounded-full bg-line/70 mb-1" />
+                {navItems.map((item) => (
+                  <Link
+                    key={`mobile-${item.href}`}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="block rounded-lg border border-transparent px-3 py-2.5 text-textMuted hover:border-line hover:bg-white/5 hover:text-text"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                  <Link
+                    href={user ? '/perfil' : '/login'}
+                    onClick={() => setOpen(false)}
+                    className="button-secondary w-full"
+                  >
+                    {user ? t('nav.profile', 'Mi perfil') : t('nav.login_mobile', 'Iniciar sesión')}
+                  </Link>
+                  <Link href="/carrito" onClick={() => setOpen(false)} className="button-primary w-full">
+                    {t('nav.go_cart_mobile', 'Ir al carrito')}
+                  </Link>
+                </div>
+
+                {user?.email ? (
+                  <p className="text-xs text-textMuted pt-1">{t('nav.session', 'Sesión')}: {user.email}</p>
+                ) : null}
               </div>
-
-              {user?.email ? (
-                <p className="text-xs text-textMuted pt-1">{t('nav.session', 'Sesión')}: {user.email}</p>
-              ) : null}
             </div>
           </div>
         </div>

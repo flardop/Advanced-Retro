@@ -10,13 +10,23 @@ import {
   LEVEL_REWARDS,
   type GamificationActionKey,
 } from '@/lib/gamification';
+import { ALL_BADGE_KEYS, normalizeBadgeKeys } from '@/lib/gamificationBadges';
 
 type UserXpRow = {
   id: string;
+  role?: string | null;
   xp_total: number | null;
   level: number | null;
   badges?: unknown;
   name?: string | null;
+  avatar_url?: string | null;
+  banner_url?: string | null;
+  bio?: string | null;
+  tagline?: string | null;
+  favorite_console?: string | null;
+  shipping_address?: unknown;
+  is_verified_seller?: boolean | null;
+  created_at?: string | null;
 };
 
 type RewardRow = {
@@ -35,6 +45,40 @@ type EventRow = {
   created_at: string;
 };
 
+type UserOrderSnapshot = {
+  id: string;
+  status: string | null;
+  total: number | null;
+  created_at: string | null;
+  paid_at?: string | null;
+  mystery_box_id?: string | null;
+};
+
+type BadgeStats = {
+  hasShipping: boolean;
+  profileCompleted: boolean;
+  hasAvatar: boolean;
+  hasBanner: boolean;
+  hasBio: boolean;
+  isVerifiedSeller: boolean;
+  orderCount: number;
+  cancelledOrderCount: number;
+  hasHighValueOrder: boolean;
+  hasNightOrder: boolean;
+  mysteryOrderCount: number;
+  mysterySpinCount: number;
+  listingCount: number;
+  deliveredListingCount: number;
+  commentCount: number;
+  likesGivenCount: number;
+  streakCurrent: number;
+  accountAgeDays: number;
+  has0333Order: boolean;
+  has64Order: boolean;
+  hasMarathonOrder: boolean;
+  level: number;
+};
+
 function hasMissingTableError(error: any): boolean {
   const message = String(error?.message || '').toLowerCase();
   return (
@@ -44,37 +88,455 @@ function hasMissingTableError(error: any): boolean {
   );
 }
 
+function hasMissingColumnError(error: any): boolean {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('column') && message.includes('does not exist');
+}
+
 function safeNumber(input: unknown, fallback = 0): number {
   const n = Number(input);
   return Number.isFinite(n) ? n : fallback;
 }
 
-function toIsoDate(value: Date): string {
-  return value.toISOString().slice(0, 10);
+const MADRID_DATE_PARTS = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Europe/Madrid',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+function toMadridIsoDate(value: Date): string {
+  const parts = MADRID_DATE_PARTS.formatToParts(value);
+  const year = parts.find((item) => item.type === 'year')?.value || '1970';
+  const month = parts.find((item) => item.type === 'month')?.value || '01';
+  const day = parts.find((item) => item.type === 'day')?.value || '01';
+  return `${year}-${month}-${day}`;
+}
+
+const MADRID_TIME_PARTS = new Intl.DateTimeFormat('es-ES', {
+  timeZone: 'Europe/Madrid',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+function toMadridHourMinute(rawIso: string | null | undefined): { hour: number; minute: number } | null {
+  const iso = String(rawIso || '').trim();
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  const parts = MADRID_TIME_PARTS.formatToParts(date);
+  const hour = Number(parts.find((item) => item.type === 'hour')?.value || NaN);
+  const minute = Number(parts.find((item) => item.type === 'minute')?.value || NaN);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  return { hour, minute };
+}
+
+function safeArray<T>(input: unknown): T[] {
+  return Array.isArray(input) ? (input as T[]) : [];
+}
+
+function hasShippingAddress(input: unknown): boolean {
+  const shipping = input as Record<string, unknown> | null | undefined;
+  if (!shipping || typeof shipping !== 'object' || Array.isArray(shipping)) return false;
+  return (
+    String(shipping.full_name || '').trim().length >= 3 &&
+    String(shipping.line1 || '').trim().length >= 4 &&
+    String(shipping.city || '').trim().length >= 2 &&
+    String(shipping.postal_code || '').trim().length >= 3 &&
+    String(shipping.country || '').trim().length >= 2
+  );
+}
+
+function hasValidProfileImage(url: unknown): boolean {
+  return String(url || '').trim().length >= 8;
+}
+
+function hasStrongText(text: unknown, minLength: number): boolean {
+  return String(text || '').trim().length >= minLength;
+}
+
+function getAccountAgeDays(createdAt: string | null | undefined): number {
+  const createdDate = new Date(String(createdAt || '').trim());
+  if (Number.isNaN(createdDate.getTime())) return 0;
+  const diffMs = Date.now() - createdDate.getTime();
+  return diffMs > 0 ? Math.floor(diffMs / 86_400_000) : 0;
 }
 
 function mergeUniqueBadges(existing: unknown, newBadges: string[]): string[] {
-  const base = Array.isArray(existing)
-    ? existing.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean)
-    : [];
+  const base = normalizeBadgeKeys(existing);
   const merged = [...base];
   for (const badge of newBadges) {
-    const normalized = String(badge || '').trim();
+    const normalized = String(badge || '').trim().toLowerCase();
     if (!normalized) continue;
     if (!merged.includes(normalized)) merged.push(normalized);
   }
-  return merged.slice(0, 24);
+  return merged.slice(0, 160);
 }
 
 async function getUserXpRow(userId: string): Promise<UserXpRow | null> {
   if (!supabaseAdmin) return null;
   const { data, error } = await supabaseAdmin
     .from('users')
-    .select('id,name,badges,xp_total,level')
+    .select(
+      'id,role,name,badges,xp_total,level,avatar_url,banner_url,bio,tagline,favorite_console,shipping_address,is_verified_seller,created_at'
+    )
     .eq('id', userId)
     .maybeSingle();
   if (error || !data) return null;
   return data as UserXpRow;
+}
+
+async function hasXpEventWithDedupeKey(dedupeKey: string): Promise<boolean> {
+  if (!supabaseAdmin) return false;
+  const normalizedDedupeKey = String(dedupeKey || '').trim();
+  if (!normalizedDedupeKey) return false;
+
+  const { data, error } = await supabaseAdmin
+    .from('user_xp_events')
+    .select('id')
+    .eq('dedupe_key', normalizedDedupeKey)
+    .limit(1);
+
+  if (error) {
+    if (!hasMissingTableError(error) && !hasMissingColumnError(error)) {
+      console.warn('XP dedupe precheck skipped:', error.message);
+    }
+    return false;
+  }
+
+  return Array.isArray(data) && data.length > 0;
+}
+
+function getBadgeDiffCount(current: string[], next: string[]): number {
+  const currentSet = new Set(current);
+  const nextSet = new Set(next);
+  let diff = 0;
+  for (const item of currentSet) {
+    if (!nextSet.has(item)) diff += 1;
+  }
+  for (const item of nextSet) {
+    if (!currentSet.has(item)) diff += 1;
+  }
+  return diff;
+}
+
+function sortBadgeKeys(keys: string[]): string[] {
+  const normalized = [...new Set(keys.map((value) => String(value || '').trim().toLowerCase()).filter(Boolean))];
+  const indexByKey = new Map(ALL_BADGE_KEYS.map((key, index) => [key, index]));
+  return normalized.sort((a, b) => {
+    const indexA = indexByKey.has(a) ? Number(indexByKey.get(a)) : 9_999;
+    const indexB = indexByKey.has(b) ? Number(indexByKey.get(b)) : 9_999;
+    if (indexA !== indexB) return indexA - indexB;
+    return a.localeCompare(b, 'es');
+  });
+}
+
+async function fetchUserOrders(userId: string): Promise<UserOrderSnapshot[]> {
+  if (!supabaseAdmin) return [];
+  const selectCandidates = [
+    'id,status,total,created_at,paid_at,mystery_box_id',
+    'id,status,total,created_at,paid_at',
+    'id,status,total,created_at',
+  ];
+
+  for (const select of selectCandidates) {
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .select(select)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(2500);
+
+    if (!error && Array.isArray(data)) {
+      return safeArray<any>(data).map((row) => ({
+        id: String(row?.id || ''),
+        status: typeof row?.status === 'string' ? row.status : null,
+        total: Number.isFinite(Number(row?.total)) ? Number(row.total) : null,
+        created_at: typeof row?.created_at === 'string' ? row.created_at : null,
+        paid_at: typeof row?.paid_at === 'string' ? row.paid_at : null,
+        mystery_box_id: typeof row?.mystery_box_id === 'string' ? row.mystery_box_id : null,
+      }));
+    }
+
+    if (error && !hasMissingTableError(error) && !hasMissingColumnError(error)) {
+      console.warn('Order metrics skipped:', error.message);
+      return [];
+    }
+  }
+
+  return [];
+}
+
+async function fetchOrderItemsQuantityMap(orderIds: string[]): Promise<Map<string, number>> {
+  const byOrder = new Map<string, number>();
+  if (!supabaseAdmin || orderIds.length === 0) return byOrder;
+
+  const chunkSize = 250;
+  for (let index = 0; index < orderIds.length; index += chunkSize) {
+    const slice = orderIds.slice(index, index + chunkSize);
+    if (slice.length === 0) continue;
+
+    const { data, error } = await supabaseAdmin
+      .from('order_items')
+      .select('order_id,quantity')
+      .in('order_id', slice);
+
+    if (error) {
+      if (!hasMissingTableError(error) && !hasMissingColumnError(error)) {
+        console.warn('Order item metrics skipped:', error.message);
+      }
+      return byOrder;
+    }
+
+    for (const row of safeArray<any>(data)) {
+      const orderId = String(row?.order_id || '').trim();
+      const quantity = Math.max(0, Math.floor(safeNumber(row?.quantity, 0)));
+      if (!orderId || quantity <= 0) continue;
+      byOrder.set(orderId, (byOrder.get(orderId) || 0) + quantity);
+    }
+  }
+
+  return byOrder;
+}
+
+async function fetchExactCount(options: {
+  table: string;
+  apply: (query: any) => any;
+}): Promise<number> {
+  if (!supabaseAdmin) return 0;
+  try {
+    const baseQuery = supabaseAdmin.from(options.table).select('id', { head: true, count: 'exact' });
+    const scopedQuery = options.apply(baseQuery);
+    const { count, error } = await scopedQuery;
+    if (error) {
+      if (!hasMissingTableError(error) && !hasMissingColumnError(error)) {
+        console.warn(`Count skipped for ${options.table}:`, error.message);
+      }
+      return 0;
+    }
+    return Math.max(0, Math.floor(safeNumber(count, 0)));
+  } catch (error: any) {
+    if (!hasMissingTableError(error) && !hasMissingColumnError(error)) {
+      console.warn(`Count failed for ${options.table}:`, error?.message || error);
+    }
+    return 0;
+  }
+}
+
+async function collectBadgeStats(userId: string, userRow: UserXpRow, level: number): Promise<BadgeStats> {
+  const paidOrderStatuses = new Set(['paid', 'shipped', 'delivered']);
+  const orders = await fetchUserOrders(userId);
+  const paidOrders = orders.filter((order) =>
+    paidOrderStatuses.has(String(order?.status || '').toLowerCase())
+  );
+  const paidOrderIds = paidOrders.map((order) => String(order.id || '').trim()).filter(Boolean);
+  const orderItemQuantityByOrder = await fetchOrderItemsQuantityMap(paidOrderIds);
+
+  const mysteryOrderCount = paidOrders.filter((order) => String(order?.mystery_box_id || '').trim().length > 0).length;
+  const hasHighValueOrder = paidOrders.some((order) => safeNumber(order?.total, 0) >= 10_000);
+  const has64Order = paidOrders.some((order) => safeNumber(order?.total, 0) === 6_400);
+  const cancelledOrderCount = orders.filter(
+    (order) => String(order?.status || '').toLowerCase() === 'cancelled'
+  ).length;
+
+  let hasNightOrder = false;
+  let has0333Order = false;
+  for (const order of paidOrders) {
+    const hourMinute = toMadridHourMinute(order?.paid_at || order?.created_at || null);
+    if (!hourMinute) continue;
+    if (hourMinute.hour >= 0 && hourMinute.hour < 6) {
+      hasNightOrder = true;
+    }
+    if (hourMinute.hour === 3 && hourMinute.minute === 33) {
+      has0333Order = true;
+    }
+    if (hasNightOrder && has0333Order) break;
+  }
+
+  const hasMarathonOrder = paidOrders.some((order) => {
+    const orderId = String(order.id || '').trim();
+    if (!orderId) return false;
+    return Math.max(0, Number(orderItemQuantityByOrder.get(orderId) || 0)) >= 3;
+  });
+
+  let listingCount = 0;
+  let deliveredListingCount = 0;
+  if (supabaseAdmin) {
+    const { data, error } = await supabaseAdmin
+      .from('user_product_listings')
+      .select('id,delivery_status')
+      .eq('user_id', userId)
+      .limit(3500);
+
+    if (!error && Array.isArray(data)) {
+      listingCount = data.length;
+      deliveredListingCount = data.filter(
+        (row) => String((row as any)?.delivery_status || '').toLowerCase() === 'delivered'
+      ).length;
+    } else if (error && !hasMissingTableError(error) && !hasMissingColumnError(error)) {
+      console.warn('Listing metrics skipped:', error.message);
+    }
+  }
+
+  const mysterySpinCount = await fetchExactCount({
+    table: 'mystery_spins',
+    apply: (query) => query.eq('user_id', userId),
+  });
+  const commentCount = await fetchExactCount({
+    table: 'user_xp_events',
+    apply: (query) => query.eq('user_id', userId).eq('action_key', 'comment_posted'),
+  });
+  const likesGivenCount = await fetchExactCount({
+    table: 'product_likes',
+    apply: (query) => query.eq('user_id', userId),
+  });
+
+  let streakCurrent = 0;
+  if (supabaseAdmin) {
+    const { data: streakRow, error: streakError } = await supabaseAdmin
+      .from('user_login_streaks')
+      .select('streak_count')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (!streakError && streakRow) {
+      streakCurrent = Math.max(0, Math.floor(safeNumber((streakRow as any)?.streak_count, 0)));
+    } else if (streakError && !hasMissingTableError(streakError) && !hasMissingColumnError(streakError)) {
+      console.warn('Streak metrics skipped:', streakError.message);
+    }
+  }
+
+  return {
+    hasShipping: hasShippingAddress(userRow.shipping_address),
+    profileCompleted: isProfileCompletionEligible({
+      name: userRow.name,
+      avatar_url: userRow.avatar_url,
+      banner_url: userRow.banner_url,
+      bio: userRow.bio,
+      tagline: userRow.tagline,
+      favorite_console: userRow.favorite_console,
+      shipping_address: userRow.shipping_address,
+    }),
+    hasAvatar: hasValidProfileImage(userRow.avatar_url),
+    hasBanner: hasValidProfileImage(userRow.banner_url),
+    hasBio: hasStrongText(userRow.bio, 20),
+    isVerifiedSeller: Boolean(userRow.is_verified_seller) || String(userRow.role || '') === 'admin',
+    orderCount: paidOrders.length,
+    cancelledOrderCount,
+    hasHighValueOrder,
+    hasNightOrder,
+    mysteryOrderCount,
+    mysterySpinCount,
+    listingCount,
+    deliveredListingCount,
+    commentCount,
+    likesGivenCount,
+    streakCurrent,
+    accountAgeDays: getAccountAgeDays(userRow.created_at),
+    has0333Order,
+    has64Order,
+    hasMarathonOrder,
+    level,
+  };
+}
+
+function collectAutomaticBadgeKeys(stats: BadgeStats): string[] {
+  const badges = new Set<string>();
+  const add = (condition: boolean, badgeKey: string) => {
+    if (condition) badges.add(badgeKey);
+  };
+
+  add(stats.hasShipping, 'direccion-confirmada');
+  add(stats.profileCompleted, 'perfil-completo');
+  add(stats.hasAvatar, 'foto-perfil');
+  add(stats.hasBanner, 'banner-personalizado');
+  add(stats.hasBio, 'bio-retro');
+  add(stats.isVerifiedSeller, 'cuenta-verificada');
+
+  add(stats.orderCount >= 1, 'primer-cartucho');
+  add(stats.orderCount >= 5, 'jugador-habitual');
+  add(stats.orderCount >= 10, 'coleccionista-oficial');
+  add(stats.orderCount >= 25, 'veterano-retro');
+  add(stats.orderCount >= 50, 'leyenda-del-pixel');
+  add(stats.orderCount >= 100, 'maestro-del-arcade');
+  add(stats.hasHighValueOrder, 'inversor-retro');
+  add(stats.hasNightOrder, 'buho-gamer');
+
+  add(stats.mysteryOrderCount >= 1, 'valiente-del-misterio');
+  add(stats.mysteryOrderCount >= 5, 'amante-del-azar');
+  add(stats.mysteryOrderCount >= 10, 'maestro-del-destino');
+  add(stats.mysterySpinCount >= 1, 'giro-inaugural');
+  add(stats.mysterySpinCount >= 20, 'dios-del-spin');
+
+  add(stats.listingCount >= 1, 'primer-vendedor');
+  add(stats.listingCount >= 5, 'mercader-retro');
+  add(stats.listingCount >= 20, 'tienda-activa');
+  add(stats.listingCount >= 50, 'gran-comerciante');
+  add(stats.deliveredListingCount >= 1, 'venta-exitosa');
+  add(stats.deliveredListingCount >= 10, 'vendedor-confianza');
+  add(stats.deliveredListingCount >= 50, 'power-seller');
+
+  add(stats.commentCount >= 1, 'voz-retro');
+  add(stats.commentCount >= 10, 'participante-activo');
+  add(stats.commentCount >= 50, 'espiritu-comunitario');
+  add(stats.likesGivenCount >= 1, 'apoyo-inicial');
+  add(stats.likesGivenCount >= 100, 'fan-del-retro');
+
+  add(stats.streakCurrent >= 7, 'constante');
+  add(stats.streakCurrent >= 30, 'comprometido');
+  add(stats.streakCurrent >= 100, 'adicto-al-pixel');
+
+  add(stats.accountAgeDays >= 365, 'miembro-fundador');
+  add(stats.accountAgeDays >= 365 * 3, 'icono-advanced-retro');
+
+  add(stats.has0333Order, 'hora-misteriosa');
+  add(stats.has64Order, 'nintendo-vibes');
+  add(stats.hasMarathonOrder, 'maraton-gamer');
+  add(stats.orderCount >= 5 && stats.cancelledOrderCount === 0, 'cliente-ejemplar');
+
+  add(stats.level >= 20, 'nivel-20');
+  add(stats.level >= 30, 'emblema-legendario');
+
+  return [...badges];
+}
+
+async function syncUserBadges(options: {
+  userId: string;
+  level: number;
+  userRow?: UserXpRow | null;
+}): Promise<string[]> {
+  if (!supabaseAdmin) return [];
+  const userId = String(options.userId || '').trim();
+  if (!userId) return [];
+
+  const userRow = options.userRow || (await getUserXpRow(userId));
+  if (!userRow) return [];
+
+  const existing = normalizeBadgeKeys(userRow.badges);
+  const stats = await collectBadgeStats(userId, userRow, options.level);
+  const auto = collectAutomaticBadgeKeys(stats);
+  let next = mergeUniqueBadges(existing, auto);
+
+  if (String(userRow.role || '').toLowerCase() === 'admin') {
+    next = mergeUniqueBadges(next, ALL_BADGE_KEYS);
+  }
+
+  next = sortBadgeKeys(next);
+
+  if (getBadgeDiffCount(existing, next) > 0) {
+    const { error } = await supabaseAdmin
+      .from('users')
+      .update({
+        badges: next,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+    if (error && !hasMissingTableError(error) && !hasMissingColumnError(error)) {
+      console.warn('Badge sync skipped:', error.message);
+    }
+  }
+
+  return next;
 }
 
 async function unlockRewardsForLevel(userId: string, fromLevel: number, toLevel: number) {
@@ -143,6 +605,17 @@ export async function grantXpToUser(options: {
   if (!before) return { awarded: false, levelUp: false };
   const prevXp = Math.max(0, Math.floor(safeNumber(before.xp_total, 0)));
   const prevLevel = Math.max(1, Math.floor(safeNumber(before.level, getLevelFromXp(prevXp))));
+
+  if (dedupeKey && (await hasXpEventWithDedupeKey(dedupeKey))) {
+    return {
+      awarded: false,
+      levelUp: false,
+      previousLevel: prevLevel,
+      currentLevel: prevLevel,
+      xpDelta: 0,
+    };
+  }
+
   const nextXp = Math.max(0, prevXp + xpDelta);
   const nextLevel = getLevelFromXp(nextXp);
 
@@ -198,6 +671,18 @@ export async function grantXpToUser(options: {
     await unlockRewardsForLevel(userId, prevLevel, nextLevel);
   }
 
+  void syncUserBadges({
+    userId,
+    level: nextLevel,
+    userRow: {
+      ...before,
+      level: nextLevel,
+      xp_total: nextXp,
+    },
+  }).catch((error) => {
+    console.warn('Async badge sync skipped:', error);
+  });
+
   return {
     awarded: true,
     levelUp: nextLevel > prevLevel,
@@ -212,10 +697,9 @@ export async function awardDailyLoginXpIfNeeded(userId: string) {
   const normalizedUserId = String(userId || '').trim();
   if (!normalizedUserId) return;
 
-  const today = toIsoDate(new Date());
-  const yesterdayDate = new Date();
-  yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
-  const yesterday = toIsoDate(yesterdayDate);
+  const now = new Date();
+  const today = toMadridIsoDate(now);
+  const yesterday = toMadridIsoDate(new Date(now.getTime() - 86_400_000));
 
   const { data: row, error } = await supabaseAdmin
     .from('user_login_streaks')
@@ -339,6 +823,12 @@ export async function getGamificationSnapshot(userId: string) {
   const userRow = await getUserXpRow(normalizedUserId);
   const xpTotal = Math.max(0, Math.floor(safeNumber(userRow?.xp_total, 0)));
   const level = Math.max(1, Math.floor(safeNumber(userRow?.level, getLevelFromXp(xpTotal))));
+
+  await syncUserBadges({
+    userId: normalizedUserId,
+    level,
+    userRow,
+  });
 
   const progress = getLevelProgress(xpTotal);
   const frame = getAvatarFrameByLevel(level);

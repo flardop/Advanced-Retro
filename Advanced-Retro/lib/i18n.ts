@@ -22,6 +22,7 @@ const ES: TranslationMap = {
   'nav.shop': 'Tienda',
   'nav.community': 'Comunidad',
   'nav.mystery': 'Mystery',
+  'nav.auctions': 'Subastas',
   'nav.roulette': 'Ruleta',
   'nav.concierge': 'Encargos',
   'nav.contact': 'Contacto',
@@ -65,6 +66,7 @@ const EN: TranslationMap = {
   'nav.shop': 'Shop',
   'nav.community': 'Community',
   'nav.mystery': 'Mystery',
+  'nav.auctions': 'Auctions',
   'nav.roulette': 'Roulette',
   'nav.concierge': 'Requests',
   'nav.contact': 'Contact',
@@ -182,4 +184,3 @@ export function translate(locale: LocaleCode, key: string, fallback?: string): s
   if (esFallback) return esFallback;
   return fallback || key;
 }
-

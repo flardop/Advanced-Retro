@@ -1,6 +1,15 @@
+import type { Metadata } from 'next';
 import SuccessView from '@/components/sections/SuccessView';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { buildPageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Pedido confirmado',
+  description: 'Resumen privado de confirmación de pedido en AdvancedRetro.es.',
+  path: '/success',
+  noIndex: true,
+});
 
 type SuccessPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;

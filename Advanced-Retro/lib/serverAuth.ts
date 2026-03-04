@@ -174,19 +174,36 @@ export async function requireAuthUser(): Promise<User> {
 
 export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
   if (!supabaseAdmin) throw new ApiError(503, 'Supabase not configured');
-  const { safeEmail, safeName, safeAvatar } = await syncAuthUserProfileRow(user);
+  const safeEmail = user.email || `${user.id}@local.invalid`;
+  const safeName = userNameFromAuth(user);
+  const safeAvatar = userAvatarFromAuth(user);
   const safeBanner = userBannerFromAuth(user);
   const metadata = user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {};
   const metadataShipping = normalizeShippingAddressFromUnknown((metadata as any).shipping_address);
 
-  const { data: profile, error: profileError } = await supabaseAdmin
+  const { data: existingProfile, error: existingProfileError } = await supabaseAdmin
     .from('users')
     .select('*')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (profileError || !profile) {
-    throw new ApiError(500, profileError?.message || 'Unable to load profile');
+  if (existingProfileError) {
+    throw new ApiError(500, existingProfileError?.message || 'Unable to load profile');
+  }
+
+  let profile = existingProfile;
+  if (!profile) {
+    await syncAuthUserProfileRow(user);
+    const { data: syncedProfile, error: syncedProfileError } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (syncedProfileError || !syncedProfile) {
+      throw new ApiError(500, syncedProfileError?.message || 'Unable to load profile');
+    }
+    profile = syncedProfile;
   }
 
   return {

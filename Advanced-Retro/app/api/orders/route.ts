@@ -5,6 +5,7 @@ import { supabaseServer } from '@/lib/supabaseServer';
 import { normalizeCouponCode, validateCouponForCheckout } from '@/lib/coupons';
 import { applyPaidOrderWithStockUpdate } from '@/lib/orderSettlement';
 import { calculateShippingQuoteFromArenys } from '@/lib/shipping';
+import { computeCommission } from '@/lib/commissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -179,6 +180,12 @@ export async function POST(req: Request) {
   }
 
   const total = Math.max(0, checkoutSubtotal - couponDiscount);
+  const commission = computeCommission({
+    source: 'catalog',
+    // La base de comisión excluye envío para no comisionar costes logísticos.
+    baseCents: Math.max(0, total - shippingCost),
+    grossCents: total,
+  });
 
   const legacyItems = [...itemQuantities.entries()]
     .map(([productId, quantity]) => {
@@ -205,6 +212,12 @@ export async function POST(req: Request) {
     coupon_code: couponValidation?.coupon?.code || null,
     coupon_id: couponValidation?.coupon?.id || null,
     coupon_discount: couponDiscount,
+    commission_source: commission.source,
+    commission_rate: commission.ratePercent,
+    commission_base_cents: commission.baseCents,
+    commission_amount_cents: commission.amountCents,
+    gross_amount_cents: commission.grossCents,
+    net_amount_cents: commission.netCents,
     updated_at: new Date().toISOString(),
   };
 
@@ -221,6 +234,7 @@ export async function POST(req: Request) {
   orderError = insertAttempt.error;
 
   if (orderError && String(orderError.message || '').toLowerCase().includes('column')) {
+    // Fallback para instalaciones que todavía no ejecutaron la migración de comisiones.
     const fallbackAttempt = await supabaseAdmin
       .from('orders')
       .insert({
@@ -257,6 +271,7 @@ export async function POST(req: Request) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
 
   if (total <= 0) {
+    // Pedido a 0€ (cupón total): se liquida sin pasar por Stripe.
     try {
       await applyPaidOrderWithStockUpdate({
         supabaseAdmin,
@@ -307,12 +322,31 @@ export async function POST(req: Request) {
       discounts: stripeDiscounts,
       success_url: `${siteUrl}/success?orderId=${order.id}`,
       cancel_url: `${siteUrl}/carrito`,
-      metadata: { orderId: order.id },
+      metadata: {
+        // Metadata usada en webhook para conciliar pago + comisión.
+        orderId: order.id,
+        commissionSource: commission.source,
+        commissionRate: String(commission.ratePercent),
+        commissionBaseCents: String(commission.baseCents),
+        commissionAmountCents: String(commission.amountCents),
+      },
     });
   } catch (stripeError) {
     await supabaseAdmin.from('orders').delete().eq('id', order.id);
     const message = stripeError instanceof Error ? stripeError.message : 'Error creating checkout session';
     return NextResponse.json({ error: message }, { status: 502 });
+  }
+
+  // Guardado best-effort de la sesión Stripe para trazabilidad.
+  const { error: stripeSessionUpdateError } = await supabaseAdmin
+    .from('orders')
+    .update({
+      stripe_session_id: session.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', order.id);
+  if (stripeSessionUpdateError) {
+    console.warn('Order stripe_session_id update skipped:', stripeSessionUpdateError);
   }
 
   return NextResponse.json({ sessionId: session.id, orderId: order.id });

@@ -1,3 +1,13 @@
+import type { Metadata } from 'next';
+import { buildPageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Política de cookies',
+  description: 'Información sobre cookies técnicas, analíticas y de preferencia usadas en AdvancedRetro.es.',
+  path: '/cookies',
+  keywords: ['cookies tienda online', 'cookies advanced retro'],
+});
+
 export default function CookiesPage() {
   return (
     <section className="section">

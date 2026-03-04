@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getPublicApprovedListings } from '@/lib/userListings';
+import {
+  COMMUNITY_COMMISSION_RATE,
+  COMMUNITY_FEATURED_FEE_PER_DAY_CENTS,
+  COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS,
+  getPublicApprovedListings,
+} from '@/lib/userListings';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +16,9 @@ export async function GET(req: Request) {
     return NextResponse.json({
       policy: {
         publish_fee_cents: 0,
-        commission_rate: 10,
+        commission_rate: COMMUNITY_COMMISSION_RATE,
+        featured_fee_per_day_cents: COMMUNITY_FEATURED_FEE_PER_DAY_CENTS,
+        showcase_fee_per_day_cents: COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS,
       },
       listings,
     });

@@ -1,0 +1,19 @@
+<svg width="1600" height="500" viewBox="0 0 1600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2A0900" />
+      <stop offset="0.5" stop-color="#5B1208" />
+      <stop offset="1" stop-color="#7C2D12" />
+    </linearGradient>
+    <radialGradient id="sun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1260 120) rotate(160) scale(460 220)">
+      <stop stop-color="#FB923C" stop-opacity="0.55" />
+      <stop offset="1" stop-color="#FB923C" stop-opacity="0" />
+    </radialGradient>
+    <pattern id="scan" width="8" height="8" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0.5" x2="8" y2="0.5" stroke="#FCD34D" stroke-opacity="0.1" />
+    </pattern>
+  </defs>
+  <rect width="1600" height="500" fill="url(#bg)" />
+  <rect width="1600" height="500" fill="url(#sun)" />
+  <rect width="1600" height="500" fill="url(#scan)" />
+</svg>

@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { ApiError, requireUserContext } from '@/lib/serverAuth';
 import {
   COMMUNITY_COMMISSION_RATE,
+  COMMUNITY_FEATURED_FEE_PER_DAY_CENTS,
   COMMUNITY_LISTING_FEE_CENTS,
+  COMMUNITY_MAX_IMAGES,
+  COMMUNITY_MIN_IMAGES,
+  COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS,
   createUserListing,
   getUserListings,
   validateListingInput,
@@ -26,6 +30,10 @@ export async function GET() {
       policy: {
         listing_fee_cents: COMMUNITY_LISTING_FEE_CENTS,
         commission_rate: COMMUNITY_COMMISSION_RATE,
+        featured_fee_per_day_cents: COMMUNITY_FEATURED_FEE_PER_DAY_CENTS,
+        showcase_fee_per_day_cents: COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS,
+        min_images: COMMUNITY_MIN_IMAGES,
+        max_images: COMMUNITY_MAX_IMAGES,
       },
       listings,
     });
@@ -63,6 +71,10 @@ export async function POST(req: Request) {
       policy: {
         listing_fee_cents: COMMUNITY_LISTING_FEE_CENTS,
         commission_rate: COMMUNITY_COMMISSION_RATE,
+        featured_fee_per_day_cents: COMMUNITY_FEATURED_FEE_PER_DAY_CENTS,
+        showcase_fee_per_day_cents: COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS,
+        min_images: COMMUNITY_MIN_IMAGES,
+        max_images: COMMUNITY_MAX_IMAGES,
       },
       listing,
     });

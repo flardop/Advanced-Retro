@@ -30,6 +30,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'thumbnails.libretro.com' },
       { protocol: 'https', hostname: 'images.igdb.com' },
       { protocol: 'https', hostname: 'upload.wikimedia.org' },
+      { protocol: 'https', hostname: 'i.ytimg.com' },
+      { protocol: 'https', hostname: '*.ytimg.com' },
     ],
   },
   async headers() {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
@@ -14,7 +14,23 @@ type AdminTab =
   | 'chats'
   | 'listings'
   | 'coupons'
-  | 'mystery';
+  | 'mystery'
+  | 'performance';
+
+type AdminExportScope =
+  | 'overview'
+  | 'products'
+  | 'users'
+  | 'orders'
+  | 'financial'
+  | 'social'
+  | 'tickets'
+  | 'listings'
+  | 'performance'
+  | 'user'
+  | 'all';
+
+type AdminExportFormat = 'csv' | 'json' | 'pdf';
 
 type AdminTicket = {
   id: string;
@@ -54,6 +70,37 @@ type MysteryBoxAdmin = {
   ticket_price: number;
   is_active: boolean;
   prizes: MysteryPrizeAdmin[];
+};
+
+type HypeLaunchKind = 'mystery_drop' | 'auction_season';
+
+type HypeLaunchAdmin = {
+  id: string;
+  launch_key: string;
+  kind: HypeLaunchKind;
+  title: string;
+  subtitle: string;
+  description: string;
+  image_url: string;
+  lock_until: string;
+  is_active: boolean;
+  pinned: boolean;
+  priority: number;
+  reservations_count: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+type HypeLaunchDraft = {
+  kind: HypeLaunchKind;
+  title: string;
+  subtitle: string;
+  description: string;
+  image_url: string;
+  lock_until: string;
+  is_active: boolean;
+  pinned: boolean;
+  priority: number;
 };
 
 type UserVisualDraft = {
@@ -149,6 +196,78 @@ type AdminWithdrawalRequest = {
   reviewer?: { id: string; email?: string; name?: string | null; avatar_url?: string | null } | null;
 };
 
+type PerformanceRange = '1h' | '24h' | '7d';
+
+type PerformanceSummary = {
+  totalRequests: number;
+  avgDurationMs: number;
+  p95DurationMs: number;
+  maxDurationMs: number;
+  errorCount: number;
+  errorRate: number;
+  cacheMeasuredRequests: number;
+  cacheHitRatio: number | null;
+  endpointCount: number;
+};
+
+type PerformanceEndpointStat = {
+  endpoint: string;
+  method: string;
+  requests: number;
+  avgDurationMs: number;
+  p95DurationMs: number;
+  maxDurationMs: number;
+  errorRate: number;
+  cacheHitRatio: number | null;
+};
+
+type PerformanceTimelinePoint = {
+  bucketStart: string;
+  label: string;
+  requests: number;
+  avgDurationMs: number;
+  p95DurationMs: number;
+  errorRate: number;
+  cacheHitRatio: number | null;
+};
+
+type PerformanceErrorRow = {
+  endpoint: string;
+  method: string;
+  statusCode: number;
+  durationMs: number;
+  createdAt: string;
+};
+
+type AdminPerformancePayload = {
+  setupRequired?: boolean;
+  error?: string;
+  range?: PerformanceRange;
+  since?: string;
+  sampleSize?: number;
+  summary?: PerformanceSummary;
+  topSlowEndpoints?: PerformanceEndpointStat[];
+  topEndpointsByRequests?: PerformanceEndpointStat[];
+  timeline?: PerformanceTimelinePoint[];
+  recentErrors?: PerformanceErrorRow[];
+};
+
+type SocialBackfillResult = {
+  startedAt: string;
+  finishedAt: string;
+  dryRun: boolean;
+  sqlAvailable: boolean;
+  scanned: number;
+  processed: number;
+  productsWithLegacyData: number;
+  skippedNoData: number;
+  summaryRowsUpserted: number;
+  visitRowsUpserted: number;
+  reviewRowsUpserted: number;
+  likesSource: 'product_likes' | 'storage';
+  errors: Array<{ productId: string; message: string }>;
+};
+
 const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const;
 const PROFILE_THEME_OPTIONS = ['neon-grid', 'sunset-glow', 'arcade-purple', 'mint-wave'] as const;
 const WALLET_STATUS_OPTIONS = ['available', 'pending', 'spent'] as const;
@@ -240,6 +359,12 @@ function downloadCsvFile(filename: string, headers: string[], rows: Array<Array<
   window.URL.revokeObjectURL(url);
 }
 
+function getFilenameFromDisposition(disposition: string | null): string | null {
+  if (!disposition) return null;
+  const match = disposition.match(/filename="([^"]+)"/i);
+  return match?.[1] || null;
+}
+
 function isSameLocalDay(value: unknown, referenceDate = new Date()): boolean {
   const raw = String(value || '').trim();
   if (!raw) return false;
@@ -250,6 +375,16 @@ function isSameLocalDay(value: unknown, referenceDate = new Date()): boolean {
     date.getMonth() === referenceDate.getMonth() &&
     date.getDate() === referenceDate.getDate()
   );
+}
+
+function toDatetimeLocalValue(value: unknown): string {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const date = new Date(raw);
+  if (!Number.isFinite(date.getTime())) return '';
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60 * 1000);
+  return local.toISOString().slice(0, 16);
 }
 
 export default function AdminPanel() {
@@ -264,6 +399,23 @@ export default function AdminPanel() {
   const [listings, setListings] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [mysteryBoxes, setMysteryBoxes] = useState<MysteryBoxAdmin[]>([]);
+  const [hypeLaunches, setHypeLaunches] = useState<HypeLaunchAdmin[]>([]);
+  const [hypeSetupRequired, setHypeSetupRequired] = useState(false);
+  const [hypeErrorMessage, setHypeErrorMessage] = useState<string | null>(null);
+  const [hypeDraftByKey, setHypeDraftByKey] = useState<Record<string, HypeLaunchDraft>>({});
+  const [creatingHypeLaunch, setCreatingHypeLaunch] = useState(false);
+  const [newHypeLaunch, setNewHypeLaunch] = useState({
+    launch_key: '',
+    kind: 'mystery_drop' as HypeLaunchKind,
+    title: '',
+    subtitle: '',
+    description: '',
+    image_url: '/images/hype/mystery-drop.svg',
+    lock_until: '',
+    priority: 100,
+    is_active: true,
+    pinned: false,
+  });
   const [withdrawals, setWithdrawals] = useState<AdminWithdrawalRequest[]>([]);
   const [withdrawalsSummary, setWithdrawalsSummary] = useState<{
     total: number;
@@ -339,6 +491,17 @@ export default function AdminPanel() {
   const [userVisualDraftById, setUserVisualDraftById] = useState<
     Record<string, UserVisualDraft>
   >({});
+  const [performanceRange, setPerformanceRange] = useState<PerformanceRange>('24h');
+  const [performanceLoading, setPerformanceLoading] = useState(false);
+  const [performanceErrorMessage, setPerformanceErrorMessage] = useState<string | null>(null);
+  const [performanceData, setPerformanceData] = useState<AdminPerformancePayload | null>(null);
+  const [performanceSetupRequired, setPerformanceSetupRequired] = useState(false);
+  const [socialBackfillLimit, setSocialBackfillLimit] = useState(250);
+  const [socialBackfillDryRun, setSocialBackfillDryRun] = useState(true);
+  const [socialBackfillRunning, setSocialBackfillRunning] = useState(false);
+  const [socialBackfillResult, setSocialBackfillResult] = useState<SocialBackfillResult | null>(null);
+  const [exportingKey, setExportingKey] = useState('');
+  const [exportUserId, setExportUserId] = useState('');
 
   const loadWallets = async (search = '') => {
     setWalletsErrorMessage(null);
@@ -428,6 +591,69 @@ export default function AdminPanel() {
     }
   };
 
+  const loadPerformanceMetrics = useCallback(async (range: PerformanceRange) => {
+    setPerformanceLoading(true);
+    setPerformanceErrorMessage(null);
+    setPerformanceSetupRequired(false);
+
+    try {
+      const params = new URLSearchParams();
+      params.set('range', range);
+      const res = await fetch(`/api/admin/performance/metrics?${params.toString()}`);
+      const data = (await res.json().catch(() => null)) as AdminPerformancePayload | null;
+
+      if (!res.ok) {
+        setPerformanceData(null);
+        setPerformanceSetupRequired(Boolean(data?.setupRequired));
+        setPerformanceErrorMessage(data?.error || 'No se pudieron cargar métricas de rendimiento');
+        return;
+      }
+
+      setPerformanceData(data || null);
+      setPerformanceSetupRequired(Boolean(data?.setupRequired));
+      if (data?.error) setPerformanceErrorMessage(String(data.error));
+    } catch {
+      setPerformanceData(null);
+      setPerformanceErrorMessage('No se pudieron cargar métricas de rendimiento');
+    } finally {
+      setPerformanceLoading(false);
+    }
+  }, []);
+
+  const runSocialBackfill = async () => {
+    setSocialBackfillRunning(true);
+    setPerformanceErrorMessage(null);
+
+    try {
+      const payload = {
+        dryRun: Boolean(socialBackfillDryRun),
+        limit: Math.min(Math.max(Math.round(Number(socialBackfillLimit || 0)), 1), 1000),
+      };
+
+      const res = await fetch('/api/admin/performance/social-backfill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        toast.error(data?.error || 'No se pudo ejecutar backfill');
+        if (data?.setupRequired) {
+          setPerformanceSetupRequired(true);
+        }
+        return;
+      }
+
+      setSocialBackfillResult((data?.result || null) as SocialBackfillResult | null);
+      toast.success(payload.dryRun ? 'Dry-run completado' : 'Backfill aplicado');
+      await loadPerformanceMetrics(performanceRange);
+    } catch {
+      toast.error('No se pudo ejecutar backfill');
+    } finally {
+      setSocialBackfillRunning(false);
+    }
+  };
+
   const updateWithdrawalStatus = async (
     requestId: string,
     status: 'pending' | 'approved' | 'rejected' | 'paid' | 'cancelled'
@@ -491,12 +717,63 @@ export default function AdminPanel() {
     }
   };
 
+  const exportAdminData = async (
+    scope: AdminExportScope,
+    format: AdminExportFormat = 'csv',
+    options?: { userId?: string; limit?: number; hours?: number }
+  ) => {
+    const exportKey = `${scope}:${format}:${options?.userId || 'all'}`;
+    setExportingKey(exportKey);
+    try {
+      const params = new URLSearchParams();
+      params.set('scope', scope);
+      params.set('format', format);
+      params.set('limit', String(Math.min(Math.max(Number(options?.limit || 5000), 200), 25000)));
+      if (Number.isFinite(Number(options?.hours || 0)) && Number(options?.hours || 0) > 0) {
+        params.set('hours', String(Math.round(Number(options?.hours))));
+      }
+      if (scope === 'user') {
+        const userId = String(options?.userId || '').trim();
+        if (!userId) {
+          toast.error('Selecciona un usuario para exportación individual');
+          return;
+        }
+        params.set('userId', userId);
+      }
+
+      const res = await fetch(`/api/admin/exports?${params.toString()}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'No se pudo exportar datos');
+      }
+
+      const blob = await res.blob();
+      const contentDisposition = res.headers.get('content-disposition');
+      const fallbackName = `admin-export-${scope}.${format === 'json' ? 'json' : format === 'pdf' ? 'pdf' : 'csv'}`;
+      const filename = getFilenameFromDisposition(contentDisposition) || fallbackName;
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Exportación ${scope} (${format.toUpperCase()}) descargada`);
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo exportar datos');
+    } finally {
+      setExportingKey('');
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const [pRes, oRes, uRes, tRes, lRes, cRes, mRes, wRes, wdRes] = await Promise.all([
+      const [pRes, oRes, uRes, tRes, lRes, cRes, mRes, hRes, wRes, wdRes] = await Promise.all([
         fetch('/api/admin/products'),
         fetch('/api/admin/orders'),
         fetch('/api/admin/users'),
@@ -504,6 +781,7 @@ export default function AdminPanel() {
         fetch('/api/admin/listings'),
         fetch('/api/admin/coupons'),
         fetch('/api/admin/mystery'),
+        fetch('/api/admin/hype/launches'),
         fetch('/api/admin/wallets?limit=200'),
         fetch('/api/admin/wallet-withdrawals?status=all&limit=150'),
       ]);
@@ -551,6 +829,18 @@ export default function AdminPanel() {
         setMysteryBoxes([]);
       }
 
+      if (hRes.ok) {
+        const h = await hRes.json().catch(() => null);
+        setHypeLaunches(Array.isArray(h?.launches) ? h.launches : []);
+        setHypeSetupRequired(Boolean(h?.setupRequired));
+        setHypeErrorMessage(typeof h?.error === 'string' ? h.error : null);
+      } else {
+        const hErr = await hRes.json().catch(() => null);
+        setHypeLaunches([]);
+        setHypeSetupRequired(Boolean(hErr?.setupRequired));
+        setHypeErrorMessage(hErr?.error || 'No se pudieron cargar los lanzamientos bloqueados');
+      }
+
       if (wRes.ok) {
         const w = await wRes.json().catch(() => null);
         setWalletRows(Array.isArray(w?.wallets) ? w.wallets : []);
@@ -590,6 +880,18 @@ export default function AdminPanel() {
   }, []);
 
   useEffect(() => {
+    if (exportUserId) return;
+    if (!Array.isArray(users) || users.length === 0) return;
+    const first = users[0];
+    if (first?.id) setExportUserId(String(first.id));
+  }, [users, exportUserId]);
+
+  useEffect(() => {
+    if (tab !== 'performance') return;
+    void loadPerformanceMetrics(performanceRange);
+  }, [tab, performanceRange, loadPerformanceMetrics]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       const raw = window.localStorage.getItem(ADMIN_PREFS_STORAGE_KEY);
@@ -609,6 +911,7 @@ export default function AdminPanel() {
         'listings',
         'coupons',
         'mystery',
+        'performance',
       ];
       if (allowedTabs.includes(nextTab as AdminTab)) setTab(nextTab as AdminTab);
 
@@ -910,6 +1213,173 @@ export default function AdminPanel() {
 
     setMysteryBoxes((prev) => prev.map((box) => ({ ...box, is_active: nextActive })));
     toast.success(nextActive ? 'Ruleta activada' : 'Ruleta apagada');
+  };
+
+  const getHypeLaunchDraft = (launch: HypeLaunchAdmin): HypeLaunchDraft => {
+    const existing = hypeDraftByKey[launch.launch_key];
+    if (existing) return existing;
+    return {
+      kind: launch.kind,
+      title: String(launch.title || ''),
+      subtitle: String(launch.subtitle || ''),
+      description: String(launch.description || ''),
+      image_url: String(launch.image_url || ''),
+      lock_until: toDatetimeLocalValue(launch.lock_until),
+      is_active: Boolean(launch.is_active),
+      pinned: Boolean(launch.pinned),
+      priority: Number(launch.priority || 0),
+    };
+  };
+
+  const setHypeDraftField = <K extends keyof HypeLaunchDraft>(
+    launchKey: string,
+    launch: HypeLaunchAdmin,
+    field: K,
+    value: HypeLaunchDraft[K]
+  ) => {
+    setHypeDraftByKey((prev) => {
+      const base = prev[launchKey] || getHypeLaunchDraft(launch);
+      return {
+        ...prev,
+        [launchKey]: {
+          ...base,
+          [field]: value,
+        },
+      };
+    });
+  };
+
+  const refreshHypeLaunches = async () => {
+    setHypeErrorMessage(null);
+    setHypeSetupRequired(false);
+    try {
+      const res = await fetch('/api/admin/hype/launches');
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setHypeLaunches([]);
+        setHypeSetupRequired(Boolean(data?.setupRequired));
+        setHypeErrorMessage(data?.error || 'No se pudo cargar lanzamientos bloqueados');
+        return;
+      }
+      setHypeLaunches(Array.isArray(data?.launches) ? data.launches : []);
+      setHypeSetupRequired(Boolean(data?.setupRequired));
+      setHypeErrorMessage(typeof data?.error === 'string' ? data.error : null);
+    } catch {
+      setHypeLaunches([]);
+      setHypeErrorMessage('No se pudo cargar lanzamientos bloqueados');
+    }
+  };
+
+  const saveHypeLaunch = async (launch: HypeLaunchAdmin) => {
+    const draft = getHypeLaunchDraft(launch);
+    const lockUntilIso = draft.lock_until ? new Date(draft.lock_until).toISOString() : '';
+    const payload = {
+      launch_key: launch.launch_key,
+      kind: draft.kind,
+      title: draft.title,
+      subtitle: draft.subtitle,
+      description: draft.description,
+      image_url: draft.image_url,
+      lock_until: lockUntilIso,
+      priority: Number(draft.priority || 0),
+      is_active: Boolean(draft.is_active),
+      pinned: Boolean(draft.pinned),
+    };
+
+    const res = await fetch('/api/admin/hype/launches', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo guardar lanzamiento');
+      return;
+    }
+
+    toast.success('Lanzamiento actualizado');
+    await refreshHypeLaunches();
+  };
+
+  const createHypeLaunch = async () => {
+    const lockUntilIso = newHypeLaunch.lock_until ? new Date(newHypeLaunch.lock_until).toISOString() : '';
+    if (!newHypeLaunch.launch_key.trim() || !newHypeLaunch.title.trim() || !lockUntilIso) {
+      toast.error('Completa launch_key, título y fecha de apertura');
+      return;
+    }
+
+    const payload = {
+      launch_key: newHypeLaunch.launch_key,
+      kind: newHypeLaunch.kind,
+      title: newHypeLaunch.title,
+      subtitle: newHypeLaunch.subtitle,
+      description: newHypeLaunch.description,
+      image_url: newHypeLaunch.image_url,
+      lock_until: lockUntilIso,
+      priority: Number(newHypeLaunch.priority || 100),
+      is_active: Boolean(newHypeLaunch.is_active),
+      pinned: Boolean(newHypeLaunch.pinned),
+    };
+
+    const res = await fetch('/api/admin/hype/launches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      toast.error(data?.error || 'No se pudo crear lanzamiento');
+      return;
+    }
+
+    toast.success('Lanzamiento creado');
+    setNewHypeLaunch({
+      launch_key: '',
+      kind: 'mystery_drop',
+      title: '',
+      subtitle: '',
+      description: '',
+      image_url: '/images/hype/mystery-drop.svg',
+      lock_until: '',
+      priority: 100,
+      is_active: true,
+      pinned: false,
+    });
+    setCreatingHypeLaunch(false);
+    await refreshHypeLaunches();
+  };
+
+  const exportHypeReservationsCsv = async (launchKey?: string) => {
+    try {
+      const params = new URLSearchParams();
+      params.set('status', 'active');
+      params.set('limit', '25000');
+      if (launchKey) params.set('launchKey', launchKey);
+
+      const res = await fetch(`/api/admin/hype/reservations/export?${params.toString()}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || 'No se pudo exportar reservas');
+      }
+
+      const blob = await res.blob();
+      const contentDisposition = res.headers.get('content-disposition');
+      const filename =
+        getFilenameFromDisposition(contentDisposition) ||
+        `hype-reservas-${launchKey || 'all'}-${new Date().toISOString().slice(0, 10)}.csv`;
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('CSV de reservas descargado');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo exportar reservas');
+    }
   };
 
   const openTicket = async (ticketId: string) => {
@@ -1393,6 +1863,91 @@ export default function AdminPanel() {
               <button className="chip" onClick={exportWithdrawalsCsv}>
                 Export retiradas CSV
               </button>
+              <button
+                className="chip"
+                onClick={() => void exportAdminData('all', 'csv')}
+                disabled={Boolean(exportingKey)}
+              >
+                {exportingKey === 'all:csv:all' ? 'Exportando...' : 'Export TODO CSV'}
+              </button>
+              <button
+                className="chip"
+                onClick={() => void exportAdminData('all', 'json')}
+                disabled={Boolean(exportingKey)}
+              >
+                {exportingKey === 'all:json:all' ? 'Exportando...' : 'Export TODO JSON'}
+              </button>
+              <button
+                className="chip"
+                onClick={() => void exportAdminData('overview', 'pdf')}
+                disabled={Boolean(exportingKey)}
+              >
+                {exportingKey === 'overview:pdf:all' ? 'Exportando...' : 'Informe PDF'}
+              </button>
+            </div>
+          </div>
+
+          <div className="border border-line p-3 mb-4">
+            <p className="text-xs text-textMuted mb-2">
+              Centro de exportación avanzada (usuarios, pedidos, finanzas, social, comunidad, rendimiento y por usuario).
+            </p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button className="chip" onClick={() => void exportAdminData('users', 'csv')} disabled={Boolean(exportingKey)}>
+                {exportingKey === 'users:csv:all' ? 'Exportando...' : 'Usuarios CSV'}
+              </button>
+              <button className="chip" onClick={() => void exportAdminData('products', 'csv')} disabled={Boolean(exportingKey)}>
+                {exportingKey === 'products:csv:all' ? 'Exportando...' : 'Productos CSV'}
+              </button>
+              <button className="chip" onClick={() => void exportAdminData('orders', 'csv')} disabled={Boolean(exportingKey)}>
+                {exportingKey === 'orders:csv:all' ? 'Exportando...' : 'Pedidos CSV'}
+              </button>
+              <button className="chip" onClick={() => void exportAdminData('financial', 'csv')} disabled={Boolean(exportingKey)}>
+                {exportingKey === 'financial:csv:all' ? 'Exportando...' : 'Finanzas CSV'}
+              </button>
+              <button className="chip" onClick={() => void exportAdminData('social', 'csv')} disabled={Boolean(exportingKey)}>
+                {exportingKey === 'social:csv:all' ? 'Exportando...' : 'Social productos CSV'}
+              </button>
+              <button className="chip" onClick={() => void exportAdminData('listings', 'csv')} disabled={Boolean(exportingKey)}>
+                {exportingKey === 'listings:csv:all' ? 'Exportando...' : 'Comunidad CSV'}
+              </button>
+              <button className="chip" onClick={() => void exportAdminData('tickets', 'csv')} disabled={Boolean(exportingKey)}>
+                {exportingKey === 'tickets:csv:all' ? 'Exportando...' : 'Tickets CSV'}
+              </button>
+              <button className="chip" onClick={() => void exportAdminData('performance', 'csv', { hours: 24 * 7 })} disabled={Boolean(exportingKey)}>
+                {exportingKey === 'performance:csv:all' ? 'Exportando...' : 'Rendimiento CSV (7d)'}
+              </button>
+              <button className="chip" onClick={() => void exportAdminData('performance', 'json', { hours: 24 * 7 })} disabled={Boolean(exportingKey)}>
+                {exportingKey === 'performance:json:all' ? 'Exportando...' : 'Rendimiento JSON (7d)'}
+              </button>
+            </div>
+
+            <div className="grid gap-2 md:grid-cols-[1fr_auto_auto]">
+              <select
+                className="bg-transparent border border-line px-3 py-2 text-sm"
+                value={exportUserId}
+                onChange={(e) => setExportUserId(e.target.value)}
+              >
+                {users.length === 0 ? <option value="">Sin usuarios</option> : null}
+                {users.map((user) => (
+                  <option key={`export-user-${user.id}`} value={user.id}>
+                    {user.email || user.name || user.id}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="chip"
+                onClick={() => void exportAdminData('user', 'csv', { userId: exportUserId })}
+                disabled={!exportUserId || Boolean(exportingKey)}
+              >
+                {exportingKey === `user:csv:${exportUserId || 'all'}` ? 'Exportando...' : 'Usuario CSV'}
+              </button>
+              <button
+                className="chip"
+                onClick={() => void exportAdminData('user', 'json', { userId: exportUserId })}
+                disabled={!exportUserId || Boolean(exportingKey)}
+              >
+                {exportingKey === `user:json:${exportUserId || 'all'}` ? 'Exportando...' : 'Usuario JSON'}
+              </button>
             </div>
           </div>
 
@@ -1550,7 +2105,7 @@ export default function AdminPanel() {
         </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
-          {(['products', 'orders', 'shipping', 'users', 'wallets', 'withdrawals', 'chats', 'listings', 'coupons', 'mystery'] as const).map((t) => (
+          {(['products', 'orders', 'shipping', 'users', 'wallets', 'withdrawals', 'chats', 'listings', 'coupons', 'mystery', 'performance'] as const).map((t) => (
             <button
               key={t}
               className={`chip ${tab === t ? 'text-primary border-primary' : ''}`}
@@ -2547,7 +3102,7 @@ export default function AdminPanel() {
             <div className="glass p-3 mb-4 text-sm">
               <p className="text-primary font-semibold">Marketplace comunidad</p>
               <p className="text-textMuted mt-1">
-                Publicar cuesta 0,00 € para el cliente vendedor. Comisión para la tienda: 10% del precio cuando se vende.
+                Publicar cuesta 0,00 € para el cliente vendedor. Comisión para la tienda: 5% del precio cuando se vende.
               </p>
             </div>
             <div className="space-y-4 max-h-[780px] overflow-auto pr-1">
@@ -2562,7 +3117,7 @@ export default function AdminPanel() {
                       <p className="text-xs text-primary">Estado revisión: {listing.status}</p>
                       <p className="text-xs text-textMuted mt-1">
                         Publicar: {(Number(listing.listing_fee_cents || 0) / 100).toFixed(2)} € · Comisión:
-                        {' '}{(Number(listing.commission_rate || 10)).toFixed(0)}% ·
+                        {' '}{(Number(listing.commission_rate || 5)).toFixed(0)}% ·
                         {' '}Importe comisión: {(Number(listing.commission_cents || 0) / 100).toFixed(2)} €
                       </p>
                     </div>
@@ -2750,68 +3305,525 @@ export default function AdminPanel() {
         )}
 
         {tab === 'mystery' && (
-          <div className="glass p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h2 className="font-semibold">Ruleta y Mystery Boxes ({mysteryBoxes.length})</h2>
-              <div className="flex flex-wrap gap-2">
-                <button className="chip" onClick={() => setAllMysteryBoxesActive(true)}>
-                  Activar ruleta
-                </button>
-                <button className="chip" onClick={() => setAllMysteryBoxesActive(false)}>
-                  Apagar ruleta
-                </button>
+          <div className="space-y-6">
+            <div className="glass p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="font-semibold">Lanzamientos hype (bloqueados)</h2>
+                  <p className="text-xs text-textMuted mt-1">
+                    Gestiona mystery drops y temporadas de subasta con contador y reserva de plaza.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button className="chip" onClick={() => void refreshHypeLaunches()}>
+                    Refrescar hype
+                  </button>
+                  <button
+                    className="chip"
+                    onClick={() => void exportHypeReservationsCsv()}
+                  >
+                    Export reservas CSV
+                  </button>
+                  <button className="chip" onClick={() => setCreatingHypeLaunch((prev) => !prev)}>
+                    {creatingHypeLaunch ? 'Cancelar nuevo' : 'Nuevo lanzamiento'}
+                  </button>
+                </div>
+              </div>
+
+              {hypeErrorMessage ? (
+                <div className="border border-line p-3 mb-4">
+                  <p className="text-red-400">{hypeErrorMessage}</p>
+                  {hypeSetupRequired ? (
+                    <p className="text-xs text-textMuted mt-1">
+                      Ejecuta en Supabase SQL Editor:{' '}
+                      <span className="text-primary">database/hype_future_launches.sql</span>
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {creatingHypeLaunch ? (
+                <div className="border border-line p-4 mb-4 grid gap-3 md:grid-cols-2">
+                  <input
+                    className="bg-transparent border border-line px-3 py-2"
+                    placeholder="launch_key (ej: mystery-drop-s2)"
+                    value={newHypeLaunch.launch_key}
+                    onChange={(e) =>
+                      setNewHypeLaunch((prev) => ({ ...prev, launch_key: e.target.value.trim().toLowerCase() }))
+                    }
+                  />
+                  <select
+                    className="bg-transparent border border-line px-3 py-2"
+                    value={newHypeLaunch.kind}
+                    onChange={(e) => setNewHypeLaunch((prev) => ({ ...prev, kind: e.target.value as HypeLaunchKind }))}
+                  >
+                    <option value="mystery_drop">mystery_drop</option>
+                    <option value="auction_season">auction_season</option>
+                  </select>
+                  <input
+                    className="bg-transparent border border-line px-3 py-2"
+                    placeholder="Título"
+                    value={newHypeLaunch.title}
+                    onChange={(e) => setNewHypeLaunch((prev) => ({ ...prev, title: e.target.value }))}
+                  />
+                  <input
+                    className="bg-transparent border border-line px-3 py-2"
+                    placeholder="Subtítulo"
+                    value={newHypeLaunch.subtitle}
+                    onChange={(e) => setNewHypeLaunch((prev) => ({ ...prev, subtitle: e.target.value }))}
+                  />
+                  <input
+                    className="bg-transparent border border-line px-3 py-2"
+                    type="datetime-local"
+                    value={newHypeLaunch.lock_until}
+                    onChange={(e) => setNewHypeLaunch((prev) => ({ ...prev, lock_until: e.target.value }))}
+                  />
+                  <input
+                    className="bg-transparent border border-line px-3 py-2"
+                    type="number"
+                    min={0}
+                    value={newHypeLaunch.priority}
+                    onChange={(e) => setNewHypeLaunch((prev) => ({ ...prev, priority: Number(e.target.value || 0) }))}
+                  />
+                  <input
+                    className="md:col-span-2 bg-transparent border border-line px-3 py-2"
+                    placeholder="URL imagen"
+                    value={newHypeLaunch.image_url}
+                    onChange={(e) => setNewHypeLaunch((prev) => ({ ...prev, image_url: e.target.value }))}
+                  />
+                  <textarea
+                    className="md:col-span-2 bg-transparent border border-line px-3 py-2 min-h-[100px]"
+                    placeholder="Descripción"
+                    value={newHypeLaunch.description}
+                    onChange={(e) => setNewHypeLaunch((prev) => ({ ...prev, description: e.target.value }))}
+                  />
+                  <label className="text-xs flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={newHypeLaunch.is_active}
+                      onChange={(e) => setNewHypeLaunch((prev) => ({ ...prev, is_active: e.target.checked }))}
+                    />
+                    Activo
+                  </label>
+                  <label className="text-xs flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={newHypeLaunch.pinned}
+                      onChange={(e) => setNewHypeLaunch((prev) => ({ ...prev, pinned: e.target.checked }))}
+                    />
+                    Pineado
+                  </label>
+                  <div className="md:col-span-2">
+                    <button className="button-primary" onClick={createHypeLaunch}>
+                      Crear lanzamiento
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="space-y-4">
+                {hypeLaunches.map((launch) => {
+                  const draft = getHypeLaunchDraft(launch);
+                  return (
+                    <div key={launch.launch_key} className="border border-line p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">{launch.title}</p>
+                          <p className="text-xs text-textMuted">
+                            {launch.launch_key} · {launch.kind} · Reservas activas: {Number(launch.reservations_count || 0)}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button className="chip" onClick={() => void exportHypeReservationsCsv(launch.launch_key)}>
+                            Export CSV
+                          </button>
+                          <button className="chip" onClick={() => void saveHypeLaunch(launch)}>
+                            Guardar
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        <select
+                          className="bg-transparent border border-line px-3 py-2"
+                          value={draft.kind}
+                          onChange={(e) => setHypeDraftField(launch.launch_key, launch, 'kind', e.target.value as HypeLaunchKind)}
+                        >
+                          <option value="mystery_drop">mystery_drop</option>
+                          <option value="auction_season">auction_season</option>
+                        </select>
+                        <input
+                          className="bg-transparent border border-line px-3 py-2"
+                          type="number"
+                          min={0}
+                          value={draft.priority}
+                          onChange={(e) =>
+                            setHypeDraftField(
+                              launch.launch_key,
+                              launch,
+                              'priority',
+                              Number(e.target.value || 0)
+                            )
+                          }
+                        />
+                        <input
+                          className="bg-transparent border border-line px-3 py-2"
+                          value={draft.title}
+                          onChange={(e) => setHypeDraftField(launch.launch_key, launch, 'title', e.target.value)}
+                          placeholder="Título"
+                        />
+                        <input
+                          className="bg-transparent border border-line px-3 py-2"
+                          value={draft.subtitle}
+                          onChange={(e) => setHypeDraftField(launch.launch_key, launch, 'subtitle', e.target.value)}
+                          placeholder="Subtítulo"
+                        />
+                        <input
+                          className="bg-transparent border border-line px-3 py-2"
+                          type="datetime-local"
+                          value={draft.lock_until}
+                          onChange={(e) =>
+                            setHypeDraftField(launch.launch_key, launch, 'lock_until', e.target.value)
+                          }
+                        />
+                        <input
+                          className="bg-transparent border border-line px-3 py-2"
+                          value={draft.image_url}
+                          onChange={(e) => setHypeDraftField(launch.launch_key, launch, 'image_url', e.target.value)}
+                          placeholder="URL imagen"
+                        />
+                        <textarea
+                          className="md:col-span-2 bg-transparent border border-line px-3 py-2 min-h-[90px]"
+                          value={draft.description}
+                          onChange={(e) =>
+                            setHypeDraftField(launch.launch_key, launch, 'description', e.target.value)
+                          }
+                          placeholder="Descripción"
+                        />
+                        <label className="text-xs flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={draft.is_active}
+                            onChange={(e) =>
+                              setHypeDraftField(launch.launch_key, launch, 'is_active', e.target.checked)
+                            }
+                          />
+                          Activo
+                        </label>
+                        <label className="text-xs flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={draft.pinned}
+                            onChange={(e) =>
+                              setHypeDraftField(launch.launch_key, launch, 'pinned', e.target.checked)
+                            }
+                          />
+                          Pineado
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {hypeLaunches.length === 0 ? (
+                  <p className="text-sm text-textMuted">No hay lanzamientos hype configurados.</p>
+                ) : null}
               </div>
             </div>
 
-            <div className="space-y-4">
-              {mysteryBoxes.map((box) => (
-                <div key={box.id} className="border border-line p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="font-semibold">{box.name}</p>
-                      <p className="text-xs text-textMuted">
-                        {box.slug} · {(Number(box.ticket_price || 0) / 100).toFixed(2)} € por ticket
-                      </p>
-                      <p className="text-xs text-textMuted mt-1">{box.description}</p>
-                    </div>
-                    <button
-                      className={`chip ${box.is_active ? 'text-primary border-primary' : ''}`}
-                      onClick={() => toggleMysteryBoxActive(box.id, !box.is_active)}
-                    >
-                      {box.is_active ? 'Desactivar caja' : 'Activar caja'}
-                    </button>
-                  </div>
-
-                  <div className="mt-3 border border-line p-3 space-y-2">
-                    <p className="text-sm font-medium">Premios ({Array.isArray(box.prizes) ? box.prizes.length : 0})</p>
-                    {Array.isArray(box.prizes) && box.prizes.length > 0 ? (
-                      box.prizes.map((prize) => (
-                        <div key={prize.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
-                          <div>
-                            <p className="text-sm">{prize.label}</p>
-                            <p className="text-xs text-textMuted">
-                              Prob: {Number(prize.probability || 0).toFixed(4)}
-                              {prize.stock == null ? ' · Stock ilimitado' : ` · Stock ${prize.stock}`}
-                            </p>
-                          </div>
-                          <button
-                            className={`chip ${prize.is_active ? 'text-primary border-primary' : ''}`}
-                            onClick={() => toggleMysteryPrizeActive(prize.id, !prize.is_active)}
-                          >
-                            {prize.is_active ? 'Desactivar premio' : 'Activar premio'}
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-textMuted">Sin premios configurados.</p>
-                    )}
-                  </div>
+            <div className="glass p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h2 className="font-semibold">Ruleta y Mystery Boxes ({mysteryBoxes.length})</h2>
+                <div className="flex flex-wrap gap-2">
+                  <button className="chip" onClick={() => setAllMysteryBoxesActive(true)}>
+                    Activar ruleta
+                  </button>
+                  <button className="chip" onClick={() => setAllMysteryBoxesActive(false)}>
+                    Apagar ruleta
+                  </button>
                 </div>
-              ))}
+              </div>
 
-              {mysteryBoxes.length === 0 ? (
-                <p className="text-sm text-textMuted">No hay mystery boxes configuradas.</p>
+              <div className="space-y-4">
+                {mysteryBoxes.map((box) => (
+                  <div key={box.id} className="border border-line p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="font-semibold">{box.name}</p>
+                        <p className="text-xs text-textMuted">
+                          {box.slug} · {(Number(box.ticket_price || 0) / 100).toFixed(2)} € por ticket
+                        </p>
+                        <p className="text-xs text-textMuted mt-1">{box.description}</p>
+                      </div>
+                      <button
+                        className={`chip ${box.is_active ? 'text-primary border-primary' : ''}`}
+                        onClick={() => toggleMysteryBoxActive(box.id, !box.is_active)}
+                      >
+                        {box.is_active ? 'Desactivar caja' : 'Activar caja'}
+                      </button>
+                    </div>
+
+                    <div className="mt-3 border border-line p-3 space-y-2">
+                      <p className="text-sm font-medium">Premios ({Array.isArray(box.prizes) ? box.prizes.length : 0})</p>
+                      {Array.isArray(box.prizes) && box.prizes.length > 0 ? (
+                        box.prizes.map((prize) => (
+                          <div key={prize.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
+                            <div>
+                              <p className="text-sm">{prize.label}</p>
+                              <p className="text-xs text-textMuted">
+                                Prob: {Number(prize.probability || 0).toFixed(4)}
+                                {prize.stock == null ? ' · Stock ilimitado' : ` · Stock ${prize.stock}`}
+                              </p>
+                            </div>
+                            <button
+                              className={`chip ${prize.is_active ? 'text-primary border-primary' : ''}`}
+                              onClick={() => toggleMysteryPrizeActive(prize.id, !prize.is_active)}
+                            >
+                              {prize.is_active ? 'Desactivar premio' : 'Activar premio'}
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-textMuted">Sin premios configurados.</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {mysteryBoxes.length === 0 ? (
+                  <p className="text-sm text-textMuted">No hay mystery boxes configuradas.</p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'performance' && (
+          <div className="grid gap-6 xl:grid-cols-[1.6fr,1fr]">
+            <div className="glass p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="font-semibold">Rendimiento API</h2>
+                  <p className="text-xs text-textMuted mt-1">
+                    Latencias, cache hit ratio y endpoints lentos para diagnóstico rápido.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(['1h', '24h', '7d'] as PerformanceRange[]).map((range) => (
+                    <button
+                      key={`perf-range-${range}`}
+                      className={`chip ${performanceRange === range ? 'border-primary text-primary' : ''}`}
+                      onClick={() => setPerformanceRange(range)}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                  <button
+                    className="chip"
+                    onClick={() => void loadPerformanceMetrics(performanceRange)}
+                    disabled={performanceLoading}
+                  >
+                    {performanceLoading ? 'Cargando...' : 'Refrescar'}
+                  </button>
+                </div>
+              </div>
+
+              {performanceErrorMessage ? (
+                <div className="border border-line p-3 mb-4">
+                  <p className="text-red-400">{performanceErrorMessage}</p>
+                  {performanceSetupRequired ? (
+                    <p className="text-xs text-textMuted mt-1">
+                      Ejecuta en Supabase SQL Editor:{' '}
+                      <span className="text-primary">database/performance_social_market_cache.sql</span>
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
+
+              {performanceData?.summary ? (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-4">
+                    <div className="border border-line p-3">
+                      <p className="text-xs text-textMuted">Requests</p>
+                      <p className="text-xl font-semibold text-primary">{performanceData.summary.totalRequests}</p>
+                    </div>
+                    <div className="border border-line p-3">
+                      <p className="text-xs text-textMuted">Latencia media</p>
+                      <p className="text-xl font-semibold">{performanceData.summary.avgDurationMs.toFixed(1)} ms</p>
+                    </div>
+                    <div className="border border-line p-3">
+                      <p className="text-xs text-textMuted">P95</p>
+                      <p className="text-xl font-semibold">{performanceData.summary.p95DurationMs.toFixed(1)} ms</p>
+                    </div>
+                    <div className="border border-line p-3">
+                      <p className="text-xs text-textMuted">Cache hit ratio</p>
+                      <p className="text-xl font-semibold">
+                        {performanceData.summary.cacheHitRatio == null
+                          ? 'N/A'
+                          : `${(performanceData.summary.cacheHitRatio * 100).toFixed(1)}%`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 xl:grid-cols-2 mb-4">
+                    <div className="border border-line p-3">
+                      <p className="text-sm font-semibold mb-2">Top endpoints lentos</p>
+                      <div className="space-y-2 max-h-[380px] overflow-auto pr-1">
+                        {(performanceData.topSlowEndpoints || []).length === 0 ? (
+                          <p className="text-xs text-textMuted">Sin datos.</p>
+                        ) : (
+                          (performanceData.topSlowEndpoints || []).map((item) => (
+                            <div key={`perf-slow-${item.method}-${item.endpoint}`} className="border border-line p-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="text-xs text-primary font-mono">{item.method}</p>
+                                  <p className="text-sm line-clamp-1">{item.endpoint}</p>
+                                </div>
+                                <div className="text-right text-xs text-textMuted shrink-0">
+                                  <p>P95 {item.p95DurationMs.toFixed(1)} ms</p>
+                                  <p>Avg {item.avgDurationMs.toFixed(1)} ms</p>
+                                  <p>{item.requests} req</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border border-line p-3">
+                      <p className="text-sm font-semibold mb-2">Actividad por franja</p>
+                      <div className="space-y-2 max-h-[380px] overflow-auto pr-1">
+                        {(performanceData.timeline || []).length === 0 ? (
+                          <p className="text-xs text-textMuted">Sin datos.</p>
+                        ) : (
+                          (performanceData.timeline || []).map((point) => (
+                            <div key={`perf-timeline-${point.bucketStart}`} className="border border-line p-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-xs text-textMuted">{point.label}</p>
+                                <p className="text-xs text-textMuted">{point.requests} req</p>
+                              </div>
+                              <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                                <span className="chip">Avg {point.avgDurationMs.toFixed(1)} ms</span>
+                                <span className="chip">P95 {point.p95DurationMs.toFixed(1)} ms</span>
+                                <span className="chip">
+                                  Err {(Number(point.errorRate || 0) * 100).toFixed(1)}%
+                                </span>
+                                <span className="chip">
+                                  Cache{' '}
+                                  {point.cacheHitRatio == null
+                                    ? 'N/A'
+                                    : `${(Number(point.cacheHitRatio || 0) * 100).toFixed(1)}%`}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border border-line p-3">
+                    <p className="text-sm font-semibold mb-2">Errores recientes (5xx)</p>
+                    <div className="space-y-2 max-h-[260px] overflow-auto pr-1">
+                      {(performanceData.recentErrors || []).length === 0 ? (
+                        <p className="text-xs text-textMuted">No hay errores recientes.</p>
+                      ) : (
+                        (performanceData.recentErrors || []).map((item, index) => (
+                          <div key={`perf-error-${index}-${item.createdAt}`} className="border border-line p-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                              <span className="text-primary font-mono">{item.method}</span>
+                              <span className="text-red-400">HTTP {item.statusCode}</span>
+                              <span className="text-textMuted">{formatDateTimeShort(item.createdAt)}</span>
+                            </div>
+                            <p className="text-sm mt-1 line-clamp-1">{item.endpoint}</p>
+                            <p className="text-xs text-textMuted mt-1">{item.durationMs} ms</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-textMuted">
+                  {performanceLoading ? 'Cargando métricas...' : 'Sin métricas de rendimiento disponibles todavía.'}
+                </p>
+              )}
+            </div>
+
+            <div className="glass p-6">
+              <h2 className="font-semibold">Backfill social Storage → SQL</h2>
+              <p className="text-xs text-textMuted mt-1">
+                Migra reseñas/visitas antiguas desde JSON en Storage hacia tablas SQL.
+              </p>
+
+              <div className="grid gap-3 mt-4">
+                <label className="grid gap-1">
+                  <span className="text-xs text-textMuted">Límite de productos</span>
+                  <input
+                    className="bg-transparent border border-line px-3 py-2"
+                    type="number"
+                    min={1}
+                    max={1000}
+                    value={socialBackfillLimit}
+                    onChange={(e) => setSocialBackfillLimit(Math.max(1, Math.min(1000, Number(e.target.value || 1))))}
+                  />
+                </label>
+
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={socialBackfillDryRun}
+                    onChange={(e) => setSocialBackfillDryRun(Boolean(e.target.checked))}
+                  />
+                  Ejecutar en modo simulación (dry-run)
+                </label>
+
+                <button
+                  className="button-primary"
+                  onClick={runSocialBackfill}
+                  disabled={socialBackfillRunning}
+                >
+                  {socialBackfillRunning ? 'Ejecutando...' : socialBackfillDryRun ? 'Probar backfill' : 'Aplicar backfill'}
+                </button>
+              </div>
+
+              {socialBackfillResult ? (
+                <div className="border border-line p-3 mt-4 text-sm">
+                  <p className="text-primary font-semibold mb-2">
+                    Resultado {socialBackfillResult.dryRun ? '(dry-run)' : '(aplicado)'}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <p>Escaneados: <span className="font-semibold">{socialBackfillResult.scanned}</span></p>
+                    <p>Procesados: <span className="font-semibold">{socialBackfillResult.processed}</span></p>
+                    <p>Con datos legacy: <span className="font-semibold">{socialBackfillResult.productsWithLegacyData}</span></p>
+                    <p>Sin datos: <span className="font-semibold">{socialBackfillResult.skippedNoData}</span></p>
+                    <p>Summary upserts: <span className="font-semibold">{socialBackfillResult.summaryRowsUpserted}</span></p>
+                    <p>Visitas upserts: <span className="font-semibold">{socialBackfillResult.visitRowsUpserted}</span></p>
+                    <p>Reseñas upserts: <span className="font-semibold">{socialBackfillResult.reviewRowsUpserted}</span></p>
+                    <p>Fuente likes: <span className="font-semibold">{socialBackfillResult.likesSource}</span></p>
+                  </div>
+
+                  {socialBackfillResult.errors.length > 0 ? (
+                    <div className="mt-3">
+                      <p className="text-red-400 text-xs mb-1">
+                        Errores: {socialBackfillResult.errors.length}
+                      </p>
+                      <div className="space-y-1 max-h-[180px] overflow-auto pr-1">
+                        {socialBackfillResult.errors.slice(0, 20).map((error, index) => (
+                          <p key={`bf-error-${index}-${error.productId}`} className="text-xs text-textMuted">
+                            {error.productId}: {error.message}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-xs text-textMuted mt-3">
+                  Sin ejecuciones todavía.
+                </p>
+              )}
             </div>
           </div>
         )}

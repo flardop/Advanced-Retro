@@ -251,6 +251,7 @@ create table if not exists public.products (
   edition text,
   collection_key text,
   platform text,
+  trailer_url text,
   is_mystery_box boolean not null default false,
   is_active boolean not null default true,
   ebay_query text,
@@ -273,6 +274,7 @@ alter table if exists public.products add column if not exists component_type te
 alter table if exists public.products add column if not exists edition text;
 alter table if exists public.products add column if not exists collection_key text;
 alter table if exists public.products add column if not exists platform text;
+alter table if exists public.products add column if not exists trailer_url text;
 alter table if exists public.products add column if not exists is_mystery_box boolean;
 alter table if exists public.products add column if not exists is_active boolean;
 alter table if exists public.products add column if not exists ebay_query text;
@@ -838,7 +840,58 @@ where not exists (
 -- -----------------------------------------------------------------------------
 -- MEJORAS FUTURAS (NO ROMPEN NADA)
 -- -----------------------------------------------------------------------------
--- 1) Snapshots de mercado (eBay/otros) para histórico real de línea
+-- 1) Resumen social por producto (evita lecturas masivas de storage por request)
+create table if not exists public.product_social_summary (
+  product_id uuid primary key references public.products(id) on delete cascade,
+  visits integer not null default 0,
+  likes_count integer not null default 0,
+  reviews_count integer not null default 0,
+  rating_average numeric(4,2) not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_product_social_summary_visits
+  on public.product_social_summary(visits desc);
+create index if not exists idx_product_social_summary_likes
+  on public.product_social_summary(likes_count desc);
+create index if not exists idx_product_social_summary_updated
+  on public.product_social_summary(updated_at desc);
+
+create table if not exists public.product_social_visits (
+  product_id uuid not null references public.products(id) on delete cascade,
+  visitor_key text not null,
+  visits_count integer not null default 0,
+  last_visit_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (product_id, visitor_key)
+);
+
+create index if not exists idx_product_social_visits_product
+  on public.product_social_visits(product_id);
+create index if not exists idx_product_social_visits_last
+  on public.product_social_visits(last_visit_at desc);
+
+create table if not exists public.product_social_reviews (
+  id uuid primary key default gen_random_uuid(),
+  product_id uuid not null references public.products(id) on delete cascade,
+  user_id uuid references public.users(id) on delete set null,
+  visitor_key text not null,
+  author_name text not null,
+  rating smallint not null check (rating between 1 and 5),
+  comment text not null,
+  photos text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (product_id, visitor_key, rating, comment)
+);
+
+create index if not exists idx_product_social_reviews_product_time
+  on public.product_social_reviews(product_id, created_at desc);
+create index if not exists idx_product_social_reviews_user
+  on public.product_social_reviews(user_id, created_at desc);
+
+-- 2) Snapshots de mercado (eBay/otros) para histórico real de línea
 create table if not exists public.product_market_snapshots (
   id uuid primary key default gen_random_uuid(),
   product_id uuid not null references public.products(id) on delete cascade,
@@ -861,7 +914,28 @@ create index if not exists idx_market_snapshots_product_time
 create index if not exists idx_market_snapshots_provider
   on public.product_market_snapshots(provider, collected_at desc);
 
--- 2) Filtros guardados admin
+-- 2b) Eventos de rendimiento API para dashboard admin (latencias/cache-hit)
+create table if not exists public.api_performance_events (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text not null,
+  method text not null,
+  status_code integer not null check (status_code between 100 and 599),
+  duration_ms integer not null check (duration_ms >= 0),
+  cache_hit boolean,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_api_perf_created
+  on public.api_performance_events(created_at desc);
+create index if not exists idx_api_perf_endpoint_method
+  on public.api_performance_events(endpoint, method, created_at desc);
+create index if not exists idx_api_perf_status
+  on public.api_performance_events(status_code, created_at desc);
+create index if not exists idx_api_perf_cache
+  on public.api_performance_events(cache_hit, created_at desc);
+
+-- 3) Filtros guardados admin
 create table if not exists public.admin_saved_filters (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
@@ -877,7 +951,7 @@ create table if not exists public.admin_saved_filters (
 create index if not exists idx_admin_saved_filters_user_area
   on public.admin_saved_filters(user_id, area);
 
--- 3) Auditoría admin
+-- 4) Auditoría admin
 create table if not exists public.admin_audit_logs (
   id uuid primary key default gen_random_uuid(),
   admin_user_id uuid references public.users(id) on delete set null,
@@ -891,7 +965,7 @@ create table if not exists public.admin_audit_logs (
 create index if not exists idx_admin_audit_logs_created
   on public.admin_audit_logs(created_at desc);
 
--- 4) Analytics propios (complemento GA)
+-- 5) Analytics propios (complemento GA)
 create table if not exists public.analytics_events (
   id uuid primary key default gen_random_uuid(),
   event_name text not null,
@@ -907,7 +981,7 @@ create index if not exists idx_analytics_events_name_time
 create index if not exists idx_analytics_events_path_time
   on public.analytics_events(path, created_at desc);
 
--- 5) Cola simple de notificaciones
+-- 6) Cola simple de notificaciones
 create table if not exists public.notification_queue (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.users(id) on delete cascade,
@@ -925,7 +999,7 @@ create table if not exists public.notification_queue (
 create index if not exists idx_notification_queue_status_time
   on public.notification_queue(status, created_at desc);
 
--- 6) Gamificación XP / niveles
+-- 7) Gamificación XP / niveles
 create table if not exists public.user_xp_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
@@ -997,7 +1071,11 @@ alter table if exists public.user_wallet_accounts enable row level security;
 alter table if exists public.user_wallet_transactions enable row level security;
 alter table if exists public.user_wallet_withdrawal_requests enable row level security;
 
+alter table if exists public.product_social_summary enable row level security;
+alter table if exists public.product_social_visits enable row level security;
+alter table if exists public.product_social_reviews enable row level security;
 alter table if exists public.product_market_snapshots enable row level security;
+alter table if exists public.api_performance_events enable row level security;
 alter table if exists public.admin_saved_filters enable row level security;
 alter table if exists public.admin_audit_logs enable row level security;
 alter table if exists public.analytics_events enable row level security;
@@ -1218,6 +1296,16 @@ create policy "product_likes_delete_own"
 on public.product_likes for delete
 using (auth.uid() = user_id);
 
+drop policy if exists "product_social_summary_public_read" on public.product_social_summary;
+create policy "product_social_summary_public_read"
+on public.product_social_summary for select
+using (true);
+
+drop policy if exists "product_social_reviews_public_read" on public.product_social_reviews;
+create policy "product_social_reviews_public_read"
+on public.product_social_reviews for select
+using (true);
+
 -- WALLET
  drop policy if exists "wallet account own read" on public.user_wallet_accounts;
 create policy "wallet account own read"
@@ -1413,7 +1501,11 @@ from (
     ('user_wallet_accounts', 'Cartera interna'),
     ('user_wallet_transactions', 'Movimientos cartera'),
     ('user_wallet_withdrawal_requests', 'Retiradas cartera'),
-    ('product_market_snapshots', 'Histórico mercado')
+    ('product_social_summary', 'Resumen social por producto'),
+    ('product_social_visits', 'Visitas social por producto'),
+    ('product_social_reviews', 'Reseñas social por producto'),
+    ('product_market_snapshots', 'Histórico mercado'),
+    ('api_performance_events', 'Eventos rendimiento API')
 ) as t(table_name, description)
 order by t.table_name;
 

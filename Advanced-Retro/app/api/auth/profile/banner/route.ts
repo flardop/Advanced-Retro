@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { ApiError, requireUserContext } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { validateImageBinarySignature } from '@/lib/uploadSafety';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -128,10 +129,19 @@ export async function POST(req: Request) {
       );
     }
 
+    const bytes = Buffer.from(await banner.arrayBuffer());
+    const binaryValidationError = validateImageBinarySignature({
+      bytes,
+      mime,
+      ext,
+    });
+    if (binaryValidationError) {
+      return NextResponse.json({ error: binaryValidationError }, { status: 400 });
+    }
+
     await ensureBannerBucket();
 
     const filePath = `users/${user.id}/banner-${Date.now()}-${randomUUID().slice(0, 8)}.${ext}`;
-    const bytes = Buffer.from(await banner.arrayBuffer());
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BANNER_BUCKET)

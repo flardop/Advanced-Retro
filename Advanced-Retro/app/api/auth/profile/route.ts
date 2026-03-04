@@ -31,18 +31,52 @@ function sanitizeShippingAddress(input: unknown) {
   return payload;
 }
 
-export async function GET() {
+function sanitizeBadgeKeys(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  const values = input
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
+    .map((value) => value.slice(0, 40));
+  return [...new Set(values)].slice(0, 160);
+}
+
+async function loadLatestProfileBadges(userId: string): Promise<string[] | null> {
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin
+    .from('users')
+    .select('badges')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return sanitizeBadgeKeys((data as any)?.badges);
+}
+
+export async function GET(req: Request) {
   try {
     const { user, profile } = await requireUserContext();
-    const gamification = await getGamificationSnapshot(user.id);
-    return NextResponse.json({
+    const url = new URL(req.url);
+    const includeGamificationRaw = String(
+      url.searchParams.get('include_gamification') || ''
+    ).trim().toLowerCase();
+    const includeGamification =
+      includeGamificationRaw === '1' ||
+      includeGamificationRaw === 'true' ||
+      includeGamificationRaw === 'yes';
+
+    const response: Record<string, unknown> = {
       user: {
         id: user.id,
         email: user.email,
         profile,
       },
-      gamification,
-    });
+    };
+
+    if (includeGamification) {
+      response.gamification = await getGamificationSnapshot(user.id);
+    }
+
+    return NextResponse.json(response);
   } catch (error: any) {
     return handleError(error);
   }
@@ -57,16 +91,15 @@ export async function PUT(req: Request) {
 
     const body = await req.json().catch(() => null);
 
-    const allowedThemes = new Set(['neon-grid', 'sunset-glow', 'arcade-purple', 'mint-wave']);
-    const sanitizeBadges = (input: unknown): string[] => {
-      if (!Array.isArray(input)) return [];
-      const values = input
-        .filter((value): value is string => typeof value === 'string')
-        .map((value) => value.trim().toLowerCase())
-        .filter(Boolean)
-        .map((value) => value.slice(0, 40));
-      return [...new Set(values)].slice(0, 8);
-    };
+    const allowedThemes = new Set([
+      'neon-grid',
+      'sunset-glow',
+      'arcade-purple',
+      'mint-wave',
+      'obsidian-ember',
+      'aurora-scanline',
+      'platinum-grid',
+    ]);
 
     const payload: Record<string, unknown> = {};
     if (typeof body?.name === 'string') {
@@ -99,7 +132,7 @@ export async function PUT(req: Request) {
         payload.profile_theme = nextTheme;
       }
     }
-    if (Array.isArray(body?.badges)) payload.badges = sanitizeBadges(body.badges);
+    if (Array.isArray(body?.badges)) payload.badges = sanitizeBadgeKeys(body.badges);
     if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'shipping_address')) {
       payload.shipping_address = sanitizeShippingAddress((body as any).shipping_address);
     }
@@ -128,7 +161,7 @@ export async function PUT(req: Request) {
         if (typeof body?.tagline === 'string') metadataPatch.tagline = body.tagline.trim().slice(0, 120) || null;
         if (typeof body?.favorite_console === 'string') metadataPatch.favorite_console = body.favorite_console.trim().slice(0, 120) || null;
         if (typeof body?.profile_theme === 'string') metadataPatch.profile_theme = body.profile_theme.trim().slice(0, 40) || null;
-        if (Array.isArray(body?.badges)) metadataPatch.badges = sanitizeBadges(body.badges);
+        if (Array.isArray(body?.badges)) metadataPatch.badges = sanitizeBadgeKeys(body.badges);
         if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'shipping_address')) {
           metadataPatch.shipping_address = sanitizeShippingAddress((body as any).shipping_address);
         }
@@ -179,8 +212,9 @@ export async function PUT(req: Request) {
             });
             const gamification = await getGamificationSnapshot(user.id);
 
+            const latestBadges = await loadLatestProfileBadges(user.id);
             return NextResponse.json({
-              profile: fallbackProfile,
+              profile: latestBadges ? { ...fallbackProfile, badges: latestBadges } : fallbackProfile,
               gamification,
               fallback: 'auth_user_metadata',
             });
@@ -204,7 +238,11 @@ export async function PUT(req: Request) {
     });
 
     const gamification = await getGamificationSnapshot(user.id);
-    return NextResponse.json({ profile: updated, gamification });
+    const latestBadges = await loadLatestProfileBadges(user.id);
+    return NextResponse.json({
+      profile: latestBadges ? { ...updated, badges: latestBadges } : updated,
+      gamification,
+    });
   } catch (error: any) {
     return handleError(error);
   }

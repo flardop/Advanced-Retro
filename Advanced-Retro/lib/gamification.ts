@@ -153,7 +153,7 @@ export const AVATAR_FRAMES: AvatarFrameDefinition[] = [
     label: 'Marco neón arcade',
     minLevel: 30,
     maxLevel: 39,
-    ringClassName: 'border-fuchsia-400/80 shadow-[0_0_32px_rgba(217,70,239,0.5)]',
+    ringClassName: 'border-fuchsia-400/80 shadow-[0_0_32px_rgba(217,70,239,0.5)] animate-pulse',
     badgeClassName: 'border-fuchsia-300/70 text-fuchsia-100',
   },
   {
@@ -161,7 +161,7 @@ export const AVATAR_FRAMES: AvatarFrameDefinition[] = [
     label: 'Marco fuego pixel',
     minLevel: 40,
     maxLevel: 49,
-    ringClassName: 'border-orange-400/85 shadow-[0_0_34px_rgba(251,146,60,0.52)]',
+    ringClassName: 'border-orange-400/85 shadow-[0_0_36px_rgba(251,146,60,0.56)] animate-pulse',
     badgeClassName: 'border-orange-300/70 text-orange-100',
   },
   {
@@ -169,7 +169,7 @@ export const AVATAR_FRAMES: AvatarFrameDefinition[] = [
     label: 'Marco legendario',
     minLevel: 50,
     maxLevel: null,
-    ringClassName: 'border-cyan-300/90 shadow-[0_0_38px_rgba(34,211,238,0.65)]',
+    ringClassName: 'border-cyan-300/90 shadow-[0_0_42px_rgba(34,211,238,0.78)] animate-pulse',
     badgeClassName: 'border-cyan-300/80 text-cyan-100',
   },
 ];

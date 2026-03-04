@@ -10,12 +10,18 @@ import {
   readCommunityListingSocialState,
 } from '@/lib/communityListingSocial';
 import { getFavoriteProductsForViewer } from '@/lib/profileFavorites';
+import { resolveCommissionConfig } from '@/lib/commissions';
+import { validateRetroListingText } from '@/lib/uploadSafety';
 
 export type ListingStatus = 'pending_review' | 'approved' | 'rejected';
 export type ListingDeliveryStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
 export const COMMUNITY_LISTING_FEE_CENTS = 0;
-export const COMMUNITY_COMMISSION_RATE = 10;
+export const COMMUNITY_COMMISSION_RATE = resolveCommissionConfig('community').ratePercent;
+export const COMMUNITY_FEATURED_FEE_PER_DAY_CENTS = 100;
+export const COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS = 500;
+export const COMMUNITY_MIN_IMAGES = 3;
+export const COMMUNITY_MAX_IMAGES = 10;
 
 export type CreateListingInput = {
   title: string;
@@ -26,6 +32,14 @@ export type CreateListingInput = {
   originality_status: 'original_verificado' | 'original_sin_verificar' | 'repro_1_1' | 'mixto';
   originality_notes?: string;
   images: string[];
+  pegi_rating: 'none' | '3' | '7' | '12' | '16' | '18';
+  genre: string;
+  package_size: 'small' | 'medium' | 'large' | 'oversize';
+  item_color: string;
+  is_featured: boolean;
+  featured_days: number;
+  is_showcase: boolean;
+  showcase_days: number;
 };
 
 const ALLOWED_CATEGORIES = new Set([
@@ -47,6 +61,8 @@ const ALLOWED_ORIGINALITY = new Set([
   'repro_1_1',
   'mixto',
 ]);
+const ALLOWED_PEGI_RATINGS = new Set(['none', '3', '7', '12', '16', '18']);
+const ALLOWED_PACKAGE_SIZES = new Set(['small', 'medium', 'large', 'oversize']);
 const ALLOWED_DELIVERY_STATUSES = new Set<ListingDeliveryStatus>([
   'pending',
   'processing',
@@ -54,6 +70,18 @@ const ALLOWED_DELIVERY_STATUSES = new Set<ListingDeliveryStatus>([
   'delivered',
   'cancelled',
 ]);
+
+function parseBooleanInput(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+}
+
+function parsePositiveInt(value: unknown, fallback = 0): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.max(0, Math.floor(parsed));
+}
 
 function isValidUrl(url: string): boolean {
   if (!url) return false;
@@ -83,6 +111,17 @@ function withCommunityDefaults<T extends Record<string, any>>(listing: T): T & {
   commission_rate: number;
   commission_cents: number;
   delivery_status: ListingDeliveryStatus;
+  featured_fee_cents: number;
+  showcase_fee_cents: number;
+  promotion_fee_total_cents: number;
+  is_featured: boolean;
+  featured_days: number;
+  is_showcase: boolean;
+  showcase_days: number;
+  pegi_rating: 'none' | '3' | '7' | '12' | '16' | '18';
+  genre: string;
+  package_size: 'small' | 'medium' | 'large' | 'oversize';
+  item_color: string;
 } {
   const price = Math.max(0, Number(listing?.price || 0));
   const commissionRateRaw = Number(listing?.commission_rate);
@@ -99,6 +138,30 @@ function withCommunityDefaults<T extends Record<string, any>>(listing: T): T & {
   const listingFeeCents = Number.isFinite(listingFeeRaw) && listingFeeRaw >= 0
     ? listingFeeRaw
     : COMMUNITY_LISTING_FEE_CENTS;
+  const featuredFeeRaw = Number(listing?.featured_fee_cents);
+  const featuredFeeCents = Number.isFinite(featuredFeeRaw) && featuredFeeRaw >= 0
+    ? featuredFeeRaw
+    : 0;
+  const showcaseFeeRaw = Number(listing?.showcase_fee_cents);
+  const showcaseFeeCents = Number.isFinite(showcaseFeeRaw) && showcaseFeeRaw >= 0
+    ? showcaseFeeRaw
+    : 0;
+
+  const featuredDaysRaw = Number(listing?.featured_days);
+  const featuredDays = Number.isFinite(featuredDaysRaw) && featuredDaysRaw > 0
+    ? Math.floor(featuredDaysRaw)
+    : 0;
+  const showcaseDaysRaw = Number(listing?.showcase_days);
+  const showcaseDays = Number.isFinite(showcaseDaysRaw) && showcaseDaysRaw > 0
+    ? Math.floor(showcaseDaysRaw)
+    : 0;
+
+  const pegiRaw = String(listing?.pegi_rating || 'none').trim().toLowerCase();
+  const pegiRating = (ALLOWED_PEGI_RATINGS.has(pegiRaw) ? pegiRaw : 'none') as CreateListingInput['pegi_rating'];
+  const packageRaw = String(listing?.package_size || 'medium').trim().toLowerCase();
+  const packageSize = (
+    ALLOWED_PACKAGE_SIZES.has(packageRaw) ? packageRaw : 'medium'
+  ) as CreateListingInput['package_size'];
 
   const deliveryStatus = ALLOWED_DELIVERY_STATUSES.has(listing?.delivery_status)
     ? listing.delivery_status
@@ -110,6 +173,17 @@ function withCommunityDefaults<T extends Record<string, any>>(listing: T): T & {
     commission_rate: commissionRate,
     commission_cents: commissionCents,
     delivery_status: deliveryStatus,
+    featured_fee_cents: featuredFeeCents,
+    showcase_fee_cents: showcaseFeeCents,
+    promotion_fee_total_cents: Math.max(0, featuredFeeCents + showcaseFeeCents),
+    is_featured: Boolean(listing?.is_featured) || featuredDays > 0,
+    featured_days: featuredDays,
+    is_showcase: Boolean(listing?.is_showcase) || showcaseDays > 0,
+    showcase_days: showcaseDays,
+    pegi_rating: pegiRating,
+    genre: String(listing?.genre || '').trim(),
+    package_size: packageSize,
+    item_color: String(listing?.item_color || '').trim(),
   };
 }
 
@@ -120,21 +194,36 @@ export function calculateCommunityCommissionCents(priceCents: number): number {
 
 export function validateListingInput(input: any): CreateListingInput {
   const title = String(input?.title || '').trim().slice(0, 140);
-  const description = String(input?.description || '').trim().slice(0, 3000);
+  const description = String(input?.description || '').trim().slice(0, 4000);
   const price = Math.round(Number(input?.price || 0));
   const category = String(input?.category || 'juegos-gameboy').trim();
   const condition = String(input?.condition || 'used').trim();
   const originalityStatus = String(input?.originality_status || '').trim() as CreateListingInput['originality_status'];
   const originalityNotes = String(input?.originality_notes || '').trim().slice(0, 1500);
   const images = normalizeImages(input?.images);
+  const pegiRaw = String(input?.pegi_rating || 'none').trim().toLowerCase();
+  const pegiRating = (ALLOWED_PEGI_RATINGS.has(pegiRaw) ? pegiRaw : 'none') as CreateListingInput['pegi_rating'];
+  const genre = String(input?.genre || '').trim().slice(0, 80);
+  const packageRaw = String(input?.package_size || 'medium').trim().toLowerCase();
+  const packageSize = (
+    ALLOWED_PACKAGE_SIZES.has(packageRaw) ? packageRaw : 'medium'
+  ) as CreateListingInput['package_size'];
+  const itemColor = String(input?.item_color || '').trim().slice(0, 60);
+  const isFeatured = parseBooleanInput(input?.is_featured);
+  const isShowcase = parseBooleanInput(input?.is_showcase);
+  const featuredDays = isFeatured ? Math.min(30, Math.max(1, parsePositiveInt(input?.featured_days, 1))) : 0;
+  const showcaseDays = isShowcase ? Math.min(30, Math.max(1, parsePositiveInt(input?.showcase_days, 1))) : 0;
 
   if (title.length < 6) throw new Error('El titulo debe tener al menos 6 caracteres');
   if (description.length < 40) throw new Error('La descripcion debe tener al menos 40 caracteres');
+  const moderationIssue = validateRetroListingText({ title, description, genre });
+  if (moderationIssue) throw new Error(moderationIssue);
   if (!Number.isInteger(price) || price < 100) throw new Error('El precio debe ser valido (min 1,00 EUR)');
   if (!ALLOWED_CATEGORIES.has(category)) throw new Error('Categoria no valida');
   if (!ALLOWED_CONDITIONS.has(condition)) throw new Error('Estado no valido');
   if (!ALLOWED_ORIGINALITY.has(originalityStatus)) throw new Error('Indica la originalidad del producto');
-  if (images.length < 2) throw new Error('Debes subir al menos 2 imagenes');
+  if (images.length < COMMUNITY_MIN_IMAGES) throw new Error('Debes subir minimo 3 imagenes');
+  if (images.length > COMMUNITY_MAX_IMAGES) throw new Error('Maximo 10 imagenes por anuncio');
   if (originalityNotes.length < 10) throw new Error('Explica la autenticidad (min 10 caracteres)');
 
   return {
@@ -146,6 +235,14 @@ export function validateListingInput(input: any): CreateListingInput {
     originality_status: originalityStatus,
     originality_notes: originalityNotes,
     images,
+    pegi_rating: pegiRating,
+    genre,
+    package_size: packageSize,
+    item_color: itemColor,
+    is_featured: isFeatured,
+    featured_days: featuredDays,
+    is_showcase: isShowcase,
+    showcase_days: showcaseDays,
   };
 }
 
@@ -154,14 +251,31 @@ export async function createUserListing(userId: string, payload: CreateListingIn
 
   const nowIso = new Date().toISOString();
   const commissionCents = calculateCommunityCommissionCents(payload.price);
+  const featuredFeeCents = payload.is_featured
+    ? payload.featured_days * COMMUNITY_FEATURED_FEE_PER_DAY_CENTS
+    : 0;
+  const showcaseFeeCents = payload.is_showcase
+    ? payload.showcase_days * COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS
+    : 0;
+
+  const featuredUntilIso = payload.is_featured
+    ? new Date(Date.now() + payload.featured_days * 24 * 60 * 60 * 1000).toISOString()
+    : null;
+  const showcaseUntilIso = payload.is_showcase
+    ? new Date(Date.now() + payload.showcase_days * 24 * 60 * 60 * 1000).toISOString()
+    : null;
 
   const extendedInsert = {
     user_id: userId,
     ...payload,
     status: 'pending_review',
-    listing_fee_cents: COMMUNITY_LISTING_FEE_CENTS,
+    listing_fee_cents: COMMUNITY_LISTING_FEE_CENTS + featuredFeeCents + showcaseFeeCents,
     commission_rate: COMMUNITY_COMMISSION_RATE,
     commission_cents: commissionCents,
+    featured_fee_cents: featuredFeeCents,
+    showcase_fee_cents: showcaseFeeCents,
+    featured_until: featuredUntilIso,
+    showcase_until: showcaseUntilIso,
     delivery_status: 'pending',
     updated_at: nowIso,
   };
@@ -177,7 +291,14 @@ export async function createUserListing(userId: string, payload: CreateListingIn
       .from('user_product_listings')
       .insert({
         user_id: userId,
-        ...payload,
+        title: payload.title,
+        description: payload.description,
+        price: payload.price,
+        category: payload.category,
+        condition: payload.condition,
+        originality_status: payload.originality_status,
+        originality_notes: payload.originality_notes,
+        images: payload.images,
         status: 'pending_review',
         updated_at: nowIso,
       })
@@ -218,7 +339,18 @@ export async function getAdminListings() {
 
   if (error) throw new Error(error.message);
 
-  const rows = (data || []).map((listing) => withCommunityDefaults(listing));
+  const rows = (data || [])
+    .map((listing) => withCommunityDefaults(listing))
+    .sort((a, b) => {
+      const showcaseDiff = Number(Boolean(b.is_showcase)) - Number(Boolean(a.is_showcase));
+      if (showcaseDiff !== 0) return showcaseDiff;
+      const featuredDiff = Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured));
+      if (featuredDiff !== 0) return featuredDiff;
+      const aTs = new Date(String(a.created_at || '')).getTime();
+      const bTs = new Date(String(b.created_at || '')).getTime();
+      if (Number.isFinite(bTs) && Number.isFinite(aTs)) return bTs - aTs;
+      return 0;
+    });
   const userIds = [...new Set(rows.map((row) => row.user_id).filter(Boolean))];
   const { data: users } = userIds.length
     ? await supabaseAdmin.from('users').select('id,email,name,avatar_url').in('id', userIds)
@@ -777,15 +909,16 @@ export async function updateListingStatus(options: {
     : 'pending_review';
 
   const previous = await getListingById(options.listingId);
-  const commissionCents = calculateCommunityCommissionCents(Number(previous.price || 0));
+  const commissionRate = Number(previous.commission_rate || COMMUNITY_COMMISSION_RATE);
+  const commissionCents = Math.round(Math.max(0, Number(previous.price || 0)) * (commissionRate / 100));
 
   const fullUpdatePayload: Record<string, unknown> = {
     status: safeStatus,
     reviewed_by: options.adminId,
     admin_notes: String(options.adminNotes || '').trim().slice(0, 1500) || null,
     updated_at: nowIso,
-    listing_fee_cents: COMMUNITY_LISTING_FEE_CENTS,
-    commission_rate: COMMUNITY_COMMISSION_RATE,
+    listing_fee_cents: Math.max(0, Number(previous.listing_fee_cents || COMMUNITY_LISTING_FEE_CENTS)),
+    commission_rate: commissionRate > 0 ? commissionRate : COMMUNITY_COMMISSION_RATE,
     commission_cents: commissionCents,
     approved_at: safeStatus === 'approved' ? nowIso : null,
   };

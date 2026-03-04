@@ -7,3 +7,9 @@
    - Eventos: `checkout.session.completed`
 4. Copiar `STRIPE_WEBHOOK_SECRET`.
 5. Agregar `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
+6. (Opcional) Configurar comisiones en entorno:
+   - `STORE_COMMISSION_RATE_PERCENT=5`
+   - `STORE_COMMISSION_RATE_CATALOG_PERCENT` (si quieres distinto para tienda)
+   - `STORE_COMMISSION_RATE_MYSTERY_PERCENT` (si quieres distinto para mystery)
+7. Ejecutar en Supabase SQL Editor:
+   - `database/stripe_commissions_upgrade.sql`

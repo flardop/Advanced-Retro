@@ -14,8 +14,16 @@ type CommunityListing = {
   category?: string;
   condition?: string;
   originality_status?: string;
+  pegi_rating?: string;
+  genre?: string;
+  package_size?: string;
+  item_color?: string;
   commission_rate?: number;
   commission_cents?: number;
+  is_featured?: boolean;
+  featured_days?: number;
+  is_showcase?: boolean;
+  showcase_days?: number;
   buyer_email?: string | null;
   shipping_tracking_code?: string | null;
   delivery_status?: string;
@@ -25,6 +33,8 @@ type CommunityListing = {
 type MarketPolicy = {
   publish_fee_cents: number;
   commission_rate: number;
+  featured_fee_per_day_cents?: number;
+  showcase_fee_per_day_cents?: number;
 };
 
 type CommunitySellerRankingRow = {
@@ -152,7 +162,7 @@ export default function CommunityFeed() {
   const [marketListings, setMarketListings] = useState<CommunityListing[]>([]);
   const [marketPolicy, setMarketPolicy] = useState<MarketPolicy>({
     publish_fee_cents: 0,
-    commission_rate: 10,
+    commission_rate: 5,
   });
   const [sellerRanking, setSellerRanking] = useState<CommunitySellerRankingRow[]>([]);
   const [rankingPeriod, setRankingPeriod] = useState<RankingPeriod>('historical');
@@ -200,7 +210,9 @@ export default function CommunityFeed() {
 
       setMarketPolicy({
         publish_fee_cents: Number(data?.policy?.publish_fee_cents || 0),
-        commission_rate: Number(data?.policy?.commission_rate || 10),
+        commission_rate: Number(data?.policy?.commission_rate || 5),
+        featured_fee_per_day_cents: Number(data?.policy?.featured_fee_per_day_cents || 100),
+        showcase_fee_per_day_cents: Number(data?.policy?.showcase_fee_per_day_cents || 500),
       });
       setMarketListings(Array.isArray(data?.listings) ? data.listings : []);
     } catch {
@@ -398,7 +410,7 @@ export default function CommunityFeed() {
 
   const policyText = useMemo(() => {
     const fee = toPrice(Number(marketPolicy.publish_fee_cents || 0));
-    const commissionRate = Number(marketPolicy.commission_rate || 10).toFixed(0);
+    const commissionRate = Number(marketPolicy.commission_rate || 5).toFixed(0);
     return `Publicar ${fee} · Comisión tienda ${commissionRate}% al vender`;
   }, [marketPolicy]);
 
@@ -486,7 +498,7 @@ export default function CommunityFeed() {
                 <option value="delivered">Entregado</option>
               </select>
               <Link
-                href="/perfil"
+                href="/comunidad/publicar"
                 className="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white hover:bg-cyan-700"
               >
                 Publicar anuncio
@@ -642,6 +654,16 @@ export default function CommunityFeed() {
                           <span className="rounded-full bg-white/95 px-2 py-1 text-[11px] text-slate-700 shadow-sm">
                             {toCategoryLabel(String(listing.category || ''))}
                           </span>
+                          {listing.is_featured ? (
+                            <span className="rounded-full bg-amber-300/95 px-2 py-1 text-[11px] font-semibold text-amber-950 shadow-sm">
+                              Destacado
+                            </span>
+                          ) : null}
+                          {listing.is_showcase ? (
+                            <span className="rounded-full bg-fuchsia-300/95 px-2 py-1 text-[11px] font-semibold text-fuchsia-950 shadow-sm">
+                              Vitrina
+                            </span>
+                          ) : null}
                         </div>
                       </div>
 
@@ -673,6 +695,16 @@ export default function CommunityFeed() {
                           >
                             {toOriginalityLabel(String(listing.originality_status || ''))}
                           </span>
+                          {String(listing.pegi_rating || 'none') !== 'none' ? (
+                            <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
+                              PEGI {String(listing.pegi_rating)}
+                            </span>
+                          ) : null}
+                          {String(listing.package_size || '').trim() ? (
+                            <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
+                              Paquete {String(listing.package_size)}
+                            </span>
+                          ) : null}
                         </div>
 
                         <div className="mt-3 rounded-xl border border-slate-200 bg-white p-2.5">
@@ -728,7 +760,7 @@ export default function CommunityFeed() {
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-slate-800 line-clamp-1">{sellerName}</p>
                               <p className="text-[11px] text-slate-500">
-                                Comisión tienda {Number(listing.commission_rate || 10).toFixed(0)}% ·{' '}
+                                Comisión tienda {Number(listing.commission_rate || 5).toFixed(0)}% ·{' '}
                                 {toPrice(commissionCents)}
                               </p>
                               {sellerId ? (

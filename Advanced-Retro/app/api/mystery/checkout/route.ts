@@ -4,6 +4,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getMysterySetupErrorMessage, isMysterySetupMissing } from '@/lib/mysterySetup';
+import { computeCommission } from '@/lib/commissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,11 @@ export async function POST(req: Request) {
     }
 
     const ticketPrice = Math.max(1, Math.round(Number(box.ticket_price || 0)));
+    const commission = computeCommission({
+      source: 'mystery',
+      baseCents: ticketPrice,
+      grossCents: ticketPrice,
+    });
     const legacyItems = [
       {
         type: 'mystery_ticket',
@@ -58,19 +64,47 @@ export async function POST(req: Request) {
       },
     ];
 
-    const { data: order, error: orderError } = await supabaseAdmin
-      .from('orders')
-      .insert({
-        user_id: user.id,
-        items: legacyItems,
-        total: ticketPrice,
-        status: 'pending',
-        mystery_box_id: box.id,
-        mystery_ticket_units: 1,
-        coupon_discount: 0,
-      })
-      .select('id,total')
-      .single();
+    let order: any = null;
+    let orderError: any = null;
+    const orderPayload = {
+      user_id: user.id,
+      items: legacyItems,
+      total: ticketPrice,
+      status: 'pending',
+      mystery_box_id: box.id,
+      mystery_ticket_units: 1,
+      coupon_discount: 0,
+      commission_source: commission.source,
+      commission_rate: commission.ratePercent,
+      commission_base_cents: commission.baseCents,
+      commission_amount_cents: commission.amountCents,
+      gross_amount_cents: commission.grossCents,
+      net_amount_cents: commission.netCents,
+      updated_at: new Date().toISOString(),
+    };
+
+    const insertAttempt = await supabaseAdmin.from('orders').insert(orderPayload).select('id,total').single();
+    order = insertAttempt.data;
+    orderError = insertAttempt.error;
+
+    if (orderError && String(orderError.message || '').toLowerCase().includes('column')) {
+      // Compatibilidad con schema legacy sin columnas de comisión.
+      const fallbackAttempt = await supabaseAdmin
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          items: legacyItems,
+          total: ticketPrice,
+          status: 'pending',
+          mystery_box_id: box.id,
+          mystery_ticket_units: 1,
+          coupon_discount: 0,
+        })
+        .select('id,total')
+        .single();
+      order = fallbackAttempt.data;
+      orderError = fallbackAttempt.error;
+    }
 
     if (orderError || !order) {
       return NextResponse.json({ error: orderError?.message || 'Could not create order' }, { status: 500 });
@@ -96,10 +130,26 @@ export async function POST(req: Request) {
       success_url: `${siteUrl}/ruleta?purchase=success&orderId=${order.id}`,
       cancel_url: `${siteUrl}/ruleta?purchase=cancelled`,
       metadata: {
+        // Metadata consumida por el webhook para settlement final.
         orderId: order.id,
         mysteryBoxId: box.id,
+        commissionSource: commission.source,
+        commissionRate: String(commission.ratePercent),
+        commissionBaseCents: String(commission.baseCents),
+        commissionAmountCents: String(commission.amountCents),
       },
     });
+
+    const { error: stripeSessionUpdateError } = await supabaseAdmin
+      .from('orders')
+      .update({
+        stripe_session_id: session.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', order.id);
+    if (stripeSessionUpdateError) {
+      console.warn('Mystery order stripe_session_id update skipped:', stripeSessionUpdateError);
+    }
 
     return NextResponse.json({ success: true, sessionId: session.id });
   } catch (error: any) {

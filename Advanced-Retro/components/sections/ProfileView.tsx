@@ -9,6 +9,7 @@ import SafeImage from '@/components/SafeImage';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { getProductHref } from '@/lib/productUrl';
 import {
+  BADGE_DEFINITIONS,
   BADGE_RARITY_LABELS,
   BADGE_RARITY_ORDER,
   BADGE_RARITY_STYLES,
@@ -172,6 +173,7 @@ type WalletWithdrawalsState = {
 
 type Tab = 'profile' | 'wallet' | 'orders' | 'tickets' | 'sell';
 type FavoritesVisibility = 'public' | 'members' | 'private';
+type GamificationTab = 'resumen' | 'marcos' | 'recompensas' | 'insignias' | 'actividad';
 
 type FavoriteProduct = {
   id: string;
@@ -282,6 +284,26 @@ const FAVORITE_CONSOLES = [
   'Sega Mega Drive',
   'Otra',
 ] as const;
+
+const RETRO_RANKS: Array<{ min: number; max: number | null; label: string }> = [
+  { min: 1, max: 4, label: 'Novato del Cartucho' },
+  { min: 5, max: 9, label: 'Explorador de 8 Bits' },
+  { min: 10, max: 19, label: 'Coleccionista Pixel' },
+  { min: 20, max: 29, label: 'Veterano Arcade' },
+  { min: 30, max: 39, label: 'Maestro del CRT' },
+  { min: 40, max: 49, label: 'Leyenda del Bit' },
+  { min: 50, max: null, label: 'Titan Retro' },
+];
+
+function getRetroRankLabel(levelInput: number): string {
+  const level = Math.max(1, Math.floor(Number(levelInput || 1)));
+  const found = RETRO_RANKS.find((entry) => {
+    const aboveMin = level >= entry.min;
+    const belowMax = entry.max == null ? true : level <= entry.max;
+    return aboveMin && belowMax;
+  });
+  return found?.label || 'Coleccionista Retro';
+}
 
 function parseImageLines(input: string): string[] {
   const list = input
@@ -398,6 +420,7 @@ export default function ProfileView() {
   const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const [gamificationTab, setGamificationTab] = useState<GamificationTab>('actividad');
 
   const applyProfileSnapshot = (nextProfile: ProfileState | null) => {
     setProfile(nextProfile);
@@ -468,7 +491,7 @@ export default function ProfileView() {
     }
   };
 
-  const loadProfile = async () => {
+  const loadProfile = async (): Promise<string> => {
     const res = await fetch('/api/auth/profile');
     const data = await res.json().catch(() => null);
 
@@ -482,6 +505,8 @@ export default function ProfileView() {
     if (data?.gamification) {
       setGamification(data.gamification);
     }
+
+    return String(data?.user?.id || '');
   };
 
   const loadGamification = async () => {
@@ -586,50 +611,60 @@ export default function ProfileView() {
   const loadAll = async () => {
     setLoading(true);
     try {
-      await loadProfile();
-      const currentUser = await supabaseClient?.auth.getUser();
-      const authUserId = currentUser?.data?.user?.id || '';
-      if (authUserId) {
-        await loadOrders(authUserId);
-      }
-      const [
-        ticketsResult,
-        listingsResult,
-        walletResult,
-        withdrawalsResult,
-        gamificationResult,
-        favoritesResult,
-      ] = await Promise.allSettled([
-        loadTickets(),
-        loadListings(),
-        loadWallet(),
-        loadWithdrawals(),
-        loadGamification(),
-        loadFavorites(),
-      ]);
+      const authUserId = await loadProfile();
+      setLoading(false);
 
-      if (ticketsResult.status === 'rejected') {
-        setTickets([]);
-      }
-      if (listingsResult.status === 'rejected') {
-        setListings([]);
-      }
-      if (walletResult.status === 'rejected') {
-        setWallet(null);
-      }
-      if (withdrawalsResult.status === 'rejected') {
-        setWithdrawalRequests([]);
-        setWithdrawalsState(null);
-      }
-      if (gamificationResult.status === 'rejected') {
-        setGamification(null);
-      }
-      if (favoritesResult.status === 'rejected') {
-        setFavoriteProducts([]);
-      }
+      // El resto de datos no bloquea la pantalla principal de perfil.
+      void (async () => {
+        const tasks: Promise<unknown>[] = [
+          loadTickets(),
+          loadListings(),
+          loadWallet(),
+          loadWithdrawals(),
+          loadGamification(),
+          loadFavorites(),
+        ];
+
+        if (authUserId) {
+          tasks.push(loadOrders(authUserId));
+        }
+
+        const results = await Promise.allSettled(tasks);
+        const [
+          ticketsResult,
+          listingsResult,
+          walletResult,
+          withdrawalsResult,
+          gamificationResult,
+          favoritesResult,
+          ordersResult,
+        ] = results;
+
+        if (ticketsResult?.status === 'rejected') {
+          setTickets([]);
+        }
+        if (listingsResult?.status === 'rejected') {
+          setListings([]);
+        }
+        if (walletResult?.status === 'rejected') {
+          setWallet(null);
+        }
+        if (withdrawalsResult?.status === 'rejected') {
+          setWithdrawalRequests([]);
+          setWithdrawalsState(null);
+        }
+        if (gamificationResult?.status === 'rejected') {
+          setGamification(null);
+        }
+        if (favoritesResult?.status === 'rejected') {
+          setFavoriteProducts([]);
+        }
+        if (ordersResult?.status === 'rejected') {
+          setOrders([]);
+        }
+      })();
     } catch (error: any) {
       toast.error(error?.message || 'Error cargando perfil');
-    } finally {
       setLoading(false);
     }
   };
@@ -988,6 +1023,14 @@ export default function ProfileView() {
     }
 
     const imageList = parseImageLines(listingImageText);
+    if (imageList.length < 3) {
+      toast.error('Debes añadir mínimo 3 imágenes');
+      return;
+    }
+    if (imageList.length > 10) {
+      toast.error('Máximo 10 imágenes por anuncio');
+      return;
+    }
 
     setPublishingListing(true);
     try {
@@ -1044,6 +1087,8 @@ export default function ProfileView() {
     0,
     Math.min(100, Number(gamification?.progress?.progressPercent || 0))
   );
+  const currentRetroRank = getRetroRankLabel(userLevel);
+  const nextRetroRank = getRetroRankLabel(Number(gamification?.progress?.nextLevel || userLevel + 1));
 
   const profileBadges = useMemo(() => {
     if (!profile?.badges || !Array.isArray(profile.badges)) return [];
@@ -1094,6 +1139,21 @@ export default function ProfileView() {
 
     return normalized;
   }, [profileBadges]);
+
+  const unlockedBadgeKeySet = useMemo(() => {
+    return new Set(profileBadgesDetailed.map((badge) => badge.key));
+  }, [profileBadgesDetailed]);
+
+  const lockedBadgesDetailed = useMemo(() => {
+    return BADGE_DEFINITIONS.filter((badge) => !unlockedBadgeKeySet.has(badge.key))
+      .sort((a, b) => {
+        const rarityDiff =
+          Number(BADGE_RARITY_ORDER[b.rarity]) - Number(BADGE_RARITY_ORDER[a.rarity]);
+        if (rarityDiff !== 0) return rarityDiff;
+        return a.label.localeCompare(b.label, 'es');
+      })
+      .slice(0, 40);
+  }, [unlockedBadgeKeySet]);
 
   const frameRoadmap = useMemo(() => {
     return AVATAR_FRAMES.map((frame) => {
@@ -1156,11 +1216,11 @@ export default function ProfileView() {
   return (
     <section className="section">
       <div className="container">
-        <h1 className="title-display text-3xl mb-6">Perfil</h1>
+        <h1 className="title-display text-3xl mb-5 sm:mb-6">Perfil</h1>
 
-        <div className="glass mb-6 overflow-hidden">
+        <div className="glass mb-5 sm:mb-6 overflow-hidden">
           <div
-            className={`relative h-44 sm:h-56 bg-gradient-to-r ${activeTheme.previewClass}`}
+            className={`relative h-36 sm:h-56 bg-gradient-to-r ${activeTheme.previewClass}`}
             style={
               bannerUrl
                 ? {
@@ -1175,9 +1235,9 @@ export default function ProfileView() {
             <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_20%,rgba(2,6,23,0.65)_100%)]" />
           </div>
 
-          <div className="p-6 pt-0">
-            <div className="-mt-12 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+          <div className="p-4 sm:p-6 pt-2">
+            <div className="-mt-6 sm:-mt-10 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:items-end">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4 min-w-0">
                 <div className="relative">
                   <div
                     className={`relative h-24 w-24 overflow-hidden rounded-2xl border-2 bg-slate-900 ${avatarFrameRingClass}`}
@@ -1197,14 +1257,14 @@ export default function ProfileView() {
                   </div>
                 </div>
 
-                <div className="pt-3 sm:pt-0">
+                <div className="pt-2 sm:pt-0 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-2xl font-black">{name || profile.name || 'Coleccionista'}</p>
+                    <p className="text-xl sm:text-2xl font-black break-words">{name || profile.name || 'Coleccionista'}</p>
                     <span className={`inline-flex items-center border px-2 py-1 text-xs ${avatarFrameBadgeClass}`}>
-                      Nivel {userLevel}
+                      Rango {userLevel}
                     </span>
                   </div>
-                  <p className="text-sm text-textMuted">{profile.email}</p>
+                  <p className="text-sm text-textMuted break-all">{profile.email}</p>
                   <p className="text-xs text-textMuted mt-1">
                     Rol: {profile.role} · Vendedor verificado: {profile.is_verified_seller ? 'sí' : 'no'}
                   </p>
@@ -1217,9 +1277,9 @@ export default function ProfileView() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs sm:text-sm min-w-[260px]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-2 text-center text-xs sm:text-sm">
                 <div className="border border-line px-3 py-2 bg-slate-950/35">
-                  <p className="text-textMuted">Nivel</p>
+                  <p className="text-textMuted">Rango</p>
                   <p className="font-semibold">{userLevel}</p>
                 </div>
                 <div className="border border-line px-3 py-2 bg-slate-950/35">
@@ -1237,7 +1297,7 @@ export default function ProfileView() {
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
               {profileBadgesDetailed.length > 0 ? (
                 profileBadgesDetailed.slice(0, 8).map((badge) => {
                   const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
@@ -1247,7 +1307,7 @@ export default function ProfileView() {
                       key={badge.key}
                       className={`inline-flex items-center border px-2 py-1 text-xs ${rarityStyle.chipClass} ${
                         isExclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
-                      }`}
+                      } shrink-0`}
                       title={`${badge.description} · ${badge.howToEarn}`}
                     >
                       {badge.label}
@@ -1261,11 +1321,11 @@ export default function ProfileView() {
               )}
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button className="chip" onClick={() => setTab('profile')}>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
+              <button className="chip justify-center" onClick={() => setTab('profile')}>
                 Editar perfil
               </button>
-              <button className="button-secondary" onClick={() => supabaseClient?.auth.signOut()}>
+              <button className="button-secondary justify-center" onClick={() => supabaseClient?.auth.signOut()}>
                 Cerrar sesión
               </button>
             </div>
@@ -1298,11 +1358,11 @@ export default function ProfileView() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="mobile-scroll-row no-scrollbar mb-6">
           {(['profile', 'wallet', 'orders', 'tickets', 'sell'] as const).map((entry) => (
             <button
               key={entry}
-              className={`chip ${tab === entry ? 'text-primary border-primary' : ''}`}
+              className={`chip shrink-0 ${tab === entry ? 'text-primary border-primary' : ''}`}
               onClick={() => setTab(entry)}
             >
               {entry === 'profile'
@@ -1320,16 +1380,16 @@ export default function ProfileView() {
 
         {tab === 'profile' && (
           <div className="grid gap-6">
-            <div className="glass p-6">
+            <div className="glass p-4 sm:p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-primary">Progreso Advanced Retro</p>
-                  <h2 className="text-2xl font-black mt-1">Nivel Steam-style</h2>
+                  <h2 className="text-2xl font-black mt-1">Rango de Coleccionista Retro</h2>
                   <p className="text-sm text-textMuted mt-1">
-                    Sube de nivel con compras, actividad en comunidad y constancia diaria.
+                    Sube de rango con compras, actividad en comunidad y constancia diaria.
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm">
                   <div className="border border-line rounded-xl px-3 py-2 bg-slate-950/40">
                     <p className="text-xs text-textMuted">XP total</p>
                     <p className="font-semibold text-primary">{Number(gamification?.xp_total || 0)}</p>
@@ -1339,11 +1399,13 @@ export default function ProfileView() {
                     <p className="font-semibold">{Number(gamification?.streak?.current || 0)} días</p>
                   </div>
                   <div className="border border-line rounded-xl px-3 py-2 bg-slate-950/40">
-                    <p className="text-xs text-textMuted">Siguiente nivel</p>
-                    <p className="font-semibold">Nivel {Number(gamification?.progress?.nextLevel || userLevel + 1)}</p>
+                    <p className="text-xs text-textMuted">Siguiente rango</p>
+                    <p className="font-semibold">
+                      Rango {Number(gamification?.progress?.nextLevel || userLevel + 1)} · {nextRetroRank}
+                    </p>
                   </div>
                   <div className="border border-line rounded-xl px-3 py-2 bg-slate-950/40">
-                    <p className="text-xs text-textMuted">XP restante</p>
+                    <p className="text-xs text-textMuted">XP para ascender</p>
                     <p className="font-semibold">{Number(gamification?.progress?.xpToNextLevel || 0)}</p>
                   </div>
                 </div>
@@ -1352,7 +1414,7 @@ export default function ProfileView() {
               <div className="mt-5">
                 <div className="flex items-center justify-between text-xs text-textMuted">
                   <span>
-                    Nivel {userLevel} · Marco: {gamification?.frame?.label || 'Sin marco'}
+                    Rango {userLevel} · {currentRetroRank} · Marco: {gamification?.frame?.label || 'Sin marco'}
                   </span>
                   <span>{levelProgressPercent.toFixed(1)}%</span>
                 </div>
@@ -1364,52 +1426,107 @@ export default function ProfileView() {
                 </div>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-line bg-[rgba(4,14,26,0.66)] p-4">
-                <p className="font-semibold">Marcos desbloqueables por nivel</p>
-                <p className="text-xs text-textMuted mt-1">
-                  El marco activo cambia automáticamente según tu nivel.
-                </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                  {frameRoadmap.map((frame) => (
-                    <div
-                      key={frame.id}
-                      className={`rounded-xl border p-3 ${
-                        frame.active
-                          ? 'border-primary bg-primary/10'
-                          : frame.unlocked
-                            ? 'border-line bg-slate-950/45'
-                            : 'border-line/70 bg-slate-950/20'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold">{frame.label}</span>
-                        <span className="text-[11px] text-textMuted">Niveles {frame.range}</span>
-                      </div>
-                      <div className="mt-3 flex items-center gap-2">
-                        <span className={`inline-flex h-8 w-8 rounded-full border-2 ${frame.ringClassName}`} />
-                        <span className="text-[11px] text-textMuted">
-                          {frame.active
-                            ? 'Activo'
-                            : frame.unlocked
-                              ? 'Desbloqueado'
-                              : 'Bloqueado'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-5 mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+                {(
+                  [
+                    { id: 'resumen' as const, label: 'Resumen' },
+                    { id: 'marcos' as const, label: 'Marcos' },
+                    { id: 'recompensas' as const, label: 'Recompensas' },
+                    { id: 'insignias' as const, label: 'Insignias' },
+                    { id: 'actividad' as const, label: 'Actividad' },
+                  ] satisfies Array<{ id: GamificationTab; label: string }>
+                ).map((entry) => (
+                  <button
+                    key={`gamification-tab-${entry.id}`}
+                    className={`chip shrink-0 ${gamificationTab === entry.id ? 'text-primary border-primary' : ''}`}
+                    onClick={() => setGamificationTab(entry.id)}
+                  >
+                    {entry.label}
+                  </button>
+                ))}
               </div>
 
-              <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr,0.9fr]">
-                <div className="border border-line rounded-2xl p-4 bg-[rgba(4,14,26,0.66)]">
+              {gamificationTab === 'resumen' ? (
+                <div className="mt-5 rounded-2xl border border-line bg-[rgba(4,14,26,0.66)] p-4">
+                  <p className="font-semibold">Resumen de progreso</p>
+                  <p className="text-xs text-textMuted mt-1">
+                    XP, racha y avance de nivel. Los marcos están en la pestaña “Marcos”.
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-xl border border-line bg-slate-950/45 px-3 py-3">
+                      <p className="text-xs text-textMuted">Marco activo</p>
+                      <p className="text-sm font-semibold mt-1">{gamification?.frame?.label || 'Sin marco'}</p>
+                    </div>
+                    <div className="rounded-xl border border-line bg-slate-950/45 px-3 py-3">
+                      <p className="text-xs text-textMuted">XP para próximo nivel</p>
+                      <p className="text-sm font-semibold mt-1">{Number(gamification?.progress?.xpToNextLevel || 0)}</p>
+                    </div>
+                    <div className="rounded-xl border border-line bg-slate-950/45 px-3 py-3">
+                      <p className="text-xs text-textMuted">Racha diaria</p>
+                      <p className="text-sm font-semibold mt-1">{Number(gamification?.streak?.current || 0)} días</p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {gamificationTab === 'marcos' ? (
+                <div className="mt-5 rounded-2xl border border-line bg-[rgba(4,14,26,0.66)] p-4">
+                  <details className="group">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+                      <div>
+                        <p className="font-semibold">Marcos desbloqueables por nivel</p>
+                        <p className="text-xs text-textMuted mt-1">
+                          Apartado independiente para no cargar la vista principal.
+                        </p>
+                      </div>
+                      <span className="chip text-[11px] group-open:border-primary group-open:text-primary">Mostrar/Ocultar</span>
+                    </summary>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                      {frameRoadmap.map((frame) => (
+                        <div
+                          key={frame.id}
+                          className={`rounded-xl border p-3 ${
+                            frame.active
+                              ? 'border-primary bg-primary/10'
+                              : frame.unlocked
+                                ? 'border-line bg-slate-950/45'
+                                : 'border-line/70 bg-slate-950/20'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold">{frame.label}</span>
+                            <span className="text-[11px] text-textMuted">Niveles {frame.range}</span>
+                          </div>
+                          <div className="mt-3 flex items-center gap-2">
+                            <span className={`inline-flex h-8 w-8 rounded-full border-2 ${frame.ringClassName}`} />
+                            <span className="text-[11px] text-textMuted">
+                              {frame.active
+                                ? 'Activo'
+                                : frame.unlocked
+                                  ? 'Desbloqueado'
+                                  : 'Bloqueado'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </div>
+              ) : null}
+
+              {gamificationTab === 'recompensas' ? (
+                <div className="mt-5 border border-line rounded-2xl p-4 bg-[rgba(4,14,26,0.66)]">
                   <p className="font-semibold">Expositor de recompensas</p>
                   <p className="text-xs text-textMuted mt-1">Desbloqueadas por nivel</p>
                   {Array.isArray(gamification?.rewards) && gamification.rewards.length > 0 ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {gamification.rewards.slice(0, 12).map((reward) => (
-                        <span key={reward.reward_key} className="chip border-primary/45 text-primary">
-                          N{reward.level_required} · {reward.reward_label}
-                        </span>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      {gamification.rewards.slice(0, 18).map((reward) => (
+                        <div key={reward.reward_key} className="rounded-xl border border-line px-3 py-2 bg-slate-950/45">
+                          <p className="font-semibold text-sm">{reward.reward_label}</p>
+                          <p className="text-xs text-textMuted mt-1">
+                            Rango requerido: {reward.level_required}
+                          </p>
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -1418,13 +1535,75 @@ export default function ProfileView() {
                     </p>
                   )}
                 </div>
+              ) : null}
 
-                <div className="border border-line rounded-2xl p-4 bg-[rgba(4,14,26,0.66)]">
+              {gamificationTab === 'insignias' ? (
+                <div className="mt-5 grid gap-5 lg:grid-cols-[1.05fr,0.95fr]">
+                  <div className="border border-line rounded-2xl p-4 bg-[rgba(4,14,26,0.66)]">
+                    <p className="font-semibold">Insignias desbloqueadas</p>
+                    <p className="text-xs text-textMuted mt-1">Las que ya tienes activas en tu perfil</p>
+                    {profileBadgesDetailed.length > 0 ? (
+                      <div className="mt-2 grid gap-2">
+                        {profileBadgesDetailed.slice(0, 18).map((badge) => {
+                          const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
+                          const exclusive = badge.animated || badge.rarity === 'legendary' || badge.rarity === 'mythic';
+                          return (
+                            <div
+                              key={`badge-unlocked-${badge.key}`}
+                              className={`rounded-xl border px-3 py-2 ${rarityStyle.panelClass} ${
+                                exclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="font-semibold">{badge.label}</p>
+                                <span className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass}`}>
+                                  {BADGE_RARITY_LABELS[badge.rarity]}
+                                </span>
+                              </div>
+                              <p className="text-xs text-textMuted mt-1">{badge.description}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-textMuted mt-2">Aún no tienes insignias desbloqueadas.</p>
+                    )}
+                  </div>
+
+                  <div className="border border-line rounded-2xl p-4 bg-[rgba(4,14,26,0.66)]">
+                    <p className="font-semibold">Insignias por desbloquear</p>
+                    <p className="text-xs text-textMuted mt-1">
+                      Se muestran en oscuro hasta que cumplas la condición.
+                    </p>
+                    <div className="mt-2 grid gap-2 max-h-[420px] overflow-auto pr-1">
+                      {lockedBadgesDetailed.map((badge) => (
+                        <div
+                          key={`badge-locked-${badge.key}`}
+                          className="rounded-xl border border-slate-600/35 bg-slate-950/60 px-3 py-2 opacity-75"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-semibold text-slate-300">{badge.label}</p>
+                            <span className="inline-flex border border-slate-500/40 px-2 py-1 text-[11px] text-slate-300">
+                              Bloqueada
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {badge.howToEarn}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {gamificationTab === 'actividad' ? (
+                <div className="mt-5 border border-line rounded-2xl p-4 bg-[rgba(4,14,26,0.66)]">
                   <p className="font-semibold">Logros recientes</p>
                   <p className="text-xs text-textMuted mt-1">Actividad XP + desbloqueos</p>
-                  <div className="mt-3 max-h-[220px] overflow-auto pr-1 space-y-2">
+                  <div className="mt-3 max-h-[320px] overflow-auto pr-1 space-y-2">
                     {Array.isArray(gamification?.recent) && gamification.recent.length > 0 ? (
-                      gamification.recent.slice(0, 8).map((item, index) => (
+                      gamification.recent.slice(0, 20).map((item, index) => (
                         <div key={`${item.type}-${item.title}-${index}`} className="rounded-xl border border-line px-3 py-2 bg-slate-950/45">
                           <p className="text-sm font-semibold">{item.title}</p>
                           <p className="text-xs text-textMuted mt-1">{item.subtitle}</p>
@@ -1436,7 +1615,7 @@ export default function ProfileView() {
                     )}
                   </div>
                 </div>
-              </div>
+              ) : null}
             </div>
 
             <div className="glass p-6">
@@ -1772,28 +1951,17 @@ export default function ProfileView() {
                 <div className="border border-line p-4">
                   <p className="font-semibold">Insignias del perfil</p>
                   {profileBadgesDetailed.length > 0 ? (
-                    <div className="mt-2 grid gap-2">
-                      {profileBadgesDetailed.slice(0, 18).map((badge) => {
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {profileBadgesDetailed.slice(0, 8).map((badge) => {
                         const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
-                        const exclusive = badge.animated || badge.rarity === 'legendary' || badge.rarity === 'mythic';
                         return (
-                          <div
+                          <span
                             key={`badge-${badge.key}`}
-                            className={`rounded-xl border px-3 py-2 ${rarityStyle.panelClass} ${
-                              exclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
-                            }`}
+                            className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass}`}
+                            title={badge.description}
                           >
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="font-semibold">{badge.label}</p>
-                              <span className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass}`}>
-                                {BADGE_RARITY_LABELS[badge.rarity]}
-                              </span>
-                            </div>
-                            <p className="text-xs text-textMuted mt-1">{badge.description}</p>
-                            <p className="text-[11px] text-primary mt-1">
-                              Como conseguirla: {badge.howToEarn}
-                            </p>
-                          </div>
+                            {badge.label}
+                          </span>
                         );
                       })}
                     </div>
@@ -1802,6 +1970,12 @@ export default function ProfileView() {
                       Aun no tienes insignias desbloqueadas.
                     </p>
                   )}
+                  <button
+                    className="chip mt-3"
+                    onClick={() => setGamificationTab('insignias')}
+                  >
+                    Ver panel completo de insignias
+                  </button>
                 </div>
               </div>
             </div>
@@ -2216,7 +2390,7 @@ export default function ProfileView() {
             <div className="glass p-6">
               <h2 className="font-semibold">Marketplace comunidad</h2>
               <p className="text-sm text-textMuted mt-2">
-                Publicación gratuita (0,00 €). Si se aprueba y se vende, la comisión para la tienda es del 10%.
+                Publicación gratuita (0,00 €). Si se aprueba y se vende, la comisión para la tienda es del 5%.
               </p>
               {!profile.is_verified_seller && profile.role !== 'admin' ? (
                 <p className="text-sm text-textMuted mt-2">
@@ -2225,7 +2399,7 @@ export default function ProfileView() {
               ) : (
                 <>
                   <p className="text-sm text-textMuted mt-2">
-                    Requisitos mínimos: 2 fotos, descripción completa y detalle de autenticidad.
+                    Requisitos mínimos: 3 fotos (máx. 10), descripción completa y detalle de autenticidad.
                   </p>
                   <div className="grid gap-3 mt-4">
                     <input className="bg-transparent border border-line px-3 py-2" placeholder="Título" value={listingTitle} onChange={(e) => setListingTitle(e.target.value)} />
@@ -2268,7 +2442,7 @@ export default function ProfileView() {
 
                     <textarea
                       className="bg-transparent border border-line px-3 py-2 min-h-[90px]"
-                      placeholder="URLs de fotos (mínimo 2), una por línea"
+                      placeholder="URLs de fotos (mínimo 3, máximo 10), una por línea"
                       value={listingImageText}
                       onChange={(e) => setListingImageText(e.target.value)}
                     />
@@ -2293,7 +2467,7 @@ export default function ProfileView() {
                       <p className="text-xs text-textMuted">{(listing.price / 100).toFixed(2)} € · {listing.status}</p>
                       <p className="text-xs text-textMuted mt-1">
                         Publicar: {((Number(listing.listing_fee_cents || 0)) / 100).toFixed(2)} € · Comisión:
-                        {' '}{Number(listing.commission_rate || 10).toFixed(0)}% ({((Number(listing.commission_cents || 0)) / 100).toFixed(2)} €)
+                        {' '}{Number(listing.commission_rate || 5).toFixed(0)}% ({((Number(listing.commission_cents || 0)) / 100).toFixed(2)} €)
                       </p>
                       <p className="text-xs text-textMuted mt-1">Originalidad: {listing.originality_status}</p>
                       <p className="text-xs text-textMuted mt-1">Entrega: {listing.delivery_status || 'pending'}</p>

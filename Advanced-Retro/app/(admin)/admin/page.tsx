@@ -1,10 +1,18 @@
+import type { Metadata } from 'next';
 import AdminPanel from '@/components/sections/AdminPanel';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { syncAuthUserProfileRow } from '@/lib/serverAuth';
+import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Admin',
+  description: 'Panel privado de administración de AdvancedRetro.es.',
+  path: '/admin',
+  noIndex: true,
+});
 
 export default async function AdminPage() {
   const supabase = supabaseServer();

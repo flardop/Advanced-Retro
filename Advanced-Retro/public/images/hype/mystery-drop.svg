@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1a35"/>
+      <stop offset="55%" stop-color="#3e2067"/>
+      <stop offset="100%" stop-color="#9a402d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="48%" r="42%">
+      <stop offset="0%" stop-color="#ffd166" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#ffd166" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1400" height="800" fill="url(#bg)"/>
+  <rect width="1400" height="800" fill="url(#glow)"/>
+  <g opacity="0.28" fill="#ffffff">
+    <circle cx="110" cy="120" r="2"/>
+    <circle cx="320" cy="60" r="2"/>
+    <circle cx="500" cy="160" r="1.8"/>
+    <circle cx="760" cy="90" r="2.3"/>
+    <circle cx="980" cy="180" r="2"/>
+    <circle cx="1210" cy="130" r="1.7"/>
+    <circle cx="1310" cy="70" r="2"/>
+    <circle cx="250" cy="220" r="1.6"/>
+    <circle cx="680" cy="210" r="1.4"/>
+    <circle cx="1090" cy="250" r="1.8"/>
+  </g>
+  <g transform="translate(350 250)">
+    <rect x="0" y="150" width="700" height="280" rx="18" fill="#39231c" stroke="#f5b45f" stroke-width="6"/>
+    <rect x="22" y="130" width="305" height="78" rx="12" fill="#563229" stroke="#f5b45f" stroke-width="4"/>
+    <rect x="372" y="130" width="306" height="78" rx="12" fill="#563229" stroke="#f5b45f" stroke-width="4"/>
+    <rect x="245" y="34" width="210" height="194" rx="16" fill="#2d1837" stroke="#f5b45f" stroke-width="6"/>
+    <text x="350" y="160" text-anchor="middle" fill="#ffd166" font-size="130" font-family="Arial, sans-serif" font-weight="700">?</text>
+  </g>
+  <text x="700" y="116" text-anchor="middle" fill="#ffffff" font-size="58" font-family="Arial, sans-serif" font-weight="700">ADVANCED RETRO</text>
+  <text x="700" y="694" text-anchor="middle" fill="#ffd166" font-size="78" font-family="Arial, sans-serif" font-weight="700">MYSTERY DROP</text>
+  <text x="700" y="748" text-anchor="middle" fill="#e9eefb" font-size="38" font-family="Arial, sans-serif">Caja sorpresa bloqueada</text>
+</svg>
+

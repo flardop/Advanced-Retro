@@ -104,7 +104,7 @@ export function getProductFallbackImageUrl(product: any): string {
   }
 
   if (category.includes('consola') || platform.includes('consola') || name.startsWith('consola ')) {
-    return '/images/collections/consolas.svg';
+    return '/images/products/console-gb-dmg.jpg';
   }
 
   if (

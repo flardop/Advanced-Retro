@@ -202,11 +202,28 @@ async function loadProductWithMarketOverrides(productId: string): Promise<Produc
 async function resolveProductByIdentifier(identifier: string): Promise<ProductWithMarketOverrides | null> {
   const parsed = parseProductRouteParam(identifier);
   const idCandidate = String(parsed.idCandidate || '').trim();
+  const idPrefixCandidate = String(parsed.idPrefixCandidate || '').trim();
   const slugCandidate = String(parsed.slugCandidate || '').trim();
 
   if (idCandidate) {
     const byId = await loadProductWithMarketOverrides(idCandidate);
     if (byId) return byId;
+  }
+
+  if (idPrefixCandidate && supabaseAdmin) {
+    const prefixProbe = await supabaseAdmin
+      .from('products')
+      .select('id')
+      .ilike('id', `${idPrefixCandidate}%`)
+      .limit(2);
+
+    if (!prefixProbe.error && Array.isArray(prefixProbe.data) && prefixProbe.data.length === 1) {
+      const resolvedId = String(prefixProbe.data[0]?.id || '').trim();
+      if (resolvedId) {
+        const byResolvedId = await loadProductWithMarketOverrides(resolvedId);
+        if (byResolvedId) return byResolvedId;
+      }
+    }
   }
 
   if (!slugCandidate || !supabaseAdmin) return null;

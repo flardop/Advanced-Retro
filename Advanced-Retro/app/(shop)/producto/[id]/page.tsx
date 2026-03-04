@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import ProductDetail from '@/components/sections/ProductDetail';
 import { absoluteUrl } from '@/lib/siteConfig';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { getProductHref, parseProductRouteParam } from '@/lib/productUrl';
+import { getProductHref, getProductRouteSegment, parseProductRouteParam } from '@/lib/productUrl';
 import { sampleProducts } from '@/lib/sampleData';
+import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
+import { permanentRedirect } from 'next/navigation';
 
 function parseBooleanQuery(value: string | string[] | undefined): boolean {
   if (Array.isArray(value)) {
@@ -49,6 +51,18 @@ async function getProductByIdentifier(identifier: string) {
     if (data) return data;
   }
 
+  if (parsed.idPrefixCandidate) {
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .ilike('id', `${parsed.idPrefixCandidate}%`)
+      .limit(2);
+
+    if (!error && Array.isArray(data) && data.length === 1) {
+      return data[0];
+    }
+  }
+
   if (parsed.slugCandidate) {
     const { data, error } = await supabaseAdmin
       .from('products')
@@ -65,13 +79,12 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const resolvedParams = await params;
   const product = await getProductByIdentifier(resolvedParams.id);
   if (!product) {
-    return {
+    return buildPageMetadata({
       title: 'Producto retro',
       description: 'Ficha de producto en AdvancedRetro.es',
-      alternates: {
-        canonical: `/producto/${encodeURIComponent(resolvedParams.id)}`,
-      },
-    };
+      path: `/producto/${encodeURIComponent(resolvedParams.id)}`,
+      keywords: ['producto retro'],
+    });
   }
 
   const title = `${String(product.name || '').trim()} | Producto retro`;
@@ -79,26 +92,19 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const imageUrl = String(product.image || absoluteUrl('/logo.png'));
   const canonicalPath = getProductHref(product);
 
-  return {
+  return buildPageMetadata({
     title,
     description,
-    alternates: {
-      canonical: canonicalPath,
-    },
-    openGraph: {
-      title,
-      description,
-      url: canonicalPath,
-      type: 'website',
-      images: [imageUrl],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [imageUrl],
-    },
-  };
+    path: canonicalPath,
+    image: imageUrl,
+    keywords: [
+      String(product?.name || '').trim(),
+      String(product?.platform || '').trim(),
+      String(product?.category || '').trim(),
+      'precio videojuego retro',
+    ].filter(Boolean),
+    type: 'article',
+  });
 }
 
 export default async function ProductPage({
@@ -109,7 +115,66 @@ export default async function ProductPage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const prefillComplete = parseBooleanQuery(resolvedSearchParams?.complete);
   const product = await getProductByIdentifier(resolvedParams.id);
+  const parsedRoute = parseProductRouteParam(resolvedParams.id);
   const productId =
-    String((product as any)?.id || '').trim() || parseProductRouteParam(resolvedParams.id).idCandidate || resolvedParams.id;
-  return <ProductDetail productId={productId} prefillComplete={prefillComplete} />;
+    String((product as any)?.id || '').trim() ||
+    parsedRoute.idCandidate ||
+    resolvedParams.id;
+
+  if (product) {
+    const requestedSegment = decodeURIComponent(String(resolvedParams.id || '').trim());
+    const expectedSegment = getProductRouteSegment(product);
+    if (requestedSegment && expectedSegment && requestedSegment !== expectedSegment) {
+      permanentRedirect(getProductHref(product, { complete: prefillComplete }));
+    }
+  }
+
+  const canonicalPath = product ? getProductHref(product) : `/producto/${encodeURIComponent(resolvedParams.id)}`;
+  const productName = String(product?.name || 'Producto retro').trim();
+  const productDescription = String(product?.description || 'Producto de coleccionismo retro disponible en AdvancedRetro.es.');
+  const productImage = absoluteUrl(String(product?.image || '/logo.png'));
+  const priceCents = Number(product?.price || 0);
+  const availability = Number(product?.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: productName,
+    description: productDescription,
+    image: [productImage],
+    sku: String(product?.id || productId),
+    category: String(product?.category || 'retro-gaming'),
+    brand: {
+      '@type': 'Brand',
+      name: 'AdvancedRetro.es',
+    },
+    offers: {
+      '@type': 'Offer',
+      url: absoluteUrl(canonicalPath),
+      priceCurrency: 'EUR',
+      price: (Math.max(0, priceCents) / 100).toFixed(2),
+      availability,
+      itemCondition: 'https://schema.org/UsedCondition',
+    },
+  };
+
+  const breadcrumbSchema = buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/' },
+    { name: 'Tienda', path: '/tienda' },
+    { name: productName, path: canonicalPath },
+  ]);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <ProductDetail productId={productId} prefillComplete={prefillComplete} />
+    </>
+  );
 }

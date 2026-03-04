@@ -1,18 +1,26 @@
 import type { Metadata } from 'next';
 import '../styles/globals.css';
-import { Toaster } from 'react-hot-toast';
 import { Analytics } from '@vercel/analytics/next';
 import Script from 'next/script';
 import { JetBrains_Mono, Manrope, Sora } from 'next/font/google';
+import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import SupportAssistantWidget from '@/components/SupportAssistantWidget';
 import { LocaleProvider } from '@/components/LocaleProvider';
-import LanguageSwitcherPopup from '@/components/LanguageSwitcherPopup';
 import { absoluteUrl, getSiteUrl } from '@/lib/siteConfig';
+import { SEO_BASE_KEYWORDS, SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE } from '@/lib/seo';
 
 const siteUrl = getSiteUrl();
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
+const SupportAssistantWidget = dynamic(() => import('@/components/SupportAssistantWidget'), {
+  ssr: false,
+});
+const LanguageSwitcherPopup = dynamic(() => import('@/components/LanguageSwitcherPopup'), {
+  ssr: false,
+});
+const ClientToaster = dynamic(() => import('@/components/ClientToaster'), {
+  ssr: false,
+});
 
 const displayFont = Sora({
   subsets: ['latin'],
@@ -34,25 +42,17 @@ const monoFont = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'AdvancedRetro.es | Tienda de juegos retro y coleccionismo',
+    default: SEO_DEFAULT_TITLE,
     template: '%s | AdvancedRetro.es',
   },
-  description:
-    'Compra juegos retro, consolas y cajas de colección. Catálogo para Game Boy, Game Boy Color, Game Boy Advance, Super Nintendo y GameCube.',
+  description: SEO_DEFAULT_DESCRIPTION,
   metadataBase: new URL(siteUrl),
   alternates: {
     canonical: '/',
   },
-  keywords: [
-    'tienda retro',
-    'juegos game boy',
-    'game boy color',
-    'game boy advance',
-    'super nintendo',
-    'gamecube',
-    'coleccionismo videojuegos',
-    'advanced retro',
-  ],
+  applicationName: 'AdvancedRetro.es',
+  category: 'shopping',
+  keywords: SEO_BASE_KEYWORDS,
   icons: {
     icon: '/favicon.png',
     apple: '/favicon.png',
@@ -145,16 +145,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           <main>{children}</main>
           <Footer />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              style: {
-                background: '#11131a',
-                color: '#f5f7ff',
-                border: '1px solid #24283a',
-              },
-            }}
-          />
+          <ClientToaster />
           <SupportAssistantWidget />
           <LanguageSwitcherPopup />
           <Analytics />
