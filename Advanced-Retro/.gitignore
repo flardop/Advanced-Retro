@@ -35,3 +35,4 @@ next-env.d.ts
 .venv-imaging/
 Imagenes/Organizadas/
 Imagenes_local_backup/
+docs/reports/

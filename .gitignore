@@ -30,3 +30,6 @@ npm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 server/
+
+# OAuth accidental local artifacts
+.apps.googleusercontent.com
