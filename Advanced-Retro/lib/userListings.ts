@@ -103,7 +103,10 @@ function normalizeImages(raw: unknown): string[] {
 
 function isMissingColumnError(error: any): boolean {
   const message = String(error?.message || '').toLowerCase();
-  return message.includes('column') && message.includes('does not exist');
+  return (
+    (message.includes('column') && message.includes('does not exist')) ||
+    (message.includes('could not find') && message.includes('column') && message.includes('schema cache'))
+  );
 }
 
 function withCommunityDefaults<T extends Record<string, any>>(listing: T): T & {

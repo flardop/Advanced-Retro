@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import '../styles/globals.css';
-import { Analytics } from '@vercel/analytics/next';
 import Script from 'next/script';
 import { JetBrains_Mono, Manrope, Sora } from 'next/font/google';
 import dynamic from 'next/dynamic';
@@ -19,6 +18,12 @@ const LanguageSwitcherPopup = dynamic(() => import('@/components/LanguageSwitche
   ssr: false,
 });
 const ClientToaster = dynamic(() => import('@/components/ClientToaster'), {
+  ssr: false,
+});
+const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBanner'), {
+  ssr: false,
+});
+const OptionalAnalytics = dynamic(() => import('@/components/OptionalAnalytics'), {
   ssr: false,
 });
 
@@ -106,7 +111,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || '';
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -130,31 +134,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="es" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
-      <body className="font-body">
+      <body className="font-body min-h-screen flex flex-col overflow-x-hidden">
         <LocaleProvider>
-          {gaMeasurementId ? (
-            <>
-              <Script
-                src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
-                strategy="afterInteractive"
-              />
-              <Script id="ga4" strategy="afterInteractive">
-                {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaMeasurementId}', { anonymize_ip: true });`}
-              </Script>
-            </>
-          ) : null}
           <Script
             id="schema-org"
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationSchema, websiteSchema]) }}
           />
           <Navbar />
-          <main>{children}</main>
+          <main className="flex-1">{children}</main>
           <Footer />
           <ClientToaster />
           <SupportAssistantWidget />
           <LanguageSwitcherPopup />
-          <Analytics />
+          <CookieConsentBanner />
+          <OptionalAnalytics />
         </LocaleProvider>
       </body>
     </html>

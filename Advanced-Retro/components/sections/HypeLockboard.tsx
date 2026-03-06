@@ -153,14 +153,29 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
                     <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(75,228,214,.23),rgba(75,228,214,0))] pointer-events-none" />
                     <div className="relative grid gap-4">
                       <div className="relative h-40 sm:h-48 rounded-xl overflow-hidden border border-line">
-                        <SafeImage
-                          src={launch.image_url || '/placeholder.svg'}
-                          fallbackSrc="/placeholder.svg"
-                          alt={launch.title}
-                          fill
-                          className="object-cover"
-                        />
-                        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,9,18,.2),rgba(4,8,16,.78))]" />
+                        {isAuction ? (
+                          <div className="absolute inset-0 bg-[#05070b]">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(75,228,214,.15),rgba(5,7,11,0))]" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+                              <p className="text-[10px] uppercase tracking-[0.3em] text-textMuted">Subastas</p>
+                              <p className="mt-2 text-2xl sm:text-3xl font-black tracking-[0.22em] text-white">INCOMING</p>
+                              <p className="mt-2 text-xs text-textMuted">
+                                Temporada bloqueada hasta apertura
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <SafeImage
+                              src={launch.image_url || '/placeholder.svg'}
+                              fallbackSrc="/placeholder.svg"
+                              alt={launch.title}
+                              fill
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,9,18,.2),rgba(4,8,16,.78))]" />
+                          </>
+                        )}
                         <div className="absolute inset-x-0 bottom-0 p-3 flex items-center justify-between gap-2">
                           <span className="chip border-primary/50 text-primary bg-[rgba(2,14,24,.8)]">
                             {launch.pinned ? 'Pineado' : 'Próximo'}

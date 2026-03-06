@@ -1,5 +1,63 @@
 const PLACEHOLDER = '/placeholder.svg';
 
+function normalizeLookup(value: unknown): string {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function getConsoleImageOverride(product: any): string | null {
+  const name = normalizeLookup(product?.name);
+  const category = normalizeLookup(product?.category || product?.category_id);
+  const platform = normalizeLookup(product?.platform);
+  const componentType = normalizeLookup(product?.component_type);
+
+  const isConsoleDomain =
+    category.includes('consola') ||
+    category.includes('hardware') ||
+    platform.includes('consola') ||
+    name.startsWith('consola ') ||
+    componentType.includes('console') ||
+    componentType.includes('consola');
+
+  if (!isConsoleDomain) return null;
+
+  if (componentType.includes('manual')) return '/images/products/console-manual-gb.jpg';
+  if (componentType.includes('insert')) return '/images/products/console-insert-universal.jpg';
+  if (componentType.includes('protector')) return '/images/products/console-protector-universal.jpg';
+  if (componentType === 'caja' || name.includes('caja consola')) return '/images/products/console-box-gb.jpg';
+
+  if (name.includes('panasonic q')) return '/images/products/special-editions/console-special-panasonic-q.jpg';
+  if (name.includes('game boy light')) return '/images/products/special-editions/console-special-gameboy-light.png';
+  if (name.includes('pikachu')) return '/images/products/special-editions/console-special-gbc-pikachu.jpg';
+  if (name.includes('nes classic') || name.includes('sp nes')) {
+    return '/images/products/special-editions/console-special-gba-sp-nes.jpg';
+  }
+  if (name.includes('famicom jr') || name.includes('snes jr')) {
+    return '/images/products/special-editions/console-special-snes-jr.jpg';
+  }
+
+  if (name.includes('gamecube') || name.includes('game cube') || platform.includes('gamecube')) {
+    return '/images/products/console-gamecube.jpg';
+  }
+  if (name.includes('super nintendo') || name.includes('snes') || platform.includes('super-nintendo')) {
+    return '/images/products/console-snes-pal.jpg';
+  }
+  if (name.includes('game boy advance') || platform.includes('game-boy-advance') || platform.includes('gba')) {
+    return '/images/products/console-gba.jpg';
+  }
+  if (name.includes('game boy color') || platform.includes('game-boy-color') || platform.includes('gbc')) {
+    return '/images/products/console-gbc.jpg';
+  }
+  if (name.includes('game boy') || platform.includes('game-boy') || platform.includes('gb')) {
+    return '/images/products/console-gb-dmg.jpg';
+  }
+
+  return '/images/products/console-gb-dmg.jpg';
+}
+
 function isValidImageUrl(url: unknown): url is string {
   if (typeof url !== 'string') return false;
   const value = url.trim();
@@ -49,6 +107,9 @@ function parseImageCollection(raw: unknown): string[] {
 }
 
 export function getProductImageUrl(product: any): string {
+  const consoleOverride = getConsoleImageOverride(product);
+  if (consoleOverride) return consoleOverride;
+
   const fromArray = parseImageCollection(product?.images);
   const fromSingle = parseImageCollection(product?.image);
   const fromLegacy = parseImageCollection(product?.gallery_images);
@@ -72,6 +133,9 @@ export function getProductImageUrls(product: any): string[] {
 }
 
 export function getProductFallbackImageUrl(product: any): string {
+  const consoleOverride = getConsoleImageOverride(product);
+  if (consoleOverride) return consoleOverride;
+
   const name = String(product?.name || '').toLowerCase();
   const category = String(product?.category || product?.category_id || '').toLowerCase();
   const platform = String(product?.platform || '').toLowerCase();
@@ -101,10 +165,6 @@ export function getProductFallbackImageUrl(product: any): string {
 
   if (category.includes('misterios') || category.includes('mystery') || Boolean(product?.is_mystery_box)) {
     return '/images/mystery-box-5.png';
-  }
-
-  if (category.includes('consola') || platform.includes('consola') || name.startsWith('consola ')) {
-    return '/images/products/console-gb-dmg.jpg';
   }
 
   if (

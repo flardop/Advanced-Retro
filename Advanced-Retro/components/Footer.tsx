@@ -8,7 +8,7 @@ export default function Footer() {
   const { t } = useLocale();
 
   return (
-    <footer className="mt-16 border-t border-line bg-[rgba(8,15,26,0.62)] backdrop-blur-sm">
+    <footer className="mt-auto border-t border-line bg-[rgba(8,15,26,0.62)] backdrop-blur-sm">
       <div className="container py-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4 text-sm text-textMuted">
         <div className="space-y-4">
           <Link href="/" className="inline-block rounded-lg p-1 hover:bg-white/5">
@@ -68,6 +68,7 @@ export default function Footer() {
             <li><Link href="/terminos" className="hover:text-text">{t('footer.terms', 'Términos')}</Link></li>
             <li><Link href="/privacidad" className="hover:text-text">{t('footer.privacy', 'Privacidad')}</Link></li>
             <li><Link href="/cookies" className="hover:text-text">{t('footer.cookies', 'Cookies')}</Link></li>
+            <li><Link href="/accesibilidad" className="hover:text-text">Accesibilidad</Link></li>
           </ul>
           <div className="mt-5 rounded-xl border border-line p-3 text-xs leading-relaxed">
             <p className="text-text font-semibold">{t('footer.secure', 'Compra segura')}</p>
@@ -91,6 +92,7 @@ export default function Footer() {
             <li><Link href="/terminos" className="hover:text-text">{t('footer.conditions', 'Condiciones')}</Link></li>
             <li><Link href="/privacidad" className="hover:text-text">{t('footer.privacy', 'Privacidad')}</Link></li>
             <li><Link href="/cookies" className="hover:text-text">{t('footer.cookies', 'Cookies')}</Link></li>
+            <li><Link href="/accesibilidad" className="hover:text-text">Accesibilidad</Link></li>
           </ul>
         </div>
       </div>

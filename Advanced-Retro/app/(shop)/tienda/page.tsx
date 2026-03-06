@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import Catalog from '@/components/sections/Catalog';
 import HypeLockboard from '@/components/sections/HypeLockboard';
 import { buildFaqJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
@@ -84,7 +85,9 @@ export default async function StorePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
       />
       <HypeLockboard compact />
-      <Catalog />
+      <Suspense fallback={<section className="section"><div className="container"><div className="glass p-6 text-textMuted">Cargando catálogo...</div></div></section>}>
+        <Catalog />
+      </Suspense>
       <section className="section pt-0">
         <div className="container glass p-6 sm:p-8 space-y-4">
           <h2 className="title-display text-2xl">Cómo comprar en la tienda retro</h2>

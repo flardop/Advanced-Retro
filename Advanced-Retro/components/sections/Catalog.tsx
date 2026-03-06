@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import SafeImage from '@/components/SafeImage';
 import { sampleProducts } from '@/lib/sampleData';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
@@ -375,6 +376,7 @@ function pickFeaturedColumn(source: any[], take: number, used: Set<string>): any
 }
 
 export default function Catalog() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
   const [active, setActive] = useState<string>('all');
   const [metrics, setMetrics] = useState<Record<string, ProductMetric>>({});
@@ -395,7 +397,7 @@ export default function Catalog() {
   const [completePackOnly, setCompletePackOnly] = useState(false);
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(true);
   const [visibleCount, setVisibleCount] = useState(24);
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(true);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const loadedMetricIdsRef = useRef<Set<string>>(new Set());
 
   const loadMetrics = useCallback(async (productIds: string[], force = false) => {
@@ -468,17 +470,29 @@ export default function Catalog() {
 
   useEffect(() => {
     const load = async () => {
-      if (!supabaseClient) {
-        setProducts(sampleProducts);
-        return;
+      try {
+        const res = await fetch('/api/catalog/public', { cache: 'no-store' });
+        const data = await res.json();
+        if (res.ok && Array.isArray(data?.products) && data.products.length > 0) {
+          setProducts(data.products);
+          return;
+        }
+      } catch {
+        // Fallbacks below.
       }
-      const { data: prods } = await supabaseClient
-        .from('products')
-        .select(CATALOG_QUERY_COLUMNS)
-        .order('created_at', { ascending: false });
-      const safeProducts = prods || [];
 
-      setProducts(safeProducts);
+      if (supabaseClient) {
+        const { data: prods } = await supabaseClient
+          .from('products')
+          .select(CATALOG_QUERY_COLUMNS)
+          .order('created_at', { ascending: false });
+        if (Array.isArray(prods) && prods.length > 0) {
+          setProducts(prods);
+          return;
+        }
+      }
+
+      setProducts(sampleProducts);
     };
     void load();
   }, []);
@@ -504,30 +518,23 @@ export default function Catalog() {
   }, [isLoggedIn, favoritesOnly]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const categoryParam = String(params.get('category') || '').trim();
-    if (categoryParam) setActive(categoryParam);
+    const categoryParamRaw = String(searchParams.get('category') || '').trim();
+    const categoryParamNormalized = normalizeText(categoryParamRaw);
 
-    const q = String(params.get('q') || '').trim();
-    if (q) setSearch(q);
-  }, []);
+    const normalizedCategoryParam =
+      categoryParamNormalized === 'mystery' ||
+      categoryParamNormalized === 'mystery box' ||
+      categoryParamNormalized === 'mystery boxes' ||
+      categoryParamNormalized === 'caja misteriosa' ||
+      categoryParamNormalized === 'cajas misteriosas'
+        ? MYSTERY_FILTER
+        : categoryParamRaw;
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+    setActive(normalizedCategoryParam || 'all');
 
-    const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    const apply = () => setIsMobileFiltersOpen(true);
-    apply();
-
-    if (typeof mediaQuery.addEventListener === 'function') {
-      mediaQuery.addEventListener('change', apply);
-      return () => mediaQuery.removeEventListener('change', apply);
-    }
-
-    mediaQuery.addListener(apply);
-    return () => mediaQuery.removeListener(apply);
-  }, []);
+    const q = String(searchParams.get('q') || '').trim();
+    setSearch(q);
+  }, [searchParams]);
 
   const completeProductIds = useMemo(() => {
     const set = new Set<string>();
@@ -544,7 +551,7 @@ export default function Catalog() {
       new Set(
         products
           .map((product) => normalizeStatusFacet(product?.status))
-          .filter(Boolean)
+          .filter((value) => Boolean(value) && value !== 'sin-estado')
       )
     );
     return raw
@@ -854,20 +861,54 @@ export default function Catalog() {
     </div>
   ) : (
     <div className="glass p-4 sm:p-5 mb-6">
-      <div className="lg:hidden flex items-center justify-between gap-3 mb-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-          <p className="text-sm font-semibold">Filtros de tienda</p>
-          <p className="text-xs text-textMuted">{activeFilterCount} filtros activos</p>
+          <p className="text-sm font-semibold">Filtros</p>
+          <p className="text-xs text-textMuted">
+            {activeFilterCount} filtros activos · Búsqueda ordenada sin bloquear la vista del catálogo
+          </p>
         </div>
-        <button
-          className={`chip ${isMobileFiltersOpen ? 'text-primary border-primary' : ''}`}
-          onClick={() => setIsMobileFiltersOpen((value) => !value)}
-        >
-          {isMobileFiltersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="chip"
+            onClick={() => {
+              setActive('all');
+              setSearch('');
+              setSortBy('newest');
+              setPricePreset('all');
+              setSelectedPlatforms([]);
+              setSelectedTypes([]);
+              setSelectedEditions([]);
+              setSelectedStatuses([]);
+              setFavoritesOnly(false);
+              setStockOnly(false);
+              setHasRealImageOnly(false);
+              setCompletePackOnly(false);
+              setMinPrice('');
+              setMaxPrice('');
+            }}
+          >
+            Limpiar
+          </button>
+          <button
+            className={`chip ${isMobileFiltersOpen ? 'text-primary border-primary' : ''}`}
+            onClick={() => setIsMobileFiltersOpen((value) => !value)}
+            aria-expanded={isMobileFiltersOpen}
+          >
+            {isMobileFiltersOpen ? 'Cerrar filtros' : 'Abrir filtros'}
+          </button>
+        </div>
       </div>
 
-      <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-4 lg:grid`}>
+      {!isMobileFiltersOpen ? (
+        <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+          <p className="text-xs text-textMuted">
+            Filtros ocultos para vista limpia. Pulsa en <span className="text-text">“Abrir filtros”</span> para desplegar.
+          </p>
+        </div>
+      ) : null}
+
+      <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-4`}>
         <div className="grid gap-3 lg:grid-cols-[1.55fr,1fr,1fr,1fr,1fr]">
           <input
             className="w-full bg-transparent border border-line px-3 py-2"
@@ -999,11 +1040,11 @@ export default function Catalog() {
                 </div>
               </div>
 
-              <div>
-                <p className="text-xs text-textMuted mb-2">Estado</p>
-                <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
-                  {statusFacetOptions.length > 0 ? (
-                    statusFacetOptions.map((option) => (
+              {statusFacetOptions.length > 0 ? (
+                <div>
+                  <p className="text-xs text-textMuted mb-2">Estado</p>
+                  <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+                    {statusFacetOptions.map((option) => (
                       <button
                         key={option.id}
                         type="button"
@@ -1012,12 +1053,10 @@ export default function Catalog() {
                       >
                         {option.label}
                       </button>
-                    ))
-                  ) : (
-                    <span className="text-xs text-textMuted">Sin estados disponibles</span>
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </div>
 
             <div>
@@ -1043,45 +1082,47 @@ export default function Catalog() {
         ) : null}
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-          <p className="text-xs text-textMuted">Resultados visibles</p>
-          <p className="text-primary text-lg font-semibold mt-1">{sorted.length}</p>
-          <p className="text-xs text-textMuted mt-1">{activeFilterCount} filtros activos</p>
-        </div>
-        <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-          <p className="text-xs text-textMuted">Stock total visible</p>
-          <p className="text-primary text-lg font-semibold mt-1">{totalVisibleStock}</p>
-          <p className="text-xs text-textMuted mt-1">Suma de stock en esta vista</p>
-        </div>
-        <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)] flex flex-col justify-between">
-          <div>
-            <p className="text-xs text-textMuted">Acción rápida</p>
-            <p className="text-sm mt-1">Restablecer filtros y volver al catálogo general</p>
+      {isMobileFiltersOpen ? (
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+            <p className="text-xs text-textMuted">Resultados visibles</p>
+            <p className="text-primary text-lg font-semibold mt-1">{sorted.length}</p>
+            <p className="text-xs text-textMuted mt-1">{activeFilterCount} filtros activos</p>
           </div>
-          <button
-            className="chip mt-2 self-start"
-            onClick={() => {
-              setActive('all');
-              setSearch('');
-              setSortBy('newest');
-              setPricePreset('all');
-              setSelectedPlatforms([]);
-              setSelectedTypes([]);
-              setSelectedEditions([]);
-              setSelectedStatuses([]);
-              setFavoritesOnly(false);
-              setStockOnly(false);
-              setHasRealImageOnly(false);
-              setCompletePackOnly(false);
-              setMinPrice('');
-              setMaxPrice('');
-            }}
-          >
-            Limpiar filtros
-          </button>
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+            <p className="text-xs text-textMuted">Stock total visible</p>
+            <p className="text-primary text-lg font-semibold mt-1">{totalVisibleStock}</p>
+            <p className="text-xs text-textMuted mt-1">Suma de stock en esta vista</p>
+          </div>
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)] flex flex-col justify-between">
+            <div>
+              <p className="text-xs text-textMuted">Acción rápida</p>
+              <p className="text-sm mt-1">Restablecer filtros y volver al catálogo general</p>
+            </div>
+            <button
+              className="chip mt-2 self-start"
+              onClick={() => {
+                setActive('all');
+                setSearch('');
+                setSortBy('newest');
+                setPricePreset('all');
+                setSelectedPlatforms([]);
+                setSelectedTypes([]);
+                setSelectedEditions([]);
+                setSelectedStatuses([]);
+                setFavoritesOnly(false);
+                setStockOnly(false);
+                setHasRealImageOnly(false);
+                setCompletePackOnly(false);
+                setMinPrice('');
+                setMaxPrice('');
+              }}
+            >
+              Limpiar filtros
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 

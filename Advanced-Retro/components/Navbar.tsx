@@ -45,6 +45,23 @@ export default function Navbar() {
     };
   }, []);
 
+  const isItemActive = (href: string) => {
+    const [targetPath, queryString] = href.split('?');
+    const pathMatches = pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+    if (!pathMatches) return false;
+    if (!queryString) return true;
+
+    if (typeof window === 'undefined') return true;
+    const targetQuery = new URLSearchParams(queryString);
+    const currentQuery = new URLSearchParams(window.location.search);
+    for (const [key, value] of targetQuery.entries()) {
+      if (currentQuery.get(key) !== value) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   return (
     <header
       className={`sticky top-0 z-50 border-b transition-all ${
@@ -67,7 +84,7 @@ export default function Navbar() {
 
         <nav className="hidden lg:flex items-center gap-6 text-[0.95rem]">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const isActive = isItemActive(item.href);
             return (
               <Link
                 key={item.href}
@@ -105,7 +122,7 @@ export default function Navbar() {
         <div className="container py-2">
           <div className="mobile-scroll-row no-scrollbar">
             {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const isActive = isItemActive(item.href);
               return (
                 <Link
                   key={`mobile-quick-${item.href}`}

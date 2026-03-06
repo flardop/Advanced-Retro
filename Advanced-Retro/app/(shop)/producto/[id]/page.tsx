@@ -216,7 +216,11 @@ export default async function ProductPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      <ProductDetail productId={productId} prefillComplete={prefillComplete} />
+      <ProductDetail
+        productId={productId}
+        prefillComplete={prefillComplete}
+        initialProduct={product || null}
+      />
     </>
   );
 }

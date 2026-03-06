@@ -8,7 +8,7 @@ import { supabaseClient } from '@/lib/supabaseClient';
 import { sampleProducts } from '@/lib/sampleData';
 import { useCartStore } from '@/store/cartStore';
 import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
-import { getProductHref } from '@/lib/productUrl';
+import { getProductHref, parseProductRouteParam } from '@/lib/productUrl';
 import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
 import { parseVideoEmbed } from '@/lib/videoEmbed';
@@ -655,11 +655,15 @@ async function fileToDataUrl(file: File): Promise<string> {
 export default function ProductDetail({
   productId,
   prefillComplete = false,
+  initialProduct = null,
 }: {
   productId: string;
   prefillComplete?: boolean;
+  initialProduct?: any | null;
 }) {
-  const [product, setProduct] = useState<any | null>(null);
+  const [product, setProduct] = useState<any | null>(initialProduct);
+  const [loadingProduct, setLoadingProduct] = useState(!initialProduct);
+  const [productLoadError, setProductLoadError] = useState('');
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
@@ -720,37 +724,119 @@ export default function ProductDetail({
 
   useEffect(() => {
     const load = async () => {
+      let nextInitialProduct = initialProduct;
+      if (nextInitialProduct) {
+        setProduct(nextInitialProduct);
+        setBundleOptions(buildBundleOptions(nextInitialProduct, [nextInitialProduct]));
+        setEditionOptions(buildEditionOptions(nextInitialProduct, [nextInitialProduct]));
+      }
+
+      setLoadingProduct(true);
+      setProductLoadError('');
+
       if (!supabaseClient) {
-        const fallback = sampleProducts.find((p) => String(p.id) === String(productId)) || null;
+        const parsed = parseProductRouteParam(String(productId || ''));
+        const fallback =
+          (parsed.idCandidate
+            ? sampleProducts.find((p) => String(p.id) === String(parsed.idCandidate))
+            : null) ||
+          (parsed.idPrefixCandidate
+            ? sampleProducts.find((p) => String(p.id || '').toLowerCase().startsWith(String(parsed.idPrefixCandidate)))
+            : null) ||
+          (parsed.slugCandidate
+            ? sampleProducts.find((p: any) => {
+                const slug = String((p as any)?.slug || '')
+                  .trim()
+                  .toLowerCase();
+                return slug && slug === parsed.slugCandidate;
+              })
+            : null) ||
+          sampleProducts.find((p) => String(p.id) === String(productId)) ||
+          null;
+
         setProduct(fallback);
 
         if (fallback) {
           const options = buildBundleOptions(fallback, sampleProducts);
           setBundleOptions(options);
           setEditionOptions(buildEditionOptions(fallback, sampleProducts));
+          setProductLoadError('');
+        } else {
+          setProductLoadError('No se pudo cargar este producto.');
         }
+        setLoadingProduct(false);
         return;
       }
 
-      const { data } = await supabaseClient
-        .from('products')
-        .select(PRODUCT_DETAIL_COLUMNS)
-        .eq('id', productId)
-        .single();
-      setProduct(data || null);
+      const parsed = parseProductRouteParam(String(productId || ''));
+      let detail: any | null = null;
 
-      if (!data) return;
+      if (parsed.idCandidate) {
+        const { data } = await supabaseClient
+          .from('products')
+          .select(PRODUCT_DETAIL_COLUMNS)
+          .eq('id', parsed.idCandidate)
+          .maybeSingle();
+        if (data) detail = data;
+      }
 
-      const pool: any[] = [data];
+      if (!detail && parsed.idPrefixCandidate) {
+        const { data, error } = await supabaseClient
+          .from('products')
+          .select(PRODUCT_DETAIL_COLUMNS)
+          .ilike('id', `${parsed.idPrefixCandidate}%`)
+          .limit(2);
+        if (!error && Array.isArray(data) && data.length === 1) {
+          detail = data[0];
+        }
+      }
+
+      if (!detail && parsed.slugCandidate) {
+        // Algunos esquemas tienen "slug", otros no. Si falla, seguimos con fallback.
+        const { data, error } = await supabaseClient
+          .from('products')
+          .select(PRODUCT_DETAIL_COLUMNS)
+          .eq('slug', parsed.slugCandidate)
+          .maybeSingle();
+        if (!error && data) {
+          detail = data;
+        }
+      }
+
+      if (!detail) {
+        const { data } = await supabaseClient
+          .from('products')
+          .select(PRODUCT_DETAIL_COLUMNS)
+          .eq('id', productId)
+          .maybeSingle();
+        if (data) detail = data;
+      }
+
+      if (!detail) {
+        if (nextInitialProduct) {
+          setProduct(nextInitialProduct);
+          setProductLoadError('');
+        } else {
+          setProduct(null);
+          setProductLoadError('No se pudo cargar este producto.');
+        }
+        setLoadingProduct(false);
+        return;
+      }
+
+      setProduct(detail);
+      setProductLoadError('');
+
+      const pool: any[] = [detail];
       const pushCandidates = (items: any[] | null | undefined) => {
         if (!Array.isArray(items) || items.length === 0) return;
         pool.push(...items);
       };
 
-      const collectionKey = String((data as any)?.collection_key || '').trim();
-      const category = String((data as any)?.category || '').trim();
+      const collectionKey = String((detail as any)?.collection_key || '').trim();
+      const category = String((detail as any)?.category || '').trim();
       const baseToken =
-        cleanBaseTitle(String((data as any)?.name || ''))
+        cleanBaseTitle(String((detail as any)?.name || ''))
           .split(' ')
           .find((token) => token.length >= 4) || '';
 
@@ -802,7 +888,7 @@ export default function ProductDetail({
         .limit(320);
 
       if (!componentCatalog.error) {
-        const basePlatform = detectPlatformKey(data);
+        const basePlatform = detectPlatformKey(detail);
         const componentCandidates = (componentCatalog.data || []).filter((item: any) => {
           const type = detectOptionType(item);
           if (!type || type === 'cartucho') return false;
@@ -823,12 +909,39 @@ export default function ProductDetail({
       }
 
       const dedupedPool = dedupeById(pool).slice(0, 420);
-      setBundleOptions(buildBundleOptions(data, dedupedPool));
-      setEditionOptions(buildEditionOptions(data, dedupedPool));
+      setBundleOptions(buildBundleOptions(detail, dedupedPool));
+      setEditionOptions(buildEditionOptions(detail, dedupedPool));
+      setLoadingProduct(false);
     };
 
-    load();
-  }, [productId]);
+    load().catch(() => {
+      if (initialProduct) {
+        setProduct(initialProduct);
+        setBundleOptions(buildBundleOptions(initialProduct, [initialProduct]));
+        setEditionOptions(buildEditionOptions(initialProduct, [initialProduct]));
+        setProductLoadError('');
+      } else {
+        setProductLoadError('No se pudo cargar este producto.');
+      }
+      setLoadingProduct(false);
+    });
+  }, [productId, initialProduct]);
+
+  useEffect(() => {
+    if (!loadingProduct) return;
+
+    const timer = window.setTimeout(() => {
+      setLoadingProduct((current) => {
+        if (!current) return current;
+        setProductLoadError((prev) =>
+          prev || 'La carga del producto está tardando más de lo normal. Recarga la página.'
+        );
+        return false;
+      });
+    }, 15000);
+
+    return () => window.clearTimeout(timer);
+  }, [loadingProduct]);
 
   useEffect(() => {
     const initialSelection: Record<string, boolean> = {};
@@ -1082,11 +1195,27 @@ export default function ProductDetail({
     reviewsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  if (!product) {
+  if (loadingProduct && !product) {
     return (
       <section className="section">
         <div className="container">
           <div className="glass p-6 text-textMuted">Cargando producto...</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!product) {
+    return (
+      <section className="section">
+        <div className="container">
+          <div className="glass p-6">
+            <p className="text-text font-semibold">Producto no disponible</p>
+            <p className="text-textMuted mt-2">{productLoadError || 'No hemos podido cargar esta ficha.'}</p>
+            <Link href="/tienda" className="button-secondary mt-4 inline-flex">
+              Volver a tienda
+            </Link>
+          </div>
         </div>
       </section>
     );

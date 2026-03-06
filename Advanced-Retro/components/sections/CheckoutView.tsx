@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useCartStore } from '@/store/cartStore';
 import { stripePromise } from '@/lib/stripe';
 import toast from 'react-hot-toast';
@@ -27,6 +28,7 @@ export default function CheckoutView() {
   const [country, setCountry] = useState('España');
   const [phone, setPhone] = useState('');
   const [prefillLoaded, setPrefillLoaded] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const shippingQuote = useMemo(
     () =>
@@ -126,6 +128,10 @@ export default function CheckoutView() {
 
     if (!fullName.trim() || !line1.trim() || !city.trim() || !postalCode.trim() || !country.trim()) {
       toast.error('Completa nombre, dirección, ciudad, código postal y país');
+      return;
+    }
+    if (!acceptedTerms) {
+      toast.error('Debes aceptar términos, privacidad y política de devoluciones para continuar');
       return;
     }
 
@@ -266,6 +272,39 @@ export default function CheckoutView() {
               <p className="flex items-center justify-between"><span>Envío</span><span>{toEuro(shippingCost)}</span></p>
               <p className="flex items-center justify-between text-primary"><span>Descuento</span><span>-{toEuro(couponDiscount)}</span></p>
               <p className="flex items-center justify-between font-semibold text-lg pt-2 border-t border-line"><span>Total</span><span>{toEuro(total)}</span></p>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-line p-3 text-xs text-textMuted space-y-2">
+              <p>
+                Información precontractual: precio final con impuestos, gastos de envío y condiciones
+                mostradas antes de pagar.
+              </p>
+              <p>
+                Derecho de desistimiento general de 14 días naturales para compras a distancia, salvo excepciones legales.
+              </p>
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>
+                  Acepto{' '}
+                  <Link href="/terminos" className="text-primary hover:underline">
+                    términos y condiciones
+                  </Link>
+                  ,{' '}
+                  <Link href="/privacidad" className="text-primary hover:underline">
+                    privacidad
+                  </Link>{' '}
+                  y{' '}
+                  <Link href="/cookies" className="text-primary hover:underline">
+                    política de cookies
+                  </Link>
+                  .
+                </span>
+              </label>
             </div>
 
             <p className="text-textMuted text-sm mt-4">Pago seguro con Stripe (tarjeta, Apple Pay y Google Pay).</p>

@@ -25,7 +25,8 @@
     "catalog:expand": "npx tsx scripts/expand-catalog-internet.ts",
     "catalog:ensure-components": "npx tsx scripts/ensure-complete-game-components.ts",
     "catalog:enrich-copy": "npx tsx scripts/enrich-product-copy.ts",
-    "seo:audit": "npx tsx scripts/seo-audit-report.ts"
+    "seo:audit": "npx tsx scripts/seo-audit-report.ts",
+    "smoke:audit": "npx tsx scripts/smoke-audit.ts"
   },
   "dependencies": {
     "@stripe/stripe-js": "^4.5.0",
