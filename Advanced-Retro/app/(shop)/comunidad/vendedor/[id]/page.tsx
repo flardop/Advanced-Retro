@@ -271,6 +271,9 @@ export default async function CommunitySellerPage({ params }: PageProps) {
               <Link href="/comunidad" className="chip">
                 Volver a comunidad
               </Link>
+              <Link href="/comunidad/vendedores" className="chip">
+                Ver ranking
+              </Link>
               <Link href="/perfil?tab=tickets" className="button-primary">
                 Abrir chat con tienda
               </Link>

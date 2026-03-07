@@ -26,9 +26,10 @@ export default function Navbar() {
   ];
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
+    const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener('scroll', onScroll);
+
     if (supabaseClient) {
       supabaseClient.auth.getUser().then(({ data }) => {
         setUser(data.user);
@@ -41,6 +42,7 @@ export default function Navbar() {
         listener.subscription.unsubscribe();
       };
     }
+
     return () => {
       window.removeEventListener('scroll', onScroll);
     };
@@ -67,11 +69,11 @@ export default function Navbar() {
     <header
       className={`sticky top-0 z-50 border-b transition-all ${
         scrolled
-          ? 'border-line bg-[rgba(8,15,26,0.9)] backdrop-blur-xl shadow-[0_12px_30px_rgba(3,10,24,0.32)]'
-          : 'border-line/70 bg-[rgba(8,15,26,0.74)] backdrop-blur-lg'
+          ? 'border-line bg-[rgba(8,14,25,0.92)] backdrop-blur-xl shadow-[0_8px_28px_rgba(3,10,24,0.32)]'
+          : 'border-line/70 bg-[rgba(8,14,25,0.78)] backdrop-blur-lg'
       }`}
     >
-      <div className="container h-[64px] sm:h-[72px] flex items-center justify-between gap-3">
+      <div className="container h-[66px] sm:h-[72px] flex items-center justify-between gap-3">
         <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
           <Image
             src="/logo.png"
@@ -83,14 +85,18 @@ export default function Navbar() {
           />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-6 text-[0.95rem]">
+        <nav className="hidden lg:flex items-center gap-2 text-[0.92rem]">
           {navItems.map((item) => {
             const isActive = isItemActive(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`link-underline ${isActive ? 'text-primary' : 'text-textMuted hover:text-text'}`}
+                className={`rounded-full px-3 py-2 transition ${
+                  isActive
+                    ? 'bg-primary/10 text-primary border border-primary/40'
+                    : 'text-textMuted hover:text-text hover:bg-white/5 border border-transparent'
+                }`}
               >
                 {item.label}
               </Link>
@@ -101,9 +107,6 @@ export default function Navbar() {
         <div className="flex items-center gap-2 sm:gap-3">
           <Link href="/carrito" className="chip hover:border-primary/50 hover:text-text">
             {t('nav.cart', 'Carrito')}
-          </Link>
-          <Link href={user ? '/perfil' : '/login'} className="chip lg:hidden hover:border-primary/50 hover:text-text">
-            {user ? t('nav.profile', 'Perfil') : t('nav.login', 'Entrar')}
           </Link>
           <Link href={user ? '/perfil' : '/login'} className="button-secondary hidden sm:inline-flex">
             {user ? t('nav.profile', 'Mi perfil') : t('nav.login', 'Entrar')}
@@ -134,6 +137,9 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            <Link href={user ? '/perfil' : '/login'} className="chip shrink-0">
+              {user ? t('nav.profile', 'Mi perfil') : t('nav.login_mobile', 'Iniciar sesión')}
+            </Link>
           </div>
         </div>
       </div>
@@ -168,9 +174,7 @@ export default function Navbar() {
                   </Link>
                 </div>
 
-                {user?.email ? (
-                  <p className="text-xs text-textMuted pt-1">{t('nav.session', 'Sesión')}: {user.email}</p>
-                ) : null}
+                {user?.email ? <p className="text-xs text-textMuted pt-1">{t('nav.session', 'Sesión')}: {user.email}</p> : null}
               </div>
             </div>
           </div>

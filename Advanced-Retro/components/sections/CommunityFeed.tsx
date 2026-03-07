@@ -29,8 +29,6 @@ type CommunityListing = {
   featured_days?: number;
   is_showcase?: boolean;
   showcase_days?: number;
-  buyer_email?: string | null;
-  shipping_tracking_code?: string | null;
   delivery_status?: string;
   user?: {
     id?: string | null;
@@ -94,7 +92,7 @@ function toDeliveryLabel(status: string): string {
 
 function toCategoryLabel(category: string): string {
   const key = String(category || '').toLowerCase();
-  if (key.includes('gameboy-advance')) return 'GBA';
+  if (key.includes('gameboy-advance')) return 'Game Boy Advance';
   if (key.includes('gameboy-color')) return 'Game Boy Color';
   if (key.includes('super-nintendo')) return 'Super Nintendo';
   if (key.includes('gamecube')) return 'GameCube';
@@ -121,15 +119,6 @@ function toOriginalityLabel(value: string): string {
   return 'Sin definir';
 }
 
-function toOriginalityChipClass(value: string): string {
-  const key = String(value || '').toLowerCase();
-  if (key === 'original_verificado') return 'border-emerald-300 bg-emerald-50 text-emerald-800';
-  if (key === 'original_sin_verificar') return 'border-amber-300 bg-amber-50 text-amber-800';
-  if (key === 'repro_1_1') return 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-800';
-  if (key === 'mixto') return 'border-slate-300 bg-slate-50 text-slate-700';
-  return 'border-slate-300 bg-slate-50 text-slate-700';
-}
-
 function toCategoryGroup(category: string): 'juegos' | 'cajas-manuales' | 'accesorios' | 'consolas' | 'otros' {
   const key = String(category || '').toLowerCase();
   if (key.includes('consolas')) return 'consolas';
@@ -151,7 +140,7 @@ function buildSellerInitial(name: string): string {
 
 function toRelativeDate(value: string): string {
   const time = new Date(String(value || '')).getTime();
-  if (!Number.isFinite(time)) return 'Publicado hace poco';
+  if (!Number.isFinite(time)) return 'Hace poco';
   const deltaMs = Date.now() - time;
   const deltaHours = Math.floor(deltaMs / (1000 * 60 * 60));
   if (deltaHours < 1) return 'Hace menos de 1h';
@@ -190,6 +179,7 @@ export default function CommunityFeed() {
   );
   const [cardLikeLoadingById, setCardLikeLoadingById] = useState<Record<string, boolean>>({});
   const [viewerShippingZone, setViewerShippingZone] = useState<CommunityShippingZone>('espana_peninsula');
+  const [showFilters, setShowFilters] = useState(false);
 
   const [marketQuery, setMarketQuery] = useState('');
   const [marketSort, setMarketSort] = useState<'newest' | 'price_asc' | 'price_desc'>('newest');
@@ -204,11 +194,6 @@ export default function CommunityFeed() {
     'all' | 'original_verificado' | 'original_sin_verificar' | 'repro_1_1' | 'mixto'
   >('all');
 
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [imageUrls, setImageUrls] = useState('');
-  const [sending, setSending] = useState(false);
-
   const loadPosts = async () => {
     try {
       const res = await fetch('/api/community/posts', { cache: 'no-store' });
@@ -222,7 +207,7 @@ export default function CommunityFeed() {
 
   const loadMarketplace = async () => {
     try {
-      const res = await fetch('/api/community/listings?limit=36', { cache: 'no-store' });
+      const res = await fetch('/api/community/listings?limit=80', { cache: 'no-store' });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'No se pudo cargar el marketplace');
 
@@ -241,7 +226,7 @@ export default function CommunityFeed() {
   const loadRanking = useCallback(async (period: RankingPeriod) => {
     setRankingLoading(true);
     try {
-      const res = await fetch(`/api/community/ranking?limit=6&period=${encodeURIComponent(period)}`, {
+      const res = await fetch(`/api/community/ranking?limit=8&period=${encodeURIComponent(period)}`, {
         cache: 'no-store',
       });
       const data = await res.json().catch(() => null);
@@ -405,193 +390,128 @@ export default function CommunityFeed() {
     };
   }, [visibleListings]);
 
-  const publish = async () => {
-    const images = imageUrls
-      .split(/\n|,|;/g)
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .slice(0, 4);
-
-    if (title.trim().length < 4) {
-      toast.error('Pon un título de al menos 4 caracteres');
-      return;
-    }
-    if (content.trim().length < 20) {
-      toast.error('Escribe al menos 20 caracteres en la publicación');
-      return;
-    }
-    if (images.length === 0) {
-      toast.error('Añade al menos una foto para que la publicación destaque');
-      return;
-    }
-
-    setSending(true);
-    try {
-      const res = await fetch('/api/community/posts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content, images }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || 'No se pudo publicar');
-
-      setTitle('');
-      setContent('');
-      setImageUrls('');
-      setPosts((prev) => [data.post, ...prev]);
-      toast.success('Publicación creada');
-    } catch (error: any) {
-      toast.error(error?.message || 'No se pudo publicar');
-    } finally {
-      setSending(false);
-    }
-  };
-
   const policyText = useMemo(() => {
     const fee = toPrice(Number(marketPolicy.publish_fee_cents || 0));
     const commissionRate = Number(marketPolicy.commission_rate || 5).toFixed(0);
     return `Publicar ${fee} · Comisión tienda ${commissionRate}% al vender`;
   }, [marketPolicy]);
 
-  const featuredListings = useMemo(() => visibleListings.slice(0, 3), [visibleListings]);
-
   return (
     <section className="section" id="comunidad">
-      <div className="mx-auto w-full max-w-[1760px] space-y-6 px-4 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white text-slate-900 shadow-[0_18px_45px_rgba(2,6,23,0.12)]">
-          <div className="relative p-6 md:p-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_40%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.16),transparent_45%)]" />
-            <div className="relative grid gap-6 xl:grid-cols-[1.25fr,0.75fr]">
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-cyan-700">Comunidad · Marketplace</p>
-                <h2 className="mt-2 text-3xl font-black leading-tight md:text-4xl">
-                  Compra y vende entre coleccionistas con revisión de la tienda
-                </h2>
-                <p className="mt-3 max-w-3xl text-slate-600">
-                  Estilo marketplace: anuncios de usuarios, control de autenticidad/originalidad, seguimiento por chat
-                  y estados de entrega con soporte desde Advanced Retro.
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="rounded-full border border-cyan-300 bg-cyan-50 px-3 py-1 text-sm font-semibold text-cyan-900">
-                    {policyText}
-                  </span>
-                  <span className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-sm text-slate-700">
-                    Chat comprador ↔ tienda
-                  </span>
-                  <span className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-sm text-slate-700">
-                    Email de seguimiento
-                  </span>
-                </div>
+      <div className="mx-auto w-full max-w-[1680px] space-y-6 px-4 sm:px-6 lg:px-8">
+        <div className="glass p-6 sm:p-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-primary">Comunidad marketplace</p>
+              <h2 className="title-display mt-2 text-3xl sm:text-4xl lg:text-5xl">Compra y vende entre coleccionistas</h2>
+              <p className="mt-3 max-w-3xl text-textMuted">
+                Flujo limpio: anuncios de usuarios, control de originalidad, seguimiento con tienda y perfil público de vendedor.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                <span className="chip border-primary/50 text-primary">{policyText}</span>
+                <span className="chip">Chat comprador ↔ tienda</span>
+                <span className="chip">Estado de envío trazable</span>
               </div>
+            </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <div className="rounded-2xl border border-slate-200 bg-white/90 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Anuncios visibles</p>
-                  <p className="mt-2 text-2xl font-black text-slate-900">{visibleStats.count}</p>
-                  <p className="text-xs text-slate-500">Con los filtros actuales</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white/90 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Valor listado</p>
-                  <p className="mt-2 text-2xl font-black text-cyan-700">{toPrice(visibleStats.totalValueCents)}</p>
-                  <p className="text-xs text-slate-500">Suma de anuncios visibles</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 sm:col-span-2 xl:col-span-1">
-                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Vendedor destacado</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-900">
-                    {visibleStats.topSeller?.name || 'Sin datos aún'}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {visibleStats.topSeller ? `${visibleStats.topSeller.count} anuncios activos` : 'Aparecerá al listar productos'}
-                  </p>
-                </div>
-              </div>
+            <div className="grid min-w-[250px] gap-2 sm:grid-cols-2">
+              <Link href="/comunidad/publicar" className="button-primary justify-center">Publicar anuncio</Link>
+              <Link href="/comunidad/mis-anuncios" className="button-secondary justify-center">Mis anuncios</Link>
+              <Link href="/comunidad/vendedores" className="button-secondary justify-center">Ver vendedores</Link>
+              <Link href="/perfil?tab=tickets" className="button-secondary justify-center">Soporte compra segura</Link>
             </div>
           </div>
 
-          <div className="border-t border-slate-200 bg-slate-50/80 p-4 md:p-6">
-            <div className="grid gap-3 lg:grid-cols-[2fr,1fr,1fr,auto]">
-              <input
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400"
-                placeholder="Buscar en comunidad (Pokémon, Zelda, consola, manual...)"
-                value={marketQuery}
-                onChange={(e) => setMarketQuery(e.target.value)}
-              />
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-line bg-[rgba(10,18,30,0.55)] p-4">
+              <p className="text-xs text-textMuted">Anuncios visibles</p>
+              <p className="mt-2 text-2xl font-black text-text">{visibleStats.count}</p>
+            </div>
+            <div className="rounded-2xl border border-line bg-[rgba(10,18,30,0.55)] p-4">
+              <p className="text-xs text-textMuted">Valor publicado</p>
+              <p className="mt-2 text-2xl font-black text-primary">{toPrice(visibleStats.totalValueCents)}</p>
+            </div>
+            <div className="rounded-2xl border border-line bg-[rgba(10,18,30,0.55)] p-4">
+              <p className="text-xs text-textMuted">Vendedor más activo</p>
+              <p className="mt-2 text-lg font-semibold text-text line-clamp-1">{visibleStats.topSeller?.name || 'Sin datos aún'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass p-4 sm:p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              className="min-w-[240px] flex-1 rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-4 py-3 text-sm"
+              placeholder="Buscar en comunidad (Pokémon, Zelda, consola, manual...)"
+              value={marketQuery}
+              onChange={(e) => setMarketQuery(e.target.value)}
+            />
+            <select
+              className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-3 text-sm"
+              value={marketSort}
+              onChange={(e) => setMarketSort(e.target.value as typeof marketSort)}
+            >
+              <option value="newest">Novedades</option>
+              <option value="price_asc">Precio: menor a mayor</option>
+              <option value="price_desc">Precio: mayor a menor</option>
+            </select>
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => setShowFilters((value) => !value)}
+            >
+              {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
+            </button>
+          </div>
+
+          {showFilters ? (
+            <div className="mt-3 grid gap-2 lg:grid-cols-5">
               <select
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
-                value={marketSort}
-                onChange={(e) => setMarketSort(e.target.value as typeof marketSort)}
-              >
-                <option value="newest">Novedades</option>
-                <option value="price_asc">Precio: menor a mayor</option>
-                <option value="price_desc">Precio: mayor a menor</option>
-              </select>
-              <select
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900"
+                className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
                 value={deliveryFilter}
                 onChange={(e) => setDeliveryFilter(e.target.value as typeof deliveryFilter)}
               >
-                <option value="all">Todos los estados</option>
+                <option value="all">Estado: todos</option>
                 <option value="pending">Pendiente</option>
-                <option value="processing">Preparando envío</option>
+                <option value="processing">Preparando</option>
                 <option value="shipped">Enviado</option>
                 <option value="delivered">Entregado</option>
               </select>
-              <Link
-                href="/comunidad/publicar"
-                className="inline-flex items-center justify-center rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white hover:bg-cyan-700"
-              >
-                Publicar anuncio
-              </Link>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {[
-                { id: 'all', label: 'Todo' },
-                { id: 'juegos', label: 'Juegos' },
-                { id: 'cajas-manuales', label: 'Cajas y manuales' },
-                { id: 'accesorios', label: 'Accesorios' },
-                { id: 'consolas', label: 'Consolas' },
-              ].map((chip) => (
-                <button
-                  key={chip.id}
-                  type="button"
-                  onClick={() => setCategoryGroupFilter(chip.id as any)}
-                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-                    categoryGroupFilter === chip.id
-                      ? 'border-cyan-300 bg-cyan-50 text-cyan-900'
-                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  {chip.label}
-                </button>
-              ))}
-
               <select
-                className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700"
+                className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
+                value={categoryGroupFilter}
+                onChange={(e) => setCategoryGroupFilter(e.target.value as any)}
+              >
+                <option value="all">Categoría: todo</option>
+                <option value="juegos">Juegos</option>
+                <option value="cajas-manuales">Cajas y manuales</option>
+                <option value="accesorios">Accesorios</option>
+                <option value="consolas">Consolas</option>
+              </select>
+              <select
+                className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
                 value={conditionFilter}
                 onChange={(e) => setConditionFilter(e.target.value as typeof conditionFilter)}
               >
-                <option value="all">Estado: todos</option>
+                <option value="all">Estado del artículo</option>
                 <option value="used">Usado</option>
                 <option value="restored">Restaurado</option>
                 <option value="new">Nuevo</option>
               </select>
-
               <select
-                className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700"
+                className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
                 value={originalityFilter}
                 onChange={(e) => setOriginalityFilter(e.target.value as typeof originalityFilter)}
               >
-                <option value="all">Originalidad: todas</option>
+                <option value="all">Originalidad</option>
                 <option value="original_verificado">Original verificado</option>
                 <option value="original_sin_verificar">Original sin verificar</option>
                 <option value="repro_1_1">Repro 1:1</option>
                 <option value="mixto">Mixto</option>
               </select>
-
               <button
                 type="button"
-                className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+                className="button-secondary justify-center"
                 onClick={() => {
                   setMarketQuery('');
                   setMarketSort('newest');
@@ -604,68 +524,54 @@ export default function CommunityFeed() {
                 Limpiar filtros
               </button>
             </div>
-
-            {featuredListings.length > 0 ? (
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
-                {featuredListings.map((listing) => (
-                  <div key={`featured-${listing.id}`} className="rounded-2xl border border-slate-200 bg-white p-3">
-                    <p className="text-[11px] uppercase tracking-[0.15em] text-slate-500">Destacado</p>
-                    <p className="mt-1 font-semibold text-slate-900 line-clamp-1">{listing.title}</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
-                        {toCategoryLabel(String(listing.category || ''))}
-                      </span>
-                      <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
-                        {toConditionLabel(String(listing.condition || 'used'))}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-lg font-black text-cyan-700">{toPrice(Number(listing.price || 0))}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          ) : null}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-12">
-          <div className="xl:col-span-9">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-xl font-semibold text-white">Anuncios de la comunidad</h3>
-                <p className="text-sm text-textMuted">
-                  Productos entre coleccionistas con control de originalidad y soporte de tienda.
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <div>
+            {visibleListings.length === 0 ? (
+              <div className="glass p-6">
+                <p className="font-semibold">No hay anuncios con esos filtros</p>
+                <p className="mt-2 text-sm text-textMuted">
+                  Prueba a limpiar filtros o publica tu primer anuncio en comunidad.
                 </p>
-              </div>
-              <Link href="/perfil" className="chip">
-                Gestionar mis anuncios
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {visibleListings.length === 0 ? (
-                <div className="glass p-6 text-textMuted sm:col-span-2 xl:col-span-3">
-                  <p className="font-semibold text-text">No hay anuncios con esos filtros</p>
-                  <p className="mt-2 text-sm">
-                    Prueba a quitar filtros o cambia a “Todo”. También puedes publicar el primero desde tu perfil.
-                  </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link href="/comunidad/publicar" className="button-primary">Publicar anuncio</Link>
+                  <button
+                    type="button"
+                    className="button-secondary"
+                    onClick={() => {
+                      setMarketQuery('');
+                      setMarketSort('newest');
+                      setDeliveryFilter('all');
+                      setCategoryGroupFilter('all');
+                      setConditionFilter('all');
+                      setOriginalityFilter('all');
+                    }}
+                  >
+                    Quitar filtros
+                  </button>
                 </div>
-              ) : (
-                visibleListings.map((listing) => {
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {visibleListings.map((listing) => {
                   const image =
                     Array.isArray(listing.images) && listing.images.length > 0
                       ? String(listing.images[0])
                       : '/logo.png';
-                  const sellerName = String(listing.user?.name || 'Vendedor verificado');
+                  const sellerName = String(listing.user?.name || 'Vendedor');
                   const sellerAvatar = String(listing.user?.avatar_url || '');
                   const sellerId = String(listing.user?.id || '').trim();
                   const sellerLocationLabel = String(listing.user?.public_location?.label || '').trim();
-                  const commissionCents = Number(listing.commission_cents || 0);
+
                   const shippingQuote = calculateCommunityShippingQuoteFromArenys({
                     zone: viewerShippingZone,
                     packageSize: listing.package_size || 'medium',
                     itemPriceCents: Number(listing.price || 0),
                   });
                   const totalPriceCents = Math.max(0, Number(listing.price || 0)) + shippingQuote.costCents;
+
                   const social = listingSocialMetrics[String(listing.id)] || {
                     visits: 0,
                     likes: 0,
@@ -673,17 +579,15 @@ export default function CommunityFeed() {
                     likedByCurrentVisitor: false,
                   };
                   const likeBusy = Boolean(cardLikeLoadingById[String(listing.id)]);
+
                   return (
-                    <article
-                      key={listing.id}
-                      className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(2,6,23,0.14)]"
-                    >
-                      <div className="relative h-60 bg-slate-100">
+                    <article key={listing.id} className="glass overflow-hidden">
+                      <Link href={`/comunidad/anuncio/${listing.id}`} className="block relative h-56 bg-surface">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={image}
                           alt={listing.title}
-                          className="h-full w-full object-cover bg-slate-100"
+                          className="h-full w-full object-cover"
                           loading="lazy"
                           onError={(event) => {
                             const target = event.currentTarget;
@@ -694,261 +598,75 @@ export default function CommunityFeed() {
                           }}
                         />
                         <div className="absolute left-2 top-2 flex flex-wrap gap-1">
-                          <span className="rounded-full bg-white/95 px-2 py-1 text-[11px] font-semibold text-slate-800 shadow-sm">
+                          <span className="rounded-full border border-white/35 bg-black/55 px-2 py-1 text-[11px] text-white">
                             {toDeliveryLabel(String(listing.delivery_status || 'pending'))}
                           </span>
-                          <span className="rounded-full bg-white/95 px-2 py-1 text-[11px] text-slate-700 shadow-sm">
-                            {toCategoryLabel(String(listing.category || ''))}
-                          </span>
                           {listing.is_featured ? (
-                            <span className="rounded-full bg-amber-300/95 px-2 py-1 text-[11px] font-semibold text-amber-950 shadow-sm">
+                            <span className="rounded-full border border-amber-300/60 bg-amber-300/20 px-2 py-1 text-[11px] text-amber-100">
                               Destacado
                             </span>
                           ) : null}
                           {listing.is_showcase ? (
-                            <span className="rounded-full bg-fuchsia-300/95 px-2 py-1 text-[11px] font-semibold text-fuchsia-950 shadow-sm">
+                            <span className="rounded-full border border-fuchsia-300/60 bg-fuchsia-300/20 px-2 py-1 text-[11px] text-fuchsia-100">
                               Vitrina
                             </span>
                           ) : null}
                         </div>
-                        <button
-                          type="button"
-                          aria-label={social.likedByCurrentVisitor ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-                          className={`absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-full border shadow-sm transition ${
-                            social.likedByCurrentVisitor
-                              ? 'border-cyan-300 bg-cyan-50 text-cyan-700'
-                              : 'border-slate-300 bg-white/95 text-slate-600 hover:bg-white'
-                          } ${likeBusy ? 'opacity-70' : ''}`}
-                          disabled={likeBusy || !visitorId}
-                          onClick={() => toggleCardLike(String(listing.id))}
-                        >
-                          {social.likedByCurrentVisitor ? '♥' : '♡'}
-                        </button>
-                      </div>
+                      </Link>
 
-                      <div className="p-4 text-slate-900">
-                        <div className="flex items-start justify-between gap-3">
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="text-2xl font-black text-cyan-700">{toPrice(totalPriceCents)}</p>
-                            <p className="text-[11px] text-slate-500">
-                              Incluye envío · producto {toPrice(Number(listing.price || 0))} + envío{' '}
-                              {toPrice(shippingQuote.costCents)}
+                            <p className="text-2xl font-black text-primary">{toPrice(totalPriceCents)}</p>
+                            <p className="text-[11px] text-textMuted">
+                              incl. envío ({toPrice(shippingQuote.costCents)})
                             </p>
                           </div>
-                          <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
-                            {toRelativeDate(String(listing.created_at || ''))}
-                          </span>
+                          <button
+                            type="button"
+                            aria-label={social.likedByCurrentVisitor ? 'Quitar favorito' : 'Guardar favorito'}
+                            className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                              social.likedByCurrentVisitor
+                                ? 'border-primary bg-primary/15 text-primary'
+                                : 'border-line text-textMuted hover:text-text'
+                            } ${likeBusy ? 'opacity-70' : ''}`}
+                            disabled={likeBusy || !visitorId}
+                            onClick={() => toggleCardLike(String(listing.id))}
+                          >
+                            {social.likedByCurrentVisitor ? '♥ Guardado' : '♡ Me gusta'}
+                          </button>
                         </div>
 
-                        <h3 className="mt-2 font-semibold leading-snug line-clamp-2 min-h-[2.7rem]">
-                          <Link href={`/comunidad/anuncio/${listing.id}`} className="hover:text-cyan-700">
+                        <h3 className="mt-2 line-clamp-2 text-base font-semibold">
+                          <Link href={`/comunidad/anuncio/${listing.id}`} className="hover:text-primary">
                             {listing.title}
                           </Link>
                         </h3>
-                        <p className="mt-2 text-sm text-slate-600 line-clamp-2 min-h-[2.5rem]">
-                          {listing.description}
-                        </p>
+                        <p className="mt-1 line-clamp-2 text-sm text-textMuted">{listing.description}</p>
 
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
-                            {toConditionLabel(String(listing.condition || 'used'))}
-                          </span>
-                          <span
-                            className={`rounded-full border px-2 py-1 text-[11px] ${toOriginalityChipClass(
-                              String(listing.originality_status || '')
-                            )}`}
-                          >
-                            {toOriginalityLabel(String(listing.originality_status || ''))}
-                          </span>
+                        <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                          <span className="chip">{toCategoryLabel(String(listing.category || ''))}</span>
+                          <span className="chip">{toConditionLabel(String(listing.condition || 'used'))}</span>
+                          <span className="chip">{toOriginalityLabel(String(listing.originality_status || ''))}</span>
                           {String(listing.pegi_rating || 'none') !== 'none' ? (
-                            <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
-                              PEGI {String(listing.pegi_rating)}
-                            </span>
-                          ) : null}
-                          {String(listing.package_size || '').trim() ? (
-                            <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
-                              Paquete {String(listing.package_size)}
-                            </span>
+                            <span className="chip">PEGI {String(listing.pegi_rating)}</span>
                           ) : null}
                         </div>
 
-                        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-2.5">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex flex-wrap gap-1.5">
-                              <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
-                                {social.likes} likes
-                              </span>
-                              <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
-                                {social.commentsCount} comentarios
-                              </span>
-                              <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
-                                {social.visits} visitas
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
-                                social.likedByCurrentVisitor
-                                  ? 'border-cyan-300 bg-cyan-50 text-cyan-900'
-                                  : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                              } ${likeBusy ? 'opacity-70' : ''}`}
-                              disabled={likeBusy || !visitorId}
-                              onClick={() => toggleCardLike(String(listing.id))}
-                            >
-                              {likeBusy
-                                ? '...'
-                                : social.likedByCurrentVisitor
-                                  ? 'En favoritos'
-                                  : 'Guardar'}
-                            </button>
+                        <div className="mt-3 rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-2.5">
+                          <div className="flex flex-wrap gap-1.5 text-[11px] text-textMuted">
+                            <span className="chip">{social.likes} likes</span>
+                            <span className="chip">{social.commentsCount} comentarios</span>
+                            <span className="chip">{social.visits} visitas</span>
                           </div>
                         </div>
 
-                        <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-2">
-                          <div className="flex items-center gap-2">
-                            <div className="h-9 w-9 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-xs font-bold text-slate-700">
-                              {sellerAvatar ? (
-                                /* eslint-disable-next-line @next/next/no-img-element */
-                                <img
-                                  src={sellerAvatar}
-                                  alt={sellerName}
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                  onError={(event) => {
-                                    event.currentTarget.style.display = 'none';
-                                  }}
-                                />
-                              ) : (
-                                buildSellerInitial(sellerName)
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-slate-800 line-clamp-1">{sellerName}</p>
-                              <p className="text-[11px] text-slate-500">
-                                Comisión tienda {Number(listing.commission_rate || 5).toFixed(0)}% ·{' '}
-                                {toPrice(commissionCents)}
-                              </p>
-                              {sellerLocationLabel ? (
-                                <p className="text-[11px] text-slate-500">Ubicación: {sellerLocationLabel}</p>
-                              ) : null}
-                              {sellerId ? (
-                                <Link
-                                  href={`/comunidad/vendedor/${sellerId}`}
-                                  className="text-[11px] text-cyan-700 hover:underline"
-                                >
-                                  Ver perfil del vendedor
-                                </Link>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 grid gap-2">
-                          <Link
-                            href={`/comunidad/anuncio/${listing.id}`}
-                            className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-                          >
-                            Ver anuncio completo
-                          </Link>
-                          <Link
-                            href="/perfil?tab=tickets"
-                            className="inline-flex w-full items-center justify-center rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                          >
-                            Hablar con tienda (compra segura)
-                          </Link>
-                          <button
-                            type="button"
-                            className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                            onClick={() => {
-                              if (typeof window === 'undefined') return;
-                              const url = `${window.location.origin}/comunidad/anuncio/${listing.id}`;
-                              if (!navigator?.clipboard?.writeText) {
-                                toast.error('Tu navegador no permite copiar automáticamente');
-                                return;
-                              }
-                              navigator.clipboard
-                                .writeText(url)
-                                .then(() => toast.success('Enlace de comunidad copiado'))
-                                .catch(() => toast.error('No se pudo copiar el enlace'));
-                            }}
-                          >
-                            Compartir
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-6 xl:col-span-3 xl:sticky xl:top-24 xl:self-start">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div>
-                  <h3 className="font-semibold text-slate-900">Top vendedores de comunidad</h3>
-                  <p className="text-slate-500 text-sm mt-1">
-                    Ranking por actividad, likes y ventas entregadas.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                  onClick={() => loadRanking(rankingPeriod)}
-                >
-                  {rankingLoading ? 'Actualizando...' : 'Actualizar'}
-                </button>
-              </div>
-
-              <div className="mb-3 flex flex-wrap gap-2">
-                {[
-                  { id: 'today', label: 'Hoy' },
-                  { id: '7d', label: '7 días' },
-                  { id: 'historical', label: 'Histórico' },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setRankingPeriod(tab.id as RankingPeriod)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                      rankingPeriod === tab.id
-                        ? 'border-cyan-300 bg-cyan-50 text-cyan-900'
-                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-3">
-                {sellerRanking.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-sm text-slate-500">
-                    {rankingLoading
-                      ? 'Cargando ranking...'
-                      : 'Aún no hay ranking suficiente para este periodo. Se llenará con actividad y likes.'}
-                  </div>
-                ) : (
-                  sellerRanking.map((row, index) => {
-                    const sellerId = String(row?.seller?.id || '').trim();
-                    const sellerName = String(row?.seller?.name || 'Coleccionista');
-                    const avatar = String(row?.seller?.avatar_url || '');
-                    const delivered = Number(row?.stats?.delivered_sales || 0);
-                    const active = Number(row?.stats?.active_listings || 0);
-                    const likes = Number(row?.stats?.total_likes || 0);
-                    const commentsCount = Number(row?.stats?.listing_comments || 0);
-                    return (
-                      <div key={`${sellerId}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
-                        <div className="flex items-start gap-3">
-                          <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">
-                            #{index + 1}
-                          </div>
-                          <div className="h-10 w-10 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-xs font-bold text-slate-700">
-                            {avatar ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
+                        <div className="mt-3 flex items-center gap-2">
+                          <div className="h-9 w-9 rounded-full border border-line bg-surface overflow-hidden flex items-center justify-center text-xs font-semibold">
+                            {sellerAvatar ? (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                src={avatar}
+                                src={sellerAvatar}
                                 alt={sellerName}
                                 className="h-full w-full object-cover"
                                 loading="lazy"
@@ -960,131 +678,123 @@ export default function CommunityFeed() {
                               buildSellerInitial(sellerName)
                             )}
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-semibold text-slate-900 line-clamp-1">{sellerName}</p>
-                              {row?.seller?.is_verified_seller ? (
-                                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                                  Verificado
-                                </span>
-                              ) : null}
-                            </div>
-                            {row?.seller?.tagline ? (
-                              <p className="mt-0.5 text-xs text-slate-500 line-clamp-1">{String(row.seller.tagline)}</p>
-                            ) : null}
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700">
-                                {likes} likes
-                              </span>
-                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700">
-                                {delivered} ventas
-                              </span>
-                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700">
-                                {active} activos
-                              </span>
-                              <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] text-slate-700">
-                                {commentsCount} comentarios
-                              </span>
-                            </div>
-                            <div className="mt-2 flex items-center justify-between gap-2">
-                              <p className="text-[11px] text-slate-500">
-                                {row.last_activity_at
-                                  ? `Actividad ${toRelativeDate(String(row.last_activity_at))}`
-                                  : 'Actividad reciente'}
-                              </p>
-                              {sellerId ? (
-                                <Link
-                                  href={`/comunidad/vendedor/${sellerId}`}
-                                  className="text-xs font-semibold text-cyan-700 hover:underline"
-                                >
-                                  Ver perfil
-                                </Link>
-                              ) : null}
-                            </div>
+                          <div className="min-w-0">
+                            <p className="line-clamp-1 text-sm font-medium">{sellerName}</p>
+                            <p className="text-[11px] text-textMuted line-clamp-1">
+                              {sellerLocationLabel || 'Ubicación no publicada'}
+                            </p>
                           </div>
                         </div>
+
+                        <div className="mt-3 flex items-center justify-between text-xs text-textMuted">
+                          <span>{toRelativeDate(String(listing.created_at || ''))}</span>
+                          {sellerId ? (
+                            <Link href={`/comunidad/vendedor/${sellerId}`} className="text-primary hover:underline">
+                              Ver vendedor
+                            </Link>
+                          ) : null}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+            <div className="glass p-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-semibold">Top vendedores</h3>
+                <button type="button" className="chip" onClick={() => loadRanking(rankingPeriod)}>
+                  {rankingLoading ? '...' : 'Actualizar'}
+                </button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  { id: 'today', label: 'Hoy' },
+                  { id: '7d', label: '7 días' },
+                  { id: 'historical', label: 'Histórico' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setRankingPeriod(tab.id as RankingPeriod)}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                      rankingPeriod === tab.id
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-line text-textMuted hover:text-text'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {sellerRanking.length === 0 ? (
+                  <p className="text-sm text-textMuted">Aún no hay ranking para este periodo.</p>
+                ) : (
+                  sellerRanking.slice(0, 5).map((row, index) => {
+                    const sellerId = String(row?.seller?.id || '').trim();
+                    return (
+                      <div key={`${sellerId}-${index}`} className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold line-clamp-1">#{index + 1} {String(row.seller?.name || 'Vendedor')}</p>
+                          {row.seller?.is_verified_seller ? <span className="chip border-primary text-primary">Verificado</span> : null}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
+                          <span className="chip">{Number(row.stats?.total_likes || 0)} likes</span>
+                          <span className="chip">{Number(row.stats?.active_listings || 0)} activos</span>
+                          <span className="chip">{Number(row.stats?.delivered_sales || 0)} ventas</span>
+                        </div>
+                        {sellerId ? (
+                          <Link href={`/comunidad/vendedor/${sellerId}`} className="mt-2 inline-flex text-xs text-primary hover:underline">
+                            Ver perfil
+                          </Link>
+                        ) : null}
                       </div>
                     );
                   })
                 )}
               </div>
+
+              <Link href="/comunidad/vendedores" className="button-secondary mt-3 w-full justify-center">Ver ranking completo</Link>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6">
-              <h3 className="font-semibold text-slate-900">Publicar en el blog de comunidad</h3>
-              <p className="text-slate-500 text-sm mt-2">
-                Restauraciones, hallazgos, comparativas y experiencias. Aporta valor a la comunidad y mejora tu perfil.
-              </p>
-              <div className="mt-4 space-y-3">
-                <input
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-900"
-                  placeholder="Título (ej. Restauración de Game Boy Pocket)"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-                <textarea
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 min-h-[120px] text-slate-900"
-                  placeholder="Comparte tu experiencia retro, proceso o consejo..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                />
-                <textarea
-                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 min-h-[88px] text-slate-900"
-                  placeholder="URLs de fotos (1 por línea). Recomendado: 1-4 imágenes"
-                  value={imageUrls}
-                  onChange={(e) => setImageUrls(e.target.value)}
-                />
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs text-slate-500">Consejo: añade una foto para mejorar la visibilidad.</p>
-                  <button
-                    className="inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-                    onClick={publish}
-                    disabled={sending}
-                  >
-                    {sending ? 'Publicando...' : 'Publicar'}
-                  </button>
-                </div>
-              </div>
+            <div className="glass p-4">
+              <h3 className="font-semibold">Cómo funciona</h3>
+              <ol className="mt-3 space-y-2 text-sm text-textMuted">
+                <li className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-2.5">
+                  <span className="font-semibold text-text">1.</span> Publicas anuncio con fotos y datos.
+                </li>
+                <li className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-2.5">
+                  <span className="font-semibold text-text">2.</span> La tienda revisa y aprueba.
+                </li>
+                <li className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-2.5">
+                  <span className="font-semibold text-text">3.</span> Compra segura + comisión al cerrar venta.
+                </li>
+              </ol>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6">
-              <h3 className="font-semibold mb-3 text-slate-900">Cómo funciona la venta en comunidad</h3>
-              <div className="space-y-3 text-sm text-slate-600">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <p className="font-semibold text-slate-900">1. Publicas tu anuncio</p>
-                  <p className="mt-1">La publicación es gratuita y la tienda revisa la información antes de aprobarla.</p>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <p className="font-semibold text-slate-900">2. Se abre chat de compra segura</p>
-                  <p className="mt-1">El comprador habla con la tienda y se gestiona seguimiento, pago y entrega.</p>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <p className="font-semibold text-slate-900">3. Comisión al cerrar la venta</p>
-                  <p className="mt-1">{policyText}. El resto va a la cartera del usuario vendedor.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6">
-              <h3 className="font-semibold mb-3 text-slate-900">Últimas publicaciones</h3>
-              <div className="space-y-3 max-h-[520px] overflow-auto pr-1">
+            <div className="glass p-4">
+              <h3 className="font-semibold">Últimas publicaciones</h3>
+              <div className="mt-3 space-y-2">
                 {posts.length === 0 ? (
-                  <p className="text-slate-500 text-sm">Aún no hay publicaciones. Sé el primero en compartir una restauración.</p>
+                  <p className="text-sm text-textMuted">Aún no hay posts de comunidad.</p>
                 ) : (
-                  posts.map((post) => (
-                    <div key={post.id} className="border border-slate-200 rounded-xl p-3 bg-slate-50/60">
-                      <p className="font-semibold text-slate-900">{post.title}</p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {post.user?.name || post.user?.email || 'Usuario'} ·{' '}
-                        {new Date(post.created_at).toLocaleDateString('es-ES')}
-                      </p>
-                      <p className="text-sm text-slate-600 mt-2 whitespace-pre-wrap line-clamp-4">{post.content}</p>
-                    </div>
+                  posts.slice(0, 4).map((post) => (
+                    <article key={post.id} className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-2.5">
+                      <p className="text-sm font-semibold line-clamp-2">{String(post.title || 'Publicación')}</p>
+                      <p className="mt-1 text-xs text-textMuted line-clamp-2">{String(post.content || '')}</p>
+                    </article>
                   ))
                 )}
               </div>
+              <Link href="/blog" className="button-secondary mt-3 w-full justify-center">Ir al blog</Link>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
     </section>

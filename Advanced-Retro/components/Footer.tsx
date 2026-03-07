@@ -8,8 +8,8 @@ export default function Footer() {
   const { t } = useLocale();
 
   return (
-    <footer className="mt-auto border-t border-line bg-[rgba(8,15,26,0.62)] backdrop-blur-sm">
-      <div className="container py-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4 text-sm text-textMuted">
+    <footer className="mt-auto border-t border-line bg-[rgba(8,14,25,0.82)] backdrop-blur-sm">
+      <div className="container py-10 grid gap-8 lg:grid-cols-[1.2fr,1fr,1fr,1fr] text-sm text-textMuted">
         <div className="space-y-4">
           <Link href="/" className="inline-block rounded-lg p-1 hover:bg-white/5">
             <Image
@@ -26,14 +26,17 @@ export default function Footer() {
               'Tienda especializada en retro gaming, coleccionismo y restauración con enfoque profesional.'
             )}
           </p>
-          <div className="space-y-1 text-xs">
+          <div className="rounded-xl border border-line bg-[rgba(11,20,34,0.6)] p-3 text-xs leading-relaxed">
             <p>
               <span className="text-primary font-semibold">{t('footer.operation', 'Operación:')}</span>{' '}
               {t('footer.operation_value', 'España')}
             </p>
-            <p>
+            <p className="mt-1">
               <span className="text-primary font-semibold">{t('footer.attention', 'Atención:')}</span>{' '}
               {t('footer.attention_value', 'ticket privado comprador ↔ tienda')}
+            </p>
+            <p className="mt-1">
+              {t('footer.contact_emails', 'Emails de contacto:')} <span className="text-text">admin@advancedretro.es</span>
             </p>
           </div>
         </div>
@@ -56,9 +59,10 @@ export default function Footer() {
           <ul className="mt-3 space-y-2">
             <li><Link href="/tienda?category=cajas-misteriosas" className="hover:text-text">Mystery Box</Link></li>
             <li><Link href="/ruleta" className="hover:text-text">Ruleta</Link></li>
+            <li><Link href="/subastas" className="hover:text-text">Subastas</Link></li>
             <li><Link href="/servicio-compra" className="hover:text-text">Encargos 5€</Link></li>
             <li><Link href="/comunidad" className="hover:text-text">Comunidad</Link></li>
-            <li><Link href="/contacto" className="hover:text-text">Contacto</Link></li>
+            <li><Link href="/comunidad/publicar" className="hover:text-text">Publicar anuncio</Link></li>
           </ul>
         </div>
 
@@ -69,8 +73,9 @@ export default function Footer() {
             <li><Link href="/privacidad" className="hover:text-text">{t('footer.privacy', 'Privacidad')}</Link></li>
             <li><Link href="/cookies" className="hover:text-text">{t('footer.cookies', 'Cookies')}</Link></li>
             <li><Link href="/accesibilidad" className="hover:text-text">Accesibilidad</Link></li>
+            <li><Link href="/contacto" className="hover:text-text">Contacto</Link></li>
           </ul>
-          <div className="mt-5 rounded-xl border border-line p-3 text-xs leading-relaxed">
+          <div className="mt-4 rounded-xl border border-line bg-[rgba(11,20,34,0.6)] p-3 text-xs">
             <p className="text-text font-semibold">{t('footer.secure', 'Compra segura')}</p>
             <p className="mt-1">
               {t(
@@ -78,14 +83,11 @@ export default function Footer() {
                 'Seguimiento de pedidos, soporte por ticket y estado de envío actualizado.'
               )}
             </p>
-            <p className="mt-1">
-              {t('footer.contact_emails', 'Emails de contacto:')} <span className="text-text">admin@advancedretro.es</span>
-            </p>
           </div>
         </div>
       </div>
 
-      <div className="border-t border-line/80">
+      <div className="border-t border-line/70">
         <div className="container py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-textMuted">
           <p>© {new Date().getFullYear()} ADVANCED RETRO. {t('footer.rights', 'Todos los derechos reservados.')}</p>
           <ul className="flex items-center gap-4">

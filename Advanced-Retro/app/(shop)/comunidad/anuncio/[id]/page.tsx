@@ -125,6 +125,7 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
             </div>
             <div className="flex flex-wrap gap-2">
               <Link href="/comunidad" className="chip">Volver a comunidad</Link>
+              <Link href="/comunidad/vendedores" className="chip">Vendedores</Link>
               <Link href="/perfil?tab=tickets" className="button-primary">Hablar con tienda</Link>
             </div>
           </div>
