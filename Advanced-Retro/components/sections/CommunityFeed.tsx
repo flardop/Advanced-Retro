@@ -418,11 +418,11 @@ export default function CommunityFeed() {
 
   return (
     <section className="section" id="comunidad">
-      <div className="container space-y-6">
+      <div className="mx-auto w-full max-w-[1760px] space-y-6 px-4 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white text-slate-900 shadow-[0_18px_45px_rgba(2,6,23,0.12)]">
           <div className="relative p-6 md:p-8">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_40%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.16),transparent_45%)]" />
-            <div className="relative grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
+            <div className="relative grid gap-6 xl:grid-cols-[1.25fr,0.75fr]">
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-cyan-700">Comunidad · Marketplace</p>
                 <h2 className="mt-2 text-3xl font-black leading-tight md:text-4xl">
@@ -470,7 +470,7 @@ export default function CommunityFeed() {
           </div>
 
           <div className="border-t border-slate-200 bg-slate-50/80 p-4 md:p-6">
-            <div className="grid gap-3 lg:grid-cols-[1.8fr,1fr,1fr,auto]">
+            <div className="grid gap-3 lg:grid-cols-[2fr,1fr,1fr,auto]">
               <input
                 className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400"
                 placeholder="Buscar en comunidad (Pokémon, Zelda, consola, manual...)"
@@ -588,8 +588,8 @@ export default function CommunityFeed() {
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.5fr,0.9fr]">
-          <div>
+        <div className="grid gap-6 xl:grid-cols-12">
+          <div className="xl:col-span-9">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-xl font-semibold text-white">Anuncios de la comunidad</h3>
@@ -602,7 +602,7 @@ export default function CommunityFeed() {
               </Link>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {visibleListings.length === 0 ? (
                 <div className="glass p-6 text-textMuted sm:col-span-2 xl:col-span-3">
                   <p className="font-semibold text-text">No hay anuncios con esos filtros</p>
@@ -630,21 +630,21 @@ export default function CommunityFeed() {
                   return (
                     <article
                       key={listing.id}
-                      className="rounded-2xl border border-slate-200 bg-white overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(2,6,23,0.14)]"
+                      className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(2,6,23,0.14)]"
                     >
-                      <div className="relative h-44 bg-slate-100">
+                      <div className="relative h-60 bg-slate-100">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={image}
                           alt={listing.title}
-                          className="h-full w-full object-contain bg-slate-100 p-2"
+                          className="h-full w-full object-cover bg-slate-100"
                           loading="lazy"
                           onError={(event) => {
                             const target = event.currentTarget;
                             if (target.src.endsWith('/logo.png')) return;
                             target.src = '/logo.png';
-                            target.classList.remove('object-contain');
-                            target.classList.add('object-cover', 'p-0');
+                            target.classList.remove('object-cover');
+                            target.classList.add('object-contain');
                           }}
                         />
                         <div className="absolute left-2 top-2 flex flex-wrap gap-1">
@@ -665,6 +665,19 @@ export default function CommunityFeed() {
                             </span>
                           ) : null}
                         </div>
+                        <button
+                          type="button"
+                          aria-label={social.likedByCurrentVisitor ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                          className={`absolute right-2 top-2 inline-flex h-9 w-9 items-center justify-center rounded-full border shadow-sm transition ${
+                            social.likedByCurrentVisitor
+                              ? 'border-cyan-300 bg-cyan-50 text-cyan-700'
+                              : 'border-slate-300 bg-white/95 text-slate-600 hover:bg-white'
+                          } ${likeBusy ? 'opacity-70' : ''}`}
+                          disabled={likeBusy || !visitorId}
+                          onClick={() => toggleCardLike(String(listing.id))}
+                        >
+                          {social.likedByCurrentVisitor ? '♥' : '♡'}
+                        </button>
                       </div>
 
                       <div className="p-4 text-slate-900">
@@ -733,8 +746,8 @@ export default function CommunityFeed() {
                               {likeBusy
                                 ? '...'
                                 : social.likedByCurrentVisitor
-                                  ? 'Quitar me gusta'
-                                  : 'Me gusta'}
+                                  ? 'En favoritos'
+                                  : 'Guardar'}
                             </button>
                           </div>
                         </div>
@@ -804,7 +817,7 @@ export default function CommunityFeed() {
                                 .catch(() => toast.error('No se pudo copiar el enlace'));
                             }}
                           >
-                            Compartir anuncio
+                            Compartir
                           </button>
                         </div>
                       </div>
@@ -815,7 +828,7 @@ export default function CommunityFeed() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 xl:col-span-3 xl:sticky xl:top-24 xl:self-start">
             <div className="rounded-3xl border border-slate-200 bg-white p-6">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>

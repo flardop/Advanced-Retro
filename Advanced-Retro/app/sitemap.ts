@@ -2,6 +2,8 @@ import type { MetadataRoute } from 'next';
 import { getSiteUrl } from '@/lib/siteConfig';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getProductHref } from '@/lib/productUrl';
+import { BLOG_POSTS } from '@/lib/blogPosts';
+import { PLATFORM_LANDING_SLUGS } from '@/lib/platformSeo';
 
 const STATIC_ROUTES = [
   '/',
@@ -9,6 +11,7 @@ const STATIC_ROUTES = [
   '/subastas',
   '/ruleta',
   '/comunidad',
+  '/blog',
   '/servicio-compra',
   '/contacto',
   '/terminos',
@@ -28,8 +31,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: path === '/' ? 1 : path === '/tienda' ? 0.95 : path === '/comunidad' ? 0.85 : 0.7,
   }));
 
+  const platformEntries: MetadataRoute.Sitemap = PLATFORM_LANDING_SLUGS.map((slug) => ({
+    url: `${siteUrl}/tienda/${slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly',
+    priority: 0.78,
+  }));
+
+  const blogEntries: MetadataRoute.Sitemap = BLOG_POSTS.map((post) => ({
+    url: `${siteUrl}/blog/${post.slug}`,
+    lastModified: post.updatedAt ? new Date(post.updatedAt) : now,
+    changeFrequency: 'monthly',
+    priority: 0.72,
+  }));
+
   if (!supabaseAdmin) {
-    return staticEntries;
+    return [...staticEntries, ...platformEntries, ...blogEntries];
   }
 
   const { data: products } = await supabaseAdmin
@@ -82,5 +99,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  return [...staticEntries, ...productEntries, ...communityEntries];
+  return [...staticEntries, ...platformEntries, ...blogEntries, ...productEntries, ...communityEntries];
 }

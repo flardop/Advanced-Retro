@@ -11,6 +11,12 @@ import { SEO_BASE_KEYWORDS, SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE } from '@
 
 const siteUrl = getSiteUrl();
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
+const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@advancedretro.es';
+const contactPhone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '';
+const socialProfiles = String(process.env.NEXT_PUBLIC_SOCIAL_PROFILES || '')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean);
 const SupportAssistantWidget = dynamic(() => import('@/components/SupportAssistantWidget'), {
   ssr: false,
 });
@@ -54,7 +60,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   alternates: {
     canonical: '/',
+    languages: {
+      'es-ES': '/',
+      'x-default': '/',
+    },
   },
+  creator: 'AdvancedRetro.es',
+  publisher: 'AdvancedRetro.es',
   applicationName: 'AdvancedRetro.es',
   manifest: '/manifest.webmanifest',
   category: 'shopping',
@@ -117,7 +129,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     name: 'AdvancedRetro.es',
     url: siteUrl,
     logo: absoluteUrl('/logo.png'),
-    sameAs: [],
+    email: contactEmail,
+    telephone: contactPhone || undefined,
+    sameAs: socialProfiles,
   };
 
   const websiteSchema = {
@@ -132,6 +146,58 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     },
   };
 
+  const onlineStoreSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'OnlineStore',
+    name: 'AdvancedRetro.es',
+    url: siteUrl,
+    image: absoluteUrl('/logo.png'),
+    description:
+      'Tienda online retro en España especializada en juegos, consolas y coleccionismo para Game Boy, GBC, GBA, SNES y GameCube.',
+    email: contactEmail,
+    telephone: contactPhone || undefined,
+    currenciesAccepted: 'EUR',
+    paymentAccepted: ['Card', 'Apple Pay', 'Google Pay'],
+    areaServed: {
+      '@type': 'Country',
+      name: 'Spain',
+    },
+    availableLanguage: ['es-ES', 'en'],
+    hasMerchantReturnPolicy: {
+      '@type': 'MerchantReturnPolicy',
+      applicableCountry: 'ES',
+      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+      merchantReturnDays: 14,
+      returnMethod: 'https://schema.org/ReturnByMail',
+      returnFees: 'https://schema.org/FreeReturn',
+    },
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        email: contactEmail,
+        telephone: contactPhone || undefined,
+        availableLanguage: ['es', 'en'],
+      },
+    ],
+  };
+
+  const localBusinessSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Store',
+    name: 'AdvancedRetro.es',
+    url: siteUrl,
+    image: absoluteUrl('/logo.png'),
+    email: contactEmail,
+    telephone: contactPhone || undefined,
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'ES',
+      addressLocality: 'Arenys de Mar',
+      addressRegion: 'Cataluña',
+    },
+  };
+
   return (
     <html lang="es" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body className="font-body min-h-screen flex flex-col overflow-x-hidden">
@@ -139,7 +205,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Script
             id="schema-org"
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationSchema, websiteSchema]) }}
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify([organizationSchema, websiteSchema, onlineStoreSchema, localBusinessSchema]),
+            }}
           />
           <Navbar />
           <main className="flex-1">{children}</main>

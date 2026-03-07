@@ -94,6 +94,7 @@ export default function Hero() {
                 fill
                 className="object-contain p-6 sm:p-8 opacity-90"
                 priority
+                sizes="(max-width: 1024px) 92vw, 44vw"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#09101a] to-transparent p-4">
                 <p className="text-sm text-text">Game Boy, GBC, GBA, SNES y GameCube</p>

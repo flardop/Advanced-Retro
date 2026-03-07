@@ -17,6 +17,7 @@ export default function Navbar() {
   const navItems = [
     { href: '/tienda', label: t('nav.shop', 'Tienda') },
     { href: '/comunidad', label: t('nav.community', 'Comunidad') },
+    { href: '/blog', label: t('nav.blog', 'Blog') },
     { href: '/tienda?category=cajas-misteriosas', label: t('nav.mystery', 'Mystery') },
     { href: '/subastas', label: t('nav.auctions', 'Subastas') },
     { href: '/ruleta', label: t('nav.roulette', 'Ruleta') },

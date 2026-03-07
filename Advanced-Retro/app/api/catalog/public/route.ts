@@ -23,6 +23,7 @@ const PUBLIC_CATALOG_COLUMNS = [
   'edition',
   'platform',
 ].join(',');
+const PUBLIC_CATALOG_LIMIT = 600;
 
 function sanitizeCatalogRows(rows: any[]): any[] {
   return rows.map((item) => ({
@@ -62,7 +63,7 @@ async function fetchWithAnonFallback(): Promise<any[]> {
       .from('products')
       .select(PUBLIC_CATALOG_COLUMNS)
       .order('updated_at', { ascending: false })
-      .limit(1200);
+      .limit(PUBLIC_CATALOG_LIMIT);
     if (error || !Array.isArray(data)) return [];
     return sanitizeCatalogRows(data);
   } catch {
@@ -80,7 +81,7 @@ export async function GET() {
         .from('products')
         .select(PUBLIC_CATALOG_COLUMNS)
         .order('updated_at', { ascending: false })
-        .limit(1200);
+        .limit(PUBLIC_CATALOG_LIMIT);
 
       if (!error && Array.isArray(data) && data.length > 0) {
         products = sanitizeCatalogRows(data);
@@ -127,4 +128,3 @@ export async function GET() {
     );
   }
 }
-

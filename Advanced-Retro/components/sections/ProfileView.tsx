@@ -354,6 +354,7 @@ export default function ProfileView() {
   const autoOpenedTicketRef = useRef('');
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const bannerInputRef = useRef<HTMLInputElement | null>(null);
+  const gamificationPanelRef = useRef<HTMLDivElement | null>(null);
   const [deepLinkTab, setDeepLinkTab] = useState('');
   const [deepLinkTicketId, setDeepLinkTicketId] = useState('');
   const [tab, setTab] = useState<Tab>('profile');
@@ -420,7 +421,15 @@ export default function ProfileView() {
   const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
-  const [gamificationTab, setGamificationTab] = useState<GamificationTab>('actividad');
+  const [gamificationTab, setGamificationTab] = useState<GamificationTab>('resumen');
+
+  const openGamificationTab = (nextTab: GamificationTab) => {
+    setTab('profile');
+    setGamificationTab(nextTab);
+    setTimeout(() => {
+      gamificationPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  };
 
   const applyProfileSnapshot = (nextProfile: ProfileState | null) => {
     setProfile(nextProfile);
@@ -1220,7 +1229,7 @@ export default function ProfileView() {
 
         <div className="glass mb-5 sm:mb-6 overflow-hidden">
           <div
-            className={`relative h-36 sm:h-56 bg-gradient-to-r ${activeTheme.previewClass}`}
+            className={`relative h-40 sm:h-52 bg-gradient-to-r ${activeTheme.previewClass}`}
             style={
               bannerUrl
                 ? {
@@ -1235,12 +1244,12 @@ export default function ProfileView() {
             <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_20%,rgba(2,6,23,0.65)_100%)]" />
           </div>
 
-          <div className="p-4 sm:p-6 pt-2">
-            <div className="-mt-6 sm:-mt-10 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:items-end">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4 min-w-0">
-                <div className="relative">
+          <div className="p-4 sm:p-6">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
+              <div className="min-w-0">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                   <div
-                    className={`relative h-24 w-24 overflow-hidden rounded-2xl border-2 bg-slate-900 ${avatarFrameRingClass}`}
+                    className={`relative h-24 w-24 overflow-hidden rounded-2xl border-2 bg-slate-900 ${avatarFrameRingClass} shrink-0`}
                   >
                     {avatarUrl ? (
                       <div
@@ -1255,70 +1264,89 @@ export default function ProfileView() {
                       </div>
                     )}
                   </div>
+
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xl sm:text-2xl font-black break-words">{name || profile.name || 'Coleccionista'}</p>
+                      <span className={`inline-flex items-center border px-2 py-1 text-xs ${avatarFrameBadgeClass}`}>
+                        {currentRetroRank}
+                      </span>
+                    </div>
+                    <p className="text-sm text-textMuted break-all">{profile.email}</p>
+                    <p className="text-xs text-textMuted mt-1">
+                      Rol: {profile.role} · Vendedor verificado: {profile.is_verified_seller ? 'sí' : 'no'}
+                    </p>
+                    <p className="text-sm text-primary mt-2">{tagline || 'Tu vitrina de coleccionismo retro'}</p>
+                  </div>
                 </div>
 
-                <div className="pt-2 sm:pt-0 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-xl sm:text-2xl font-black break-words">{name || profile.name || 'Coleccionista'}</p>
-                    <span className={`inline-flex items-center border px-2 py-1 text-xs ${avatarFrameBadgeClass}`}>
-                      Rango {userLevel}
-                    </span>
-                  </div>
-                  <p className="text-sm text-textMuted break-all">{profile.email}</p>
-                  <p className="text-xs text-textMuted mt-1">
-                    Rol: {profile.role} · Vendedor verificado: {profile.is_verified_seller ? 'sí' : 'no'}
-                  </p>
-                  <p className="text-sm text-primary mt-2">{tagline || 'Tu vitrina de coleccionismo retro'}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button className="chip" onClick={() => openGamificationTab('insignias')}>
+                    Insignias ({profileBadges.length})
+                  </button>
+                  <button className="chip" onClick={() => openGamificationTab('recompensas')}>
+                    Recompensas
+                  </button>
+                  <button className="chip" onClick={() => openGamificationTab('marcos')}>
+                    Marcos
+                  </button>
                   {favoriteConsole ? (
-                    <span className={`mt-2 inline-flex items-center border px-2 py-1 text-xs ${activeTheme.accentClass}`}>
+                    <span className={`inline-flex items-center border px-2 py-1 text-xs ${activeTheme.accentClass}`}>
                       Consola favorita: {favoriteConsole}
                     </span>
                   ) : null}
                 </div>
+
+                <details className="mt-4 rounded-xl border border-line bg-slate-950/35 p-3">
+                  <summary className="cursor-pointer text-sm font-semibold">
+                    Personalizar cabecera (avatar/banner)
+                  </summary>
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <button
+                      className="button-secondary w-full"
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={uploadingAvatar}
+                    >
+                      {uploadingAvatar ? 'Subiendo avatar...' : 'Subir avatar'}
+                    </button>
+                    <button
+                      className="button-secondary w-full"
+                      onClick={() => bannerInputRef.current?.click()}
+                      disabled={uploadingBanner}
+                    >
+                      {uploadingBanner ? 'Subiendo portada...' : 'Subir portada'}
+                    </button>
+                    <button className="chip w-full" onClick={() => removeAvatar()} disabled={uploadingAvatar || !avatarUrl}>
+                      Quitar avatar
+                    </button>
+                    <button className="chip w-full" onClick={() => removeBanner()} disabled={uploadingBanner || !bannerUrl}>
+                      Quitar portada
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-textMuted">
+                    JPG, PNG, WEBP, GIF, AVIF o HEIC. Avatar hasta 10 MB, portada hasta 15 MB.
+                  </p>
+                </details>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 gap-2 text-center text-xs sm:text-sm">
-                <div className="border border-line px-3 py-2 bg-slate-950/35">
+              <div className="grid grid-cols-2 gap-2 text-center text-xs sm:text-sm self-start">
+                <div className="rounded-xl border border-line px-3 py-3 bg-slate-950/35">
                   <p className="text-textMuted">Rango</p>
                   <p className="font-semibold">{userLevel}</p>
                 </div>
-                <div className="border border-line px-3 py-2 bg-slate-950/35">
+                <div className="rounded-xl border border-line px-3 py-3 bg-slate-950/35">
                   <p className="text-textMuted">Pedidos</p>
                   <p className="font-semibold">{orders.length}</p>
                 </div>
-                <div className="border border-line px-3 py-2 bg-slate-950/35">
+                <div className="rounded-xl border border-line px-3 py-3 bg-slate-950/35">
                   <p className="text-textMuted">Tickets</p>
                   <p className="font-semibold">{tickets.length}</p>
                 </div>
-                <div className="border border-line px-3 py-2 bg-slate-950/35">
+                <div className="rounded-xl border border-line px-3 py-3 bg-slate-950/35">
                   <p className="text-textMuted">Insignias</p>
                   <p className="font-semibold">{profileBadges.length}</p>
                 </div>
               </div>
-            </div>
-
-            <div className="mt-4 mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
-              {profileBadgesDetailed.length > 0 ? (
-                profileBadgesDetailed.slice(0, 8).map((badge) => {
-                  const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
-                  const isExclusive = badge.animated || badge.rarity === 'legendary' || badge.rarity === 'mythic';
-                  return (
-                    <span
-                      key={badge.key}
-                      className={`inline-flex items-center border px-2 py-1 text-xs ${rarityStyle.chipClass} ${
-                        isExclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
-                      } shrink-0`}
-                      title={`${badge.description} · ${badge.howToEarn}`}
-                    >
-                      {badge.label}
-                    </span>
-                  );
-                })
-              ) : (
-                <span className="text-xs text-textMuted">
-                  Aun no tienes insignias desbloqueadas.
-                </span>
-              )}
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
@@ -1329,9 +1357,6 @@ export default function ProfileView() {
                 Cerrar sesión
               </button>
             </div>
-            <p className="mt-2 text-xs text-textMuted">
-              Formatos: JPG, PNG, WEBP, GIF, AVIF o HEIC. Avatar hasta 10 MB, portada hasta 15 MB.
-            </p>
 
             <input
               ref={avatarInputRef}
@@ -1380,7 +1405,7 @@ export default function ProfileView() {
 
         {tab === 'profile' && (
           <div className="grid gap-6">
-            <div className="glass p-4 sm:p-6">
+            <div ref={gamificationPanelRef} className="glass p-4 sm:p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-primary">Progreso Advanced Retro</p>
@@ -1439,7 +1464,7 @@ export default function ProfileView() {
                   <button
                     key={`gamification-tab-${entry.id}`}
                     className={`chip shrink-0 ${gamificationTab === entry.id ? 'text-primary border-primary' : ''}`}
-                    onClick={() => setGamificationTab(entry.id)}
+                    onClick={() => openGamificationTab(entry.id)}
                   >
                     {entry.label}
                   </button>
@@ -1970,10 +1995,7 @@ export default function ProfileView() {
                       Aun no tienes insignias desbloqueadas.
                     </p>
                   )}
-                  <button
-                    className="chip mt-3"
-                    onClick={() => setGamificationTab('insignias')}
-                  >
+                  <button className="chip mt-3" onClick={() => openGamificationTab('insignias')}>
                     Ver panel completo de insignias
                   </button>
                 </div>

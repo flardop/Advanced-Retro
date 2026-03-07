@@ -99,7 +99,10 @@ const CATALOG_QUERY_COLUMNS = [
   'edition',
   'platform',
 ].join(',');
-const MAX_METRICS_BATCH_IDS = 180;
+const MAX_METRICS_BATCH_IDS = 120;
+const INITIAL_VISIBLE_PRODUCTS = 12;
+const LOAD_MORE_STEP = 12;
+const FALLBACK_QUERY_LIMIT = 600;
 
 type ProductMetric = {
   visits: number;
@@ -346,6 +349,14 @@ function hasRealCardImage(product: any): boolean {
   return selected !== fallback && selected !== '/placeholder.svg';
 }
 
+function isCoherentFeaturedGame(product: any): boolean {
+  if (isMysteryBoxProduct(product)) return false;
+  if (isConsoleBaseProduct(product)) return false;
+  if (isLikelyComponentProduct(product)) return false;
+  if (!hasRealCardImage(product)) return false;
+  return isMainGameProduct(product);
+}
+
 function getEngagementScore(product: any, metrics: Record<string, ProductMetric>): number {
   const metric = metrics[String(product?.id)] || { visits: 0, likes: 0, likedByCurrentVisitor: false };
   return Number(metric.visits || 0) + Number(metric.likes || 0) * 2;
@@ -396,7 +407,7 @@ export default function Catalog() {
   const [hasRealImageOnly, setHasRealImageOnly] = useState(false);
   const [completePackOnly, setCompletePackOnly] = useState(false);
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(true);
-  const [visibleCount, setVisibleCount] = useState(24);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_PRODUCTS);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const loadedMetricIdsRef = useRef<Set<string>>(new Set());
 
@@ -485,7 +496,8 @@ export default function Catalog() {
         const { data: prods } = await supabaseClient
           .from('products')
           .select(CATALOG_QUERY_COLUMNS)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(FALLBACK_QUERY_LIMIT);
         if (Array.isArray(prods) && prods.length > 0) {
           setProducts(prods);
           return;
@@ -707,11 +719,19 @@ export default function Catalog() {
   const hasNoProducts = sorted.length === 0;
 
   const { featuredTrending, featuredBestRated, featuredLatest } = useMemo(() => {
+    const featuredPoolRaw = sorted.filter(isCoherentFeaturedGame);
+    const featuredPool = featuredPoolRaw.length >= 3 ? featuredPoolRaw : sorted.filter((product) => {
+      if (isMysteryBoxProduct(product)) return false;
+      if (isConsoleBaseProduct(product)) return false;
+      if (isLikelyComponentProduct(product)) return false;
+      return isMainGameProduct(product);
+    });
+
     const withImagePriority = (a: any, b: any) => Number(hasRealCardImage(b)) - Number(hasRealCardImage(a));
     const byNewest = (a: any, b: any) =>
       new Date(String(b?.created_at || 0)).getTime() - new Date(String(a?.created_at || 0)).getTime();
 
-    const engagementSorted = [...sorted].sort((a, b) => {
+    const engagementSorted = [...featuredPool].sort((a, b) => {
       const scoreDiff = getEngagementScore(b, metrics) - getEngagementScore(a, metrics);
       if (scoreDiff !== 0) return scoreDiff;
       const imageDiff = withImagePriority(a, b);
@@ -719,7 +739,7 @@ export default function Catalog() {
       return byNewest(a, b);
     });
 
-    const bestRatedSorted = [...sorted].sort((a, b) => {
+    const bestRatedSorted = [...featuredPool].sort((a, b) => {
       const likesDiff = Number(metrics[String(b?.id)]?.likes || 0) - Number(metrics[String(a?.id)]?.likes || 0);
       if (likesDiff !== 0) return likesDiff;
       const visitsDiff = Number(metrics[String(b?.id)]?.visits || 0) - Number(metrics[String(a?.id)]?.visits || 0);
@@ -729,7 +749,7 @@ export default function Catalog() {
       return byNewest(a, b);
     });
 
-    const latestSorted = [...sorted].sort((a, b) => {
+    const latestSorted = [...featuredPool].sort((a, b) => {
       const newestDiff = byNewest(a, b);
       if (newestDiff !== 0) return newestDiff;
       return withImagePriority(a, b);
@@ -796,9 +816,25 @@ export default function Catalog() {
 
   const visibleProducts = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount]);
   const hasMoreProducts = visibleCount < sorted.length;
+  const resetFilters = useCallback(() => {
+    setActive('all');
+    setSearch('');
+    setSortBy('newest');
+    setPricePreset('all');
+    setSelectedPlatforms([]);
+    setSelectedTypes([]);
+    setSelectedEditions([]);
+    setSelectedStatuses([]);
+    setFavoritesOnly(false);
+    setStockOnly(false);
+    setHasRealImageOnly(false);
+    setCompletePackOnly(false);
+    setMinPrice('');
+    setMaxPrice('');
+  }, []);
 
   useEffect(() => {
-    setVisibleCount(24);
+    setVisibleCount(INITIAL_VISIBLE_PRODUCTS);
   }, [
     active,
     search,
@@ -816,7 +852,7 @@ export default function Catalog() {
     maxPrice,
   ]);
 
-  const renderMiniProduct = (product: any, label: string, className = '') => {
+  const renderMiniProduct = (product: any, label: string, className = '', priority = false) => {
     const productId = String(product.id);
     const productHref = getProductHref(product);
     return (
@@ -831,6 +867,8 @@ export default function Catalog() {
             fallbackSrc={getProductFallbackImageUrl(product)}
             alt={product.name}
             fill
+            sizes="(max-width: 768px) 42vw, (max-width: 1280px) 28vw, 22vw"
+            priority={priority}
             className="object-contain p-2"
           />
         </div>
@@ -861,116 +899,131 @@ export default function Catalog() {
     </div>
   ) : (
     <div className="glass p-4 sm:p-5 mb-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-        <div>
-          <p className="text-sm font-semibold">Filtros</p>
-          <p className="text-xs text-textMuted">
-            {activeFilterCount} filtros activos · Búsqueda ordenada sin bloquear la vista del catálogo
-          </p>
+      <div className="rounded-2xl border border-line/80 bg-[rgba(8,18,31,0.7)] p-3 sm:p-4">
+        <div className="grid gap-3 xl:grid-cols-[1.5fr,0.6fr,auto]">
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-primary/90">Buscador</p>
+            <input
+              className="w-full bg-transparent border border-line px-3 py-2.5 text-sm"
+              placeholder="Buscar por nombre, descripción o palabras clave"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-primary/90">Orden</p>
+            <select
+              className="w-full bg-transparent border border-line px-3 py-2.5 text-sm"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 xl:flex xl:items-end">
+            <button
+              className={`chip justify-center px-4 py-2.5 ${isMobileFiltersOpen ? 'text-primary border-primary bg-primary/10' : ''}`}
+              onClick={() => setIsMobileFiltersOpen((value) => !value)}
+              aria-expanded={isMobileFiltersOpen}
+            >
+              {isMobileFiltersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
+            </button>
+            <button className="chip justify-center px-4 py-2.5" onClick={resetFilters}>
+              Limpiar
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="chip"
-            onClick={() => {
-              setActive('all');
-              setSearch('');
-              setSortBy('newest');
-              setPricePreset('all');
-              setSelectedPlatforms([]);
-              setSelectedTypes([]);
-              setSelectedEditions([]);
-              setSelectedStatuses([]);
-              setFavoritesOnly(false);
-              setStockOnly(false);
-              setHasRealImageOnly(false);
-              setCompletePackOnly(false);
-              setMinPrice('');
-              setMaxPrice('');
-            }}
-          >
-            Limpiar
-          </button>
-          <button
-            className={`chip ${isMobileFiltersOpen ? 'text-primary border-primary' : ''}`}
-            onClick={() => setIsMobileFiltersOpen((value) => !value)}
-            aria-expanded={isMobileFiltersOpen}
-          >
-            {isMobileFiltersOpen ? 'Cerrar filtros' : 'Abrir filtros'}
-          </button>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="chip border-primary/40 text-primary bg-primary/10">Resultados: {sorted.length}</span>
+          <span className="chip">Filtros activos: {activeFilterCount}</span>
+          <span className="chip">Stock visible: {totalVisibleStock}</span>
         </div>
       </div>
 
       {!isMobileFiltersOpen ? (
-        <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-          <p className="text-xs text-textMuted">
-            Filtros ocultos para vista limpia. Pulsa en <span className="text-text">“Abrir filtros”</span> para desplegar.
-          </p>
-        </div>
+        <p className="text-xs text-textMuted mt-3">
+          Filtros plegados para vista limpia. Pulsa <span className="text-text">“Mostrar filtros”</span>.
+        </p>
       ) : null}
 
-      <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-4`}>
-        <div className="grid gap-3 lg:grid-cols-[1.55fr,1fr,1fr,1fr,1fr]">
-          <input
-            className="w-full bg-transparent border border-line px-3 py-2"
-            placeholder="Buscar por nombre, descripción o palabras clave"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <select
-            className="w-full bg-transparent border border-line px-3 py-2"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            {SORT_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              className="w-full bg-transparent border border-line px-3 py-2"
-              placeholder="Min €"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-            />
-            <input
-              className="w-full bg-transparent border border-line px-3 py-2"
-              placeholder="Max €"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-            />
+      <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-4 mt-4`}>
+        <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+            <p className="text-xs text-textMuted mb-2">Precio manual (€)</p>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className="w-full bg-transparent border border-line px-3 py-2"
+                placeholder="Min"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+              />
+              <input
+                className="w-full bg-transparent border border-line px-3 py-2"
+                placeholder="Max"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+              />
+            </div>
           </div>
 
-          <button
-            className={`chip justify-center ${favoritesOnly ? 'text-primary border-primary' : ''}`}
-            onClick={() => setFavoritesOnly((prev) => !prev)}
-            disabled={!isLoggedIn}
-          >
-            {isLoggedIn ? 'Solo favoritos' : 'Solo favoritos (login)'}
-          </button>
-
-          <button
-            className={`chip justify-center ${stockOnly ? 'text-primary border-primary' : ''}`}
-            onClick={() => setStockOnly((prev) => !prev)}
-          >
-            Solo con stock
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-primary">Búsqueda avanzada</p>
-            <p className="text-xs text-textMuted mt-1">Combina plataforma, tipo, edición, estado y rango.</p>
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+            <p className="text-xs text-textMuted mb-2">Atajos</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={`chip ${favoritesOnly ? 'text-primary border-primary bg-primary/10' : ''}`}
+                onClick={() => setFavoritesOnly((prev) => !prev)}
+                disabled={!isLoggedIn}
+              >
+                {isLoggedIn ? 'Solo favoritos' : 'Favoritos (login)'}
+              </button>
+              <button
+                className={`chip ${stockOnly ? 'text-primary border-primary bg-primary/10' : ''}`}
+                onClick={() => setStockOnly((prev) => !prev)}
+              >
+                Solo stock
+              </button>
+            </div>
           </div>
-          <button
-            className={`chip ${isAdvancedFiltersOpen ? 'text-primary border-primary' : ''}`}
-            onClick={() => setIsAdvancedFiltersOpen((prev) => !prev)}
-          >
-            {isAdvancedFiltersOpen ? 'Ocultar avanzado' : 'Mostrar avanzado'}
-          </button>
+
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+            <p className="text-xs text-textMuted mb-2">Visual</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className={`chip ${hasRealImageOnly ? 'text-primary border-primary bg-primary/10' : ''}`}
+                onClick={() => setHasRealImageOnly((prev) => !prev)}
+              >
+                Imagen real
+              </button>
+              <button
+                type="button"
+                className={`chip ${completePackOnly ? 'text-primary border-primary bg-primary/10' : ''}`}
+                onClick={() => setCompletePackOnly((prev) => !prev)}
+              >
+                Juego completo
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)] flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-textMuted">Nivel avanzado</p>
+              <p className="text-sm mt-1">Plataforma, tipo, edición y estado</p>
+            </div>
+            <button
+              className={`chip ${isAdvancedFiltersOpen ? 'text-primary border-primary bg-primary/10' : ''}`}
+              onClick={() => setIsAdvancedFiltersOpen((prev) => !prev)}
+            >
+              {isAdvancedFiltersOpen ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
         </div>
 
         {isAdvancedFiltersOpen ? (
@@ -982,7 +1035,7 @@ export default function Catalog() {
                   <button
                     key={preset.id}
                     type="button"
-                    className={`chip shrink-0 ${pricePreset === preset.id ? 'text-primary border-primary' : ''}`}
+                    className={`chip shrink-0 ${pricePreset === preset.id ? 'text-primary border-primary bg-primary/10' : ''}`}
                     onClick={() => setPricePreset(preset.id)}
                   >
                     {preset.label}
@@ -998,7 +1051,7 @@ export default function Catalog() {
                   <button
                     key={option.id}
                     type="button"
-                    className={`chip shrink-0 ${selectedPlatforms.includes(option.id) ? 'text-primary border-primary' : ''}`}
+                    className={`chip shrink-0 ${selectedPlatforms.includes(option.id) ? 'text-primary border-primary bg-primary/10' : ''}`}
                     onClick={() => toggleMultiFilter(option.id, setSelectedPlatforms)}
                   >
                     {option.label}
@@ -1014,7 +1067,7 @@ export default function Catalog() {
                   <button
                     key={option.id}
                     type="button"
-                    className={`chip shrink-0 ${selectedTypes.includes(option.id) ? 'text-primary border-primary' : ''}`}
+                    className={`chip shrink-0 ${selectedTypes.includes(option.id) ? 'text-primary border-primary bg-primary/10' : ''}`}
                     onClick={() => toggleMultiFilter(option.id, setSelectedTypes)}
                   >
                     {option.label}
@@ -1031,7 +1084,7 @@ export default function Catalog() {
                     <button
                       key={option.id}
                       type="button"
-                      className={`chip shrink-0 ${selectedEditions.includes(option.id) ? 'text-primary border-primary' : ''}`}
+                      className={`chip shrink-0 ${selectedEditions.includes(option.id) ? 'text-primary border-primary bg-primary/10' : ''}`}
                       onClick={() => toggleMultiFilter(option.id, setSelectedEditions)}
                     >
                       {option.label}
@@ -1048,7 +1101,7 @@ export default function Catalog() {
                       <button
                         key={option.id}
                         type="button"
-                        className={`chip shrink-0 ${selectedStatuses.includes(option.id) ? 'text-primary border-primary' : ''}`}
+                        className={`chip shrink-0 ${selectedStatuses.includes(option.id) ? 'text-primary border-primary bg-primary/10' : ''}`}
                         onClick={() => toggleMultiFilter(option.id, setSelectedStatuses)}
                       >
                         {option.label}
@@ -1058,77 +1111,15 @@ export default function Catalog() {
                 </div>
               ) : null}
             </div>
-
-            <div>
-              <p className="text-xs text-textMuted mb-2">Extras visuales</p>
-              <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
-                <button
-                  type="button"
-                  className={`chip shrink-0 ${hasRealImageOnly ? 'text-primary border-primary' : ''}`}
-                  onClick={() => setHasRealImageOnly((prev) => !prev)}
-                >
-                  Solo con imagen real
-                </button>
-                <button
-                  type="button"
-                  className={`chip shrink-0 ${completePackOnly ? 'text-primary border-primary' : ''}`}
-                  onClick={() => setCompletePackOnly((prev) => !prev)}
-                >
-                  Solo juego completo
-                </button>
-              </div>
-            </div>
           </div>
         ) : null}
       </div>
-
-      {isMobileFiltersOpen ? (
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-            <p className="text-xs text-textMuted">Resultados visibles</p>
-            <p className="text-primary text-lg font-semibold mt-1">{sorted.length}</p>
-            <p className="text-xs text-textMuted mt-1">{activeFilterCount} filtros activos</p>
-          </div>
-          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
-            <p className="text-xs text-textMuted">Stock total visible</p>
-            <p className="text-primary text-lg font-semibold mt-1">{totalVisibleStock}</p>
-            <p className="text-xs text-textMuted mt-1">Suma de stock en esta vista</p>
-          </div>
-          <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)] flex flex-col justify-between">
-            <div>
-              <p className="text-xs text-textMuted">Acción rápida</p>
-              <p className="text-sm mt-1">Restablecer filtros y volver al catálogo general</p>
-            </div>
-            <button
-              className="chip mt-2 self-start"
-              onClick={() => {
-                setActive('all');
-                setSearch('');
-                setSortBy('newest');
-                setPricePreset('all');
-                setSelectedPlatforms([]);
-                setSelectedTypes([]);
-                setSelectedEditions([]);
-                setSelectedStatuses([]);
-                setFavoritesOnly(false);
-                setStockOnly(false);
-                setHasRealImageOnly(false);
-                setCompletePackOnly(false);
-                setMinPrice('');
-                setMaxPrice('');
-              }}
-            >
-              Limpiar filtros
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 
   return (
     <section className="section">
-      <div className="container">
+      <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-6 lg:px-8">
         <div className="glass p-4 sm:p-5 mb-6">
           <div className="mobile-scroll-row no-scrollbar md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
             <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
@@ -1152,13 +1143,13 @@ export default function Catalog() {
           </p>
         </div>
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-primary">Catálogo profesional</p>
             <h1 className="title-display text-3xl">Catálogo</h1>
             <p className="text-textMuted">Retro revisado por coleccionistas y listo para tu vitrina.</p>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 xl:min-w-[58%]">
             <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
               {QUICK_FILTERS.map((filter) => (
                 <button
@@ -1204,7 +1195,7 @@ export default function Catalog() {
               </button>
             </div>
             <div className="mobile-scroll-row no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:pb-0">
-              {consoleHighlights.map((product) => (
+              {consoleHighlights.map((product, index) => (
                 <Link
                   key={`console-highlight-${String(product.id)}`}
                   href={getProductHref(product)}
@@ -1216,6 +1207,8 @@ export default function Catalog() {
                       fallbackSrc={getProductFallbackImageUrl(product)}
                       alt={String(product?.name || 'Producto de consola')}
                       fill
+                      sizes="(max-width: 768px) 42vw, (max-width: 1280px) 24vw, 18vw"
+                      priority={index === 0}
                       className="object-contain p-2"
                     />
                   </div>
@@ -1242,7 +1235,7 @@ export default function Catalog() {
               </button>
             </div>
             <div className="mobile-scroll-row no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible sm:pb-0">
-              {specialConsoleHighlights.map((product) => (
+              {specialConsoleHighlights.map((product, index) => (
                 <Link
                   key={`special-console-highlight-${String(product.id)}`}
                   href={getProductHref(product)}
@@ -1254,6 +1247,8 @@ export default function Catalog() {
                       fallbackSrc={getProductFallbackImageUrl(product)}
                       alt={String(product?.name || 'Edición especial')}
                       fill
+                      sizes="(max-width: 768px) 42vw, (max-width: 1280px) 24vw, 18vw"
+                      priority={index === 0}
                       className="object-contain p-2"
                     />
                   </div>
@@ -1266,23 +1261,29 @@ export default function Catalog() {
         ) : null}
 
         {!hasNoProducts && !isMysteryView ? (
-          <div className="grid gap-4 md:grid-cols-3 mb-8">
+          <div className="grid gap-4 xl:grid-cols-3 mb-8">
             <div>
               <h2 className="font-semibold mb-2 text-lg">Trending retro</h2>
               <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
-                {featuredTrending.map((product) => renderMiniProduct(product, 'Trending', 'w-[230px] shrink-0 md:w-auto'))}
+                {featuredTrending.map((product, index) =>
+                  renderMiniProduct(product, 'Trending', 'w-[230px] shrink-0 md:w-auto', index === 0)
+                )}
               </div>
             </div>
             <div>
               <h2 className="font-semibold mb-2 text-lg">Más valorados</h2>
               <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
-                {featuredBestRated.map((product) => renderMiniProduct(product, 'Top', 'w-[230px] shrink-0 md:w-auto'))}
+                {featuredBestRated.map((product, index) =>
+                  renderMiniProduct(product, 'Top', 'w-[230px] shrink-0 md:w-auto', index === 0)
+                )}
               </div>
             </div>
             <div>
               <h2 className="font-semibold mb-2 text-lg">Últimas entradas</h2>
               <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
-                {featuredLatest.map((product) => renderMiniProduct(product, 'Nuevo', 'w-[230px] shrink-0 md:w-auto'))}
+                {featuredLatest.map((product, index) =>
+                  renderMiniProduct(product, 'Nuevo', 'w-[230px] shrink-0 md:w-auto', index === 0)
+                )}
               </div>
             </div>
           </div>
@@ -1305,8 +1306,8 @@ export default function Catalog() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleProducts.map((product) => {
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {visibleProducts.map((product, index) => {
               const productId = String(product.id);
               const isComplete = completeProductIds.has(productId);
               const isCompleteView = String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY;
@@ -1325,6 +1326,8 @@ export default function Catalog() {
                       fallbackSrc={getProductFallbackImageUrl(product)}
                       alt={product.name}
                       fill
+                      sizes="(max-width: 640px) 34vw, (max-width: 1024px) 42vw, (max-width: 1536px) 24vw, 18vw"
+                      priority={index < 2}
                       className="object-contain p-2"
                     />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-2">
@@ -1361,7 +1364,7 @@ export default function Catalog() {
 
         {!hasNoProducts && hasMoreProducts ? (
           <div className="mt-6 flex justify-center">
-            <button className="button-secondary" onClick={() => setVisibleCount((count) => count + 24)}>
+            <button className="button-secondary" onClick={() => setVisibleCount((count) => count + LOAD_MORE_STEP)}>
               Cargar más productos
             </button>
           </div>

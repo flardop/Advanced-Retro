@@ -1376,6 +1376,8 @@ export default function ProductDetail({
               alt={product.name}
               fill
               className="object-contain p-4"
+              priority
+              sizes="(max-width: 1024px) 96vw, 48vw"
             />
             {product.status ? <span className="absolute top-3 left-3 chip text-[11px]">{product.status}</span> : null}
             <span className="absolute bottom-3 right-3 chip text-[11px]">Foto {selectedImage + 1} / {images.length}</span>
@@ -1391,7 +1393,13 @@ export default function ProductDetail({
                 }`}
                 onClick={() => setSelectedImage(index)}
               >
-                <Image src={img} alt={`${product.name} miniatura ${index + 1}`} fill className="object-contain p-1" />
+                <Image
+                  src={img}
+                  alt={`${product.name} miniatura ${index + 1}`}
+                  fill
+                  sizes="96px"
+                  className="object-contain p-1"
+                />
               </button>
             ))}
           </div>

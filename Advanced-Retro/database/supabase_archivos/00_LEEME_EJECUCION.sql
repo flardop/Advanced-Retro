@@ -1,0 +1,53 @@
+-- =============================================================================
+-- SUPABASE ARCHIVOS ORDENADOS - ADVANCED RETRO
+-- =============================================================================
+--
+-- OPCION A (RECOMENDADA): EJECUCION POR BLOQUES
+-- Ejecuta los archivos en este orden:
+--
+-- 01_master_supabase_setup.sql
+-- 02_security_rls_hardening_public_tables.sql
+-- 03_profile_columns_hotfix.sql
+-- 04_profile_customization_upgrade.sql
+-- 05_admin_chat_seller_features.sql
+-- 06_internal_wallet_mvp.sql
+-- 07_wallet_withdrawal_requests_mvp.sql
+-- 08_gamification_xp_levels.sql
+-- 09_product_likes_auth.sql
+-- 10_performance_social_market_cache.sql
+-- 11_mystery_roulette_bootstrap.sql
+-- 12_community_publish_listing_extras.sql
+-- 13_stripe_commissions_upgrade.sql
+-- 14_hype_future_launches.sql
+-- 15_snake_404_leaderboard.sql
+-- 16_normalize_generic_inserts_by_platform.sql
+-- 17_backfill_product_slugs_clean_urls.sql
+-- 18_allow_extended_categories.sql
+-- 19_seed_demo_marketplace_profiles.sql  (opcional, solo datos demo visuales)
+--
+-- OPCION B (TODO EN UNO):
+-- Ejecuta solo:
+-- 99_supabase_todo_con_checks.sql
+--
+-- (Alternativa sin checks finales: 98_supabase_full_bundle.sql)
+--
+-- =============================================================================
+-- VERIFICACION RAPIDA (puedes ejecutar al final)
+-- =============================================================================
+--
+-- select
+--   n.nspname as schema,
+--   c.relname as table,
+--   c.relrowsecurity as rls_enabled
+-- from pg_class c
+-- join pg_namespace n on n.oid = c.relnamespace
+-- where n.nspname = 'public'
+--   and c.relkind = 'r'
+--   and c.relname in (
+--     'users','products','orders','support_tickets','support_messages',
+--     'user_product_listings','product_likes',
+--     'mystery_boxes','mystery_box_prizes','mystery_tickets','mystery_spins'
+--   )
+-- order by c.relname;
+--
+-- =============================================================================

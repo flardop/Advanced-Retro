@@ -79,7 +79,7 @@ upserted_users as (
     2 + (row_number() over (order by p.email) % 7),
     180 + (row_number() over (order by p.email) * 35),
     now(),
-    now() - make_interval(days => 30 + (row_number() over (order by p.email) % 40)),
+    now() - make_interval(days => (30 + (row_number() over (order by p.email) % 40))::int),
     now()
   from seed_profiles p
   on conflict (email) do update
@@ -143,7 +143,10 @@ review_rows as (
     up.author_name,
     rt.rating,
     rt.comment,
-    now() - make_interval(days => ((tp.rn * 3 + up.rn + rt.idx) % 50), hours => ((rt.idx * 2 + up.rn) % 20)) as created_at
+    now() - make_interval(
+      days => ((tp.rn * 3 + up.rn + rt.idx) % 50)::int,
+      hours => ((rt.idx * 2 + up.rn) % 20)::int
+    ) as created_at
   from target_products tp
   join user_pool up
     on ((tp.rn + up.rn) % 5) = 0
@@ -184,7 +187,7 @@ visit_seed as (
     tp.product_id,
     ('seed-visit-' || tp.rn || '-' || gs.n) as visitor_key,
     (2 + ((tp.rn + gs.n) % 5)) as visits_count,
-    now() - make_interval(days => ((tp.rn + gs.n) % 35)) as visit_at
+    now() - make_interval(days => ((tp.rn + gs.n) % 35)::int) as visit_at
   from target_products tp
   cross join lateral generate_series(1, 16) as gs(n)
 ),
@@ -279,4 +282,3 @@ select json_build_object(
   'seeded_visits', (select count(*) from ins_visits),
   'updated_summary_rows', (select count(*) from upsert_summary)
 ) as seed_result;
-

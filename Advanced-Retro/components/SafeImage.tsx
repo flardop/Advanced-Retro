@@ -19,6 +19,8 @@ export default function SafeImage({
   alt,
   onError,
   unoptimized,
+  fill,
+  sizes,
   ...props
 }: SafeImageProps) {
   const initialSrc = useMemo(() => {
@@ -33,12 +35,20 @@ export default function SafeImage({
   }, [initialSrc]);
 
   const shouldBeUnoptimized = typeof unoptimized === 'boolean' ? unoptimized : isSvgSource(currentSrc);
+  const responsiveSizes =
+    typeof sizes === 'string' && sizes.trim()
+      ? sizes
+      : fill
+        ? '(max-width: 640px) 48vw, (max-width: 1024px) 33vw, (max-width: 1536px) 25vw, 20vw'
+        : undefined;
 
   return (
     <Image
       {...props}
       src={currentSrc}
       alt={alt}
+      fill={fill}
+      sizes={responsiveSizes}
       unoptimized={shouldBeUnoptimized}
       onError={(event) => {
         if (currentSrc !== fallbackSrc) {

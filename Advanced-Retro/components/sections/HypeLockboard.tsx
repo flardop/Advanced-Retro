@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import SafeImage from '@/components/SafeImage';
 
 type HypeLaunchKind = 'mystery_drop' | 'auction_season';
 
@@ -39,6 +38,36 @@ function getRemaining(lockUntil: string, nowMs: number) {
 
 function pad(value: number) {
   return String(value).padStart(2, '0');
+}
+
+function renderLockedVisual(kind: HypeLaunchKind) {
+  const isAuction = kind === 'auction_season';
+  const accent = isAuction ? 'from-cyan-400/30 to-blue-500/10' : 'from-amber-300/25 to-fuchsia-500/10';
+  const icon = isAuction ? '⚖' : '📦';
+  const label = isAuction ? 'SUBASTA PRIVADA' : 'MYSTERY DROP';
+
+  return (
+    <div className={`absolute inset-0 bg-gradient-to-br ${accent}`}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(75,228,214,.2),rgba(5,7,11,0))]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,16,.28),rgba(4,8,16,.88))]" />
+
+      <div className="absolute inset-4 rounded-2xl border border-line/70 bg-[rgba(4,10,18,.35)]">
+        <div className="absolute left-3 top-3 rounded-md border border-primary/50 bg-[rgba(9,21,35,.9)] px-2 py-1 text-[10px] tracking-[0.18em] text-primary">
+          {label}
+        </div>
+        <div className="absolute right-3 top-3 rounded-md border border-warning/60 bg-[rgba(20,14,7,.85)] px-2 py-1 text-[10px] tracking-[0.14em] text-warning">
+          BLOQUEADO
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+          <p className="text-4xl sm:text-5xl leading-none" aria-hidden>
+            {icon}
+          </p>
+          <p className="mt-3 text-[11px] uppercase tracking-[0.34em] text-textMuted">Próximamente</p>
+          <p className="mt-1 text-2xl sm:text-3xl font-black tracking-[0.18em] text-white">INCOMING</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
@@ -153,29 +182,7 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
                     <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(75,228,214,.23),rgba(75,228,214,0))] pointer-events-none" />
                     <div className="relative grid gap-4">
                       <div className="relative h-40 sm:h-48 rounded-xl overflow-hidden border border-line">
-                        {isAuction ? (
-                          <div className="absolute inset-0 bg-[#05070b]">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(75,228,214,.15),rgba(5,7,11,0))]" />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-                              <p className="text-[10px] uppercase tracking-[0.3em] text-textMuted">Subastas</p>
-                              <p className="mt-2 text-2xl sm:text-3xl font-black tracking-[0.22em] text-white">INCOMING</p>
-                              <p className="mt-2 text-xs text-textMuted">
-                                Temporada bloqueada hasta apertura
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <SafeImage
-                              src={launch.image_url || '/placeholder.svg'}
-                              fallbackSrc="/placeholder.svg"
-                              alt={launch.title}
-                              fill
-                              className="object-cover"
-                            />
-                            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,9,18,.2),rgba(4,8,16,.78))]" />
-                          </>
-                        )}
+                        {renderLockedVisual(launch.kind)}
                         <div className="absolute inset-x-0 bottom-0 p-3 flex items-center justify-between gap-2">
                           <span className="chip border-primary/50 text-primary bg-[rgba(2,14,24,.8)]">
                             {launch.pinned ? 'Pineado' : 'Próximo'}

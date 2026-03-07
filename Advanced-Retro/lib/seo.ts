@@ -72,6 +72,10 @@ export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
     description,
     alternates: {
       canonical: canonicalPath,
+      languages: {
+        'es-ES': canonicalPath,
+        'x-default': canonicalPath,
+      },
     },
     keywords,
     robots: noIndex

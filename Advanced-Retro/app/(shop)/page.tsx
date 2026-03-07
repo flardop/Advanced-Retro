@@ -8,7 +8,7 @@ import RetroStory from '@/components/sections/RetroStory';
 import FinalCTA from '@/components/sections/FinalCTA';
 import HypeLockboard from '@/components/sections/HypeLockboard';
 import { redirect } from 'next/navigation';
-import { buildFaqJsonLd, buildPageMetadata } from '@/lib/seo';
+import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,11 +60,31 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     },
   ]);
 
+  const breadcrumbSchema = buildBreadcrumbJsonLd([{ name: 'Inicio', path: '/' }]);
+  const homeLinksSchema = buildItemListJsonLd(
+    [
+      { name: 'Tienda retro', path: '/tienda', description: 'Catálogo completo de juegos, consolas y componentes retro.' },
+      { name: 'Comunidad', path: '/comunidad', description: 'Anuncios de usuarios, perfiles de vendedor y actividad retro.' },
+      { name: 'Ruleta y Mystery', path: '/ruleta', description: 'Experiencias gamificadas con cajas y premios.' },
+      { name: 'Servicio de compra', path: '/servicio-compra', description: 'Búsqueda asistida de productos por encargo.' },
+      { name: 'Contacto', path: '/contacto', description: 'Soporte, ayuda comercial y atención al cliente.' },
+    ],
+    'Secciones principales AdvancedRetro.es'
+  );
+
   return (
     <>
       <script
         type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeLinksSchema) }}
       />
       <Hero />
       <RetroPromoSlider />
@@ -84,6 +104,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <p className="text-textMuted leading-relaxed">
             Si buscas una pieza concreta, también puedes usar nuestro servicio de encargo con soporte por ticket para comparar
             opciones, validar estado y seguir el pedido hasta la entrega.
+          </p>
+          <p className="text-textMuted leading-relaxed">
+            Advanced Retro está orientada a compra con contexto real: catálogo limpio, filtros por consola, fichas de producto con
+            componentes y navegación diseñada para que encuentres más rápido tanto juegos completos como piezas sueltas para completar
+            colección.
           </p>
         </div>
       </section>

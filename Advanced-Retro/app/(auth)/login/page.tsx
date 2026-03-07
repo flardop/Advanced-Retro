@@ -272,14 +272,6 @@ function LoginForm() {
             </button>
           </div>
 
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm">
-            <strong className="block mb-1">Configurar Google / Apple</strong>
-            <p className="text-textMuted">
-              Estos proveedores se activan en Supabase: <strong>Authentication → Providers</strong>.
-              No necesitas variables OAuth de Google/Apple en este proyecto.
-            </p>
-          </div>
-
           <p className="text-sm text-textMuted mt-6">
             {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
             <button

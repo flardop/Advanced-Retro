@@ -19,14 +19,29 @@ function isLocalHost(host: string): boolean {
   return host.includes('localhost') || host.startsWith('127.0.0.1') || host.startsWith('0.0.0.0');
 }
 
+function shouldNoIndexByQuery(url: { pathname: string; searchParams: URLSearchParams }): boolean {
+  if (!url.searchParams || url.searchParams.size === 0) return false;
+  const pathname = String(url.pathname || '').toLowerCase();
+  if (pathname === '/tienda') return true;
+  if (pathname.startsWith('/producto/')) return true;
+  return false;
+}
+
+function applyNoIndexHeaderIfNeeded(response: NextResponse, request: NextRequest): NextResponse {
+  if (shouldNoIndexByQuery(request.nextUrl)) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  }
+  return response;
+}
+
 export function middleware(request: NextRequest) {
   if (!isProduction) {
-    return NextResponse.next();
+    return applyNoIndexHeaderIfNeeded(NextResponse.next(), request);
   }
 
   const canonicalHost = getCanonicalHost();
   if (!canonicalHost) {
-    return NextResponse.next();
+    return applyNoIndexHeaderIfNeeded(NextResponse.next(), request);
   }
 
   const incomingHost = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '')
@@ -36,12 +51,12 @@ export function middleware(request: NextRequest) {
   const shouldBeHttps = forwardedProto !== 'https';
 
   if (!incomingHost || isLocalHost(incomingHost)) {
-    return NextResponse.next();
+    return applyNoIndexHeaderIfNeeded(NextResponse.next(), request);
   }
 
   const hostChanged = incomingHost !== canonicalHost;
   if (!hostChanged && !shouldBeHttps) {
-    return NextResponse.next();
+    return applyNoIndexHeaderIfNeeded(NextResponse.next(), request);
   }
 
   const url = request.nextUrl.clone();

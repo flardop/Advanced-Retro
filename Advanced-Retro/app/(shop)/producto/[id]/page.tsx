@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import ProductDetail from '@/components/sections/ProductDetail';
+import BreadcrumbsNav from '@/components/BreadcrumbsNav';
+import SafeImage from '@/components/SafeImage';
 import { absoluteUrl } from '@/lib/siteConfig';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getProductHref, getProductRouteSegment, parseProductRouteParam } from '@/lib/productUrl';
 import { sampleProducts } from '@/lib/sampleData';
-import { buildBreadcrumbJsonLd, buildPageMetadata, buildProductSeoDescription } from '@/lib/seo';
+import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata, buildProductSeoDescription } from '@/lib/seo';
+import { getProductReviewsSql } from '@/lib/productSocialSql';
 import { permanentRedirect } from 'next/navigation';
+import Link from 'next/link';
 
 function parseBooleanQuery(value: string | string[] | undefined): boolean {
   if (Array.isArray(value)) {
@@ -93,6 +97,65 @@ async function getProductSocialSummary(productId: string) {
   };
 }
 
+async function getRelatedProducts(product: any, limit = 6) {
+  const productId = String(product?.id || '').trim();
+  const productCategory = String(product?.category || '').trim();
+  const productPlatform = String(product?.platform || '').trim();
+
+  if (!productId) return [];
+
+  if (!supabaseAdmin) {
+    return sampleProducts
+      .filter((candidate: any) => {
+        if (!candidate || String(candidate?.id || '') === productId) return false;
+        if (Number(candidate?.price || 0) <= 0) return false;
+        const sameCategory = productCategory && String(candidate?.category || '') === productCategory;
+        const samePlatform =
+          productPlatform &&
+          String(candidate?.platform || '')
+            .trim()
+            .toLowerCase() === productPlatform.toLowerCase();
+        return sameCategory || samePlatform;
+      })
+      .slice(0, limit);
+  }
+
+  const selectColumns = 'id,name,slug,image,price,stock,category,platform,updated_at,created_at';
+  const relatedMap = new Map<string, any>();
+
+  if (productCategory) {
+    const { data } = await supabaseAdmin
+      .from('products')
+      .select(selectColumns)
+      .eq('category', productCategory)
+      .gt('price', 0)
+      .neq('id', productId)
+      .order('updated_at', { ascending: false })
+      .limit(limit * 3);
+
+    for (const row of data || []) {
+      relatedMap.set(String((row as any)?.id || ''), row);
+    }
+  }
+
+  if (relatedMap.size < limit && productPlatform) {
+    const { data } = await supabaseAdmin
+      .from('products')
+      .select(selectColumns)
+      .ilike('platform', productPlatform)
+      .gt('price', 0)
+      .neq('id', productId)
+      .order('updated_at', { ascending: false })
+      .limit(limit * 3);
+
+    for (const row of data || []) {
+      relatedMap.set(String((row as any)?.id || ''), row);
+    }
+  }
+
+  return [...relatedMap.values()].slice(0, limit);
+}
+
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const resolvedParams = await params;
   const product = await getProductByIdentifier(resolvedParams.id);
@@ -165,6 +228,24 @@ export default async function ProductPage({
   const socialSummary = await getProductSocialSummary(String((product as any)?.id || ''));
   const reviewCount = Number(socialSummary?.reviewsCount || 0);
   const ratingAverage = Number(socialSummary?.ratingAverage || 0);
+  const reviewProductId = String((product as any)?.id || '').trim();
+  const reviewRows = reviewProductId ? await getProductReviewsSql(reviewProductId, 3) : [];
+  const reviewsSchema = reviewRows
+    .filter((review) => Number(review?.rating || 0) > 0 && String(review?.comment || '').trim().length > 0)
+    .slice(0, 3)
+    .map((review) => ({
+      '@type': 'Review',
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: Math.max(1, Math.min(5, Number(review.rating || 0))),
+      },
+      author: {
+        '@type': 'Person',
+        name: String(review.authorName || 'Coleccionista').trim().slice(0, 80),
+      },
+      reviewBody: String(review.comment || '').trim().slice(0, 600),
+      datePublished: String(review.createdAt || '').slice(0, 10) || undefined,
+    }));
 
   const productSchema = {
     '@context': 'https://schema.org',
@@ -185,6 +266,43 @@ export default async function ProductPage({
       price: (Math.max(0, priceCents) / 100).toFixed(2),
       availability,
       itemCondition: 'https://schema.org/UsedCondition',
+      priceValidUntil: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 10),
+      shippingDetails: [
+        {
+          '@type': 'OfferShippingDetails',
+          shippingDestination: {
+            '@type': 'DefinedRegion',
+            addressCountry: 'ES',
+          },
+          shippingRate: {
+            '@type': 'MonetaryAmount',
+            value: '0.00',
+            currency: 'EUR',
+          },
+          deliveryTime: {
+            '@type': 'ShippingDeliveryTime',
+            handlingTime: {
+              '@type': 'QuantitativeValue',
+              minValue: 1,
+              maxValue: 2,
+              unitCode: 'DAY',
+            },
+            transitTime: {
+              '@type': 'QuantitativeValue',
+              minValue: 1,
+              maxValue: 4,
+              unitCode: 'DAY',
+            },
+          },
+        },
+      ],
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'ES',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 14,
+        returnMethod: 'https://schema.org/ReturnByMail',
+      },
       seller: {
         '@type': 'Organization',
         name: 'AdvancedRetro.es',
@@ -198,6 +316,7 @@ export default async function ProductPage({
             reviewCount,
           }
         : undefined,
+    review: reviewsSchema.length > 0 ? reviewsSchema : undefined,
   };
 
   const breadcrumbSchema = buildBreadcrumbJsonLd([
@@ -205,6 +324,31 @@ export default async function ProductPage({
     { name: 'Tienda', path: '/tienda' },
     { name: productName, path: canonicalPath },
   ]);
+  const faqSchema = buildFaqJsonLd([
+    {
+      question: `¿El producto ${productName} está disponible para compra inmediata?`,
+      answer:
+        Number(product?.stock || 0) > 0
+          ? `Sí. Actualmente hay stock de ${productName} y se puede comprar desde la ficha.`
+          : `Ahora mismo ${productName} está sin stock. Puedes revisar alternativas relacionadas en esta misma página.`,
+    },
+    {
+      question: `¿Qué incluye exactamente ${productName}?`,
+      answer:
+        'La ficha muestra precio, estado, imágenes reales y opciones adicionales (caja, manual, insert o protectores) cuando hay compatibilidad disponible.',
+    },
+    {
+      question: '¿Cuál es el plazo y política de devolución?',
+      answer:
+        'La tienda trabaja con envío en España y política de devolución según condiciones publicadas, con ventana general de 14 días cuando aplique.',
+    },
+    {
+      question: '¿Puedo comparar original vs repro antes de comprar?',
+      answer:
+        'Sí. En productos compatibles verás selección de componentes y edición para que puedas comprar con criterio de coleccionismo.',
+    },
+  ]);
+  const relatedProducts = product ? await getRelatedProducts(product, 6) : [];
 
   return (
     <>
@@ -216,11 +360,63 @@ export default async function ProductPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <section className="section pb-0">
+        <div className="container">
+          <BreadcrumbsNav
+            items={[
+              { name: 'Inicio', href: '/' },
+              { name: 'Tienda', href: '/tienda' },
+              { name: productName },
+            ]}
+          />
+        </div>
+      </section>
       <ProductDetail
         productId={productId}
         prefillComplete={prefillComplete}
         initialProduct={product || null}
       />
+      {relatedProducts.length > 0 ? (
+        <section className="section pt-0">
+          <div className="container">
+            <div className="glass p-5 sm:p-6">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h2 className="title-display text-2xl">Productos relacionados</h2>
+                <Link href="/tienda" className="chip">
+                  Ver más en tienda
+                </Link>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {relatedProducts.map((item: any) => (
+                  <Link
+                    key={String(item?.id || '')}
+                    href={getProductHref(item)}
+                    className="glass p-3 sm:p-4 hover:shadow-glow transition-all group"
+                  >
+                    <div className="relative h-44 bg-surface border border-line rounded-xl overflow-hidden">
+                      <SafeImage
+                        src={String(item?.image || '/placeholder.svg')}
+                        fallbackSrc="/placeholder.svg"
+                        alt={String(item?.name || 'Producto relacionado')}
+                        fill
+                        className="object-contain p-2"
+                      />
+                    </div>
+                    <h3 className="font-semibold text-text mt-3 line-clamp-2">{String(item?.name || '')}</h3>
+                    <p className="text-primary font-semibold mt-2">
+                      {(Math.max(0, Number(item?.price || 0)) / 100).toFixed(2)} €
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }
