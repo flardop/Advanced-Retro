@@ -138,11 +138,6 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
                       alt={`${listing.title} imagen ${index + 1}`}
                       className="h-full w-full object-contain p-2"
                       loading={index === 0 ? 'eager' : 'lazy'}
-                      onError={(event) => {
-                        const t = event.currentTarget;
-                        if (t.src.endsWith('/logo.png')) return;
-                        t.src = '/logo.png';
-                      }}
                     />
                   </div>
                 ))}
@@ -270,11 +265,6 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
                         alt={item.title}
                         className="h-full w-full object-contain p-2"
                         loading="lazy"
-                        onError={(event) => {
-                          const t = event.currentTarget;
-                          if (t.src.endsWith('/logo.png')) return;
-                          t.src = '/logo.png';
-                        }}
                       />
                     </div>
                     <div className="p-4">

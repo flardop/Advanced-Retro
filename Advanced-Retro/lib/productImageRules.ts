@@ -56,6 +56,11 @@ export function isLikelyProductImageUrl(rawUrl: unknown): boolean {
   const host = parsed.hostname.toLowerCase();
   const path = parsed.pathname.toLowerCase();
 
+  // No usar imágenes subidas por usuarios al bucket de comunidad como imagen de catálogo.
+  if (path.includes('/community-listings/')) {
+    return false;
+  }
+
   // Muchas rutas de splash históricas están caídas (404) en este catálogo.
   // Preferimos reemplazarlas por fuentes estables.
   if (host === 'splash.games.directory') {

@@ -21,6 +21,7 @@
     "images:upload": "npx tsx scripts/upload-organized-images-to-supabase.ts --apply",
     "images:pipeline": "bash scripts/run-image-pipeline.sh",
     "images:fill:fallbacks": "npx tsx scripts/fill-fallback-product-images.ts --limit=220",
+    "images:community:normalize": "npx tsx scripts/normalize-community-listing-images.ts --apply",
     "products:dedupe": "npx tsx scripts/deduplicate-products.ts",
     "catalog:expand": "npx tsx scripts/expand-catalog-internet.ts",
     "catalog:ensure-components": "npx tsx scripts/ensure-complete-game-components.ts",
