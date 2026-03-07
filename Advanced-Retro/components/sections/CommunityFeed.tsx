@@ -3,6 +3,11 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import {
+  calculateCommunityShippingQuoteFromArenys,
+  inferShippingZoneFromAddress,
+  type CommunityShippingZone,
+} from '@/lib/shipping';
 
 type CommunityListing = {
   id: string;
@@ -27,7 +32,19 @@ type CommunityListing = {
   buyer_email?: string | null;
   shipping_tracking_code?: string | null;
   delivery_status?: string;
-  user?: { id?: string | null; name?: string | null; avatar_url?: string | null } | null;
+  user?: {
+    id?: string | null;
+    name?: string | null;
+    avatar_url?: string | null;
+    is_verified_seller?: boolean;
+    public_location?: {
+      city?: string | null;
+      state?: string | null;
+      country?: string | null;
+      postal_code?: string | null;
+      label?: string | null;
+    } | null;
+  } | null;
 };
 
 type MarketPolicy = {
@@ -172,6 +189,7 @@ export default function CommunityFeed() {
     {}
   );
   const [cardLikeLoadingById, setCardLikeLoadingById] = useState<Record<string, boolean>>({});
+  const [viewerShippingZone, setViewerShippingZone] = useState<CommunityShippingZone>('espana_peninsula');
 
   const [marketQuery, setMarketQuery] = useState('');
   const [marketSort, setMarketSort] = useState<'newest' | 'price_asc' | 'price_desc'>('newest');
@@ -238,6 +256,27 @@ export default function CommunityFeed() {
 
   useEffect(() => {
     setVisitorId(getOrCreateVisitorId());
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadViewerZone = async () => {
+      try {
+        const res = await fetch('/api/auth/profile', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => null);
+        if (cancelled) return;
+        const address = data?.user?.profile?.shipping_address;
+        if (!address) return;
+        setViewerShippingZone(inferShippingZoneFromAddress(address));
+      } catch {
+        // Zona por defecto.
+      }
+    };
+    void loadViewerZone();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -619,7 +658,14 @@ export default function CommunityFeed() {
                   const sellerName = String(listing.user?.name || 'Vendedor verificado');
                   const sellerAvatar = String(listing.user?.avatar_url || '');
                   const sellerId = String(listing.user?.id || '').trim();
+                  const sellerLocationLabel = String(listing.user?.public_location?.label || '').trim();
                   const commissionCents = Number(listing.commission_cents || 0);
+                  const shippingQuote = calculateCommunityShippingQuoteFromArenys({
+                    zone: viewerShippingZone,
+                    packageSize: listing.package_size || 'medium',
+                    itemPriceCents: Number(listing.price || 0),
+                  });
+                  const totalPriceCents = Math.max(0, Number(listing.price || 0)) + shippingQuote.costCents;
                   const social = listingSocialMetrics[String(listing.id)] || {
                     visits: 0,
                     likes: 0,
@@ -682,7 +728,13 @@ export default function CommunityFeed() {
 
                       <div className="p-4 text-slate-900">
                         <div className="flex items-start justify-between gap-3">
-                          <p className="text-2xl font-black text-cyan-700">{toPrice(Number(listing.price || 0))}</p>
+                          <div>
+                            <p className="text-2xl font-black text-cyan-700">{toPrice(totalPriceCents)}</p>
+                            <p className="text-[11px] text-slate-500">
+                              Incluye envío · producto {toPrice(Number(listing.price || 0))} + envío{' '}
+                              {toPrice(shippingQuote.costCents)}
+                            </p>
+                          </div>
                           <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600">
                             {toRelativeDate(String(listing.created_at || ''))}
                           </span>
@@ -776,6 +828,9 @@ export default function CommunityFeed() {
                                 Comisión tienda {Number(listing.commission_rate || 5).toFixed(0)}% ·{' '}
                                 {toPrice(commissionCents)}
                               </p>
+                              {sellerLocationLabel ? (
+                                <p className="text-[11px] text-slate-500">Ubicación: {sellerLocationLabel}</p>
+                              ) : null}
                               {sellerId ? (
                                 <Link
                                   href={`/comunidad/vendedor/${sellerId}`}

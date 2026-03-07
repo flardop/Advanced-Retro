@@ -25,6 +25,19 @@ export type ShippingQuote = {
   etaLabel: string;
 };
 
+export type CommunityPackageSize = 'small' | 'medium' | 'large' | 'oversize';
+export type CommunityShippingZone = ShippingQuote['zone'];
+
+export type CommunityShippingQuote = ShippingQuote & {
+  packageSize: CommunityPackageSize;
+  baseCents: number;
+  sizeMultiplier: number;
+  handlingCents: number;
+  fuelCents: number;
+  protectionCents: number;
+  subtotalCents: number;
+};
+
 const EU_CODES = new Set([
   'AT',
   'BE',
@@ -93,6 +106,89 @@ function spainPostalPrefix(postalCode: string): number | null {
   const prefix = Number(postalCode.slice(0, 2));
   if (!Number.isInteger(prefix) || prefix < 1 || prefix > 52) return null;
   return prefix;
+}
+
+function normalizePackageSize(value: unknown): CommunityPackageSize {
+  const key = String(value || '')
+    .trim()
+    .toLowerCase();
+  if (key === 'small' || key === 'medium' || key === 'large' || key === 'oversize') {
+    return key;
+  }
+  return 'medium';
+}
+
+const COMMUNITY_ZONE_BASE_CENTS: Record<CommunityShippingZone, number> = {
+  local_arenys_barcelona: 390,
+  cataluna: 490,
+  espana_peninsula: 590,
+  espana_baleares: 990,
+  espana_canarias: 1590,
+  espana_ceuta_melilla: 1290,
+  eu: 1290,
+  europe_non_eu: 1790,
+  rest_world: 2490,
+};
+
+const COMMUNITY_ZONE_ETA: Record<CommunityShippingZone, string> = {
+  local_arenys_barcelona: '24-48h',
+  cataluna: '24-72h',
+  espana_peninsula: '24-72h',
+  espana_baleares: '48-96h',
+  espana_canarias: '4-7 días',
+  espana_ceuta_melilla: '3-6 días',
+  eu: '3-6 días',
+  europe_non_eu: '4-8 días',
+  rest_world: '5-12 días',
+};
+
+const COMMUNITY_PACKAGE_MULTIPLIER: Record<CommunityPackageSize, number> = {
+  small: 1,
+  medium: 1.18,
+  large: 1.45,
+  oversize: 1.85,
+};
+
+const COMMUNITY_PACKAGE_HANDLING: Record<CommunityPackageSize, number> = {
+  small: 60,
+  medium: 90,
+  large: 160,
+  oversize: 280,
+};
+
+export function inferShippingZoneFromAddress(address: ShippingAddressInput): CommunityShippingZone {
+  return calculateShippingQuoteFromArenys(address).zone;
+}
+
+export function calculateCommunityShippingQuoteFromArenys(input: {
+  address?: ShippingAddressInput | null;
+  zone?: CommunityShippingZone | null;
+  packageSize?: unknown;
+  itemPriceCents?: number;
+}): CommunityShippingQuote {
+  const packageSize = normalizePackageSize(input.packageSize);
+  const zone = input.zone || inferShippingZoneFromAddress(input.address || {});
+  const baseCents = COMMUNITY_ZONE_BASE_CENTS[zone] ?? COMMUNITY_ZONE_BASE_CENTS.espana_peninsula;
+  const sizeMultiplier = COMMUNITY_PACKAGE_MULTIPLIER[packageSize] ?? COMMUNITY_PACKAGE_MULTIPLIER.medium;
+  const handlingCents = COMMUNITY_PACKAGE_HANDLING[packageSize] ?? COMMUNITY_PACKAGE_HANDLING.medium;
+  const fuelCents = Math.max(35, Math.round(baseCents * 0.08));
+  const protectionCents = Math.min(990, Math.max(0, Math.round(Math.max(0, Number(input.itemPriceCents || 0)) * 0.006)));
+  const subtotalCents = Math.round(baseCents * sizeMultiplier) + handlingCents + fuelCents;
+  const costCents = subtotalCents + protectionCents;
+
+  return {
+    method: 'envio-estandar',
+    zone,
+    etaLabel: COMMUNITY_ZONE_ETA[zone] || '24-72h',
+    costCents,
+    packageSize,
+    baseCents,
+    sizeMultiplier,
+    handlingCents,
+    fuelCents,
+    protectionCents,
+    subtotalCents,
+  };
 }
 
 export function calculateShippingQuoteFromArenys(address: ShippingAddressInput): ShippingQuote {

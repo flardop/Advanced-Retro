@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublicApprovedListingWithSellerById } from '@/lib/userListings';
 import CommunityListingSocialPanel from '@/components/sections/CommunityListingSocialPanel';
+import CommunityListingShippingCard from '@/components/sections/CommunityListingShippingCard';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -84,6 +85,7 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
   }
 
   const { listing, relatedBySeller } = data;
+  const sellerLocationLabel = String((listing.user as any)?.public_location?.label || '').trim() || null;
   const images = Array.isArray(listing.images) && listing.images.length > 0 ? listing.images : ['/logo.png'];
   const listingSchema = {
     '@context': 'https://schema.org',
@@ -158,6 +160,12 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
                 </p>
               </div>
 
+              <CommunityListingShippingCard
+                itemPriceCents={Math.max(0, Number(listing.price || 0))}
+                packageSize={String((listing as any).package_size || 'medium')}
+                sellerLocationLabel={sellerLocationLabel}
+              />
+
               <div className="rounded-2xl border border-line p-4 space-y-3">
                 <p className="text-xs uppercase tracking-[0.16em] text-primary">Datos del anuncio</p>
                 <div className="flex flex-wrap gap-2">
@@ -209,6 +217,7 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
                     <p className="text-xs text-textMuted">
                       {listing.user?.is_verified_seller ? 'Vendedor verificado' : 'Comunidad'}
                     </p>
+                    {sellerLocationLabel ? <p className="text-xs text-textMuted">Ubicación: {sellerLocationLabel}</p> : null}
                   </div>
                 </div>
                 {listing.user?.id ? (

@@ -23,6 +23,14 @@ export const COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS = 500;
 export const COMMUNITY_MIN_IMAGES = 3;
 export const COMMUNITY_MAX_IMAGES = 10;
 
+type PublicLocation = {
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  postal_code: string | null;
+  label: string | null;
+};
+
 export type CreateListingInput = {
   title: string;
   description: string;
@@ -87,6 +95,27 @@ function isValidUrl(url: string): boolean {
   if (!url) return false;
   if (url.startsWith('/')) return true;
   return /^https?:\/\/.+/i.test(url);
+}
+
+function extractPublicLocationFromShippingAddress(input: unknown): PublicLocation | null {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  const source = input as Record<string, unknown>;
+  const city = String(source.city || '').trim().slice(0, 120);
+  const state = String(source.state || '').trim().slice(0, 120);
+  const country = String(source.country || '').trim().slice(0, 80);
+  const postalCode = String(source.postal_code || '').trim().slice(0, 30);
+
+  if (!city && !state && !country) return null;
+
+  const parts = [city, state, country].filter(Boolean);
+  const label = parts.length > 0 ? parts.join(', ') : null;
+  return {
+    city: city || null,
+    state: state || null,
+    country: country || null,
+    postal_code: postalCode || null,
+    label,
+  };
 }
 
 function normalizeImages(raw: unknown): string[] {
@@ -384,13 +413,27 @@ export async function getPublicApprovedListings(limit = 60) {
   const rows = (data || []).map((listing) => withCommunityDefaults(listing));
   const userIds = [...new Set(rows.map((row) => row.user_id).filter(Boolean))];
   const { data: users } = userIds.length
-    ? await supabaseAdmin.from('users').select('id,name,avatar_url').in('id', userIds)
+    ? await supabaseAdmin
+        .from('users')
+        .select('id,name,avatar_url,is_verified_seller,shipping_address')
+        .in('id', userIds)
     : { data: [] as any[] };
   const userMap = new Map<string, any>((users || []).map((user) => [String(user.id), user]));
 
   return rows.map((listing) => ({
     ...listing,
-    user: userMap.get(String(listing.user_id)) || null,
+    user: (() => {
+      const user = userMap.get(String(listing.user_id));
+      if (!user) return null;
+      const publicLocation = extractPublicLocationFromShippingAddress((user as any).shipping_address);
+      return {
+        id: user.id,
+        name: user.name,
+        avatar_url: user.avatar_url,
+        is_verified_seller: Boolean((user as any).is_verified_seller),
+        public_location: publicLocation,
+      };
+    })(),
   }));
 }
 
@@ -414,7 +457,7 @@ export async function getPublicApprovedListingWithSellerById(listingId: string) 
 
   const { data: user } = await supabaseAdmin
     .from('users')
-    .select('id,name,avatar_url,banner_url,bio,tagline,is_verified_seller')
+    .select('id,name,avatar_url,banner_url,bio,tagline,is_verified_seller,shipping_address')
     .eq('id', String(listing.user_id))
     .maybeSingle();
 
@@ -432,7 +475,12 @@ export async function getPublicApprovedListingWithSellerById(listingId: string) 
   return {
     listing: {
       ...listing,
-      user: user || null,
+      user: user
+        ? {
+            ...user,
+            public_location: extractPublicLocationFromShippingAddress((user as any).shipping_address),
+          }
+        : null,
     },
     relatedBySeller,
   };
