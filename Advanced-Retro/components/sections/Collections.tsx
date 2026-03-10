@@ -66,11 +66,11 @@ export default function Collections() {
   return (
     <section className="section">
       <div className="container">
-        <div className="flex items-end justify-between gap-4 mb-6">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-primary">Navegación por consola</p>
-            <h2 className="title-display text-3xl mt-2">Colecciones principales</h2>
-            <p className="text-textMuted">Carrusel por plataforma para entrar más rápido a lo que te interesa.</p>
+            <h2 className="title-display mt-2 text-3xl sm:text-4xl">Colecciones principales</h2>
+            <p className="text-textMuted">Atajos por plataforma con portada real y entrada directa.</p>
           </div>
 
           <div className="hidden sm:flex items-center gap-2">
@@ -102,23 +102,23 @@ export default function Collections() {
 
           <div
             ref={railRef}
-            className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-2"
+            className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-2"
           >
             {COLLECTIONS.map((collection) => (
               <Link
                 key={collection.title}
                 href={collection.href}
-                className="glass min-w-[280px] sm:min-w-[340px] lg:min-w-[360px] p-5 sm:p-6 hover:shadow-glow transition-all group hover:-translate-y-0.5 snap-start"
+                className="group glass min-w-[280px] snap-start p-5 transition-all hover:-translate-y-0.5 hover:shadow-glow sm:min-w-[330px] lg:min-w-[360px]"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-textMuted text-xs font-mono uppercase tracking-[0.12em]">Colección</p>
+                  <p className="text-xs font-mono uppercase tracking-[0.12em] text-textMuted">Colección</p>
                   <span className="text-primary text-sm transition-transform group-hover:translate-x-1">→</span>
                 </div>
 
                 <h3 className="title-display text-2xl mt-2">{collection.title}</h3>
                 <p className="text-textMuted mt-2 min-h-[48px]">{collection.subtitle}</p>
 
-                <div className="mt-4 h-40 rounded-xl border border-line bg-surface relative overflow-hidden">
+                <div className="relative mt-4 h-44 overflow-hidden rounded-xl border border-line bg-surface">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(75,228,214,.15),transparent_55%)]" />
                   <SafeImage
                     src={collection.cover}
@@ -134,7 +134,7 @@ export default function Collections() {
 
                 <div className="mt-4 flex items-center justify-between gap-2">
                   <span className="text-xs text-textMuted">Filtrado directo por plataforma</span>
-                  <span className="chip text-xs border-primary/40 text-primary">Abrir colección</span>
+                  <span className="chip border-primary/40 text-xs text-primary">Abrir colección</span>
                 </div>
               </Link>
             ))}

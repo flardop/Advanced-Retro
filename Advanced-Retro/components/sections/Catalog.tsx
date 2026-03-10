@@ -406,7 +406,7 @@ export default function Catalog() {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [hasRealImageOnly, setHasRealImageOnly] = useState(false);
   const [completePackOnly, setCompletePackOnly] = useState(false);
-  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(true);
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_PRODUCTS);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const loadedMetricIdsRef = useRef<Set<string>>(new Set());

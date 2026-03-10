@@ -42,28 +42,25 @@ function pad(value: number) {
 
 function renderLockedVisual(kind: HypeLaunchKind) {
   const isAuction = kind === 'auction_season';
-  const accent = isAuction ? 'from-cyan-400/30 to-blue-500/10' : 'from-amber-300/25 to-fuchsia-500/10';
-  const icon = isAuction ? '⚖' : '📦';
-  const label = isAuction ? 'SUBASTA PRIVADA' : 'MYSTERY DROP';
+  const icon = isAuction ? 'A' : 'M';
+  const label = isAuction ? 'SUBASTA' : 'MYSTERY';
 
   return (
-    <div className={`absolute inset-0 bg-gradient-to-br ${accent}`}>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(75,228,214,.2),rgba(5,7,11,0))]" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,8,16,.28),rgba(4,8,16,.88))]" />
-
-      <div className="absolute inset-4 rounded-2xl border border-line/70 bg-[rgba(4,10,18,.35)]">
-        <div className="absolute left-3 top-3 rounded-md border border-primary/50 bg-[rgba(9,21,35,.9)] px-2 py-1 text-[10px] tracking-[0.18em] text-primary">
+    <div className="absolute inset-0 bg-[linear-gradient(145deg,#05070b,#080c14)]">
+      <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_50%_40%,rgba(62,226,211,.16),rgba(5,7,11,0))]" />
+      <div className="absolute inset-4 rounded-2xl border border-line/80 bg-[rgba(6,10,16,0.8)]">
+        <div className="absolute left-3 top-3 rounded-md border border-primary/40 bg-[rgba(9,21,35,.9)] px-2 py-1 text-[10px] tracking-[0.16em] text-primary">
           {label}
         </div>
-        <div className="absolute right-3 top-3 rounded-md border border-warning/60 bg-[rgba(20,14,7,.85)] px-2 py-1 text-[10px] tracking-[0.14em] text-warning">
+        <div className="absolute right-3 top-3 rounded-md border border-line bg-[rgba(10,15,22,0.9)] px-2 py-1 text-[10px] tracking-[0.14em] text-textMuted">
           BLOQUEADO
         </div>
         <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-          <p className="text-4xl sm:text-5xl leading-none" aria-hidden>
+          <p className="rounded-lg border border-line bg-[rgba(12,18,27,0.9)] px-4 py-2 text-4xl font-black sm:text-5xl" aria-hidden>
             {icon}
           </p>
-          <p className="mt-3 text-[11px] uppercase tracking-[0.34em] text-textMuted">Próximamente</p>
-          <p className="mt-1 text-2xl sm:text-3xl font-black tracking-[0.18em] text-white">INCOMING</p>
+          <p className="mt-3 text-[11px] uppercase tracking-[0.28em] text-textMuted">Proximamente</p>
+          <p className="mt-1 text-2xl font-black tracking-[0.2em] text-white sm:text-3xl">INCOMING</p>
         </div>
       </div>
     </div>
@@ -145,12 +142,12 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
         <div className="glass p-5 sm:p-7">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-primary">Drops bloqueados · hype mode</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-primary">Pre-lanzamientos</p>
               <h2 className="title-display text-2xl sm:text-3xl mt-2">
                 Lo que viene en Advanced Retro
               </h2>
               <p className="text-textMuted mt-2">
-                Contadores activos, plazas limitadas y apertura automática cuando termine la cuenta atrás.
+                Reservas limitadas con apertura automática cuando termine la cuenta atrás.
               </p>
             </div>
             <Link href="/subastas" className="button-secondary">

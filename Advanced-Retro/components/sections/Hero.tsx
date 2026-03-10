@@ -1,131 +1,93 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+const quickLinks = [
+  { label: 'Game Boy', href: '/tienda?category=platform:game-boy' },
+  { label: 'Game Boy Color', href: '/tienda?category=platform:game-boy-color' },
+  { label: 'Game Boy Advance', href: '/tienda?category=platform:game-boy-advance' },
+  { label: 'Super Nintendo', href: '/tienda?category=platform:super-nintendo' },
+  { label: 'GameCube', href: '/tienda?category=platform:gamecube' },
+];
+
 export default function Hero() {
   return (
-    <section className="section relative overflow-hidden pt-8 sm:pt-10">
-      <div className="absolute inset-0 bg-grid opacity-25" />
+    <section className="section relative overflow-hidden pt-6 sm:pt-8">
       <div className="absolute inset-0 bg-radial" />
-      <div className="container relative grid gap-7 sm:gap-10 lg:grid-cols-2 items-center">
-        <div>
-          <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-3 sm:mb-6">
-            <span className="chip shrink-0">Retro verificado</span>
-            <span className="chip shrink-0">Catálogo multiconsola</span>
-            <span className="chip shrink-0">Envío protegido</span>
-          </div>
-          <h1 className="title-display text-3xl sm:text-5xl lg:text-6xl">
-            Tu tienda retro profesional para comprar, completar y coleccionar.
-          </h1>
-          <p className="text-textMuted mt-4 text-base sm:text-lg">
-            Juegos y consolas revisados con detalle real de estado, opciones por componentes
-            y atención directa por ticket en cada pedido.
-          </p>
-          <div className="mt-6 sm:mt-7 flex flex-col sm:flex-row gap-3">
-            <Link href="/tienda" className="button-primary text-center">
-              Explorar tienda
-            </Link>
-            <Link href="/comunidad" className="button-secondary text-center">Ver comunidad</Link>
-            <Link href="/servicio-compra" className="button-secondary text-center">Encargo 1:1</Link>
-          </div>
-
-          <div className="mt-4 mobile-scroll-row no-scrollbar text-xs sm:flex sm:flex-wrap sm:gap-2 sm:pb-0">
-            <Link href="/tienda?category=platform:game-boy" className="chip shrink-0 hover:border-primary/60">
-              Game Boy
-            </Link>
-            <Link href="/tienda?category=platform:game-boy-color" className="chip shrink-0 hover:border-primary/60">
-              Game Boy Color
-            </Link>
-            <Link href="/tienda?category=platform:game-boy-advance" className="chip shrink-0 hover:border-primary/60">
-              Game Boy Advance
-            </Link>
-            <Link href="/tienda?category=cajas-misteriosas" className="chip shrink-0 hover:border-primary/60">
-              Mystery Box
-            </Link>
-            <Link href="/ruleta" className="chip shrink-0 hover:border-primary/60">
-              Ruleta
-            </Link>
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-            <div>
-              <p className="text-primary font-semibold text-lg">24-48h</p>
-              <p className="text-textMuted">Preparación de pedidos</p>
-            </div>
-            <div>
-              <p className="text-primary font-semibold text-lg">5★</p>
-              <p className="text-textMuted">Experiencia orientada a confianza</p>
-            </div>
-            <div>
-              <p className="text-primary font-semibold text-lg">100%</p>
-              <p className="text-textMuted">Catálogo con foto y stock visible</p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <Link href="/tienda" className="glass p-3 hover:shadow-glow transition-shadow">
-              <p className="text-xs uppercase tracking-[0.14em] text-primary">Tienda</p>
-              <p className="mt-1 font-semibold">Juegos, cajas y consolas</p>
-              <p className="text-xs text-textMuted mt-1">Catálogo filtrable con fotos completas y métricas.</p>
-            </Link>
-            <Link href="/comunidad" className="glass p-3 hover:shadow-glow transition-shadow">
-              <p className="text-xs uppercase tracking-[0.14em] text-primary">Comunidad</p>
-              <p className="mt-1 font-semibold">Marketplace de usuarios</p>
-              <p className="text-xs text-textMuted mt-1">Compra segura con revisión y seguimiento de la tienda.</p>
-            </Link>
-            <Link href="/ruleta" className="glass p-3 hover:shadow-glow transition-shadow">
-              <p className="text-xs uppercase tracking-[0.14em] text-primary">Experiencias</p>
-              <p className="mt-1 font-semibold">Ruleta y mystery box</p>
-              <p className="text-xs text-textMuted mt-1">Tickets por precio y premios gestionados desde tu perfil.</p>
-            </Link>
-          </div>
-        </div>
-
-        <div className="glass p-5 sm:p-8 shadow-deep">
-          <div className="space-y-5">
-            <div className="flex items-center justify-between text-xs font-mono uppercase tracking-[0.12em]">
-              <span className="text-primary">Colección destacada</span>
-              <span className="text-accent">Actualizada</span>
-            </div>
-
-            <div className="relative h-56 sm:h-72 rounded-2xl border border-line overflow-hidden bg-gradient-to-br from-[#0f1f33] via-[#12243b] to-[#141f31]">
-              <Image
-                src="/logo.png"
-                alt="Advanced Retro colección destacada"
-                fill
-                className="object-contain p-6 sm:p-8 opacity-90"
-                priority
-                sizes="(max-width: 1024px) 92vw, 44vw"
-              />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#09101a] to-transparent p-4">
-                <p className="text-sm text-text">Game Boy, GBC, GBA, SNES y GameCube</p>
-                <p className="text-xs text-textMuted mt-1">Incluye opciones original / repro y componentes sueltos</p>
+      <div className="container relative">
+        <div className="glass overflow-hidden">
+          <div className="grid gap-0 lg:grid-cols-[1.06fr,0.94fr]">
+            <div className="p-6 sm:p-8 lg:p-10">
+              <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2">
+                <span className="chip">Retro verificado</span>
+                <span className="chip">Envío desde España</span>
+                <span className="chip">Soporte real</span>
               </div>
-            </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-line p-3 bg-[rgba(12,23,37,0.74)]">
-                <p className="text-xs text-textMuted">Compra guiada</p>
-                <p className="text-sm mt-1">Ticket verificado comprador ↔ tienda</p>
-              </div>
-              <div className="rounded-xl border border-line p-3 bg-[rgba(12,23,37,0.74)]">
-                <p className="text-xs text-textMuted">Marketplace comunidad</p>
-                <p className="text-sm mt-1">Publica y vende con comisión clara</p>
-              </div>
-            </div>
+              <h1 className="title-display mt-4 text-3xl sm:text-5xl lg:text-[3.4rem]">
+                Catálogo retro profesional sin ruido.
+              </h1>
 
-            <div className="rounded-xl border border-line p-3 bg-[rgba(12,23,37,0.66)]">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="text-xs text-textMuted">Siguiente paso recomendado</p>
-                  <p className="text-sm mt-1">Explora la tienda o abre un encargo si buscas una pieza concreta</p>
+              <p className="mt-4 max-w-[60ch] text-base text-textMuted sm:text-lg">
+                Juegos, consolas y piezas de coleccionismo con fichas claras, stock real y opciones para
+                completar tu edición sin perder tiempo.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-2.5">
+                <Link href="/tienda" className="button-primary text-center">
+                  Explorar tienda
+                </Link>
+                <Link href="/comunidad" className="button-secondary text-center">
+                  Marketplace comunidad
+                </Link>
+                <Link href="/servicio-compra" className="button-secondary text-center">
+                  Encargo 1:1
+                </Link>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-2 text-xs">
+                {quickLinks.map((item) => (
+                  <Link key={item.href} href={item.href} className="chip shrink-0 hover:border-primary/50 hover:text-text">
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+
+              <div className="mt-7 grid gap-2.5 sm:grid-cols-3">
+                <div className="rounded-xl border border-line bg-[rgba(10,18,31,0.62)] p-3.5">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-textMuted">Preparación</p>
+                  <p className="mt-1 text-base font-semibold text-primary">24-48h</p>
                 </div>
-                <div className="flex gap-2">
-                  <Link href="/tienda" className="chip border-primary text-primary">
-                    Ir a tienda
-                  </Link>
-                  <Link href="/servicio-compra" className="chip">
-                    Encargo
-                  </Link>
+                <div className="rounded-xl border border-line bg-[rgba(10,18,31,0.62)] p-3.5">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-textMuted">Cobertura</p>
+                  <p className="mt-1 text-base font-semibold text-primary">Multiconsola</p>
+                </div>
+                <div className="rounded-xl border border-line bg-[rgba(10,18,31,0.62)] p-3.5">
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-textMuted">Atención</p>
+                  <p className="mt-1 text-base font-semibold text-primary">Ticket privado</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-line/80 bg-[linear-gradient(160deg,#10213a,#0b1728)] p-4 sm:p-6 lg:border-l lg:border-t-0">
+              <div className="relative h-[300px] overflow-hidden rounded-xl border border-line sm:h-[360px]">
+                <Image
+                  src="/logo.png"
+                  alt="Advanced Retro"
+                  fill
+                  className="object-contain p-8 opacity-90"
+                  priority
+                  sizes="(max-width: 1024px) 92vw, 44vw"
+                />
+                <div className="absolute left-3 top-3 rounded-full border border-primary/35 bg-[rgba(6,15,27,0.78)] px-3 py-1 text-xs text-primary">
+                  Catálogo actualizado
+                </div>
+                <div className="absolute right-3 top-3 rounded-full border border-line bg-[rgba(6,15,27,0.78)] px-3 py-1 text-xs text-textMuted">
+                  Compra segura
+                </div>
+                <div className="absolute inset-x-0 bottom-0 grid gap-2 border-t border-line/70 bg-[rgba(5,11,20,0.9)] p-3 sm:grid-cols-3">
+                  <p className="text-xs text-textMuted">Game Boy</p>
+                  <p className="text-xs text-textMuted">Nintendo clásico</p>
+                  <p className="text-xs text-textMuted">Comunidad activa</p>
                 </div>
               </div>
             </div>

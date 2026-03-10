@@ -398,14 +398,14 @@ export default function CommunityFeed() {
 
   return (
     <section className="section" id="comunidad">
-      <div className="mx-auto w-full max-w-[1680px] space-y-6 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1720px] space-y-5 px-4 sm:px-6 lg:px-8">
         <div className="glass p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-primary">Comunidad marketplace</p>
-              <h2 className="title-display mt-2 text-3xl sm:text-4xl lg:text-5xl">Compra y vende entre coleccionistas</h2>
+              <h2 className="title-display mt-2 text-3xl sm:text-4xl lg:text-5xl">Compra y vende sin fricción</h2>
               <p className="mt-3 max-w-3xl text-textMuted">
-                Flujo limpio: anuncios de usuarios, control de originalidad, seguimiento con tienda y perfil público de vendedor.
+                Feed estilo marketplace con filtros claros, envío calculado y perfil público de vendedor.
               </p>
               <div className="mt-4 flex flex-wrap gap-2 text-xs">
                 <span className="chip border-primary/50 text-primary">{policyText}</span>
@@ -527,7 +527,7 @@ export default function CommunityFeed() {
           ) : null}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-6">
           <div>
             {visibleListings.length === 0 ? (
               <div className="glass p-6">
@@ -554,7 +554,7 @@ export default function CommunityFeed() {
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {visibleListings.map((listing) => {
                   const image =
                     Array.isArray(listing.images) && listing.images.length > 0
@@ -581,7 +581,7 @@ export default function CommunityFeed() {
                   const likeBusy = Boolean(cardLikeLoadingById[String(listing.id)]);
 
                   return (
-                    <article key={listing.id} className="glass overflow-hidden">
+                    <article key={listing.id} className="overflow-hidden rounded-2xl border border-line bg-[rgba(12,19,31,0.88)] shadow-[0_12px_26px_rgba(1,8,18,0.28)] transition hover:-translate-y-0.5 hover:shadow-glow">
                       <Link href={`/comunidad/anuncio/${listing.id}`} className="block relative h-56 bg-surface">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -653,7 +653,7 @@ export default function CommunityFeed() {
                           ) : null}
                         </div>
 
-                        <div className="mt-3 rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-2.5">
+                        <div className="mt-3 rounded-xl border border-line bg-[rgba(10,18,30,0.62)] p-2.5">
                           <div className="flex flex-wrap gap-1.5 text-[11px] text-textMuted">
                             <span className="chip">{social.likes} likes</span>
                             <span className="chip">{social.commentsCount} comentarios</span>
@@ -702,7 +702,7 @@ export default function CommunityFeed() {
             )}
           </div>
 
-          <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+          <aside className="grid gap-4 lg:grid-cols-3">
             <div className="glass p-4">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="font-semibold">Top vendedores</h3>

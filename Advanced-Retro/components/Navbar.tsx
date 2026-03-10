@@ -69,11 +69,11 @@ export default function Navbar() {
     <header
       className={`sticky top-0 z-50 border-b transition-all ${
         scrolled
-          ? 'border-line bg-[rgba(8,14,25,0.92)] backdrop-blur-xl shadow-[0_8px_28px_rgba(3,10,24,0.32)]'
-          : 'border-line/70 bg-[rgba(8,14,25,0.78)] backdrop-blur-lg'
+          ? 'border-line bg-[rgba(8,14,25,0.94)] backdrop-blur-xl shadow-[0_10px_28px_rgba(3,10,24,0.34)]'
+          : 'border-line/70 bg-[rgba(8,14,25,0.84)] backdrop-blur-lg'
       }`}
     >
-      <div className="container h-[66px] sm:h-[72px] flex items-center justify-between gap-3">
+      <div className="container flex h-[66px] items-center justify-between gap-3 sm:h-[70px]">
         <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
           <Image
             src="/logo.png"
@@ -85,7 +85,7 @@ export default function Navbar() {
           />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-2 text-[0.92rem]">
+        <nav className="hidden lg:flex items-center gap-1.5 text-[0.9rem]">
           {navItems.map((item) => {
             const isActive = isItemActive(item.href);
             return (
@@ -181,8 +181,8 @@ export default function Navbar() {
         </div>
       )}
 
-      <div className="border-t border-line/60 hidden lg:block">
-        <div className="container py-2 text-[11px] text-textMuted flex flex-wrap items-center gap-6">
+      <div className="hidden border-t border-line/60 xl:block">
+        <div className="container flex flex-wrap items-center gap-6 py-2 text-[11px] text-textMuted">
           <span>
             <strong className="text-primary">{t('trust.shipping_title', 'Envío 24-48h:')}</strong>{' '}
             {t('trust.shipping_text', 'preparación desde España')}
