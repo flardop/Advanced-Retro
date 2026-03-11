@@ -1,14 +1,9 @@
 export type SiteThemeId =
-  | 'default-neon'
   | 'steam-market'
   | 'retro-pixel'
   | 'minimal-premium'
   | 'arcade-neon'
-  | 'marketplace-clean'
-  | 'vault-amber'
-  | 'ocean-cyber'
-  | 'forest-retro'
-  | 'mono-pro';
+  | 'marketplace-clean';
 
 export type SiteTheme = {
   id: SiteThemeId;
@@ -18,58 +13,33 @@ export type SiteTheme = {
 
 export const SITE_THEMES: SiteTheme[] = [
   {
-    id: 'default-neon',
-    label: 'Advanced Neon',
-    description: 'El estilo actual de referencia.',
-  },
-  {
     id: 'steam-market',
     label: 'Steam Marketplace',
-    description: 'Oscuro elegante con foco en catálogo.',
+    description: 'Marketplace oscuro premium con estética de launcher.',
   },
   {
     id: 'retro-pixel',
     label: 'Retro Pixel',
-    description: 'Arcade 8-bit con contraste fuerte.',
+    description: '8-bit real: bordes rectos, tipografía arcade y look CRT.',
   },
   {
     id: 'minimal-premium',
     label: 'Minimal Premium',
-    description: 'Limpio, aireado y orientado a producto.',
+    description: 'Editorial limpio, blanco premium y foco total en producto.',
   },
   {
     id: 'arcade-neon',
     label: 'Arcade Neon',
-    description: 'Neón gamer potente para impacto visual.',
+    description: 'Neón agresivo con contraste alto y animaciones vivas.',
   },
   {
     id: 'marketplace-clean',
     label: 'Marketplace Clean',
-    description: 'Claro, comercial y rápido para comprar.',
-  },
-  {
-    id: 'vault-amber',
-    label: 'Vault Amber',
-    description: 'Oscuro cálido con tono coleccionista.',
-  },
-  {
-    id: 'ocean-cyber',
-    label: 'Ocean Cyber',
-    description: 'Cian profundo y estética tecnológica.',
-  },
-  {
-    id: 'forest-retro',
-    label: 'Forest Retro',
-    description: 'Verde vintage y lectura cómoda.',
-  },
-  {
-    id: 'mono-pro',
-    label: 'Mono Pro',
-    description: 'Monocromo profesional de alto contraste.',
+    description: 'Comercial tipo clasificados: rápido, claro y directo.',
   },
 ];
 
-export const DEFAULT_SITE_THEME: SiteThemeId = 'default-neon';
+export const DEFAULT_SITE_THEME: SiteThemeId = 'steam-market';
 
 export function isValidSiteTheme(value: string): value is SiteThemeId {
   return SITE_THEMES.some((theme) => theme.id === value);

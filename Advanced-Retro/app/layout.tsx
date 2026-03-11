@@ -205,7 +205,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="es" data-site-theme="default-neon" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
+    <html lang="es" data-site-theme="steam-market" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body className="font-body min-h-screen flex flex-col overflow-x-hidden">
         <LocaleProvider>
           <Script
@@ -213,7 +213,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             strategy="beforeInteractive"
             dangerouslySetInnerHTML={{
               __html:
-                "(function(){try{var key='advancedretro:site-theme';var v=localStorage.getItem(key);if(v){document.documentElement.setAttribute('data-site-theme',v);}else{document.documentElement.setAttribute('data-site-theme','default-neon');}}catch(e){document.documentElement.setAttribute('data-site-theme','default-neon');}})();",
+                "(function(){try{var key='advancedretro:site-theme';var allowed=['steam-market','retro-pixel','minimal-premium','arcade-neon','marketplace-clean'];var v=localStorage.getItem(key);if(v&&allowed.indexOf(v)!==-1){document.documentElement.setAttribute('data-site-theme',v);}else{document.documentElement.setAttribute('data-site-theme','steam-market');}}catch(e){document.documentElement.setAttribute('data-site-theme','steam-market');}})();",
             }}
           />
           <AnimatedFavicon />
