@@ -70,6 +70,7 @@ create table if not exists public.users (
   tagline text,
   favorite_console text,
   profile_theme text not null default 'neon-grid',
+  favorites_visibility text not null default 'public',
   badges text[] not null default '{}',
   shipping_address jsonb,
   is_verified_seller boolean not null default false,
@@ -91,6 +92,7 @@ alter table if exists public.users add column if not exists bio text;
 alter table if exists public.users add column if not exists tagline text;
 alter table if exists public.users add column if not exists favorite_console text;
 alter table if exists public.users add column if not exists profile_theme text;
+alter table if exists public.users add column if not exists favorites_visibility text default 'public';
 alter table if exists public.users add column if not exists badges text[];
 alter table if exists public.users add column if not exists shipping_address jsonb;
 alter table if exists public.users add column if not exists is_verified_seller boolean;
@@ -107,6 +109,7 @@ alter table if exists public.users add column if not exists updated_at timestamp
 update public.users set role = coalesce(nullif(role, ''), 'user') where true;
 update public.users set name = coalesce(nullif(trim(name), ''), split_part(email, '@', 1), 'Coleccionista') where true;
 update public.users set profile_theme = coalesce(nullif(profile_theme, ''), 'neon-grid') where true;
+update public.users set favorites_visibility = case when lower(coalesce(favorites_visibility, 'public')) in ('public','members','private') then lower(coalesce(favorites_visibility, 'public')) else 'public' end where true;
 update public.users set badges = coalesce(badges, '{}') where badges is null;
 update public.users set is_verified_seller = coalesce(is_verified_seller, false) where is_verified_seller is null;
 update public.users set xp_total = coalesce(xp_total, 0) where true;
@@ -2290,6 +2293,7 @@ alter table if exists public.users add column if not exists level integer defaul
 alter table if exists public.users add column if not exists xp_total integer default 0;
 alter table if exists public.users add column if not exists xp_updated_at timestamptz default now();
 alter table if exists public.users add column if not exists profile_theme text default 'neon-grid';
+alter table if exists public.users add column if not exists favorites_visibility text default 'public';
 alter table if exists public.users add column if not exists is_verified_seller boolean default false;
 
 -- -----------------------------------------------------------------------------

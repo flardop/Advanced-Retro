@@ -13,6 +13,7 @@ alter table if exists public.users add column if not exists bio text;
 alter table if exists public.users add column if not exists tagline text;
 alter table if exists public.users add column if not exists favorite_console text;
 alter table if exists public.users add column if not exists profile_theme text default 'neon-grid';
+alter table if exists public.users add column if not exists favorites_visibility text default 'public';
 alter table if exists public.users add column if not exists badges text[] default '{}';
 alter table if exists public.users add column if not exists shipping_address jsonb;
 alter table if exists public.users add column if not exists is_verified_seller boolean default false;
@@ -25,6 +26,11 @@ update public.users
 set
   name = coalesce(nullif(trim(name), ''), split_part(coalesce(email, ''), '@', 1), 'Coleccionista'),
   profile_theme = coalesce(nullif(profile_theme, ''), 'neon-grid'),
+  favorites_visibility = case
+    when lower(coalesce(favorites_visibility, 'public')) in ('private', 'members', 'public')
+      then lower(coalesce(favorites_visibility, 'public'))
+    else 'public'
+  end,
   badges = coalesce(badges, '{}'),
   is_verified_seller = coalesce(is_verified_seller, false),
   xp_total = coalesce(xp_total, 0),

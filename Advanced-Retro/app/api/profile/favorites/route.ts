@@ -36,7 +36,10 @@ async function persistFavoritesVisibility(options: {
 
   if (updateUsersRes.error) {
     const message = String(updateUsersRes.error.message || '').toLowerCase();
-    if (!(message.includes('column') && message.includes('does not exist'))) {
+    const missingColumn =
+      (message.includes('column') && message.includes('does not exist')) ||
+      (message.includes('could not find') && message.includes('schema cache'));
+    if (!missingColumn) {
       throw new Error(updateUsersRes.error.message || 'No se pudo guardar la privacidad de favoritos');
     }
   }

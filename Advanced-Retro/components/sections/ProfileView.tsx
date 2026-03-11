@@ -14,6 +14,7 @@ import {
   BADGE_RARITY_ORDER,
   BADGE_RARITY_STYLES,
   getBadgeDefinition,
+  getBadgeIconPng,
 } from '@/lib/gamificationBadges';
 
 type Ticket = {
@@ -1128,6 +1129,7 @@ export default function ProfileView() {
             howToEarn: 'Asignada manualmente por el equipo.',
             rarity: 'common' as const,
             animated: false,
+            iconPng: getBadgeIconPng(badgeKey),
           };
         }
         return {
@@ -1137,6 +1139,7 @@ export default function ProfileView() {
           howToEarn: definition.howToEarn,
           rarity: definition.rarity,
           animated: Boolean(definition.animated),
+          iconPng: definition.iconPng || getBadgeIconPng(definition.key),
         };
       })
       .sort((a, b) => {
@@ -1580,7 +1583,19 @@ export default function ProfileView() {
                               }`}
                             >
                               <div className="flex items-center justify-between gap-3">
-                                <p className="font-semibold">{badge.label}</p>
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="h-11 w-11 rounded-lg border border-white/20 bg-slate-950/50 overflow-hidden shrink-0">
+                                    <SafeImage
+                                      src={badge.iconPng || getBadgeIconPng(badge.key)}
+                                      fallbackSrc="/images/badges/default.png"
+                                      alt={badge.label}
+                                      width={44}
+                                      height={44}
+                                      className="h-full w-full object-contain p-1"
+                                    />
+                                  </div>
+                                  <p className="font-semibold truncate">{badge.label}</p>
+                                </div>
                                 <span className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass}`}>
                                   {BADGE_RARITY_LABELS[badge.rarity]}
                                 </span>
@@ -1607,7 +1622,19 @@ export default function ProfileView() {
                           className="rounded-xl border border-slate-600/35 bg-slate-950/60 px-3 py-2 opacity-75"
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <p className="font-semibold text-slate-300">{badge.label}</p>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="h-10 w-10 rounded-lg border border-slate-600/40 bg-slate-950/70 overflow-hidden shrink-0">
+                                <SafeImage
+                                  src={getBadgeIconPng(badge.key)}
+                                  fallbackSrc="/images/badges/default.png"
+                                  alt={badge.label}
+                                  width={40}
+                                  height={40}
+                                  className="h-full w-full object-contain p-1 grayscale opacity-60"
+                                />
+                              </div>
+                              <p className="font-semibold text-slate-300 truncate">{badge.label}</p>
+                            </div>
                             <span className="inline-flex border border-slate-500/40 px-2 py-1 text-[11px] text-slate-300">
                               Bloqueada
                             </span>
@@ -1961,10 +1988,18 @@ export default function ProfileView() {
                         return (
                           <span
                             key={`preview-${badge.key}`}
-                            className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass} ${
+                            className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] ${rarityStyle.chipClass} ${
                               exclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
                             }`}
                           >
+                            <SafeImage
+                              src={badge.iconPng || getBadgeIconPng(badge.key)}
+                              fallbackSrc="/images/badges/default.png"
+                              alt={badge.label}
+                              width={14}
+                              height={14}
+                              className="h-3.5 w-3.5 object-contain"
+                            />
                             {badge.label}
                           </span>
                         );
@@ -1982,9 +2017,17 @@ export default function ProfileView() {
                         return (
                           <span
                             key={`badge-${badge.key}`}
-                            className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass}`}
+                            className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] ${rarityStyle.chipClass}`}
                             title={badge.description}
                           >
+                            <SafeImage
+                              src={badge.iconPng || getBadgeIconPng(badge.key)}
+                              fallbackSrc="/images/badges/default.png"
+                              alt={badge.label}
+                              width={14}
+                              height={14}
+                              className="h-3.5 w-3.5 object-contain"
+                            />
                             {badge.label}
                           </span>
                         );

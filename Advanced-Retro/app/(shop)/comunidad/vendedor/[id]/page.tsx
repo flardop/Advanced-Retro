@@ -8,6 +8,7 @@ import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { getProductHref } from '@/lib/productUrl';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { buildPageMetadata } from '@/lib/seo';
+import { getBadgeDefinition, getBadgeIconPng } from '@/lib/gamificationBadges';
 
 export const dynamic = 'force-dynamic';
 
@@ -186,11 +187,26 @@ export default async function CommunitySellerPage({ params }: PageProps) {
                 <div className="rounded-2xl border border-line p-4 bg-[rgba(8,16,28,0.52)]">
                   <p className="text-xs uppercase tracking-[0.16em] text-primary">Insignias</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {seller.badges.map((badge) => (
-                      <span key={badge} className="chip border-primary/40 bg-primary/10 text-primary">
-                        {badge.replaceAll('-', ' ')}
-                      </span>
-                    ))}
+                    {seller.badges.map((badge) => {
+                      const badgeDef = getBadgeDefinition(badge);
+                      const badgeLabel = badgeDef?.label || badge.replaceAll('-', ' ');
+                      const badgeIcon = badgeDef?.iconPng || getBadgeIconPng(badge);
+                      return (
+                        <span key={badge} className="chip border-primary/40 bg-primary/10 text-primary inline-flex items-center gap-2">
+                          <span className="h-5 w-5 rounded-full bg-slate-900/80 border border-primary/30 overflow-hidden">
+                            <SafeImage
+                              src={badgeIcon}
+                              fallbackSrc="/images/badges/default.png"
+                              alt={badgeLabel}
+                              width={20}
+                              height={20}
+                              className="h-full w-full object-contain p-[2px]"
+                            />
+                          </span>
+                          {badgeLabel}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}

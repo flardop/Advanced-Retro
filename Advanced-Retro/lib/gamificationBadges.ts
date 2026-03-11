@@ -7,6 +7,7 @@ export type BadgeDefinition = {
   howToEarn: string;
   rarity: BadgeRarity;
   animated?: boolean;
+  iconPng?: string;
 };
 
 export const BADGE_DEFINITIONS: BadgeDefinition[] = [
@@ -320,8 +321,24 @@ export const BADGE_DEFINITIONS: BadgeDefinition[] = [
   },
 ];
 
+function normalizeBadgeKey(value: unknown): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+export function getBadgeIconPng(key: string): string {
+  const normalized = normalizeBadgeKey(key);
+  if (!normalized) return '/images/badges/default.png';
+  return `/images/badges/${normalized}.png`;
+}
+
 export const BADGE_DEFINITIONS_MAP: Record<string, BadgeDefinition> = Object.fromEntries(
-  BADGE_DEFINITIONS.map((badge) => [badge.key, badge])
+  BADGE_DEFINITIONS.map((badge) => [
+    badge.key,
+    {
+      ...badge,
+      iconPng: badge.iconPng || getBadgeIconPng(badge.key),
+    },
+  ])
 );
 
 export const ALL_BADGE_KEYS: string[] = BADGE_DEFINITIONS.map((badge) => badge.key);
@@ -390,7 +407,7 @@ export function normalizeBadgeKeys(input: unknown): string[] {
 }
 
 export function getBadgeDefinition(key: string): BadgeDefinition | null {
-  const normalized = String(key || '').trim().toLowerCase();
+  const normalized = normalizeBadgeKey(key);
   if (!normalized) return null;
   return BADGE_DEFINITIONS_MAP[normalized] || null;
 }

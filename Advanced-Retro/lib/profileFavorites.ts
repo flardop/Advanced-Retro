@@ -23,7 +23,8 @@ function isMissingTableError(error: any): boolean {
   const message = String(error?.message || '').toLowerCase();
   return (
     (message.includes('relation') && message.includes('does not exist')) ||
-    (message.includes('column') && message.includes('does not exist'))
+    (message.includes('column') && message.includes('does not exist')) ||
+    (message.includes('could not find') && message.includes('schema cache'))
   );
 }
 
