@@ -112,13 +112,13 @@ export default function FeaturedProducts() {
               href={getProductHref(product)}
               className="featured-product-card group glass overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-glow"
             >
-              <div className="relative h-52 border-b border-line bg-surface">
+              <div className="photo-frame-glow relative h-52 border-b border-line bg-surface">
                 <SafeImage
                   src={getProductImageUrl(product)}
                   fallbackSrc={getProductFallbackImageUrl(product)}
                   alt={product.name}
                   fill
-                  className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.04]"
+                  className="object-contain p-3 photo-breath photo-hover-pop"
                 />
               </div>
               <div className="p-4">

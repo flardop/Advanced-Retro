@@ -17,7 +17,7 @@ export default function Footer() {
               alt="Advanced Retro"
               width={160}
               height={42}
-              className="h-9 w-auto object-contain"
+              className="h-9 w-auto object-contain logo-breath"
             />
           </Link>
           <p>

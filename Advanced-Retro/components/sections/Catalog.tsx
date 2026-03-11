@@ -861,7 +861,7 @@ export default function Catalog() {
         href={productHref}
         className={`mini-product-card glass p-3 hover:shadow-glow transition-shadow group ${className}`.trim()}
       >
-        <div className="relative w-full h-36 bg-surface border border-line rounded-xl overflow-hidden">
+        <div className="photo-frame-glow relative w-full h-36 bg-surface border border-line rounded-xl overflow-hidden">
           <SafeImage
             src={getProductImageUrl(product)}
             fallbackSrc={getProductFallbackImageUrl(product)}
@@ -869,7 +869,7 @@ export default function Catalog() {
             fill
             sizes="(max-width: 768px) 42vw, (max-width: 1280px) 28vw, 22vw"
             priority={priority}
-            className="object-contain p-2"
+            className="object-contain p-2 photo-hover-pop"
           />
         </div>
         <p className="text-xs text-primary mt-3">{label}</p>
@@ -1320,7 +1320,7 @@ export default function Catalog() {
                   href={href}
                   className="catalog-product-card glass p-3 sm:p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5 flex gap-3 sm:block"
                 >
-                  <div className="relative h-28 w-[116px] shrink-0 sm:w-full sm:h-56 bg-surface border border-line rounded-xl overflow-hidden">
+                  <div className="photo-frame-glow relative h-28 w-[116px] shrink-0 sm:w-full sm:h-56 bg-surface border border-line rounded-xl overflow-hidden">
                     <SafeImage
                       src={getProductImageUrl(product)}
                       fallbackSrc={getProductFallbackImageUrl(product)}
@@ -1328,7 +1328,7 @@ export default function Catalog() {
                       fill
                       sizes="(max-width: 640px) 34vw, (max-width: 1024px) 42vw, (max-width: 1536px) 24vw, 18vw"
                       priority={index < 2}
-                      className="object-contain p-2"
+                      className="object-contain p-2 photo-hover-pop"
                     />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-2">
                       <span className="chip text-xs">{product.status}</span>

@@ -74,7 +74,7 @@ export default function Hero() {
                   src="/logo.png"
                   alt="Advanced Retro"
                   fill
-                  className="object-contain p-8 opacity-90"
+                  className="object-contain p-8 opacity-90 logo-breath photo-hover-pop"
                   priority
                   sizes="(max-width: 1024px) 92vw, 44vw"
                 />

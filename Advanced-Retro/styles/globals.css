@@ -608,6 +608,50 @@ body::before {
   animation: logo-breath 4s ease-in-out infinite;
 }
 
+@keyframes photo-breath {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -2px, 0) scale(1.018);
+  }
+}
+
+.photo-breath {
+  animation: photo-breath 6.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.photo-hover-pop {
+  transition: transform 0.32s ease, filter 0.32s ease, opacity 0.32s ease;
+  will-change: transform;
+}
+
+.group:hover .photo-hover-pop {
+  transform: scale(1.045);
+  filter: saturate(1.06) contrast(1.04);
+}
+
+.photo-frame-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-frame-glow::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(75, 228, 214, 0.22), transparent 62%);
+  transition: opacity 0.3s ease;
+}
+
+.group:hover .photo-frame-glow::after {
+  opacity: 1;
+}
+
 input,
 textarea,
 select {
@@ -847,8 +891,13 @@ a {
 
 @media (prefers-reduced-motion: reduce) {
   .logo-breath,
+  .photo-breath,
   [data-site-theme='arcade-neon'] .hero-shell,
   .marquee-track {
     animation: none;
+  }
+
+  .photo-hover-pop {
+    transition: none;
   }
 }

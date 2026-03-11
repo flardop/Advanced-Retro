@@ -1380,12 +1380,12 @@ export default function ProductDetail({
     <section className="section pb-32 lg:pb-14">
       <div className="container grid gap-6 sm:gap-8 lg:grid-cols-2">
         <div className="glass p-4 sm:p-6">
-          <div className="relative w-full h-[320px] sm:h-[500px] bg-surface border border-line rounded-2xl flex items-center justify-center overflow-hidden">
+          <div className="photo-frame-glow relative w-full h-[320px] sm:h-[500px] bg-surface border border-line rounded-2xl flex items-center justify-center overflow-hidden">
             <Image
               src={images[selectedImage] || images[0] || PLACEHOLDER}
               alt={product.name}
               fill
-              className="object-contain p-4"
+              className="object-contain p-4 photo-breath photo-hover-pop"
               priority
               sizes="(max-width: 1024px) 96vw, 48vw"
             />
@@ -1398,7 +1398,7 @@ export default function ProductDetail({
               <button
                 type="button"
                 key={`${img}-${index}`}
-                className={`relative h-20 w-20 shrink-0 sm:w-auto rounded-xl border bg-surface overflow-hidden transition-colors ${
+                className={`group relative h-20 w-20 shrink-0 sm:w-auto rounded-xl border bg-surface overflow-hidden transition-colors ${
                   selectedImage === index ? 'border-primary' : 'border-line'
                 }`}
                 onClick={() => setSelectedImage(index)}
@@ -1408,7 +1408,7 @@ export default function ProductDetail({
                   alt={`${product.name} miniatura ${index + 1}`}
                   fill
                   sizes="96px"
-                  className="object-contain p-1"
+                  className="object-contain p-1 photo-hover-pop"
                 />
               </button>
             ))}
