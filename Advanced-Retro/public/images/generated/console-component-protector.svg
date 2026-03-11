@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0e1728"/>
+      <stop offset="1" stop-color="#1d2f47"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect x="300" y="180" width="600" height="520" rx="42" fill="#dff4ff" fill-opacity="0.2" stroke="#9ddcff" stroke-width="8"/>
+  <rect x="350" y="230" width="500" height="420" rx="28" fill="#ebfbff" fill-opacity="0.12" stroke="#c9f0ff" stroke-width="4"/>
+  <circle cx="808" cy="286" r="18" fill="#9fe4ff"/>
+  <text x="600" y="118" text-anchor="middle" fill="#88f0eb" font-size="50" font-family="Arial" font-weight="700">PROTECTOR TRANSPARENTE</text>
+</svg>

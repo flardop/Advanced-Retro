@@ -32,6 +32,12 @@ const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBann
 const OptionalAnalytics = dynamic(() => import('@/components/OptionalAnalytics'), {
   ssr: false,
 });
+const ThemeStyleMenu = dynamic(() => import('@/components/ThemeStyleMenu'), {
+  ssr: false,
+});
+const AnimatedFavicon = dynamic(() => import('@/components/AnimatedFavicon'), {
+  ssr: false,
+});
 
 const displayFont = Sora({
   subsets: ['latin'],
@@ -202,6 +208,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body className="font-body min-h-screen flex flex-col overflow-x-hidden">
         <LocaleProvider>
+          <AnimatedFavicon />
           <Script
             id="schema-org"
             type="application/ld+json"
@@ -217,6 +224,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LanguageSwitcherPopup />
           <CookieConsentBanner />
           <OptionalAnalytics />
+          <ThemeStyleMenu />
         </LocaleProvider>
       </body>
     </html>

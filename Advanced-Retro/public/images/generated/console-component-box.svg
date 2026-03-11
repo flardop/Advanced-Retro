@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#11192e"/>
+      <stop offset="1" stop-color="#23324f"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <path d="M250 350L600 190L950 350L600 510Z" fill="#8f5b3f"/>
+  <path d="M250 350V620L600 790V510Z" fill="#6a412d"/>
+  <path d="M950 350V620L600 790V510Z" fill="#7a4b33"/>
+  <path d="M250 350L600 510L950 350" stroke="#c3895d" stroke-width="10"/>
+  <text x="600" y="120" text-anchor="middle" fill="#8be9ef" font-size="52" font-family="Arial" font-weight="700">CAJA DE CONSOLA</text>
+</svg>

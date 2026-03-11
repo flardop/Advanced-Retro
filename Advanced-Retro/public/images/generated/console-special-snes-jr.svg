@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#11172e"/><stop offset="1" stop-color="#2f3b63"/></linearGradient></defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect x="280" y="280" width="640" height="300" rx="48" fill="#e5e7ee"/>
+  <rect x="360" y="356" width="480" height="74" rx="12" fill="#a6adbd"/>
+  <circle cx="500" cy="495" r="20" fill="#9388cf"/><circle cx="545" cy="495" r="20" fill="#6fc9b4"/><circle cx="590" cy="495" r="20" fill="#d58f8f"/><circle cx="635" cy="495" r="20" fill="#f2cf79"/>
+  <text x="600" y="120" text-anchor="middle" fill="#97f4ef" font-size="50" font-family="Arial" font-weight="700">SUPER FAMICOM JR</text>
+</svg>

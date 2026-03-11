@@ -24,38 +24,38 @@ function getConsoleImageOverride(product: any): string | null {
 
   if (!isConsoleDomain) return null;
 
-  if (componentType.includes('manual')) return '/images/products/console-manual-gb.jpg';
-  if (componentType.includes('insert')) return '/images/products/console-insert-universal.jpg';
-  if (componentType.includes('protector')) return '/images/products/console-protector-universal.jpg';
-  if (componentType === 'caja' || name.includes('caja consola')) return '/images/products/console-box-gb.jpg';
+  if (componentType.includes('manual')) return '/images/generated/console-component-manual.svg';
+  if (componentType.includes('insert')) return '/images/generated/console-component-insert.svg';
+  if (componentType.includes('protector')) return '/images/generated/console-component-protector.svg';
+  if (componentType === 'caja' || name.includes('caja consola')) return '/images/generated/console-component-box.svg';
 
-  if (name.includes('panasonic q')) return '/images/products/special-editions/console-special-panasonic-q.jpg';
-  if (name.includes('game boy light')) return '/images/products/special-editions/console-special-gameboy-light.png';
-  if (name.includes('pikachu')) return '/images/products/special-editions/console-special-gbc-pikachu.jpg';
+  if (name.includes('panasonic q')) return '/images/generated/console-special-panasonic-q.svg';
+  if (name.includes('game boy light')) return '/images/generated/console-special-gameboy-light.svg';
+  if (name.includes('pikachu')) return '/images/generated/console-special-gbc-pikachu.svg';
   if (name.includes('nes classic') || name.includes('sp nes')) {
-    return '/images/products/special-editions/console-special-gba-sp-nes.jpg';
+    return '/images/generated/console-special-gba-sp-nes.svg';
   }
   if (name.includes('famicom jr') || name.includes('snes jr')) {
-    return '/images/products/special-editions/console-special-snes-jr.jpg';
+    return '/images/generated/console-special-snes-jr.svg';
   }
 
   if (name.includes('gamecube') || name.includes('game cube') || platform.includes('gamecube')) {
-    return '/images/products/console-gamecube.jpg';
+    return '/images/generated/console-gamecube.svg';
   }
   if (name.includes('super nintendo') || name.includes('snes') || platform.includes('super-nintendo')) {
-    return '/images/products/console-snes-pal.jpg';
+    return '/images/generated/console-snes.svg';
   }
   if (name.includes('game boy advance') || platform.includes('game-boy-advance') || platform.includes('gba')) {
-    return '/images/products/console-gba.jpg';
+    return '/images/generated/console-gba.svg';
   }
   if (name.includes('game boy color') || platform.includes('game-boy-color') || platform.includes('gbc')) {
-    return '/images/products/console-gbc.jpg';
+    return '/images/generated/console-gbc.svg';
   }
   if (name.includes('game boy') || platform.includes('game-boy') || platform.includes('gb')) {
-    return '/images/products/console-gb-dmg.jpg';
+    return '/images/generated/console-game-boy.svg';
   }
 
-  return '/images/products/console-gb-dmg.jpg';
+  return '/images/generated/console-game-boy.svg';
 }
 
 function isValidImageUrl(url: unknown): url is string {
@@ -78,6 +78,20 @@ function isValidImageUrl(url: unknown): url is string {
     lower.includes('/object/public/');
 
   return hasImageExt || knownImageHost || value.startsWith('/');
+}
+
+function scoreImageCandidate(url: string): number {
+  const lower = String(url || '').toLowerCase();
+  if (!lower) return 0;
+  if (lower.includes('named_boxarts')) return 100;
+  if (lower.includes('boxart')) return 95;
+  if (lower.startsWith('/images/generated/')) return 92;
+  if (lower.startsWith('/images/collections/')) return 86;
+  if (lower.startsWith('/images/components/')) return 84;
+  if (lower.includes('supabase.co/storage')) return 20;
+  if (lower.includes('named_titles')) return 48;
+  if (lower.includes('named_snaps')) return 36;
+  return 60;
 }
 
 function parseImageCollection(raw: unknown): string[] {
@@ -114,8 +128,10 @@ export function getProductImageUrl(product: any): string {
   const fromSingle = parseImageCollection(product?.image);
   const fromLegacy = parseImageCollection(product?.gallery_images);
   const candidates = [...fromArray, ...fromSingle, ...fromLegacy];
-  for (const candidate of candidates) {
-    if (isValidImageUrl(candidate)) return candidate;
+  const valid = candidates.filter(isValidImageUrl);
+  if (valid.length > 0) {
+    const sorted = [...valid].sort((a, b) => scoreImageCandidate(b) - scoreImageCandidate(a));
+    return sorted[0];
   }
   return getProductFallbackImageUrl(product);
 }
@@ -128,7 +144,9 @@ export function getProductImageUrls(product: any): string[] {
   ];
 
   const deduped = [...new Set(raw)];
-  const valid = deduped.filter(isValidImageUrl);
+  const valid = deduped
+    .filter(isValidImageUrl)
+    .sort((a, b) => scoreImageCandidate(b) - scoreImageCandidate(a));
   return valid.length > 0 ? valid : [getProductFallbackImageUrl(product)];
 }
 

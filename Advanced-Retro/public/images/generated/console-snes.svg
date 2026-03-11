@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#121a2f"/><stop offset="1" stop-color="#284870"/></linearGradient></defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect x="220" y="280" width="760" height="320" rx="44" fill="#d8d9de"/>
+  <rect x="290" y="350" width="620" height="70" rx="14" fill="#9ea6b6"/>
+  <circle cx="330" cy="500" r="28" fill="#8f89cf"/><circle cx="400" cy="500" r="28" fill="#72cab4"/><circle cx="470" cy="500" r="28" fill="#d58d8d"/><circle cx="540" cy="500" r="28" fill="#f3d578"/>
+  <text x="600" y="116" text-anchor="middle" fill="#8bf4ed" font-size="56" font-family="Arial" font-weight="700">SUPER NINTENDO</text>
+  <text x="600" y="840" text-anchor="middle" fill="#dbe7ff" font-size="34" font-family="Arial">Consola SNES</text>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#101a32"/><stop offset="1" stop-color="#233f78"/></linearGradient></defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect x="190" y="300" width="820" height="310" rx="150" fill="#d5d8ec"/>
+  <rect x="430" y="350" width="340" height="180" rx="24" fill="#0b1328"/>
+  <circle cx="330" cy="455" r="52" fill="#6a748b"/>
+  <circle cx="860" cy="455" r="52" fill="#6a748b"/>
+  <text x="600" y="120" text-anchor="middle" fill="#8bf4ed" font-size="56" font-family="Arial" font-weight="700">GAME BOY ADVANCE</text>
+  <text x="600" y="840" text-anchor="middle" fill="#dbe7ff" font-size="34" font-family="Arial">Portátil GBA</text>
+</svg>

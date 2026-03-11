@@ -80,7 +80,7 @@ export default function Navbar() {
             alt="Advanced Retro — Juegos y nostalgia retro"
             width={180}
             height={48}
-            className="h-9 sm:h-10 w-auto object-contain"
+            className="h-9 sm:h-10 w-auto object-contain logo-breath"
             priority
           />
         </Link>

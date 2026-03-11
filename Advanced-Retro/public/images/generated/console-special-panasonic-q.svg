@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12161f"/><stop offset="1" stop-color="#2e3138"/></linearGradient></defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <rect x="280" y="230" width="640" height="360" rx="34" fill="#cfd6e5"/>
+  <rect x="340" y="300" width="520" height="26" rx="8" fill="#8e98ad"/>
+  <circle cx="420" cy="500" r="34" fill="#8e98ad"/>
+  <circle cx="780" cy="500" r="34" fill="#8e98ad"/>
+  <text x="600" y="118" text-anchor="middle" fill="#95f4ef" font-size="50" font-family="Arial" font-weight="700">EDICIÓN ESPECIAL PANASONIC Q</text>
+</svg>
