@@ -11,7 +11,7 @@ import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
 import { getProductHref, parseProductRouteParam } from '@/lib/productUrl';
 import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
-import { parseVideoEmbed } from '@/lib/videoEmbed';
+import { buildYouTubeSearchEmbed, parseVideoEmbed } from '@/lib/videoEmbed';
 
 type BundleOptionType =
   | 'cartucho'
@@ -667,6 +667,7 @@ export default function ProductDetail({
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [showSearchVideoPlayer, setShowSearchVideoPlayer] = useState(false);
   const buySectionRef = useRef<HTMLDivElement | null>(null);
   const reviewsSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -1146,6 +1147,7 @@ export default function ProductDetail({
 
   useEffect(() => {
     setShowVideoPlayer(false);
+    setShowSearchVideoPlayer(false);
   }, [productId]);
 
   const selectedBundleOptions = useMemo(
@@ -1187,6 +1189,13 @@ export default function ProductDetail({
     () => parseVideoEmbed((product as any)?.trailer_url),
     [product]
   );
+  const fallbackVideoSearchEmbed = useMemo(() => {
+    const title = String(product?.name || '').trim();
+    if (!title) return null;
+    const platform = String(product?.platform || '').trim();
+    const query = platform ? `${title} ${platform} gameplay trailer` : `${title} gameplay trailer`;
+    return buildYouTubeSearchEmbed(query);
+  }, [product]);
 
   const scrollToBuySection = () => {
     buySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1473,19 +1482,39 @@ export default function ProductDetail({
             </div>
           ) : (
             <div className="mt-5 rounded-xl border border-line bg-[rgba(10,18,30,0.56)] p-3">
-              <p className="text-sm text-textMuted">
-                Vídeo no disponible todavía para este juego.
-              </p>
-              <a
-                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
-                  `${String(product?.name || '')} gameplay trailer`
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
-              >
-                Buscar gameplay en YouTube
-              </a>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-sm font-semibold">Gameplay / tráiler</p>
+                <span className="chip text-[11px]">YouTube</span>
+              </div>
+              {!showSearchVideoPlayer ? (
+                <>
+                  <p className="text-sm text-textMuted">
+                    No hay tráiler oficial guardado. Puedes ver gameplay aquí sin salir de la tienda.
+                  </p>
+                  {fallbackVideoSearchEmbed ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowSearchVideoPlayer(true)}
+                      className="mt-2 inline-flex items-center rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
+                    >
+                      Ver gameplay aquí
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                <div className="relative overflow-hidden rounded-lg border border-line">
+                  <div className="aspect-video w-full">
+                    <iframe
+                      src={fallbackVideoSearchEmbed?.embedUrl || ''}
+                      title={`Búsqueda de gameplay para ${product.name}`}
+                      className="h-full w-full"
+                      loading="lazy"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -12,6 +12,19 @@ export type VideoEmbedData = {
   thumbnailUrl: string | null;
 };
 
+export function buildYouTubeSearchEmbed(query: unknown): VideoEmbedData | null {
+  const normalizedQuery = String(query || '').trim();
+  if (!normalizedQuery) return null;
+  const encoded = encodeURIComponent(normalizedQuery);
+  return {
+    provider: 'youtube',
+    id: `search:${normalizedQuery.toLowerCase()}`,
+    watchUrl: `https://www.youtube.com/results?search_query=${encoded}`,
+    embedUrl: `https://www.youtube.com/embed?listType=search&list=${encoded}&rel=0&modestbranding=1`,
+    thumbnailUrl: null,
+  };
+}
+
 function normalizeRawVideoUrl(input: string): string {
   const raw = String(input || '').trim();
   if (!raw) return '';
