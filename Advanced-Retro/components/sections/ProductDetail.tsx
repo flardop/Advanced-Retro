@@ -11,7 +11,7 @@ import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
 import { getProductHref, parseProductRouteParam } from '@/lib/productUrl';
 import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
-import { buildYouTubeSearchEmbed, parseVideoEmbed } from '@/lib/videoEmbed';
+import { buildYouTubeSearchEmbed, parseVideoEmbedList } from '@/lib/videoEmbed';
 
 type BundleOptionType =
   | 'cartucho'
@@ -666,6 +666,7 @@ export default function ProductDetail({
   const [productLoadError, setProductLoadError] = useState('');
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [showSearchVideoPlayer, setShowSearchVideoPlayer] = useState(false);
   const buySectionRef = useRef<HTMLDivElement | null>(null);
@@ -1146,6 +1147,7 @@ export default function ProductDetail({
   }, [images, selectedImage]);
 
   useEffect(() => {
+    setActiveVideoIndex(0);
     setShowVideoPlayer(false);
     setShowSearchVideoPlayer(false);
   }, [productId]);
@@ -1185,10 +1187,13 @@ export default function ProductDetail({
       Boolean(marketGuideEbay?.available) &&
       Number(marketGuideEbay?.sampleSize || 0) >= 2);
   const ebayDiagnosticHref = `/api/market/ebay-diagnostic?q=${encodeURIComponent(String(product?.name || ''))}`;
-  const videoEmbed = useMemo(
-    () => parseVideoEmbed((product as any)?.trailer_url),
-    [product]
-  );
+  const videoEmbeds = useMemo(() => parseVideoEmbedList((product as any)?.trailer_url), [product]);
+  const videoEmbed = videoEmbeds[activeVideoIndex] || null;
+  useEffect(() => {
+    if (activeVideoIndex <= videoEmbeds.length - 1) return;
+    setActiveVideoIndex(0);
+  }, [videoEmbeds, activeVideoIndex]);
+
   const fallbackVideoSearchEmbed = useMemo(() => {
     const title = String(product?.name || '').trim();
     if (!title) return null;
@@ -1438,6 +1443,32 @@ export default function ProductDetail({
                 <p className="text-sm font-semibold">Gameplay / tráiler</p>
                 <span className="chip text-[11px]">{videoEmbed.provider === 'youtube' ? 'YouTube' : 'Vimeo'}</span>
               </div>
+
+              {videoEmbeds.length > 1 ? (
+                <div className="mobile-scroll-row no-scrollbar mb-3 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
+                  {videoEmbeds.slice(0, 6).map((embed, index) => {
+                    const selected = index === activeVideoIndex;
+                    return (
+                      <button
+                        key={`${embed.provider}-${embed.id}-${index}`}
+                        type="button"
+                        onClick={() => {
+                          setActiveVideoIndex(index);
+                          setShowVideoPlayer(false);
+                        }}
+                        className={`shrink-0 w-[160px] sm:w-auto rounded-lg border p-2 text-left transition-colors ${
+                          selected
+                            ? 'border-primary bg-[rgba(75,228,214,0.14)]'
+                            : 'border-line bg-[rgba(9,16,28,0.8)] hover:border-primary/35'
+                        }`}
+                      >
+                        <p className="text-xs font-semibold">Vídeo {index + 1}</p>
+                        <p className="text-[11px] text-textMuted mt-0.5">{embed.provider === 'youtube' ? 'YouTube' : 'Vimeo'}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
 
               {!showVideoPlayer ? (
                 <button

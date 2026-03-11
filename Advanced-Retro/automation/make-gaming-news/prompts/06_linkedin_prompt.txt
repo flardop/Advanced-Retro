@@ -1,0 +1,9 @@
+Crea un post para LinkedIn con enfoque profesional.
+Longitud: 120-220 palabras.
+Incluye impacto en industria gaming (negocio/comunidad/tendencia).
+Cierra con CTA suave a AdvancedRetro.es.
+Anade 3 hashtags.
+
+Base:
+{{6.captions.linkedin}}
+{{6.resumen_noticia}}

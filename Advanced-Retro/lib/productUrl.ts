@@ -1,6 +1,7 @@
 const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHORT_ID_REGEX = /^[0-9a-f]{6,12}$/i;
+const LEGACY_ID_REGEX = /^[a-z0-9][a-z0-9._:-]{1,79}$/i;
 
 function toSafeString(value: unknown): string {
   return String(value ?? '').trim();
@@ -27,7 +28,12 @@ export function parseProductRouteParam(raw: string): {
   idPrefixCandidate: string | null;
   slugCandidate: string | null;
 } {
-  const safe = decodeURIComponent(toSafeString(raw));
+  let safe = toSafeString(raw);
+  try {
+    safe = decodeURIComponent(safe);
+  } catch {
+    // Keep the original segment when URL decoding fails.
+  }
   if (!safe) return { raw: '', idCandidate: null, idPrefixCandidate: null, slugCandidate: null };
 
   if (isUuidLike(safe)) {
@@ -47,28 +53,42 @@ export function parseProductRouteParam(raw: string): {
     };
   }
 
-  // New short format: slug-p-<idPrefix>
-  const withShortId = safe.match(/^(.*)-p-([0-9a-f]{6,12})$/i);
+  // New format: slug-p-<idToken>
+  // idToken can be:
+  // - uuid prefix (recommended short format),
+  // - full legacy id (for non-UUID catalogs),
+  // - full uuid (for compatibility).
+  const withShortId = safe.match(/^(.*)-p-([a-z0-9._:-]{2,80})$/i);
   if (withShortId) {
     const slugCandidate = slugify(withShortId[1] || '');
-    const idPrefixCandidate = toSafeString(withShortId[2] || '').toLowerCase();
+    const idToken = toSafeString(withShortId[2] || '').toLowerCase();
+    const isShortPrefix = SHORT_ID_REGEX.test(idToken) && !isUuidLike(idToken);
+    const idCandidate =
+      isUuidLike(idToken) || (LEGACY_ID_REGEX.test(idToken) && !isShortPrefix) ? idToken : null;
+    const idPrefixCandidate =
+      SHORT_ID_REGEX.test(idToken) || LEGACY_ID_REGEX.test(idToken) ? idToken : null;
     return {
       raw: safe,
-      idCandidate: null,
-      idPrefixCandidate: SHORT_ID_REGEX.test(idPrefixCandidate) ? idPrefixCandidate : null,
+      idCandidate,
+      idPrefixCandidate,
       slugCandidate: slugCandidate || null,
     };
   }
 
-  // Optional compatibility: slug--<idPrefix>
-  const withLegacyShortId = safe.match(/^(.*)--([0-9a-f]{6,12})$/i);
+  // Optional compatibility: slug--<idToken>
+  const withLegacyShortId = safe.match(/^(.*)--([a-z0-9._:-]{2,80})$/i);
   if (withLegacyShortId) {
     const slugCandidate = slugify(withLegacyShortId[1] || '');
-    const idPrefixCandidate = toSafeString(withLegacyShortId[2] || '').toLowerCase();
+    const idToken = toSafeString(withLegacyShortId[2] || '').toLowerCase();
+    const isShortPrefix = SHORT_ID_REGEX.test(idToken) && !isUuidLike(idToken);
+    const idCandidate =
+      isUuidLike(idToken) || (LEGACY_ID_REGEX.test(idToken) && !isShortPrefix) ? idToken : null;
+    const idPrefixCandidate =
+      SHORT_ID_REGEX.test(idToken) || LEGACY_ID_REGEX.test(idToken) ? idToken : null;
     return {
       raw: safe,
-      idCandidate: null,
-      idPrefixCandidate: SHORT_ID_REGEX.test(idPrefixCandidate) ? idPrefixCandidate : null,
+      idCandidate,
+      idPrefixCandidate,
       slugCandidate: slugCandidate || null,
     };
   }
@@ -88,7 +108,7 @@ function getShortIdPrefix(value: unknown): string {
   if (isUuidLike(id)) {
     return id.split('-')[0] || '';
   }
-  return id.replace(/[^a-z0-9]/g, '').slice(0, 8);
+  return id.replace(/[^a-z0-9._:-]/g, '').slice(0, 24);
 }
 
 export function getProductRouteSegment(product: any): string {

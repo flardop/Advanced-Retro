@@ -1,0 +1,29 @@
+{
+  "name": "Gaming News Multi-Channel Publisher",
+  "description": "Template funcional para reconstruir el escenario en Make a partir de modulos",
+  "scenarios": [
+    {
+      "id": "scenario_content_publish",
+      "modules": [
+        {"order": 1, "module": "Google Sheets > Watch New Rows", "sheet": "news_queue"},
+        {"order": 2, "module": "Filter", "condition": "estado='pendiente' AND url_noticia != ''"},
+        {"order": 3, "module": "Google Sheets > Update a Row", "set": {"estado": "en_proceso", "lock_uuid": "{{uuid()}}"}},
+        {"order": 4, "module": "Perplexity/HTTP", "prompt_file": "prompts/01_perplexity_news_analysis.txt"},
+        {"order": 5, "module": "JSON > Parse JSON", "target": "perplexity_output"},
+        {"order": 6, "module": "OpenAI > Create Chat Completion", "prompt_file": "prompts/02_gpt_master_make_agent.txt"},
+        {"order": 7, "module": "JSON > Parse JSON", "target": "gpt_output"},
+        {"order": 8, "module": "Google Sheets > Add/Update Row", "sheet": "news_content"},
+        {"order": 9, "module": "Router", "branches": ["instagram", "x", "facebook", "linkedin", "youtube", "tiktok", "vimeo", "video"]}
+      ]
+    },
+    {
+      "id": "scenario_video_render",
+      "modules": [
+        {"order": 1, "module": "HTTP > Make a request", "method": "POST", "url": "https://<worker>/render"},
+        {"order": 2, "module": "Sleep", "seconds": 30},
+        {"order": 3, "module": "HTTP > Make a request", "method": "GET", "url": "https://<worker>/render/{{job_id}}"},
+        {"order": 4, "module": "Router", "branches": ["done", "retry", "error"]}
+      ]
+    }
+  ]
+}

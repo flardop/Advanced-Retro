@@ -1,0 +1,13 @@
+Reescribe este contenido para Instagram.
+Objetivo: engagement + claridad.
+Longitud: 120-220 palabras.
+Incluye:
+- 1 hook inicial.
+- 1 bloque informativo.
+- 1 CTA suave a AdvancedRetro.es.
+Anade 6-10 hashtags relevantes de gaming.
+No tono vendedor.
+
+Base:
+{{6.captions.instagram}}
+{{6.resumen_noticia}}

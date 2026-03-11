@@ -1,0 +1,12 @@
+Crea un post para Facebook.
+Longitud: 80-160 palabras.
+Estructura:
+- titular corto,
+- resumen,
+- pregunta para comentarios,
+- CTA suave.
+Anade 3-5 hashtags.
+
+Base:
+{{6.captions.facebook}}
+{{6.resumen_noticia}}

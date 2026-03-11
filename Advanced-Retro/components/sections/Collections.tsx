@@ -16,37 +16,37 @@ const COLLECTIONS: CollectionCard[] = [
     title: 'Game Boy',
     subtitle: 'Clásicos originales y edición coleccionista',
     href: '/tienda?category=platform:game-boy',
-    cover: '/images/generated/console-game-boy.svg',
+    cover: '/images/products/console-gb-dmg.jpg',
   },
   {
     title: 'Game Boy Color',
     subtitle: 'Catálogo dedicado para GBC',
     href: '/tienda?category=platform:game-boy-color',
-    cover: '/images/generated/console-gbc.svg',
+    cover: '/images/products/console-gbc.jpg',
   },
   {
     title: 'Game Boy Advance',
     subtitle: 'Juegos y variantes de GBA',
     href: '/tienda?category=platform:game-boy-advance',
-    cover: '/images/generated/console-gba.svg',
+    cover: '/images/products/console-gba.jpg',
   },
   {
     title: 'Super Nintendo',
     subtitle: 'Selección SNES para coleccionismo',
     href: '/tienda?category=platform:super-nintendo',
-    cover: '/images/generated/console-snes.svg',
+    cover: '/images/products/console-snes-pal.jpg',
   },
   {
     title: 'GameCube',
     subtitle: 'Catálogo GameCube en expansión',
     href: '/tienda?category=platform:gamecube',
-    cover: '/images/generated/console-gamecube.svg',
+    cover: '/images/products/console-gamecube.jpg',
   },
   {
     title: 'Consolas',
     subtitle: 'Consolas completas y hardware con imagen real',
     href: '/tienda?category=platform:consolas',
-    cover: '/images/generated/console-game-boy.svg',
+    cover: '/images/products/console-gb-dmg.jpg',
   },
 ];
 
@@ -125,7 +125,7 @@ export default function Collections() {
                     fallbackSrc="/placeholder.svg"
                     alt={`${collection.title} portada`}
                     fill
-                    className="object-contain p-4 photo-breath photo-hover-pop"
+                    className="object-cover photo-breath photo-hover-pop"
                   />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#07111b] to-transparent p-3">
                     <p className="text-xs text-textMuted">Entrar en {collection.title}</p>

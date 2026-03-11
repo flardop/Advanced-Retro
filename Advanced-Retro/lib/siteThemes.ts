@@ -40,7 +40,8 @@ export const SITE_THEMES: SiteTheme[] = [
 ];
 
 export const DEFAULT_SITE_THEME: SiteThemeId = 'steam-market';
+export const SITE_THEME_IDS: SiteThemeId[] = SITE_THEMES.map((theme) => theme.id);
 
 export function isValidSiteTheme(value: string): value is SiteThemeId {
-  return SITE_THEMES.some((theme) => theme.id === value);
+  return SITE_THEME_IDS.includes(value as SiteThemeId);
 }

@@ -8,6 +8,78 @@ function normalizeLookup(value: unknown): string {
     .trim();
 }
 
+type PlatformAssetKey = 'gameboy' | 'gbc' | 'gba' | 'snes' | 'gamecube';
+type ComponentAssetKey = 'manual' | 'insert' | 'protector_juego' | 'protector_caja' | 'caja';
+
+const COMPONENT_IMAGE_BY_PLATFORM: Record<PlatformAssetKey, Record<ComponentAssetKey, string>> = {
+  gameboy: {
+    manual: '/images/components/gameboy-manual.svg',
+    insert: '/images/components/gameboy-insert.svg',
+    protector_juego: '/images/components/gameboy-protector-juego.svg',
+    protector_caja: '/images/components/gameboy-protector-caja.svg',
+    caja: '/images/components/gameboy-caja.svg',
+  },
+  gbc: {
+    manual: '/images/components/gbc-manual.svg',
+    insert: '/images/components/gbc-insert.svg',
+    protector_juego: '/images/components/gbc-protector-juego.svg',
+    protector_caja: '/images/components/gbc-protector-caja.svg',
+    caja: '/images/components/gbc-caja.svg',
+  },
+  gba: {
+    manual: '/images/components/gba-manual.svg',
+    insert: '/images/components/gba-insert.svg',
+    protector_juego: '/images/components/gba-protector-juego.svg',
+    protector_caja: '/images/components/gba-protector-caja.svg',
+    caja: '/images/components/gba-caja.svg',
+  },
+  snes: {
+    manual: '/images/components/snes-manual.svg',
+    insert: '/images/components/snes-insert.svg',
+    protector_juego: '/images/components/snes-protector-juego.svg',
+    protector_caja: '/images/components/snes-protector-caja.svg',
+    caja: '/images/components/snes-caja.svg',
+  },
+  gamecube: {
+    manual: '/images/components/gamecube-manual.svg',
+    insert: '/images/components/gamecube-insert.svg',
+    protector_juego: '/images/components/gamecube-protector-juego.svg',
+    protector_caja: '/images/components/gamecube-protector-caja.svg',
+    caja: '/images/components/gamecube-caja.svg',
+  },
+};
+
+function detectPlatformAssetKey(product: any): PlatformAssetKey {
+  const source = normalizeLookup(
+    `${String(product?.platform || '')} ${String(product?.category || product?.category_id || '')} ${String(product?.name || '')}`
+  );
+  if (source.includes('gamecube') || source.includes('game cube')) return 'gamecube';
+  if (source.includes('snes') || source.includes('super nintendo')) return 'snes';
+  if (source.includes('gameboy advance') || source.includes('game boy advance') || source.includes('gba')) return 'gba';
+  if (source.includes('gameboy color') || source.includes('game boy color') || source.includes('gbc')) return 'gbc';
+  return 'gameboy';
+}
+
+function detectComponentAssetKey(product: any): ComponentAssetKey | null {
+  const type = normalizeLookup(product?.component_type);
+  const source = normalizeLookup(`${String(product?.name || '')} ${String(product?.category || '')}`);
+  if (source.includes('mystery') || source.includes('misteriosa')) return null;
+
+  if (type === 'manual' || source.includes('manual')) return 'manual';
+  if (type === 'insert' || source.includes('insert') || source.includes('inlay') || source.includes('interior')) return 'insert';
+  if (type === 'protector_caja' || (source.includes('protector') && source.includes('caja'))) return 'protector_caja';
+  if (type === 'protector_juego' || type === 'protector' || source.includes('protector')) return 'protector_juego';
+  if (type === 'caja' || source.includes('caja')) return 'caja';
+  return null;
+}
+
+function getComponentImageOverride(product: any): string | null {
+  const component = detectComponentAssetKey(product);
+  if (!component) return null;
+  const platform = detectPlatformAssetKey(product);
+  return COMPONENT_IMAGE_BY_PLATFORM[platform][component] || null;
+}
+
 function getConsoleImageOverride(product: any): string | null {
   const name = normalizeLookup(product?.name);
   const category = normalizeLookup(product?.category || product?.category_id);
@@ -121,6 +193,9 @@ function parseImageCollection(raw: unknown): string[] {
 }
 
 export function getProductImageUrl(product: any): string {
+  const componentOverride = getComponentImageOverride(product);
+  if (componentOverride) return componentOverride;
+
   const consoleOverride = getConsoleImageOverride(product);
   if (consoleOverride) return consoleOverride;
 
@@ -137,6 +212,9 @@ export function getProductImageUrl(product: any): string {
 }
 
 export function getProductImageUrls(product: any): string[] {
+  const componentOverride = getComponentImageOverride(product);
+  if (componentOverride) return [componentOverride];
+
   const raw = [
     ...parseImageCollection(product?.images),
     ...parseImageCollection(product?.image),
@@ -151,6 +229,9 @@ export function getProductImageUrls(product: any): string[] {
 }
 
 export function getProductFallbackImageUrl(product: any): string {
+  const componentOverride = getComponentImageOverride(product);
+  if (componentOverride) return componentOverride;
+
   const consoleOverride = getConsoleImageOverride(product);
   if (consoleOverride) return consoleOverride;
 

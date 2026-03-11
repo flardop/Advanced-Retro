@@ -1,0 +1,8 @@
+Genera descripcion para YouTube Shorts.
+Longitud: 2-4 lineas.
+Incluye keywords de la noticia + CTA suave.
+Anade 3 hashtags incluyendo #Shorts.
+
+Base:
+{{6.captions.youtube_shorts}}
+{{6.resumen_noticia}}

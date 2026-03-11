@@ -12,6 +12,15 @@ export type VideoEmbedData = {
   thumbnailUrl: string | null;
 };
 
+function splitRawVideoInput(input: unknown): string[] {
+  const raw = String(input || '').trim();
+  if (!raw) return [];
+  return raw
+    .split(/[\n,;|]+/g)
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 export function buildYouTubeSearchEmbed(query: unknown): VideoEmbedData | null {
   const normalizedQuery = String(query || '').trim();
   if (!normalizedQuery) return null;
@@ -99,4 +108,23 @@ export function parseVideoEmbed(input: unknown): VideoEmbedData | null {
   }
 
   return null;
+}
+
+export function parseVideoEmbedList(input: unknown): VideoEmbedData[] {
+  const rawValues = splitRawVideoInput(input);
+  if (rawValues.length === 0) return [];
+
+  const seen = new Set<string>();
+  const parsed: VideoEmbedData[] = [];
+
+  for (const raw of rawValues) {
+    const embed = parseVideoEmbed(raw);
+    if (!embed) continue;
+    const dedupeKey = `${embed.provider}:${embed.id}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    parsed.push(embed);
+  }
+
+  return parsed;
 }

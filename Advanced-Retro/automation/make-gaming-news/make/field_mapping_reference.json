@@ -1,0 +1,29 @@
+{
+  "google_sheets_news_queue_to_prompts": {
+    "id_noticia": "metadata.job_id",
+    "url_noticia": "perplexity.prompt.url",
+    "idioma": "gpt.prompt.idioma",
+    "usar_video": "router.video_filter",
+    "publicar_instagram": "router.instagram_filter",
+    "publicar_x": "router.x_filter",
+    "publicar_facebook": "router.facebook_filter",
+    "publicar_linkedin": "router.linkedin_filter",
+    "publicar_youtube": "router.youtube_filter",
+    "publicar_tiktok": "router.tiktok_filter",
+    "publicar_vimeo": "router.vimeo_filter"
+  },
+  "gpt_output_to_news_content": {
+    "titulo_final": "titulo_final",
+    "resumen_noticia": "resumen_noticia",
+    "hook": "hook",
+    "reel_script": "guion_reel",
+    "subtitulos_srt": "subtitulos_srt",
+    "captions.instagram": "caption_instagram",
+    "captions.x": "post_x",
+    "captions.facebook": "post_facebook",
+    "captions.linkedin": "post_linkedin",
+    "captions.youtube_shorts": "descripcion_youtube",
+    "hashtags": "hashtags_json",
+    "cta_final": "cta_final"
+  }
+}

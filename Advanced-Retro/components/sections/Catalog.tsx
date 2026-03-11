@@ -859,23 +859,25 @@ export default function Catalog() {
       <Link
         key={`${label}-${productId}`}
         href={productHref}
-        className={`mini-product-card glass p-3 hover:shadow-glow transition-shadow group ${className}`.trim()}
+        className={`mini-product-card glass p-2.5 hover:shadow-glow transition-shadow group flex items-start gap-3 ${className}`.trim()}
       >
-        <div className="photo-frame-glow relative w-full h-36 bg-surface border border-line rounded-xl overflow-hidden">
+        <div className="photo-frame-glow relative h-28 w-[96px] shrink-0 bg-surface border border-line rounded-xl overflow-hidden">
           <SafeImage
             src={getProductImageUrl(product)}
             fallbackSrc={getProductFallbackImageUrl(product)}
             alt={product.name}
             fill
-            sizes="(max-width: 768px) 42vw, (max-width: 1280px) 28vw, 22vw"
+            sizes="96px"
             priority={priority}
-            className="object-contain p-2 photo-hover-pop"
+            className="object-contain p-1 photo-hover-pop"
           />
         </div>
-        <p className="text-xs text-primary mt-3">{label}</p>
-        <h3 className="font-semibold text-sm line-clamp-2 mt-1">{product.name}</h3>
-        <p className="text-xs text-textMuted mt-1">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
-        <p className="text-xs text-textMuted mt-2 group-hover:text-text">Ver producto</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] leading-none text-primary">{label}</p>
+          <h3 className="font-semibold text-sm line-clamp-2 mt-1">{product.name}</h3>
+          <p className="text-xs text-textMuted mt-1">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
+          <p className="text-xs text-textMuted mt-1.5 group-hover:text-text">Ver producto</p>
+        </div>
       </Link>
     );
   };
@@ -1261,26 +1263,26 @@ export default function Catalog() {
         ) : null}
 
         {!hasNoProducts && !isMysteryView ? (
-          <div className="catalog-featured-grid grid gap-4 xl:grid-cols-3 mb-8">
+          <div className="catalog-featured-grid grid gap-3 xl:grid-cols-3 mb-6">
             <div>
-              <h2 className="font-semibold mb-2 text-lg">Trending retro</h2>
-              <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
+              <h2 className="font-semibold mb-1 text-lg">Trending retro</h2>
+              <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-2">
                 {featuredTrending.map((product, index) =>
                   renderMiniProduct(product, 'Trending', 'w-[230px] shrink-0 md:w-auto', index === 0)
                 )}
               </div>
             </div>
             <div>
-              <h2 className="font-semibold mb-2 text-lg">Más valorados</h2>
-              <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
+              <h2 className="font-semibold mb-1 text-lg">Más valorados</h2>
+              <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-2">
                 {featuredBestRated.map((product, index) =>
                   renderMiniProduct(product, 'Top', 'w-[230px] shrink-0 md:w-auto', index === 0)
                 )}
               </div>
             </div>
             <div>
-              <h2 className="font-semibold mb-2 text-lg">Últimas entradas</h2>
-              <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
+              <h2 className="font-semibold mb-1 text-lg">Últimas entradas</h2>
+              <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-2">
                 {featuredLatest.map((product, index) =>
                   renderMiniProduct(product, 'Nuevo', 'w-[230px] shrink-0 md:w-auto', index === 0)
                 )}

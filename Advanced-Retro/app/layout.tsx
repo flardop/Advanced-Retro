@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { absoluteUrl, getSiteUrl } from '@/lib/siteConfig';
 import { SEO_BASE_KEYWORDS, SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE } from '@/lib/seo';
+import { DEFAULT_SITE_THEME, SITE_THEME_IDS } from '@/lib/siteThemes';
 
 const siteUrl = getSiteUrl();
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
@@ -129,6 +130,8 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const allowedSiteThemes = JSON.stringify(SITE_THEME_IDS);
+  const defaultSiteTheme = JSON.stringify(DEFAULT_SITE_THEME);
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -213,7 +216,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             strategy="beforeInteractive"
             dangerouslySetInnerHTML={{
               __html:
-                "(function(){try{var key='advancedretro:site-theme';var allowed=['steam-market','retro-pixel','minimal-premium','arcade-neon','marketplace-clean'];var v=localStorage.getItem(key);if(v&&allowed.indexOf(v)!==-1){document.documentElement.setAttribute('data-site-theme',v);}else{document.documentElement.setAttribute('data-site-theme','steam-market');}}catch(e){document.documentElement.setAttribute('data-site-theme','steam-market');}})();",
+                `(function(){try{var key='advancedretro:site-theme';var allowed=${allowedSiteThemes};var fallback=${defaultSiteTheme};var v=localStorage.getItem(key);if(v&&allowed.indexOf(v)!==-1){document.documentElement.setAttribute('data-site-theme',v);}else{document.documentElement.setAttribute('data-site-theme',fallback);}}catch(e){document.documentElement.setAttribute('data-site-theme',${defaultSiteTheme});}})();`,
             }}
           />
           <AnimatedFavicon />

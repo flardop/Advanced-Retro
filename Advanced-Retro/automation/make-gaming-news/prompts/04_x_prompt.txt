@@ -1,0 +1,11 @@
+Crea un post para X en espanol.
+Maximo 260 caracteres.
+Debe incluir:
+- dato principal,
+- contexto breve,
+- CTA suave.
+Anade 1-2 hashtags maximo.
+Sin relleno.
+
+Base:
+{{6.captions.x}}

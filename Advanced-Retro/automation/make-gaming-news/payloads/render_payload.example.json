@@ -1,0 +1,29 @@
+{
+  "job_id": "NEWS-0001",
+  "output_name": "NEWS-0001.mp4",
+  "clips": [
+    {
+      "url": "../../../public/media/advanced-retro-intro.mp4",
+      "duration_sec": 5
+    },
+    {
+      "url": "../../../public/media/advanced-retro-intro.mp4",
+      "duration_sec": 5
+    },
+    {
+      "url": "../../../public/media/advanced-retro-intro.mp4",
+      "duration_sec": 5
+    }
+  ],
+  "voice_url": "",
+  "music_url": "../../../public/media/advanced-retro-jingle.mp3",
+  "subtitles_srt": "1\n00:00:00,000 --> 00:00:03,000\nAtencion: nueva noticia gaming\n\n2\n00:00:03,000 --> 00:00:12,000\nResumen rapido con los datos clave\n\n3\n00:00:12,000 --> 00:00:18,000\nMas noticias en AdvancedRetro.es\n",
+  "resolution": {
+    "width": 1080,
+    "height": 1920
+  },
+  "fps": 30,
+  "transition_sec": 0.3,
+  "music_volume": 0.12,
+  "voice_volume": 1.0
+}

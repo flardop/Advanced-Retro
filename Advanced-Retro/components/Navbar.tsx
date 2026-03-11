@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { useLocale } from '@/components/LocaleProvider';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { t } = useLocale();
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<{ email?: string } | null>(null);
@@ -48,21 +49,33 @@ export default function Navbar() {
     };
   }, []);
 
-  const isItemActive = (href: string) => {
-    const [targetPath, queryString] = href.split('?');
-    const pathMatches = pathname === targetPath || pathname.startsWith(`${targetPath}/`);
-    if (!pathMatches) return false;
-    if (!queryString) return true;
-
-    if (typeof window === 'undefined') return true;
+  const queryMatches = (queryString: string) => {
     const targetQuery = new URLSearchParams(queryString);
-    const currentQuery = new URLSearchParams(window.location.search);
     for (const [key, value] of targetQuery.entries()) {
-      if (currentQuery.get(key) !== value) {
+      if (searchParams.get(key) !== value) {
         return false;
       }
     }
     return true;
+  };
+
+  const isItemActive = (href: string) => {
+    const [targetPath, queryString] = href.split('?');
+    const pathMatches = pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+    if (!pathMatches) return false;
+
+    if (!queryString) {
+      // If there is a more specific menu item for the same path (with query params)
+      // and it matches the current URL, keep only that specific item active.
+      const hasSpecificMatch = navItems.some((item) => {
+        const [itemPath, itemQuery] = item.href.split('?');
+        if (!itemQuery || itemPath !== targetPath) return false;
+        return queryMatches(itemQuery);
+      });
+      return !hasSpecificMatch;
+    }
+
+    return queryMatches(queryString);
   };
 
   return (

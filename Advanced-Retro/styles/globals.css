@@ -407,8 +407,8 @@ body::before {
 }
 
 .container {
-  @apply mx-auto w-full px-4 sm:px-6 lg:px-10;
-  max-width: var(--theme-container-max);
+  @apply mx-auto w-full px-3 sm:px-4 lg:px-5;
+  max-width: 100%;
 }
 
 .section {
@@ -472,6 +472,70 @@ body::before {
   box-shadow:
     0 14px 34px color-mix(in srgb, var(--primary) 20%, transparent),
     0 6px 14px rgba(2, 10, 24, 0.22);
+}
+
+@keyframes theme-shadow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 10px 24px color-mix(in srgb, var(--primary) 20%, transparent),
+      0 0 0 rgba(0, 0, 0, 0);
+  }
+  50% {
+    box-shadow:
+      0 14px 32px color-mix(in srgb, var(--primary) 34%, transparent),
+      0 0 18px color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+}
+
+@keyframes theme-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.theme-pulse {
+  animation: theme-shadow-pulse 3.2s ease-in-out infinite;
+}
+
+.theme-menu-panel {
+  animation: theme-panel-in 0.22s ease-out;
+}
+
+.theme-card-hover {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.theme-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, var(--primary) 22%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 26%, transparent);
+}
+
+.theme-card-hover:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--primary) 36%, transparent),
+    0 0 0 5px rgba(0, 0, 0, 0.18);
+}
+
+.media-showcase-panel {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(75, 228, 214, 0.16), transparent 42%),
+    linear-gradient(170deg, rgba(6, 14, 25, 0.94), rgba(9, 18, 34, 0.86));
+}
+
+.media-showcase-panel video {
+  filter: saturate(1.07) contrast(1.02);
 }
 
 .link-underline {
@@ -974,8 +1038,8 @@ a {
 
 @media (max-width: 640px) {
   .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
   .section {
@@ -1011,6 +1075,8 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .theme-pulse,
+  .theme-menu-panel,
   .logo-breath,
   .photo-breath,
   .badge-exclusive-card,
@@ -1024,6 +1090,7 @@ a {
   }
 
   .photo-hover-pop,
+  .theme-card-hover,
   .badge-exclusive-card::after,
   .badge-exclusive-chip::after {
     transition: none;

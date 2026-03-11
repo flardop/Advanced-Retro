@@ -1,0 +1,2 @@
+id_noticia,fecha_alta,url_noticia,fuente,tema,juego,plataforma,idioma,prioridad,usar_video,publicar_instagram,publicar_tiktok,publicar_youtube,publicar_x,publicar_facebook,publicar_linkedin,publicar_vimeo,fecha_programada,estado,intento_count,error_detalle,lock_uuid
+NEWS-0001,2026-03-11T19:00:00Z,https://example.com/noticia-gaming,example,lanzamiento,Starfall Protocol,PC|PS5|Xbox Series,es,3,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,2026-03-11T20:00:00Z,pendiente,0,,

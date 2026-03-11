@@ -17,6 +17,8 @@ import {
   getBadgeIconPng,
   type BadgeRarity,
 } from '@/lib/gamificationBadges';
+import { DEFAULT_SITE_THEME, SITE_THEMES, isValidSiteTheme, type SiteThemeId } from '@/lib/siteThemes';
+import { SITE_THEME_EVENT, applySiteTheme, setSiteTheme } from '@/lib/clientSiteTheme';
 
 type Ticket = {
   id: string;
@@ -390,6 +392,8 @@ export default function ProfileView() {
   const [tagline, setTagline] = useState('');
   const [favoriteConsole, setFavoriteConsole] = useState('');
   const [profileTheme, setProfileTheme] = useState('neon-grid');
+  const [siteTheme, setSiteThemeState] = useState<SiteThemeId>(DEFAULT_SITE_THEME);
+  const [savingSiteTheme, setSavingSiteTheme] = useState(false);
   const [favoritesVisibility, setFavoritesVisibility] = useState<FavoritesVisibility>('public');
   const [shippingFullName, setShippingFullName] = useState('');
   const [shippingLine1, setShippingLine1] = useState('');
@@ -545,6 +549,42 @@ export default function ProfileView() {
     setGamification(data?.gamification || null);
   };
 
+  const loadUserSiteTheme = async () => {
+    try {
+      const res = await fetch('/api/auth/site-theme', { cache: 'no-store' });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) return;
+      const next = typeof data?.theme === 'string' ? data.theme : '';
+      if (!next || !isValidSiteTheme(next)) return;
+      setSiteThemeState(next);
+      applySiteTheme(next);
+    } catch {
+      // ignore
+    }
+  };
+
+  const saveUserSiteTheme = async (next: SiteThemeId) => {
+    setSiteThemeState(next);
+    setSiteTheme(next);
+    setSavingSiteTheme(true);
+    try {
+      const res = await fetch('/api/auth/site-theme', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme: next }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo guardar el estilo global');
+      }
+      toast.success('Estilo global guardado para tu cuenta');
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo guardar el estilo global');
+    } finally {
+      setSavingSiteTheme(false);
+    }
+  };
+
   const loadOrders = async (userId: string) => {
     if (!supabaseClient || !userId) return;
 
@@ -650,6 +690,7 @@ export default function ProfileView() {
           loadWithdrawals(),
           loadGamification(),
           loadFavorites(),
+          loadUserSiteTheme(),
         ];
 
         if (authUserId) {
@@ -767,6 +808,19 @@ export default function ProfileView() {
     loadAll();
     // loadAll is intentionally triggered once on mount for profile bootstrap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const onThemeChanged = (event: Event) => {
+      const custom = event as CustomEvent<{ theme?: string }>;
+      const next = custom?.detail?.theme || '';
+      if (next && isValidSiteTheme(next)) {
+        setSiteThemeState(next);
+      }
+    };
+
+    window.addEventListener(SITE_THEME_EVENT, onThemeChanged as EventListener);
+    return () => window.removeEventListener(SITE_THEME_EVENT, onThemeChanged as EventListener);
   }, []);
 
   useEffect(() => {
@@ -1814,6 +1868,29 @@ export default function ProfileView() {
                         </option>
                       ))}
                     </select>
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-sm text-textMuted">Estilo global de la tienda (tu cuenta)</span>
+                    <select
+                      className="bg-transparent border border-line px-3 py-2"
+                      value={siteTheme}
+                      onChange={(e) => {
+                        const next = e.target.value;
+                        if (!isValidSiteTheme(next)) return;
+                        void saveUserSiteTheme(next);
+                      }}
+                      disabled={savingSiteTheme}
+                    >
+                      {SITE_THEMES.map((themeOption) => (
+                        <option key={themeOption.id} value={themeOption.id}>
+                          {themeOption.label} · {themeOption.description}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-textMuted">
+                      Este estilo se aplica por defecto cuando inicias sesión.
+                    </p>
                   </label>
 
                   <label className="grid gap-2">
