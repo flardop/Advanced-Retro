@@ -16,37 +16,37 @@ const COLLECTIONS: CollectionCard[] = [
     title: 'Game Boy',
     subtitle: 'Clásicos originales y edición coleccionista',
     href: '/tienda?category=platform:game-boy',
-    cover: '/images/products/console-gb-dmg.jpg',
+    cover: '/images/generated/console-game-boy.svg',
   },
   {
     title: 'Game Boy Color',
     subtitle: 'Catálogo dedicado para GBC',
     href: '/tienda?category=platform:game-boy-color',
-    cover: '/images/products/console-gbc.jpg',
+    cover: '/images/generated/console-gbc.svg',
   },
   {
     title: 'Game Boy Advance',
     subtitle: 'Juegos y variantes de GBA',
     href: '/tienda?category=platform:game-boy-advance',
-    cover: '/images/products/console-gba.jpg',
+    cover: '/images/generated/console-gba.svg',
   },
   {
     title: 'Super Nintendo',
     subtitle: 'Selección SNES para coleccionismo',
     href: '/tienda?category=platform:super-nintendo',
-    cover: '/images/products/console-snes-pal.jpg',
+    cover: '/images/generated/console-snes.svg',
   },
   {
     title: 'GameCube',
     subtitle: 'Catálogo GameCube en expansión',
     href: '/tienda?category=platform:gamecube',
-    cover: '/images/products/console-gamecube.jpg',
+    cover: '/images/generated/console-gamecube.svg',
   },
   {
     title: 'Consolas',
     subtitle: 'Consolas completas y hardware con imagen real',
     href: '/tienda?category=platform:consolas',
-    cover: '/images/products/console-gb-dmg.jpg',
+    cover: '/images/generated/console-game-boy.svg',
   },
 ];
 
@@ -108,7 +108,7 @@ export default function Collections() {
               <Link
                 key={collection.title}
                 href={collection.href}
-                className="group glass min-w-[280px] snap-start p-5 transition-all hover:-translate-y-0.5 hover:shadow-glow sm:min-w-[330px] lg:min-w-[360px]"
+                className="collection-card group glass min-w-[280px] snap-start p-5 transition-all hover:-translate-y-0.5 hover:shadow-glow sm:min-w-[330px] lg:min-w-[360px]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-xs font-mono uppercase tracking-[0.12em] text-textMuted">Colección</p>

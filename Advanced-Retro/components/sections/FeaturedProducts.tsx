@@ -110,7 +110,7 @@ export default function FeaturedProducts() {
             <Link
               key={product.id}
               href={getProductHref(product)}
-              className="group glass overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-glow"
+              className="featured-product-card group glass overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-glow"
             >
               <div className="relative h-52 border-b border-line bg-surface">
                 <SafeImage

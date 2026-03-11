@@ -11,12 +11,12 @@ const quickLinks = [
 
 export default function Hero() {
   return (
-    <section className="section relative overflow-hidden pt-6 sm:pt-8">
+    <section className="hero-section section relative overflow-hidden pt-6 sm:pt-8">
       <div className="absolute inset-0 bg-radial" />
       <div className="container relative">
-        <div className="glass overflow-hidden">
+        <div className="hero-shell glass overflow-hidden">
           <div className="grid gap-0 lg:grid-cols-[1.06fr,0.94fr]">
-            <div className="p-6 sm:p-8 lg:p-10">
+            <div className="hero-copy p-6 sm:p-8 lg:p-10">
               <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2">
                 <span className="chip">Retro verificado</span>
                 <span className="chip">Envío desde España</span>
@@ -68,7 +68,7 @@ export default function Hero() {
               </div>
             </div>
 
-            <div className="border-t border-line/80 bg-[linear-gradient(160deg,#10213a,#0b1728)] p-4 sm:p-6 lg:border-l lg:border-t-0">
+            <div className="hero-media border-t border-line/80 bg-[linear-gradient(160deg,#10213a,#0b1728)] p-4 sm:p-6 lg:border-l lg:border-t-0">
               <div className="relative h-[300px] overflow-hidden rounded-xl border border-line sm:h-[360px]">
                 <Image
                   src="/logo.png"

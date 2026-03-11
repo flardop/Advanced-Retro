@@ -859,7 +859,7 @@ export default function Catalog() {
       <Link
         key={`${label}-${productId}`}
         href={productHref}
-        className={`glass p-3 hover:shadow-glow transition-shadow group ${className}`.trim()}
+        className={`mini-product-card glass p-3 hover:shadow-glow transition-shadow group ${className}`.trim()}
       >
         <div className="relative w-full h-36 bg-surface border border-line rounded-xl overflow-hidden">
           <SafeImage
@@ -898,7 +898,7 @@ export default function Catalog() {
       </div>
     </div>
   ) : (
-    <div className="glass p-4 sm:p-5 mb-6">
+    <div className="catalog-filter-panel glass p-4 sm:p-5 mb-6">
       <div className="rounded-2xl border border-line/80 bg-[rgba(8,18,31,0.7)] p-3 sm:p-4">
         <div className="grid gap-3 xl:grid-cols-[1.5fr,0.6fr,auto]">
           <div className="space-y-1">
@@ -1118,9 +1118,9 @@ export default function Catalog() {
   );
 
   return (
-    <section className="section">
+    <section className="catalog-section section">
       <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-6 lg:px-8">
-        <div className="glass p-4 sm:p-5 mb-6">
+        <div className="catalog-trust-strip glass p-4 sm:p-5 mb-6">
           <div className="mobile-scroll-row no-scrollbar md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
             <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
               <p className="text-primary text-sm font-semibold">Envíos desde España</p>
@@ -1137,7 +1137,7 @@ export default function Catalog() {
           </div>
         </div>
 
-        <div className="glass p-4 sm:p-5 mb-8">
+        <div className="catalog-story-strip glass p-4 sm:p-5 mb-8">
           <p className="text-sm text-textMuted leading-relaxed">
             Cada cartucho tiene historia. Mystery Box es azar con tiradas y premios; Ruleta es el panel de giro; Encargos es compra asistida 1 a 1.
           </p>
@@ -1199,7 +1199,7 @@ export default function Catalog() {
                 <Link
                   key={`console-highlight-${String(product.id)}`}
                   href={getProductHref(product)}
-                  className="w-[230px] shrink-0 sm:w-auto rounded-xl border border-line bg-[rgba(10,20,34,0.82)] p-3 hover:border-primary/40 transition-colors"
+                  className="console-highlight-card w-[230px] shrink-0 sm:w-auto rounded-xl border border-line bg-[rgba(10,20,34,0.82)] p-3 hover:border-primary/40 transition-colors"
                 >
                   <div className="relative h-32 rounded-lg border border-line bg-surface overflow-hidden">
                     <SafeImage
@@ -1239,7 +1239,7 @@ export default function Catalog() {
                 <Link
                   key={`special-console-highlight-${String(product.id)}`}
                   href={getProductHref(product)}
-                  className="w-[230px] shrink-0 sm:w-auto rounded-xl border border-line bg-[rgba(10,20,34,0.82)] p-3 hover:border-primary/40 transition-colors"
+                  className="console-highlight-card w-[230px] shrink-0 sm:w-auto rounded-xl border border-line bg-[rgba(10,20,34,0.82)] p-3 hover:border-primary/40 transition-colors"
                 >
                   <div className="relative h-32 rounded-lg border border-line bg-surface overflow-hidden">
                     <SafeImage
@@ -1261,7 +1261,7 @@ export default function Catalog() {
         ) : null}
 
         {!hasNoProducts && !isMysteryView ? (
-          <div className="grid gap-4 xl:grid-cols-3 mb-8">
+          <div className="catalog-featured-grid grid gap-4 xl:grid-cols-3 mb-8">
             <div>
               <h2 className="font-semibold mb-2 text-lg">Trending retro</h2>
               <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-3">
@@ -1318,7 +1318,7 @@ export default function Catalog() {
                 <Link
                   key={product.id}
                   href={href}
-                  className="glass p-3 sm:p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5 flex gap-3 sm:block"
+                  className="catalog-product-card glass p-3 sm:p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5 flex gap-3 sm:block"
                 >
                   <div className="relative h-28 w-[116px] shrink-0 sm:w-full sm:h-56 bg-surface border border-line rounded-xl overflow-hidden">
                     <SafeImage

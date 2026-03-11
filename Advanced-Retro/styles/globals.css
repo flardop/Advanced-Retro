@@ -280,6 +280,118 @@ body {
   border-radius: 0.6rem;
 }
 
+[data-site-theme='steam-market'] .hero-shell,
+[data-site-theme='steam-market'] .catalog-filter-panel,
+[data-site-theme='steam-market'] .catalog-trust-strip,
+[data-site-theme='steam-market'] .catalog-story-strip {
+  background:
+    linear-gradient(160deg, rgba(22, 31, 44, 0.94), rgba(18, 26, 38, 0.96)),
+    radial-gradient(520px 240px at 96% 0%, rgba(102, 192, 244, 0.14), transparent 62%);
+  border-color: color-mix(in srgb, var(--line) 78%, #9cc8ff 22%);
+}
+
+[data-site-theme='steam-market'] .featured-product-card,
+[data-site-theme='steam-market'] .collection-card,
+[data-site-theme='steam-market'] .mini-product-card,
+[data-site-theme='steam-market'] .catalog-product-card,
+[data-site-theme='steam-market'] .console-highlight-card {
+  border-color: color-mix(in srgb, var(--line) 74%, #9bc5ea 26%);
+  background:
+    linear-gradient(164deg, rgba(24, 34, 49, 0.92), rgba(18, 27, 40, 0.96)),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0.012));
+  box-shadow:
+    0 10px 24px rgba(5, 12, 24, 0.34),
+    inset 0 1px 0 rgba(190, 219, 255, 0.04);
+}
+
+[data-site-theme='steam-market'] .featured-product-card:hover,
+[data-site-theme='steam-market'] .collection-card:hover,
+[data-site-theme='steam-market'] .catalog-product-card:hover {
+  border-color: color-mix(in srgb, var(--primary) 52%, #ffffff 48%);
+  transform: translateY(-2px);
+}
+
+[data-site-theme='steam-market'] .title-display {
+  letter-spacing: 0.015em;
+}
+
+[data-site-theme='steam-market'] .button-primary {
+  background: linear-gradient(135deg, #66c0f4, #88d0ff);
+  color: #08263d;
+  box-shadow: 0 10px 24px rgba(102, 192, 244, 0.26);
+}
+
+[data-site-theme='steam-market'] .chip {
+  background: rgba(16, 24, 36, 0.74);
+  border-color: color-mix(in srgb, var(--line) 76%, #9cc7f3 24%);
+}
+
+[data-site-theme='retro-pixel'] .glass,
+[data-site-theme='retro-pixel'] .catalog-product-card,
+[data-site-theme='retro-pixel'] .collection-card,
+[data-site-theme='retro-pixel'] .featured-product-card,
+[data-site-theme='retro-pixel'] .mini-product-card,
+[data-site-theme='retro-pixel'] .console-highlight-card {
+  border-radius: 0.38rem !important;
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--line) 54%, #a079ff 46%);
+  box-shadow:
+    5px 5px 0 rgba(64, 29, 102, 0.55),
+    0 10px 20px rgba(7, 5, 20, 0.35);
+}
+
+[data-site-theme='retro-pixel'] .glass:hover,
+[data-site-theme='retro-pixel'] .catalog-product-card:hover,
+[data-site-theme='retro-pixel'] .collection-card:hover {
+  transform: translate(-1px, -1px);
+  box-shadow:
+    7px 7px 0 rgba(64, 29, 102, 0.62),
+    0 12px 22px rgba(7, 5, 20, 0.38);
+}
+
+[data-site-theme='retro-pixel'] .title-display {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+  line-height: 1.05;
+}
+
+[data-site-theme='retro-pixel'] .chip {
+  border-radius: 0.35rem;
+  border-width: 2px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+[data-site-theme='retro-pixel'] .button-primary,
+[data-site-theme='retro-pixel'] .button-secondary {
+  border-radius: 0.35rem;
+  border-width: 2px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+[data-site-theme='retro-pixel'] .button-primary {
+  background: linear-gradient(135deg, #66ffba, #8cf9d3);
+  color: #0a3326;
+  box-shadow:
+    4px 4px 0 rgba(39, 123, 91, 0.52),
+    0 8px 18px rgba(12, 31, 24, 0.42);
+}
+
+[data-site-theme='retro-pixel'] .button-secondary {
+  background: rgba(21, 15, 40, 0.8);
+}
+
+[data-site-theme='retro-pixel'] input,
+[data-site-theme='retro-pixel'] select,
+[data-site-theme='retro-pixel'] textarea {
+  border-radius: 0.35rem;
+  border-width: 2px;
+}
+
 body {
   background:
     radial-gradient(1100px 500px at 8% -14%, rgba(61, 226, 211, 0.1), transparent 58%),

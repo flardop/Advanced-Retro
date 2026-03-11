@@ -205,9 +205,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="es" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
+    <html lang="es" data-site-theme="default-neon" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body className="font-body min-h-screen flex flex-col overflow-x-hidden">
         <LocaleProvider>
+          <Script
+            id="theme-bootstrap"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{
+              __html:
+                "(function(){try{var key='advancedretro:site-theme';var v=localStorage.getItem(key);if(v){document.documentElement.setAttribute('data-site-theme',v);}else{document.documentElement.setAttribute('data-site-theme','default-neon');}}catch(e){document.documentElement.setAttribute('data-site-theme','default-neon');}})();",
+            }}
+          />
           <AnimatedFavicon />
           <Script
             id="schema-org"
