@@ -797,9 +797,10 @@ export default function ProductDetail({
           .from('products')
           .select(PRODUCT_DETAIL_COLUMNS)
           .eq('slug', parsed.slugCandidate)
-          .maybeSingle();
-        if (!error && data) {
-          detail = data;
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        if (!error && Array.isArray(data) && data.length > 0) {
+          detail = data[0];
         }
       }
 

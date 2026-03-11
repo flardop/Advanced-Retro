@@ -94,11 +94,9 @@ function getShortIdPrefix(value: unknown): string {
 export function getProductRouteSegment(product: any): string {
   const id = toSafeString(product?.id);
   const slug = getRawSlug(product);
-  const explicitSlug = toSafeString(product?.slug);
-
   if (slug && id) {
-    if (explicitSlug) return slug;
     const shortPrefix = getShortIdPrefix(id);
+    // Always include a short id prefix to avoid ambiguous slugs in catalogs with duplicates.
     if (shortPrefix) return `${slug}-p-${shortPrefix}`;
     return slug;
   }

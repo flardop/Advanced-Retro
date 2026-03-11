@@ -72,8 +72,9 @@ async function getProductByIdentifier(identifier: string) {
       .from('products')
       .select('*')
       .eq('slug', parsed.slugCandidate)
-      .maybeSingle();
-    if (!error && data) return data;
+      .order('updated_at', { ascending: false })
+      .limit(1);
+    if (!error && Array.isArray(data) && data.length > 0) return data[0];
   }
 
   return null;
