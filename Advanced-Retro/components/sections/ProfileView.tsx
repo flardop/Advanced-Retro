@@ -15,6 +15,7 @@ import {
   BADGE_RARITY_STYLES,
   getBadgeDefinition,
   getBadgeIconPng,
+  type BadgeRarity,
 } from '@/lib/gamificationBadges';
 
 type Ticket = {
@@ -349,6 +350,22 @@ function isValidIban(value: string): boolean {
 
 function isConciergeTicket(ticket: { subject?: string } | null | undefined): boolean {
   return String(ticket?.subject || '').toLowerCase().includes('encargo');
+}
+
+function isExclusiveBadge(badge: { rarity: BadgeRarity; animated?: boolean }): boolean {
+  return Boolean(badge.animated) || badge.rarity === 'legendary' || badge.rarity === 'mythic';
+}
+
+function getExclusiveCardClass(badge: { rarity: BadgeRarity; animated?: boolean }): string {
+  if (!isExclusiveBadge(badge)) return '';
+  if (badge.rarity === 'mythic') return 'badge-exclusive-card badge-mythic';
+  if (badge.rarity === 'legendary') return 'badge-exclusive-card badge-legendary';
+  return 'badge-exclusive-card badge-epic';
+}
+
+function getExclusiveChipClass(badge: { rarity: BadgeRarity; animated?: boolean }): string {
+  if (!isExclusiveBadge(badge)) return '';
+  return `badge-exclusive-chip badge-${badge.rarity}`;
 }
 
 export default function ProfileView() {
@@ -1574,17 +1591,21 @@ export default function ProfileView() {
                       <div className="mt-2 grid gap-2">
                         {profileBadgesDetailed.slice(0, 18).map((badge) => {
                           const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
-                          const exclusive = badge.animated || badge.rarity === 'legendary' || badge.rarity === 'mythic';
+                          const exclusive = isExclusiveBadge(badge);
                           return (
                             <div
                               key={`badge-unlocked-${badge.key}`}
-                              className={`rounded-xl border px-3 py-2 ${rarityStyle.panelClass} ${
-                                exclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
+                              className={`relative rounded-xl border px-3 py-2 ${rarityStyle.panelClass} ${
+                                exclusive ? `${getExclusiveCardClass(badge)} ${rarityStyle.glowClass}` : ''
                               }`}
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-3 min-w-0">
-                                  <div className="h-11 w-11 rounded-lg border border-white/20 bg-slate-950/50 overflow-hidden shrink-0">
+                                  <div
+                                    className={`h-11 w-11 rounded-lg border border-white/20 bg-slate-950/50 overflow-hidden shrink-0 ${
+                                      exclusive ? 'badge-exclusive-icon' : ''
+                                    }`}
+                                  >
                                     <SafeImage
                                       src={badge.iconPng || getBadgeIconPng(badge.key)}
                                       fallbackSrc="/images/badges/default.png"
@@ -1596,7 +1617,11 @@ export default function ProfileView() {
                                   </div>
                                   <p className="font-semibold truncate">{badge.label}</p>
                                 </div>
-                                <span className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass}`}>
+                                <span
+                                  className={`inline-flex border px-2 py-1 text-[11px] ${rarityStyle.chipClass} ${
+                                    exclusive ? getExclusiveChipClass(badge) : ''
+                                  }`}
+                                >
                                   {BADGE_RARITY_LABELS[badge.rarity]}
                                 </span>
                               </div>
@@ -1984,12 +2009,12 @@ export default function ProfileView() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       {(profileBadgesDetailed.length > 0 ? profileBadgesDetailed : []).slice(0, 4).map((badge) => {
                         const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
-                        const exclusive = badge.animated || badge.rarity === 'legendary' || badge.rarity === 'mythic';
+                        const exclusive = isExclusiveBadge(badge);
                         return (
                           <span
                             key={`preview-${badge.key}`}
                             className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] ${rarityStyle.chipClass} ${
-                              exclusive ? `animate-pulse ${rarityStyle.glowClass}` : ''
+                              exclusive ? `${getExclusiveChipClass(badge)} ${rarityStyle.glowClass}` : ''
                             }`}
                           >
                             <SafeImage
@@ -2014,10 +2039,13 @@ export default function ProfileView() {
                     <div className="mt-2 flex flex-wrap gap-2">
                       {profileBadgesDetailed.slice(0, 8).map((badge) => {
                         const rarityStyle = BADGE_RARITY_STYLES[badge.rarity];
+                        const exclusive = isExclusiveBadge(badge);
                         return (
                           <span
                             key={`badge-${badge.key}`}
-                            className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] ${rarityStyle.chipClass}`}
+                            className={`inline-flex items-center gap-1 border px-2 py-1 text-[11px] ${rarityStyle.chipClass} ${
+                              exclusive ? `${getExclusiveChipClass(badge)} ${rarityStyle.glowClass}` : ''
+                            }`}
                             title={badge.description}
                           >
                             <SafeImage

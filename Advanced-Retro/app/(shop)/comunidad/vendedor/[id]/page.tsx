@@ -8,7 +8,7 @@ import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { getProductHref } from '@/lib/productUrl';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { buildPageMetadata } from '@/lib/seo';
-import { getBadgeDefinition, getBadgeIconPng } from '@/lib/gamificationBadges';
+import { BADGE_RARITY_STYLES, getBadgeDefinition, getBadgeIconPng } from '@/lib/gamificationBadges';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,9 +191,22 @@ export default async function CommunitySellerPage({ params }: PageProps) {
                       const badgeDef = getBadgeDefinition(badge);
                       const badgeLabel = badgeDef?.label || badge.replaceAll('-', ' ');
                       const badgeIcon = badgeDef?.iconPng || getBadgeIconPng(badge);
+                      const badgeRarity = (badgeDef?.rarity || 'common') as keyof typeof BADGE_RARITY_STYLES;
+                      const rarityStyle = BADGE_RARITY_STYLES[badgeRarity];
+                      const exclusive =
+                        Boolean(badgeDef?.animated) || badgeRarity === 'legendary' || badgeRarity === 'mythic';
                       return (
-                        <span key={badge} className="chip border-primary/40 bg-primary/10 text-primary inline-flex items-center gap-2">
-                          <span className="h-5 w-5 rounded-full bg-slate-900/80 border border-primary/30 overflow-hidden">
+                        <span
+                          key={badge}
+                          className={`chip inline-flex items-center gap-2 ${rarityStyle.chipClass} ${
+                            exclusive ? `badge-exclusive-chip badge-${badgeRarity}` : ''
+                          }`}
+                        >
+                          <span
+                            className={`h-5 w-5 rounded-full bg-slate-900/80 border border-primary/30 overflow-hidden ${
+                              exclusive ? 'badge-exclusive-icon' : ''
+                            }`}
+                          >
                             <SafeImage
                               src={badgeIcon}
                               fallbackSrc="/images/badges/default.png"

@@ -652,6 +652,127 @@ body::before {
   opacity: 1;
 }
 
+@keyframes badge-float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes badge-shimmer-slide {
+  0% {
+    transform: translateX(-140%) skewX(-18deg);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.28;
+  }
+  42% {
+    opacity: 0.12;
+  }
+  100% {
+    transform: translateX(220%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+@keyframes badge-aura-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 0 0 rgba(0, 0, 0, 0);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 0 14px rgba(75, 228, 214, 0.18);
+  }
+}
+
+@keyframes badge-icon-pulse {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+  50% {
+    transform: translateY(-1px) scale(1.06);
+    filter: drop-shadow(0 0 7px rgba(255, 255, 255, 0.26));
+  }
+}
+
+.badge-exclusive-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  animation: badge-float-slow 5.2s ease-in-out infinite;
+}
+
+.badge-exclusive-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(circle at 20% 14%, rgba(255, 255, 255, 0.08), transparent 38%);
+}
+
+.badge-exclusive-card::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  width: 30%;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.23), transparent);
+  animation: badge-shimmer-slide 3.8s ease-in-out infinite;
+}
+
+.badge-exclusive-card.badge-epic {
+  box-shadow: 0 0 18px rgba(217, 70, 239, 0.2);
+}
+
+.badge-exclusive-card.badge-legendary {
+  box-shadow: 0 0 22px rgba(251, 191, 36, 0.25);
+}
+
+.badge-exclusive-card.badge-mythic {
+  box-shadow: 0 0 26px rgba(244, 63, 94, 0.32), 0 0 18px rgba(34, 211, 238, 0.16);
+}
+
+.badge-exclusive-chip {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  animation: badge-aura-pulse 3.4s ease-in-out infinite;
+}
+
+.badge-exclusive-chip::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  animation: badge-shimmer-slide 3.2s ease-in-out infinite;
+}
+
+.badge-exclusive-chip.badge-legendary,
+.badge-exclusive-chip.badge-mythic {
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.14);
+}
+
+.badge-exclusive-icon {
+  animation: badge-icon-pulse 3s ease-in-out infinite;
+}
+
 input,
 textarea,
 select {
@@ -892,12 +1013,19 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .logo-breath,
   .photo-breath,
+  .badge-exclusive-card,
+  .badge-exclusive-chip,
+  .badge-exclusive-icon,
+  .badge-exclusive-card::after,
+  .badge-exclusive-chip::after,
   [data-site-theme='arcade-neon'] .hero-shell,
   .marquee-track {
     animation: none;
   }
 
-  .photo-hover-pop {
+  .photo-hover-pop,
+  .badge-exclusive-card::after,
+  .badge-exclusive-chip::after {
     transition: none;
   }
 }
