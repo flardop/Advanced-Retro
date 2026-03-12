@@ -25,6 +25,21 @@ Este archivo mantiene trazabilidad breve de trabajo para continuar sin perder co
   - Intento `npx vercel --prod --yes` falló por token inválido.
   - Error: `The specified token is not valid. Use vercel login to generate a new token.`
 
+## 2026-03-12 23:xx (video local v2 generado + subido a Supabase)
+- Objetivo:
+  - Cumplir petición explícita: vídeo generado desde cero, sin YouTube.
+- Media nueva generada localmente:
+  - `public/media/advanced-retro-intro-v2.mp4` (12s, H264, faststart).
+  - `public/images/hero/intro-poster-v2.jpg`.
+- Subida a Supabase Storage (bucket `public`):
+  - `https://darrmonhygphreshbplz.supabase.co/storage/v1/object/public/public/media/advanced-retro-intro-v2.mp4`
+  - `https://darrmonhygphreshbplz.supabase.co/storage/v1/object/public/public/media/intro-poster-v2.jpg`
+- Integración en frontend:
+  - `/Users/joelrivera/tienda-web/Advanced-Retro/components/sections/MediaShowcase.tsx`
+    - actualizado para usar `intro-v2` y `poster-v2`.
+- Validación:
+  - `npm run build` -> OK.
+
 ## 2026-03-12 21:xx (turno actual)
 - Objetivo: corregir fallo de build Vercel por `useSearchParams` sin `Suspense`.
 - Cambios aplicados:
