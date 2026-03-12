@@ -2,12 +2,12 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { useLocale } from '@/components/LocaleProvider';
 
-export default function Navbar() {
+function NavbarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { t } = useLocale();
@@ -211,5 +211,33 @@ export default function Navbar() {
         </div>
       </div>
     </header>
+  );
+}
+
+function NavbarFallback() {
+  return (
+    <header className="sticky top-0 z-50 border-b border-line/70 bg-[rgba(8,14,25,0.84)] backdrop-blur-lg">
+      <div className="container flex h-[66px] items-center justify-between gap-3 sm:h-[70px]">
+        <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
+          <Image
+            src="/logo.png"
+            alt="Advanced Retro — Juegos y nostalgia retro"
+            width={180}
+            height={48}
+            className="h-9 sm:h-10 w-auto object-contain logo-breath"
+            priority
+          />
+        </Link>
+        <div className="chip">Cargando menu...</div>
+      </div>
+    </header>
+  );
+}
+
+export default function Navbar() {
+  return (
+    <Suspense fallback={<NavbarFallback />}>
+      <NavbarContent />
+    </Suspense>
   );
 }

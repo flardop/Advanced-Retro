@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -386,7 +386,7 @@ function pickFeaturedColumn(source: any[], take: number, used: Set<string>): any
   return picked;
 }
 
-export default function Catalog() {
+function CatalogContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
   const [active, setActive] = useState<string>('all');
@@ -1373,5 +1373,23 @@ export default function Catalog() {
         ) : null}
       </div>
     </section>
+  );
+}
+
+function CatalogFallback() {
+  return (
+    <section className="section">
+      <div className="container">
+        <div className="glass p-6 text-textMuted">Cargando catalogo...</div>
+      </div>
+    </section>
+  );
+}
+
+export default function Catalog() {
+  return (
+    <Suspense fallback={<CatalogFallback />}>
+      <CatalogContent />
+    </Suspense>
   );
 }
