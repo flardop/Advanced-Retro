@@ -11,7 +11,7 @@ import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
 import { getProductHref, parseProductRouteParam } from '@/lib/productUrl';
 import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
-import { buildYouTubeSearchEmbed, parseVideoEmbedList } from '@/lib/videoEmbed';
+import { parseVideoEmbedList } from '@/lib/videoEmbed';
 
 type BundleOptionType =
   | 'cartucho'
@@ -668,7 +668,6 @@ export default function ProductDetail({
   const [selectedImage, setSelectedImage] = useState(0);
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
-  const [showSearchVideoPlayer, setShowSearchVideoPlayer] = useState(false);
   const buySectionRef = useRef<HTMLDivElement | null>(null);
   const reviewsSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -739,6 +738,7 @@ export default function ProductDetail({
       if (!supabaseClient) {
         const parsed = parseProductRouteParam(String(productId || ''));
         const fallback =
+          nextInitialProduct ||
           (parsed.idCandidate
             ? sampleProducts.find((p) => String(p.id) === String(parsed.idCandidate))
             : null) ||
@@ -783,13 +783,46 @@ export default function ProductDetail({
       }
 
       if (!detail && parsed.idPrefixCandidate) {
-        const { data, error } = await supabaseClient
-          .from('products')
-          .select(PRODUCT_DETAIL_COLUMNS)
-          .ilike('id', `${parsed.idPrefixCandidate}%`)
-          .limit(2);
-        if (!error && Array.isArray(data) && data.length === 1) {
-          detail = data[0];
+        const safePrefix = String(parsed.idPrefixCandidate || '').trim().toLowerCase();
+        if (safePrefix) {
+          const fast = await supabaseClient
+            .from('products')
+            .select(PRODUCT_DETAIL_COLUMNS)
+            .ilike('id', `${safePrefix}%`)
+            .limit(2);
+
+          if (!fast.error && Array.isArray(fast.data) && fast.data.length === 1) {
+            detail = fast.data[0];
+          }
+
+          // UUID fallback: when ilike on id is not supported by DB type/policies.
+          if (!detail) {
+            const scan = await supabaseClient
+              .from('products')
+              .select('id')
+              .order('updated_at', { ascending: false })
+              .limit(3000);
+
+            if (!scan.error && Array.isArray(scan.data) && scan.data.length > 0) {
+              const matches = scan.data.filter((row: any) =>
+                String(row?.id || '').toLowerCase().startsWith(safePrefix)
+              );
+
+              if (matches.length === 1) {
+                const resolvedId = String(matches[0]?.id || '').trim();
+                if (resolvedId) {
+                  const full = await supabaseClient
+                    .from('products')
+                    .select(PRODUCT_DETAIL_COLUMNS)
+                    .eq('id', resolvedId)
+                    .maybeSingle();
+                  if (full.data) {
+                    detail = full.data;
+                  }
+                }
+              }
+            }
+          }
         }
       }
 
@@ -1149,7 +1182,6 @@ export default function ProductDetail({
   useEffect(() => {
     setActiveVideoIndex(0);
     setShowVideoPlayer(false);
-    setShowSearchVideoPlayer(false);
   }, [productId]);
 
   const selectedBundleOptions = useMemo(
@@ -1187,20 +1219,15 @@ export default function ProductDetail({
       Boolean(marketGuideEbay?.available) &&
       Number(marketGuideEbay?.sampleSize || 0) >= 2);
   const ebayDiagnosticHref = `/api/market/ebay-diagnostic?q=${encodeURIComponent(String(product?.name || ''))}`;
-  const videoEmbeds = useMemo(() => parseVideoEmbedList((product as any)?.trailer_url), [product]);
+  const videoEmbeds = useMemo(
+    () => parseVideoEmbedList((product as any)?.trailer_url).filter((embed) => embed.provider !== 'youtube'),
+    [product]
+  );
   const videoEmbed = videoEmbeds[activeVideoIndex] || null;
   useEffect(() => {
     if (activeVideoIndex <= videoEmbeds.length - 1) return;
     setActiveVideoIndex(0);
   }, [videoEmbeds, activeVideoIndex]);
-
-  const fallbackVideoSearchEmbed = useMemo(() => {
-    const title = String(product?.name || '').trim();
-    if (!title) return null;
-    const platform = String(product?.platform || '').trim();
-    const query = platform ? `${title} ${platform} gameplay trailer` : `${title} gameplay trailer`;
-    return buildYouTubeSearchEmbed(query);
-  }, [product]);
 
   const scrollToBuySection = () => {
     buySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1441,7 +1468,7 @@ export default function ProductDetail({
             <div className="mt-5 rounded-xl border border-line bg-[rgba(10,18,30,0.56)] p-3">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm font-semibold">Gameplay / tráiler</p>
-                <span className="chip text-[11px]">{videoEmbed.provider === 'youtube' ? 'YouTube' : 'Vimeo'}</span>
+                <span className="chip text-[11px]">Vídeo</span>
               </div>
 
               {videoEmbeds.length > 1 ? (
@@ -1461,12 +1488,12 @@ export default function ProductDetail({
                             ? 'border-primary bg-[rgba(75,228,214,0.14)]'
                             : 'border-line bg-[rgba(9,16,28,0.8)] hover:border-primary/35'
                         }`}
-                      >
-                        <p className="text-xs font-semibold">Vídeo {index + 1}</p>
-                        <p className="text-[11px] text-textMuted mt-0.5">{embed.provider === 'youtube' ? 'YouTube' : 'Vimeo'}</p>
-                      </button>
-                    );
-                  })}
+                        >
+                          <p className="text-xs font-semibold">Vídeo {index + 1}</p>
+                          <p className="text-[11px] text-textMuted mt-0.5">Fuente externa</p>
+                        </button>
+                      );
+                    })}
                 </div>
               ) : null}
 
@@ -1515,37 +1542,11 @@ export default function ProductDetail({
             <div className="mt-5 rounded-xl border border-line bg-[rgba(10,18,30,0.56)] p-3">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="text-sm font-semibold">Gameplay / tráiler</p>
-                <span className="chip text-[11px]">YouTube</span>
+                <span className="chip text-[11px]">Sin vídeo local</span>
               </div>
-              {!showSearchVideoPlayer ? (
-                <>
-                  <p className="text-sm text-textMuted">
-                    No hay tráiler oficial guardado. Puedes ver gameplay aquí sin salir de la tienda.
-                  </p>
-                  {fallbackVideoSearchEmbed ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowSearchVideoPlayer(true)}
-                      className="mt-2 inline-flex items-center rounded-lg border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
-                    >
-                      Ver gameplay aquí
-                    </button>
-                  ) : null}
-                </>
-              ) : (
-                <div className="relative overflow-hidden rounded-lg border border-line">
-                  <div className="aspect-video w-full">
-                    <iframe
-                      src={fallbackVideoSearchEmbed?.embedUrl || ''}
-                      title={`Búsqueda de gameplay para ${product.name}`}
-                      className="h-full w-full"
-                      loading="lazy"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-              )}
+              <p className="text-sm text-textMuted">
+                Este producto todavía no tiene vídeo local cargado.
+              </p>
             </div>
           )}
 

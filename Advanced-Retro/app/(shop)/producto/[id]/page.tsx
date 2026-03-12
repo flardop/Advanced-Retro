@@ -10,6 +10,12 @@ import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata, buildProductS
 import { getProductReviewsSql } from '@/lib/productSocialSql';
 import { permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.ANON;
+const supabasePublic = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 function parseBooleanQuery(value: string | string[] | undefined): boolean {
   if (Array.isArray(value)) {
@@ -27,8 +33,9 @@ type ProductPageProps = {
 
 async function getProductByIdentifier(identifier: string) {
   const parsed = parseProductRouteParam(identifier);
+  const db = supabaseAdmin ?? supabasePublic;
 
-  if (!supabaseAdmin) {
+  if (!db) {
     const byId = parsed.idCandidate
       ? sampleProducts.find((p: any) => String(p?.id || '') === parsed.idCandidate)
       : null;
@@ -46,8 +53,46 @@ async function getProductByIdentifier(identifier: string) {
     return null;
   }
 
+  const findByIdPrefix = async (prefix: string) => {
+    const safePrefix = String(prefix || '').trim().toLowerCase();
+    if (!safePrefix) return null;
+
+    // Fast path: works when id is text-compatible for ilike.
+    const direct = await db
+      .from('products')
+      .select('*')
+      .ilike('id', `${safePrefix}%`)
+      .limit(2);
+    if (!direct.error && Array.isArray(direct.data) && direct.data.length === 1) {
+      return direct.data[0];
+    }
+
+    // Fallback: for UUID columns where ilike can fail, scan ids and resolve prefix in JS.
+    const scan = await db
+      .from('products')
+      .select('id')
+      .order('updated_at', { ascending: false })
+      .limit(3000);
+    if (scan.error || !Array.isArray(scan.data) || scan.data.length === 0) return null;
+
+    const matches = scan.data.filter((row: any) =>
+      String(row?.id || '').toLowerCase().startsWith(safePrefix)
+    );
+    if (matches.length !== 1) return null;
+
+    const resolvedId = String(matches[0]?.id || '').trim();
+    if (!resolvedId) return null;
+
+    const full = await db
+      .from('products')
+      .select('*')
+      .eq('id', resolvedId)
+      .maybeSingle();
+    return full.data || null;
+  };
+
   if (parsed.idCandidate) {
-    const { data } = await supabaseAdmin
+    const { data } = await db
       .from('products')
       .select('*')
       .eq('id', parsed.idCandidate)
@@ -56,25 +101,56 @@ async function getProductByIdentifier(identifier: string) {
   }
 
   if (parsed.idPrefixCandidate) {
-    const { data, error } = await supabaseAdmin
-      .from('products')
-      .select('*')
-      .ilike('id', `${parsed.idPrefixCandidate}%`)
-      .limit(2);
-
-    if (!error && Array.isArray(data) && data.length === 1) {
-      return data[0];
+    const byPrefix = await findByIdPrefix(parsed.idPrefixCandidate);
+    if (byPrefix) {
+      return byPrefix;
     }
   }
 
   if (parsed.slugCandidate) {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from('products')
       .select('*')
       .eq('slug', parsed.slugCandidate)
       .order('updated_at', { ascending: false })
       .limit(1);
     if (!error && Array.isArray(data) && data.length > 0) return data[0];
+
+    const nameQuery = parsed.slugCandidate.replace(/-/g, ' ').trim();
+    if (nameQuery) {
+      const byName = await db
+        .from('products')
+        .select('*')
+        .ilike('name', `${nameQuery}%`)
+        .order('updated_at', { ascending: false })
+        .limit(1);
+      if (!byName.error && Array.isArray(byName.data) && byName.data.length > 0) {
+        return byName.data[0];
+      }
+    }
+  }
+
+  // Last fallback to local sample to avoid hard 404 when DB env or policies are misconfigured.
+  const byId = parsed.idCandidate
+    ? sampleProducts.find((p: any) => String(p?.id || '') === parsed.idCandidate)
+    : null;
+  if (byId) return byId;
+
+  if (parsed.idPrefixCandidate) {
+    const byPrefix = sampleProducts.find((p: any) =>
+      String(p?.id || '').toLowerCase().startsWith(String(parsed.idPrefixCandidate).toLowerCase())
+    );
+    if (byPrefix) return byPrefix;
+  }
+
+  if (parsed.slugCandidate) {
+    const bySlug = sampleProducts.find((p: any) => {
+      const slug = String((p as any)?.slug || '')
+        .trim()
+        .toLowerCase();
+      return slug && slug === parsed.slugCandidate;
+    });
+    if (bySlug) return bySlug;
   }
 
   return null;

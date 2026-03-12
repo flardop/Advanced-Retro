@@ -33,9 +33,6 @@ const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBann
 const OptionalAnalytics = dynamic(() => import('@/components/OptionalAnalytics'), {
   ssr: false,
 });
-const ThemeStyleMenu = dynamic(() => import('@/components/ThemeStyleMenu'), {
-  ssr: false,
-});
 const AnimatedFavicon = dynamic(() => import('@/components/AnimatedFavicon'), {
   ssr: false,
 });
@@ -228,14 +225,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pb-[84px] lg:pb-0">{children}</main>
           <Footer />
           <ClientToaster />
           <SupportAssistantWidget />
           <LanguageSwitcherPopup />
           <CookieConsentBanner />
           <OptionalAnalytics />
-          <ThemeStyleMenu />
         </LocaleProvider>
       </body>
     </html>
