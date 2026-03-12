@@ -18,3 +18,8 @@ Este archivo mantiene trazabilidad breve de trabajo para continuar sin perder co
 ### Validacion local
 - `npm run build` ejecutado en `/Users/joelrivera/tienda-web/Advanced-Retro`.
 - Resultado: OK, sin errores de prerender y sin error de `useSearchParams`.
+
+### Publicacion
+- Commit: `b83f0fb`.
+- Mensaje: `fix: wrap searchParams consumers in suspense for prerender`.
+- Push: `main` -> `origin/main` (redeploy Vercel debe activarse automaticamente).
