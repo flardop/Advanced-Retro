@@ -16,6 +16,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.ANON;
 const supabasePublic = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+const PRODUCT_FALLBACK_LIMIT = 2500;
 
 function parseBooleanQuery(value: string | string[] | undefined): boolean {
   if (Array.isArray(value)) {
@@ -35,23 +36,60 @@ async function getProductByIdentifier(identifier: string) {
   const parsed = parseProductRouteParam(identifier);
   const db = supabaseAdmin ?? supabasePublic;
 
-  if (!db) {
-    const byId = parsed.idCandidate
-      ? sampleProducts.find((p: any) => String(p?.id || '') === parsed.idCandidate)
-      : null;
-    if (byId) return byId;
+  const resolveFromRows = (rows: any[] | null | undefined) => {
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+
+    if (parsed.idCandidate) {
+      const exactById = rows.find((row: any) => String(row?.id || '') === String(parsed.idCandidate));
+      if (exactById) return exactById;
+    }
+
+    if (parsed.idPrefixCandidate) {
+      const safePrefix = String(parsed.idPrefixCandidate || '').trim().toLowerCase();
+      const prefixMatches = rows.filter((row: any) =>
+        String(row?.id || '').toLowerCase().startsWith(safePrefix)
+      );
+      if (prefixMatches.length === 1) return prefixMatches[0];
+      if (prefixMatches.length > 1 && parsed.slugCandidate) {
+        const bySlugInPrefix = prefixMatches.find((row: any) => {
+          const slug = String((row as any)?.slug || '')
+            .trim()
+            .toLowerCase();
+          return slug && slug === parsed.slugCandidate;
+        });
+        if (bySlugInPrefix) return bySlugInPrefix;
+      }
+    }
 
     if (parsed.slugCandidate) {
-      const bySlug = sampleProducts.find((p: any) => {
-        const slug = String((p as any)?.slug || '')
+      const exactBySlug = rows.find((row: any) => {
+        const slug = String((row as any)?.slug || '')
           .trim()
           .toLowerCase();
         return slug && slug === parsed.slugCandidate;
       });
-      if (bySlug) return bySlug;
+      if (exactBySlug) return exactBySlug;
+
+      const tokens = String(parsed.slugCandidate || '')
+        .split('-')
+        .map((token) => token.trim())
+        .filter((token) => token.length >= 2);
+      if (tokens.length > 0) {
+        const fuzzyByName = rows.find((row: any) => {
+          const normalizedName = String((row as any)?.name || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+          return tokens.every((token) => normalizedName.includes(token));
+        });
+        if (fuzzyByName) return fuzzyByName;
+      }
     }
+
     return null;
-  }
+  };
+
+  if (!db) return resolveFromRows(sampleProducts);
 
   const findByIdPrefix = async (prefix: string) => {
     const safePrefix = String(prefix || '').trim().toLowerCase();
@@ -130,30 +168,18 @@ async function getProductByIdentifier(identifier: string) {
     }
   }
 
+  // Hard fallback: resolve from a broad public snapshot when direct queries fail
+  // (helps with mixed schemas, short-id URLs and permissive/legacy setups).
+  const { data: snapshotRows } = await db
+    .from('products')
+    .select('*')
+    .order('updated_at', { ascending: false })
+    .limit(PRODUCT_FALLBACK_LIMIT);
+  const bySnapshot = resolveFromRows(snapshotRows as any[]);
+  if (bySnapshot) return bySnapshot;
+
   // Last fallback to local sample to avoid hard 404 when DB env or policies are misconfigured.
-  const byId = parsed.idCandidate
-    ? sampleProducts.find((p: any) => String(p?.id || '') === parsed.idCandidate)
-    : null;
-  if (byId) return byId;
-
-  if (parsed.idPrefixCandidate) {
-    const byPrefix = sampleProducts.find((p: any) =>
-      String(p?.id || '').toLowerCase().startsWith(String(parsed.idPrefixCandidate).toLowerCase())
-    );
-    if (byPrefix) return byPrefix;
-  }
-
-  if (parsed.slugCandidate) {
-    const bySlug = sampleProducts.find((p: any) => {
-      const slug = String((p as any)?.slug || '')
-        .trim()
-        .toLowerCase();
-      return slug && slug === parsed.slugCandidate;
-    });
-    if (bySlug) return bySlug;
-  }
-
-  return null;
+  return resolveFromRows(sampleProducts);
 }
 
 async function getProductSocialSummary(productId: string) {

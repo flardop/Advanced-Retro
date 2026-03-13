@@ -398,7 +398,7 @@ export default function CommunityFeed() {
 
   return (
     <section className="section" id="comunidad">
-      <div className="mx-auto w-full max-w-[1720px] space-y-5 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1640px] space-y-5 px-4 sm:px-6 lg:px-8">
         <div className="glass p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -414,7 +414,7 @@ export default function CommunityFeed() {
               </div>
             </div>
 
-            <div className="grid min-w-[250px] gap-2 sm:grid-cols-2">
+            <div className="grid w-full gap-2 sm:w-auto sm:min-w-[280px] sm:grid-cols-2">
               <Link href="/comunidad/publicar" className="button-primary justify-center">Publicar anuncio</Link>
               <Link href="/comunidad/mis-anuncios" className="button-secondary justify-center">Mis anuncios</Link>
               <Link href="/comunidad/vendedores" className="button-secondary justify-center">Ver vendedores</Link>
@@ -439,15 +439,15 @@ export default function CommunityFeed() {
         </div>
 
         <div className="glass p-4 sm:p-5">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <input
-              className="min-w-[240px] flex-1 rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-4 py-3 text-sm"
+              className="w-full min-w-0 flex-1 rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-4 py-3 text-sm"
               placeholder="Buscar en comunidad (Pokémon, Zelda, consola, manual...)"
               value={marketQuery}
               onChange={(e) => setMarketQuery(e.target.value)}
             />
             <select
-              className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-3 text-sm"
+              className="w-full rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-3 text-sm sm:w-auto"
               value={marketSort}
               onChange={(e) => setMarketSort(e.target.value as typeof marketSort)}
             >
@@ -457,73 +457,154 @@ export default function CommunityFeed() {
             </select>
             <button
               type="button"
-              className="button-secondary"
+              className="button-secondary w-full justify-center sm:w-auto sm:min-w-[160px]"
               onClick={() => setShowFilters((value) => !value)}
             >
-              {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
+              {showFilters ? 'Cerrar filtros' : 'Abrir filtros'}
             </button>
           </div>
 
           {showFilters ? (
-            <div className="mt-3 grid gap-2 lg:grid-cols-5">
-              <select
-                className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
-                value={deliveryFilter}
-                onChange={(e) => setDeliveryFilter(e.target.value as typeof deliveryFilter)}
-              >
-                <option value="all">Estado: todos</option>
-                <option value="pending">Pendiente</option>
-                <option value="processing">Preparando</option>
-                <option value="shipped">Enviado</option>
-                <option value="delivered">Entregado</option>
-              </select>
-              <select
-                className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
-                value={categoryGroupFilter}
-                onChange={(e) => setCategoryGroupFilter(e.target.value as any)}
-              >
-                <option value="all">Categoría: todo</option>
-                <option value="juegos">Juegos</option>
-                <option value="cajas-manuales">Cajas y manuales</option>
-                <option value="accesorios">Accesorios</option>
-                <option value="consolas">Consolas</option>
-              </select>
-              <select
-                className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
-                value={conditionFilter}
-                onChange={(e) => setConditionFilter(e.target.value as typeof conditionFilter)}
-              >
-                <option value="all">Estado del artículo</option>
-                <option value="used">Usado</option>
-                <option value="restored">Restaurado</option>
-                <option value="new">Nuevo</option>
-              </select>
-              <select
-                className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
-                value={originalityFilter}
-                onChange={(e) => setOriginalityFilter(e.target.value as typeof originalityFilter)}
-              >
-                <option value="all">Originalidad</option>
-                <option value="original_verificado">Original verificado</option>
-                <option value="original_sin_verificar">Original sin verificar</option>
-                <option value="repro_1_1">Repro 1:1</option>
-                <option value="mixto">Mixto</option>
-              </select>
-              <button
-                type="button"
-                className="button-secondary justify-center"
-                onClick={() => {
-                  setMarketQuery('');
-                  setMarketSort('newest');
-                  setDeliveryFilter('all');
-                  setCategoryGroupFilter('all');
-                  setConditionFilter('all');
-                  setOriginalityFilter('all');
-                }}
-              >
-                Limpiar filtros
-              </button>
-            </div>
+            <>
+              <div className="mt-3 hidden lg:grid gap-2 lg:grid-cols-5">
+                <select
+                  className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
+                  value={deliveryFilter}
+                  onChange={(e) => setDeliveryFilter(e.target.value as typeof deliveryFilter)}
+                >
+                  <option value="all">Estado: todos</option>
+                  <option value="pending">Pendiente</option>
+                  <option value="processing">Preparando</option>
+                  <option value="shipped">Enviado</option>
+                  <option value="delivered">Entregado</option>
+                </select>
+                <select
+                  className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
+                  value={categoryGroupFilter}
+                  onChange={(e) => setCategoryGroupFilter(e.target.value as any)}
+                >
+                  <option value="all">Categoría: todo</option>
+                  <option value="juegos">Juegos</option>
+                  <option value="cajas-manuales">Cajas y manuales</option>
+                  <option value="accesorios">Accesorios</option>
+                  <option value="consolas">Consolas</option>
+                </select>
+                <select
+                  className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
+                  value={conditionFilter}
+                  onChange={(e) => setConditionFilter(e.target.value as typeof conditionFilter)}
+                >
+                  <option value="all">Estado del artículo</option>
+                  <option value="used">Usado</option>
+                  <option value="restored">Restaurado</option>
+                  <option value="new">Nuevo</option>
+                </select>
+                <select
+                  className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
+                  value={originalityFilter}
+                  onChange={(e) => setOriginalityFilter(e.target.value as typeof originalityFilter)}
+                >
+                  <option value="all">Originalidad</option>
+                  <option value="original_verificado">Original verificado</option>
+                  <option value="original_sin_verificar">Original sin verificar</option>
+                  <option value="repro_1_1">Repro 1:1</option>
+                  <option value="mixto">Mixto</option>
+                </select>
+                <button
+                  type="button"
+                  className="button-secondary justify-center"
+                  onClick={() => {
+                    setMarketQuery('');
+                    setMarketSort('newest');
+                    setDeliveryFilter('all');
+                    setCategoryGroupFilter('all');
+                    setConditionFilter('all');
+                    setOriginalityFilter('all');
+                  }}
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+
+              <div className="fixed inset-0 z-[70] bg-[rgba(2,8,16,0.72)] backdrop-blur-sm p-4 lg:hidden">
+                <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-line bg-[rgba(8,14,24,0.98)] p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold">Filtros de comunidad</p>
+                    <button type="button" className="chip" onClick={() => setShowFilters(false)}>
+                      Cerrar
+                    </button>
+                  </div>
+                  <div className="mt-3 grid gap-2">
+                    <select
+                      className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
+                      value={deliveryFilter}
+                      onChange={(e) => setDeliveryFilter(e.target.value as typeof deliveryFilter)}
+                    >
+                      <option value="all">Estado: todos</option>
+                      <option value="pending">Pendiente</option>
+                      <option value="processing">Preparando</option>
+                      <option value="shipped">Enviado</option>
+                      <option value="delivered">Entregado</option>
+                    </select>
+                    <select
+                      className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
+                      value={categoryGroupFilter}
+                      onChange={(e) => setCategoryGroupFilter(e.target.value as any)}
+                    >
+                      <option value="all">Categoría: todo</option>
+                      <option value="juegos">Juegos</option>
+                      <option value="cajas-manuales">Cajas y manuales</option>
+                      <option value="accesorios">Accesorios</option>
+                      <option value="consolas">Consolas</option>
+                    </select>
+                    <select
+                      className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
+                      value={conditionFilter}
+                      onChange={(e) => setConditionFilter(e.target.value as typeof conditionFilter)}
+                    >
+                      <option value="all">Estado del artículo</option>
+                      <option value="used">Usado</option>
+                      <option value="restored">Restaurado</option>
+                      <option value="new">Nuevo</option>
+                    </select>
+                    <select
+                      className="rounded-xl border border-line bg-[rgba(12,20,34,0.55)] px-3 py-2.5 text-sm"
+                      value={originalityFilter}
+                      onChange={(e) => setOriginalityFilter(e.target.value as typeof originalityFilter)}
+                    >
+                      <option value="all">Originalidad</option>
+                      <option value="original_verificado">Original verificado</option>
+                      <option value="original_sin_verificar">Original sin verificar</option>
+                      <option value="repro_1_1">Repro 1:1</option>
+                      <option value="mixto">Mixto</option>
+                    </select>
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        className="button-secondary flex-1 justify-center"
+                        onClick={() => {
+                          setMarketQuery('');
+                          setMarketSort('newest');
+                          setDeliveryFilter('all');
+                          setCategoryGroupFilter('all');
+                          setConditionFilter('all');
+                          setOriginalityFilter('all');
+                        }}
+                      >
+                        Limpiar
+                      </button>
+                      <button
+                        type="button"
+                        className="button-primary flex-1 justify-center"
+                        onClick={() => setShowFilters(false)}
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : null}
         </div>
 
@@ -554,7 +635,7 @@ export default function CommunityFeed() {
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
                 {visibleListings.map((listing) => {
                   const image =
                     Array.isArray(listing.images) && listing.images.length > 0
@@ -582,7 +663,7 @@ export default function CommunityFeed() {
 
                   return (
                     <article key={listing.id} className="overflow-hidden rounded-2xl border border-line bg-[rgba(12,19,31,0.88)] shadow-[0_12px_26px_rgba(1,8,18,0.28)] transition hover:-translate-y-0.5 hover:shadow-glow">
-                      <Link href={`/comunidad/anuncio/${listing.id}`} className="block relative h-56 bg-surface">
+                      <Link href={`/comunidad/anuncio/${listing.id}`} className="block relative h-48 sm:h-56 bg-surface">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={image}

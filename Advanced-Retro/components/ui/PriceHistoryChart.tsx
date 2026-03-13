@@ -85,6 +85,18 @@ function chooseAxisStepCents(maxCents: number): number {
   return 25000; // 250€
 }
 
+function percentileCents(values: number[], quantile: number): number {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const q = Math.min(1, Math.max(0, quantile));
+  const index = (sorted.length - 1) * q;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sorted[lower];
+  const weight = index - lower;
+  return Math.round(sorted[lower] + (sorted[upper] - sorted[lower]) * weight);
+}
+
 export default function PriceHistoryChart({
   points,
   marketOverlay,
@@ -168,11 +180,11 @@ export default function PriceHistoryChart({
       : safePoints;
 
   const width = 760;
-  const height = 320;
+  const height = 260;
   const paddingLeft = 64;
   const paddingRight = 24;
   const paddingTop = 16;
-  const paddingBottom = 72;
+  const paddingBottom = 48;
   const chartLeft = paddingLeft;
   const chartRight = width - paddingRight;
   const chartTop = paddingTop;
@@ -190,11 +202,19 @@ export default function PriceHistoryChart({
 
   const allPrices = [...prices, ...marketValues];
   const dataMaxPrice = Math.max(...allPrices);
+  const p90 = percentileCents(allPrices, 0.9);
+  const p95 = percentileCents(allPrices, 0.95);
+  const robustUpperBound = Math.max(p90, Math.round(p95 * 1.1));
+  const hasExtremeOutlier = dataMaxPrice > robustUpperBound * 1.7 && allPrices.length >= 8;
+  const effectiveMaxPrice = hasExtremeOutlier ? robustUpperBound : dataMaxPrice;
   const axisMinPrice = 0;
-  const axisStep = chooseAxisStepCents(dataMaxPrice);
-  const axisMaxPrice = Math.max(axisStep, Math.ceil(dataMaxPrice / axisStep) * axisStep);
+  const axisStep = chooseAxisStepCents(effectiveMaxPrice);
+  const axisMaxPrice = Math.max(axisStep, Math.ceil(effectiveMaxPrice / axisStep) * axisStep);
   const spread = Math.max(1, axisMaxPrice - axisMinPrice);
-  const toY = (price: number) => chartTop + (1 - (price - axisMinPrice) / spread) * chartHeight;
+  const toY = (price: number) => {
+    const clamped = Math.min(axisMaxPrice, Math.max(axisMinPrice, price));
+    return chartTop + (1 - (clamped - axisMinPrice) / spread) * chartHeight;
+  };
 
   const yTicks: number[] = [];
   for (let value = axisMinPrice; value <= axisMaxPrice; value += axisStep) {
@@ -237,6 +257,26 @@ export default function PriceHistoryChart({
         { id: 'max', label: 'eBay máximo', value: marketOverlay.maxPrice, color: '#f472b6' },
       ].filter((item) => isValidPrice(item.value))
     : [];
+  const marketLineLabelYs = (() => {
+    const labels = marketLines
+      .map((line) => ({
+        id: line.id,
+        y: toY(Number(line.value)),
+      }))
+      .sort((a, b) => a.y - b.y);
+    const minGap = 12;
+    for (let index = 1; index < labels.length; index += 1) {
+      if (labels[index].y - labels[index - 1].y < minGap) {
+        labels[index].y = labels[index - 1].y + minGap;
+      }
+    }
+    const result: Record<string, number> = {};
+    for (const item of labels) {
+      result[item.id] = Math.min(chartBottom - 2, Math.max(chartTop + 10, item.y));
+    }
+    return result;
+  })();
+  const outOfScalePoints = displayPoints.filter((point) => point.price > axisMaxPrice).length;
 
   return (
     <div className="border border-line bg-surface p-3">
@@ -286,7 +326,7 @@ export default function PriceHistoryChart({
               />
               <text
                 x={chartRight - 4}
-                y={y - 4}
+                y={(marketLineLabelYs[line.id] ?? y) - 2}
                 fill={line.color}
                 fontSize="9"
                 textAnchor="end"
@@ -305,7 +345,7 @@ export default function PriceHistoryChart({
             cx={coord.x}
             cy={coord.y}
             r={4.2}
-            fill="#5d8bff"
+            fill={coord.point.price > axisMaxPrice ? '#f97316' : '#5d8bff'}
             stroke="#d9e5ff"
             strokeWidth="1"
             style={{ cursor: 'crosshair' }}
@@ -351,6 +391,11 @@ export default function PriceHistoryChart({
         <span>
           Actual: <span className="text-primary">{formatEuro(last.price)}</span>
         </span>
+        {outOfScalePoints > 0 ? (
+          <span className="text-[11px] text-[#fbbf24]">
+            Escala compactada ({outOfScalePoints} punto{outOfScalePoints === 1 ? '' : 's'} atipico{outOfScalePoints === 1 ? '' : 's'})
+          </span>
+        ) : null}
       </div>
 
       {marketOverlay ? (

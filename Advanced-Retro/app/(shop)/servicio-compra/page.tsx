@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import ConciergeRequestPanel from '@/components/sections/ConciergeRequestPanel';
+import ConciergeOpenRequests from '@/components/sections/ConciergeOpenRequests';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = buildPageMetadata({
@@ -106,6 +107,13 @@ export default function ConciergeServicePage() {
                   Solo aprobamos la operacion contigo, y te mantenemos informado hasta la entrega final.
                 </p>
               </div>
+              <div className="border border-line p-4">
+                <p className="font-semibold">5. Ayuda de comunidad (opcional)</p>
+                <p className="text-textMuted text-sm mt-1">
+                  Puedes permitir que un helper de comunidad tome tu encargo. Si no responde o no te aporta valor,
+                  el encargo se reabre automáticamente y el helper queda bloqueado para ese ticket.
+                </p>
+              </div>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -121,6 +129,7 @@ export default function ConciergeServicePage() {
             </div>
 
             <ConciergeRequestPanel />
+            <ConciergeOpenRequests />
           </div>
         </div>
       </section>

@@ -11,7 +11,6 @@ import { getProductImageUrl, getProductImageUrls } from '@/lib/imageUrl';
 import { getProductHref, parseProductRouteParam } from '@/lib/productUrl';
 import PriceHistoryChart, { type PriceHistoryPoint } from '@/components/ui/PriceHistoryChart';
 import { isMysteryOrRouletteProduct } from '@/lib/productMarket';
-import { parseVideoEmbedList } from '@/lib/videoEmbed';
 
 type BundleOptionType =
   | 'cartucho'
@@ -666,8 +665,6 @@ export default function ProductDetail({
   const [productLoadError, setProductLoadError] = useState('');
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
-  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const buySectionRef = useRef<HTMLDivElement | null>(null);
   const reviewsSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -687,6 +684,8 @@ export default function ProductDetail({
   const [reviewComment, setReviewComment] = useState('');
   const [reviewPhotos, setReviewPhotos] = useState<string[]>([]);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [activeReviewIndex, setActiveReviewIndex] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [priceHistory, setPriceHistory] = useState<PriceHistoryPoint[]>([]);
@@ -1086,6 +1085,18 @@ export default function ProductDetail({
     }
   }, [productId, visitorId, refreshSocial, getAuthHeaders]);
 
+  useEffect(() => {
+    if (reviews.length === 0) {
+      setActiveReviewIndex(0);
+      return;
+    }
+    setActiveReviewIndex((prev) => {
+      if (prev < 0) return 0;
+      if (prev >= reviews.length) return reviews.length - 1;
+      return prev;
+    });
+  }, [reviews]);
+
   const refreshPriceHistory = useCallback(async () => {
     if (!productId) return;
     if (!product) return;
@@ -1179,11 +1190,6 @@ export default function ProductDetail({
     }
   }, [images, selectedImage]);
 
-  useEffect(() => {
-    setActiveVideoIndex(0);
-    setShowVideoPlayer(false);
-  }, [productId]);
-
   const selectedBundleOptions = useMemo(
     () => bundleOptions.filter((option) => selectedBundleIds[option.id]),
     [bundleOptions, selectedBundleIds]
@@ -1219,16 +1225,6 @@ export default function ProductDetail({
       Boolean(marketGuideEbay?.available) &&
       Number(marketGuideEbay?.sampleSize || 0) >= 2);
   const ebayDiagnosticHref = `/api/market/ebay-diagnostic?q=${encodeURIComponent(String(product?.name || ''))}`;
-  const videoEmbeds = useMemo(
-    () => parseVideoEmbedList((product as any)?.trailer_url).filter((embed) => embed.provider !== 'youtube'),
-    [product]
-  );
-  const videoEmbed = videoEmbeds[activeVideoIndex] || null;
-  useEffect(() => {
-    if (activeVideoIndex <= videoEmbeds.length - 1) return;
-    setActiveVideoIndex(0);
-  }, [videoEmbeds, activeVideoIndex]);
-
   const scrollToBuySection = () => {
     buySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -1292,6 +1288,17 @@ export default function ProductDetail({
           'Conserva pruebas de compra y fotos de estado para mantener valor de colección.',
         ];
 
+  const currentReview = reviews.length > 0 ? reviews[activeReviewIndex] : null;
+
+  const getReviewProfileHref = (review: ProductSocialReview): string | null => {
+    const raw = String(review?.visitorId || '').trim();
+    if (!raw) return null;
+    if (raw.startsWith('auth-') && raw.length > 10) {
+      return `/comunidad/vendedor/${encodeURIComponent(raw.replace(/^auth-/, ''))}`;
+    }
+    return null;
+  };
+
   const toggleLike = async () => {
     if (!isLoggedIn) {
       toast.error('Inicia sesión para guardar favoritos');
@@ -1352,6 +1359,7 @@ export default function ProductDetail({
       setReviewComment('');
       setReviewRating(5);
       setReviewPhotos([]);
+      setReviewModalOpen(false);
       toast.success('Reseña publicada');
     } catch (error: any) {
       toast.error(error?.message || 'Error publicando reseña');
@@ -1461,95 +1469,6 @@ export default function ProductDetail({
           <p className="text-primary text-[1.9rem] sm:text-3xl mt-3 sm:mt-4 font-semibold">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
           <p className="text-textMuted mt-3 sm:mt-4 leading-relaxed text-[0.94rem] sm:text-base">{product.long_description || product.description}</p>
 
-          {/* Bloque de vídeo ligero:
-              - Miniatura primero
-              - iframe solo tras click (ahorro de carga en móvil y desktop) */}
-          {videoEmbed ? (
-            <div className="mt-5 rounded-xl border border-line bg-[rgba(10,18,30,0.56)] p-3">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-sm font-semibold">Gameplay / tráiler</p>
-                <span className="chip text-[11px]">Vídeo</span>
-              </div>
-
-              {videoEmbeds.length > 1 ? (
-                <div className="mobile-scroll-row no-scrollbar mb-3 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
-                  {videoEmbeds.slice(0, 6).map((embed, index) => {
-                    const selected = index === activeVideoIndex;
-                    return (
-                      <button
-                        key={`${embed.provider}-${embed.id}-${index}`}
-                        type="button"
-                        onClick={() => {
-                          setActiveVideoIndex(index);
-                          setShowVideoPlayer(false);
-                        }}
-                        className={`shrink-0 w-[160px] sm:w-auto rounded-lg border p-2 text-left transition-colors ${
-                          selected
-                            ? 'border-primary bg-[rgba(75,228,214,0.14)]'
-                            : 'border-line bg-[rgba(9,16,28,0.8)] hover:border-primary/35'
-                        }`}
-                        >
-                          <p className="text-xs font-semibold">Vídeo {index + 1}</p>
-                          <p className="text-[11px] text-textMuted mt-0.5">Fuente externa</p>
-                        </button>
-                      );
-                    })}
-                </div>
-              ) : null}
-
-              {!showVideoPlayer ? (
-                <button
-                  type="button"
-                  onClick={() => setShowVideoPlayer(true)}
-                  className="group relative block w-full overflow-hidden rounded-lg border border-line bg-surface"
-                  aria-label="Reproducir vídeo del producto"
-                >
-                  {videoEmbed.thumbnailUrl ? (
-                    <Image
-                      src={videoEmbed.thumbnailUrl}
-                      alt={`Previsualización de vídeo de ${product.name}`}
-                      width={1280}
-                      height={720}
-                      className="h-auto w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
-                    />
-                  ) : (
-                    <div className="flex h-44 w-full items-center justify-center text-sm text-textMuted">
-                      Cargar vídeo
-                    </div>
-                  )}
-                  <span className="absolute inset-0 flex items-center justify-center">
-                    <span className="rounded-full border border-primary/50 bg-[rgba(7,13,22,0.78)] px-4 py-2 text-sm text-primary">
-                      Ver vídeo
-                    </span>
-                  </span>
-                </button>
-              ) : (
-                <div className="relative overflow-hidden rounded-lg border border-line">
-                  <div className="aspect-video w-full">
-                    <iframe
-                      src={videoEmbed.embedUrl}
-                      title={`Video de ${product.name}`}
-                      className="h-full w-full"
-                      loading="lazy"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="mt-5 rounded-xl border border-line bg-[rgba(10,18,30,0.56)] p-3">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <p className="text-sm font-semibold">Gameplay / tráiler</p>
-                <span className="chip text-[11px]">Sin vídeo local</span>
-              </div>
-              <p className="text-sm text-textMuted">
-                Este producto todavía no tiene vídeo local cargado.
-              </p>
-            </div>
-          )}
-
           <div className="mt-4 grid grid-cols-2 gap-2 lg:hidden">
             <button type="button" className="button-primary !px-4 !py-2 !w-full" onClick={scrollToBuySection}>
               Comprar ahora
@@ -1640,10 +1559,13 @@ export default function ProductDetail({
           </div>
 
           <div ref={buySectionRef} className="mt-7 border-t border-line pt-5 sm:mt-8 sm:pt-6">
-            <p className="font-semibold mb-2">Opciones adicionales al comprar (caja, manual, insert, protector)</p>
-            <p className="text-sm text-textMuted mb-3">
-              La caja puede ser original o repro según el producto enlazado. Marca solo lo que quieras añadir.
-            </p>
+            <div className="rounded-2xl border border-line bg-[linear-gradient(145deg,rgba(11,22,38,0.92),rgba(8,16,30,0.72))] p-4 sm:p-5">
+              <p className="text-xs uppercase tracking-[0.14em] text-primary">Componentes y extras</p>
+              <p className="font-semibold text-lg mt-1">Configura tu compra completa</p>
+              <p className="text-sm text-textMuted mt-2">
+                Combina cartucho, caja, manual, insert y protectores. Solo se añade lo que selecciones.
+              </p>
+            </div>
             <div className="mb-3 flex flex-wrap gap-2">
               <button
                 type="button"
@@ -1663,7 +1585,7 @@ export default function ProductDetail({
             {prefillComplete ? (
               <p className="text-xs text-primary mb-3">Modo juego completo activado: opciones preseleccionadas.</p>
             ) : null}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {displayedBundleOptions.map((option) => {
                 const isCurrentProduct = String(option.id) === String(product.id);
                 const canOpenProduct = !option.isVirtual && !isCurrentProduct;
@@ -1676,7 +1598,7 @@ export default function ProductDetail({
                 return (
                   <div
                     key={option.id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-line px-3 py-2 bg-[rgba(12,22,36,0.64)]"
+                    className="group flex flex-col gap-3 rounded-2xl border border-line px-3 py-3 bg-[rgba(12,22,36,0.7)] transition-colors hover:border-primary/45 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex items-start gap-3">
                       <input
@@ -1719,10 +1641,14 @@ export default function ProductDetail({
                             <span className="font-semibold text-textMuted">{option.name}</span>
                           )}
                         </p>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          <span className="chip text-[11px]">{BUNDLE_TYPE_LABEL[option.type]}</span>
+                          {option.stock <= 0 ? <span className="chip text-[11px] border-red-400 text-red-300">Sin stock</span> : null}
+                        </div>
                         {canOpenProduct ? (
                           <Link
                             href={buildProductHref({ id: option.id, name: option.name })}
-                            className="mt-1 inline-flex items-center rounded-lg border border-primary/45 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
+                            className="mt-2 inline-flex items-center rounded-lg border border-primary/45 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:border-primary hover:bg-primary/20"
                           >
                             Ver componente
                           </Link>
@@ -1734,7 +1660,7 @@ export default function ProductDetail({
                     </div>
 
                     <div className="sm:text-right">
-                      <p className="text-sm text-primary">{(option.price / 100).toFixed(2)} €</p>
+                      <p className="text-base font-semibold text-primary">{(option.price / 100).toFixed(2)} €</p>
                       {showStockForOption ? <p className="text-xs text-textMuted">Stock {option.stock}</p> : null}
                     </div>
                   </div>
@@ -1791,7 +1717,9 @@ export default function ProductDetail({
             </div>
 
             {priceHistory.length > 0 ? (
-              <PriceHistoryChart points={priceHistory} marketOverlay={marketGuideEbay} />
+              <div className="mx-auto w-full max-w-[1180px]">
+                <PriceHistoryChart points={priceHistory} marketOverlay={marketGuideEbay} />
+              </div>
             ) : (
               <p className="text-sm text-textMuted">Aun no hay datos suficientes para mostrar tendencia.</p>
             )}
@@ -1866,23 +1794,119 @@ export default function ProductDetail({
             </p>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-3 rounded-xl border border-line p-4 bg-[rgba(12,22,36,0.62)]">
-              {requiresPurchaseForReview && !canReview ? (
-                <div className="border border-line rounded-lg p-3 text-sm text-textMuted">
-                  Para publicar valoración debes haber comprado este producto con tu cuenta.
+          <div className="space-y-4">
+            <div className="rounded-xl border border-line p-4 bg-[rgba(12,22,36,0.62)]">
+              {reviews.length === 0 || !currentReview ? (
+                <p className="text-textMuted">Aun no hay reseñas. Se el primero en opinar.</p>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">{currentReview.authorName}</p>
+                      <p className="text-xs text-textMuted">
+                        {new Date(currentReview.createdAt).toLocaleDateString('es-ES')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="chip">Puntuación {currentReview.rating}/5</span>
+                      {getReviewProfileHref(currentReview) ? (
+                        <Link className="chip text-primary border-primary/45" href={String(getReviewProfileHref(currentReview))}>
+                          Ver perfil público
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <p className="text-sm mt-3 text-textMuted">{currentReview.comment}</p>
+                  {currentReview.photos?.length ? (
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      {currentReview.photos.map((photo) => (
+                        <div key={photo} className="relative h-24 rounded-lg border border-line bg-surface overflow-hidden">
+                          <Image src={photo} alt="review-photo" fill className="object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+
+            {reviews.length > 1 ? (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-line p-3 bg-[rgba(9,18,30,0.58)]">
+                <div className="flex flex-wrap gap-2">
+                  {reviews.slice(0, 8).map((review, index) => (
+                    <button
+                      type="button"
+                      key={`review-dot-${review.id}`}
+                      className={`chip ${index === activeReviewIndex ? 'text-primary border-primary' : ''}`}
+                      onClick={() => setActiveReviewIndex(index)}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
                 </div>
-              ) : null}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="chip"
+                    onClick={() => setActiveReviewIndex((value) => (value <= 0 ? reviews.length - 1 : value - 1))}
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    type="button"
+                    className="chip"
+                    onClick={() => setActiveReviewIndex((value) => (value + 1) % reviews.length)}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="button-primary"
+                onClick={() => setReviewModalOpen(true)}
+                disabled={requiresPurchaseForReview && !canReview}
+              >
+                Publicar valoración
+              </button>
+              {requiresPurchaseForReview && !canReview ? (
+                <span className="text-xs text-textMuted">
+                  Para publicar valoración debes haber comprado este producto con tu cuenta.
+                </span>
+              ) : (
+                <span className="text-xs text-textMuted">
+                  Tu valoración se guarda y aparece en este carrusel.
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {reviewModalOpen ? (
+        <div className="fixed inset-0 z-[90] bg-[rgba(2,6,16,0.75)] backdrop-blur-sm p-4 sm:p-6">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-line bg-[rgba(8,16,30,0.98)] p-5 sm:p-6 max-h-[90vh] overflow-auto">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h3 className="title-display text-xl">Publicar valoración</h3>
+              <button type="button" className="chip" onClick={() => setReviewModalOpen(false)}>
+                Cerrar
+              </button>
+            </div>
+
+            <div className="space-y-3">
               <label className="block text-sm text-textMuted">Tu nombre (opcional)</label>
               <input
                 className="w-full bg-transparent border border-line px-3 py-2"
                 value={reviewName}
                 onChange={(e) => setReviewName(e.target.value)}
                 placeholder="Coleccionista"
-                disabled={requiresPurchaseForReview && !canReview}
               />
 
-              <label className="block text-sm text-textMuted">Tu valoracion</label>
+              <label className="block text-sm text-textMuted">Tu valoración</label>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((value) => (
                   <button
@@ -1890,7 +1914,6 @@ export default function ProductDetail({
                     key={value}
                     className={`chip ${reviewRating >= value ? 'text-primary border-primary' : ''}`}
                     onClick={() => setReviewRating(value)}
-                    disabled={requiresPurchaseForReview && !canReview}
                   >
                     {value}
                   </button>
@@ -1899,11 +1922,10 @@ export default function ProductDetail({
 
               <label className="block text-sm text-textMuted">Comentario</label>
               <textarea
-                className="w-full bg-transparent border border-line px-3 py-2 min-h-[120px]"
+                className="w-full bg-transparent border border-line px-3 py-2 min-h-[140px]"
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
                 placeholder="Comparte tu experiencia con este producto..."
-                disabled={requiresPurchaseForReview && !canReview}
               />
 
               <label className="block text-sm text-textMuted">Fotos (max. 3)</label>
@@ -1911,7 +1933,6 @@ export default function ProductDetail({
                 type="file"
                 accept="image/*"
                 multiple
-                disabled={requiresPurchaseForReview && !canReview}
                 onChange={async (e) => {
                   const files = Array.from(e.target.files || []).slice(0, 3);
                   try {
@@ -1926,50 +1947,25 @@ export default function ProductDetail({
               {reviewPhotos.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2">
                   {reviewPhotos.map((photo, index) => (
-                    <div key={`${photo.slice(0, 20)}-${index}`} className="relative h-20 border border-line bg-surface">
-                      <Image src={photo} alt={`preview-${index + 1}`} fill className="object-contain" unoptimized />
+                    <div key={`${photo.slice(0, 20)}-${index}`} className="relative h-20 rounded-lg border border-line bg-surface overflow-hidden">
+                      <Image src={photo} alt={`preview-${index + 1}`} fill className="object-cover" unoptimized />
                     </div>
                   ))}
                 </div>
               ) : null}
-
-              <button
-                className="button-primary"
-                onClick={submitReview}
-                disabled={submittingReview || (requiresPurchaseForReview && !canReview)}
-              >
-                {submittingReview ? 'Publicando...' : 'Publicar valoracion'}
-              </button>
             </div>
 
-            <div className="space-y-4 max-h-[520px] overflow-auto pr-1">
-              {reviews.length === 0 ? (
-                <p className="text-textMuted">Aun no hay reseñas. Se el primero en opinar.</p>
-              ) : (
-                reviews.map((review) => (
-                  <div key={review.id} className="border border-line rounded-xl p-4 bg-[rgba(12,22,36,0.58)]">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold">{review.authorName}</p>
-                      <p className="text-xs text-textMuted">{new Date(review.createdAt).toLocaleDateString('es-ES')}</p>
-                    </div>
-                    <p className="text-sm text-primary mt-1">Puntuacion: {review.rating}/5</p>
-                    <p className="text-sm mt-2 text-textMuted">{review.comment}</p>
-                    {review.photos?.length ? (
-                      <div className="grid grid-cols-3 gap-2 mt-3">
-                        {review.photos.map((photo) => (
-                          <div key={photo} className="relative h-20 border border-line bg-surface">
-                            <Image src={photo} alt="review-photo" fill className="object-contain" />
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                ))
-              )}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button className="button-primary" onClick={submitReview} disabled={submittingReview}>
+                {submittingReview ? 'Publicando...' : 'Publicar valoración'}
+              </button>
+              <button type="button" className="chip" onClick={() => setReviewModalOpen(false)}>
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </section>
   );
 }

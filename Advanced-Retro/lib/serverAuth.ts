@@ -27,6 +27,10 @@ type AppUserProfile = {
     phone: string;
   } | null;
   is_verified_seller: boolean;
+  helper_completed_count: number;
+  helper_active_count: number;
+  helper_reputation: number;
+  preferred_language: string | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -268,6 +272,15 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
           }
         : null),
     is_verified_seller: Boolean(profile.is_verified_seller),
+    helper_completed_count: Number((profile as any).helper_completed_count || 0),
+    helper_active_count: Number((profile as any).helper_active_count || 0),
+    helper_reputation: Number((profile as any).helper_reputation || 0),
+    preferred_language:
+      typeof (profile as any).preferred_language === 'string'
+        ? (profile as any).preferred_language
+        : typeof (metadata as any).preferred_language === 'string'
+          ? String((metadata as any).preferred_language)
+          : 'es',
     created_at: profile.created_at,
     updated_at: profile.updated_at,
   };

@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
 import Hero from '@/components/sections/Hero';
-import MediaShowcase from '@/components/sections/MediaShowcase';
-import RetroPromoSlider from '@/components/sections/RetroPromoSlider';
 import FeaturedProducts from '@/components/sections/FeaturedProducts';
 import Collections from '@/components/sections/Collections';
 import Benefits from '@/components/sections/Benefits';
@@ -88,8 +86,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeLinksSchema) }}
       />
       <Hero />
-      <MediaShowcase />
-      <RetroPromoSlider />
       <HypeLockboard />
       <FeaturedProducts />
       <Collections />

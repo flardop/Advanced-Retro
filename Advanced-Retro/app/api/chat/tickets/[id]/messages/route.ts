@@ -35,11 +35,12 @@ async function canAccessTicket(ticketId: string) {
 
   const isAdmin = ctx.profile.role === 'admin';
   const isOwner = String(ticket.user_id) === String(ctx.user.id);
-  if (!isAdmin && !isOwner) {
+  const isHelper = String((ticket as any).helper_user_id || '') === String(ctx.user.id);
+  if (!isAdmin && !isOwner && !isHelper) {
     throw new ApiError(403, 'No autorizado para acceder a este ticket');
   }
 
-  return { ctx, ticket, isAdmin };
+  return { ctx, ticket, isAdmin, isHelper };
 }
 
 export async function GET(
@@ -71,8 +72,18 @@ export async function POST(
     const body = await req.json().catch(() => null);
     const message = String(body?.message || '').trim().slice(0, 3000);
     const status = typeof body?.status === 'string' ? body.status : undefined;
+    const attachments = Array.isArray(body?.attachments)
+      ? body.attachments
+          .filter((item: any) => item && typeof item === 'object')
+          .map((item: any) => ({
+            type: item?.type === 'video' ? 'video' : 'image',
+            url: String(item?.url || '').trim().slice(0, 600),
+          }))
+          .filter((item: any) => Boolean(item.url))
+          .slice(0, 6)
+      : [];
 
-    if (message.length < 2) {
+    if (message.length < 2 && attachments.length === 0) {
       return NextResponse.json({ error: 'Mensaje demasiado corto' }, { status: 400 });
     }
     if (message.length > 2000) {
@@ -86,8 +97,9 @@ export async function POST(
       ticketId: ticket.id,
       userId: ctx.user.id,
       isAdmin,
-      message,
+      message: message || 'Adjunto enviado',
       status: isAdmin ? (status as any) : undefined,
+      attachments,
     });
 
     return NextResponse.json({ message: row });

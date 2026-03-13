@@ -100,6 +100,7 @@ export async function PUT(req: Request) {
       'aurora-scanline',
       'platinum-grid',
     ]);
+    const allowedLanguages = new Set(['auto', 'es', 'en', 'fr', 'de', 'it', 'pt']);
 
     const payload: Record<string, unknown> = {};
     if (typeof body?.name === 'string') {
@@ -132,6 +133,12 @@ export async function PUT(req: Request) {
         payload.profile_theme = nextTheme;
       }
     }
+    if (typeof body?.preferred_language === 'string') {
+      const normalized = body.preferred_language.trim().toLowerCase().slice(0, 10);
+      if (allowedLanguages.has(normalized)) {
+        payload.preferred_language = normalized;
+      }
+    }
     if (Array.isArray(body?.badges)) payload.badges = sanitizeBadgeKeys(body.badges);
     if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'shipping_address')) {
       payload.shipping_address = sanitizeShippingAddress((body as any).shipping_address);
@@ -147,7 +154,9 @@ export async function PUT(req: Request) {
       .from('users')
       .update(payload)
       .eq('id', user.id)
-      .select('id,email,role,name,avatar_url,banner_url,bio,tagline,favorite_console,profile_theme,badges,shipping_address,is_verified_seller,created_at,updated_at')
+      .select(
+        'id,email,role,name,avatar_url,banner_url,bio,tagline,favorite_console,profile_theme,badges,shipping_address,is_verified_seller,helper_completed_count,helper_active_count,helper_reputation,preferred_language,created_at,updated_at'
+      )
       .single();
 
     if (updateError || !updated) {
@@ -161,6 +170,12 @@ export async function PUT(req: Request) {
         if (typeof body?.tagline === 'string') metadataPatch.tagline = body.tagline.trim().slice(0, 120) || null;
         if (typeof body?.favorite_console === 'string') metadataPatch.favorite_console = body.favorite_console.trim().slice(0, 120) || null;
         if (typeof body?.profile_theme === 'string') metadataPatch.profile_theme = body.profile_theme.trim().slice(0, 40) || null;
+        if (typeof body?.preferred_language === 'string') {
+          const normalized = body.preferred_language.trim().toLowerCase().slice(0, 10);
+          if (allowedLanguages.has(normalized)) {
+            metadataPatch.preferred_language = normalized;
+          }
+        }
         if (Array.isArray(body?.badges)) metadataPatch.badges = sanitizeBadgeKeys(body.badges);
         if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'shipping_address')) {
           metadataPatch.shipping_address = sanitizeShippingAddress((body as any).shipping_address);
@@ -198,6 +213,10 @@ export async function PUT(req: Request) {
                 typeof metadataPatch.profile_theme === 'string'
                   ? metadataPatch.profile_theme
                   : currentProfile.profile_theme,
+              preferred_language:
+                typeof metadataPatch.preferred_language === 'string'
+                  ? metadataPatch.preferred_language
+                  : currentProfile.preferred_language,
               badges: Array.isArray(metadataPatch.badges) ? metadataPatch.badges : currentProfile.badges,
               shipping_address:
                 Object.prototype.hasOwnProperty.call(metadataPatch, 'shipping_address')

@@ -3,7 +3,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import SafeImage from '@/components/SafeImage';
 import { sampleProducts } from '@/lib/sampleData';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
@@ -387,7 +386,6 @@ function pickFeaturedColumn(source: any[], take: number, used: Set<string>): any
 }
 
 function CatalogContent() {
-  const searchParams = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
   const [active, setActive] = useState<string>('all');
   const [metrics, setMetrics] = useState<Record<string, ProductMetric>>({});
@@ -530,23 +528,31 @@ function CatalogContent() {
   }, [isLoggedIn, favoritesOnly]);
 
   useEffect(() => {
-    const categoryParamRaw = String(searchParams.get('category') || '').trim();
-    const categoryParamNormalized = normalizeText(categoryParamRaw);
+    const applyUrlFilters = () => {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const categoryParamRaw = String(params.get('category') || '').trim();
+      const categoryParamNormalized = normalizeText(categoryParamRaw);
 
-    const normalizedCategoryParam =
-      categoryParamNormalized === 'mystery' ||
-      categoryParamNormalized === 'mystery box' ||
-      categoryParamNormalized === 'mystery boxes' ||
-      categoryParamNormalized === 'caja misteriosa' ||
-      categoryParamNormalized === 'cajas misteriosas'
-        ? MYSTERY_FILTER
-        : categoryParamRaw;
+      const normalizedCategoryParam =
+        categoryParamNormalized === 'mystery' ||
+        categoryParamNormalized === 'mystery box' ||
+        categoryParamNormalized === 'mystery boxes' ||
+        categoryParamNormalized === 'caja misteriosa' ||
+        categoryParamNormalized === 'cajas misteriosas'
+          ? MYSTERY_FILTER
+          : categoryParamRaw;
 
-    setActive(normalizedCategoryParam || 'all');
+      setActive(normalizedCategoryParam || 'all');
 
-    const q = String(searchParams.get('q') || '').trim();
-    setSearch(q);
-  }, [searchParams]);
+      const q = String(params.get('q') || '').trim();
+      setSearch(q);
+    };
+
+    applyUrlFilters();
+    window.addEventListener('popstate', applyUrlFilters);
+    return () => window.removeEventListener('popstate', applyUrlFilters);
+  }, []);
 
   const completeProductIds = useMemo(() => {
     const set = new Set<string>();
@@ -861,7 +867,7 @@ function CatalogContent() {
         href={productHref}
         className={`mini-product-card glass p-2.5 hover:shadow-glow transition-shadow group flex items-start gap-3 ${className}`.trim()}
       >
-        <div className="photo-frame-glow relative h-28 w-[96px] shrink-0 bg-surface border border-line rounded-xl overflow-hidden">
+        <div className="photo-frame-glow relative h-28 w-[96px] shrink-0 rounded-xl overflow-hidden">
           <SafeImage
             src={getProductImageUrl(product)}
             fallbackSrc={getProductFallbackImageUrl(product)}
@@ -869,7 +875,7 @@ function CatalogContent() {
             fill
             sizes="96px"
             priority={priority}
-            className="object-contain p-1 photo-hover-pop"
+            className="object-cover object-center photo-hover-pop"
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -1121,7 +1127,7 @@ function CatalogContent() {
 
   return (
     <section className="catalog-section section">
-      <div className="mx-auto w-full max-w-[1720px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
         <div className="catalog-trust-strip glass p-4 sm:p-5 mb-6">
           <div className="mobile-scroll-row no-scrollbar md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
             <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
@@ -1322,7 +1328,7 @@ function CatalogContent() {
                   href={href}
                   className="catalog-product-card glass p-3 sm:p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5 flex gap-3 sm:block"
                 >
-                  <div className="photo-frame-glow relative h-28 w-[116px] shrink-0 sm:w-full sm:h-56 bg-surface border border-line rounded-xl overflow-hidden">
+                  <div className="photo-frame-glow relative h-28 w-[116px] shrink-0 sm:w-full sm:h-56 rounded-xl overflow-hidden">
                     <SafeImage
                       src={getProductImageUrl(product)}
                       fallbackSrc={getProductFallbackImageUrl(product)}
@@ -1330,7 +1336,7 @@ function CatalogContent() {
                       fill
                       sizes="(max-width: 640px) 34vw, (max-width: 1024px) 42vw, (max-width: 1536px) 24vw, 18vw"
                       priority={index < 2}
-                      className="object-contain p-2 photo-hover-pop"
+                      className="object-cover object-center photo-hover-pop"
                     />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-2">
                       <span className="chip text-xs">{product.status}</span>

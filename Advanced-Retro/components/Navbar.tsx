@@ -3,27 +3,33 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense, useEffect, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { useLocale } from '@/components/LocaleProvider';
 
 function NavbarContent() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { t } = useLocale();
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<{ email?: string } | null>(null);
   const [open, setOpen] = useState(false);
 
   const navItems = [
-    { href: '/tienda', label: t('nav.shop', 'Tienda') },
-    { href: '/comunidad', label: t('nav.community', 'Comunidad') },
-    { href: '/blog', label: t('nav.blog', 'Blog') },
-    { href: '/tienda?category=cajas-misteriosas', label: t('nav.mystery', 'Mystery') },
-    { href: '/subastas', label: t('nav.auctions', 'Subastas') },
-    { href: '/ruleta', label: t('nav.roulette', 'Ruleta') },
-    { href: '/servicio-compra', label: t('nav.concierge', 'Encargos') },
-    { href: '/contacto', label: t('nav.contact', 'Contacto') },
+    { href: '/tienda', label: t('nav.shop', 'Tienda'), icon: '🛒', description: 'Catálogo completo' },
+    { href: '/comunidad', label: t('nav.community', 'Comunidad'), icon: '👥', description: 'Compra y vende entre usuarios' },
+    { href: '/blog', label: t('nav.blog', 'Blog'), icon: '📰', description: 'Guías y noticias retro' },
+    { href: '/tienda?category=cajas-misteriosas', label: t('nav.mystery', 'Mystery'), icon: '🎁', description: 'Drops sorpresa y cajas' },
+    { href: '/subastas', label: t('nav.auctions', 'Subastas'), icon: '⏳', description: 'Próximos eventos y pujas' },
+    { href: '/ruleta', label: t('nav.roulette', 'Ruleta'), icon: '🎯', description: 'Tiradas y premios' },
+    { href: '/servicio-compra', label: t('nav.concierge', 'Encargos'), icon: '🧭', description: 'Compra asistida y seguimiento' },
+    { href: '/contacto', label: t('nav.contact', 'Contacto'), icon: '💬', description: 'Soporte verificado' },
+  ];
+  const mobileBottomItems = [
+    { href: '/tienda', label: 'Tienda', icon: '🛍️' },
+    { href: '/comunidad', label: 'Comunidad', icon: '👥' },
+    { href: '/servicio-compra', label: 'Encargos', icon: '🧭' },
+    { href: '/carrito', label: 'Carrito', icon: '🛒' },
+    { href: user ? '/perfil' : '/login', label: user ? 'Perfil' : 'Entrar', icon: user ? '👤' : '🔐' },
   ];
 
   useEffect(() => {
@@ -51,8 +57,12 @@ function NavbarContent() {
 
   const queryMatches = (queryString: string) => {
     const targetQuery = new URLSearchParams(queryString);
+    const currentQuery =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search)
+        : new URLSearchParams();
     for (const [key, value] of targetQuery.entries()) {
-      if (searchParams.get(key) !== value) {
+      if (currentQuery.get(key) !== value) {
         return false;
       }
     }
@@ -125,54 +135,76 @@ function NavbarContent() {
             {user ? t('nav.profile', 'Mi perfil') : t('nav.login', 'Entrar')}
           </Link>
           <button
-            className={`lg:hidden chip ${open ? 'border-primary/60 text-text' : ''}`}
+            className={`lg:hidden chip min-w-[94px] justify-center ${open ? 'border-primary/60 text-text' : ''}`}
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
             aria-label="Abrir menú"
           >
-            {open ? t('nav.close', 'Cerrar') : t('nav.menu', 'Menu')}
+            {open ? t('nav.close', 'Cerrar') : 'Explorar'}
           </button>
         </div>
       </div>
 
       <div className="lg:hidden border-t border-line/80">
-        <div className="container py-2">
-          <div className="mobile-scroll-row no-scrollbar">
-            {navItems.map((item) => {
-              const isActive = isItemActive(item.href);
-              return (
-                <Link
-                  key={`mobile-quick-${item.href}`}
-                  href={item.href}
-                  className={`chip shrink-0 ${isActive ? 'text-primary border-primary' : ''}`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-            <Link href={user ? '/perfil' : '/login'} className="chip shrink-0">
-              {user ? t('nav.profile', 'Mi perfil') : t('nav.login_mobile', 'Iniciar sesión')}
-            </Link>
-          </div>
+        <div className="container py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          {[
+            navItems[0],
+            navItems[1],
+            navItems[6],
+          ].map((item) => {
+            const isActive = isItemActive(item.href);
+            return (
+              <Link
+                key={`mobile-quick-${item.href}`}
+                href={item.href}
+                className={`chip shrink-0 ${isActive ? 'text-primary border-primary' : ''}`}
+              >
+                <span className="mr-1">{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+          <Link href={user ? '/perfil' : '/login'} className="chip shrink-0">
+            {user ? t('nav.profile', 'Mi perfil') : t('nav.login_mobile', 'Iniciar sesión')}
+          </Link>
         </div>
       </div>
 
       {open && (
         <div className="lg:hidden fixed inset-0 z-[70] bg-[rgba(2,8,16,0.72)] backdrop-blur-sm" onClick={() => setOpen(false)}>
-          <div className="absolute inset-x-0 bottom-0 border-t border-line bg-[rgba(7,14,24,0.98)] rounded-t-2xl">
-            <div className="container py-4" onClick={(event) => event.stopPropagation()}>
+          <div className="absolute inset-y-0 right-0 w-[min(92vw,420px)] border-l border-line bg-[rgba(7,14,24,0.98)]">
+            <div className="h-full overflow-auto p-4" onClick={(event) => event.stopPropagation()}>
               <div className="glass p-4 space-y-3 text-sm">
-                <div className="mx-auto h-1.5 w-10 rounded-full bg-line/70 mb-1" />
-                {navItems.map((item) => (
-                  <Link
-                    key={`mobile-${item.href}`}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className="block rounded-lg border border-transparent px-3 py-2.5 text-textMuted hover:border-line hover:bg-white/5 hover:text-text"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs uppercase tracking-[0.18em] text-primary">Navegación móvil</p>
+                  <button type="button" className="chip" onClick={() => setOpen(false)}>
+                    {t('nav.close', 'Cerrar')}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  {navItems.map((item) => {
+                    const isActive = isItemActive(item.href);
+                    return (
+                      <Link
+                        key={`mobile-${item.href}`}
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={`rounded-xl border px-3 py-3 transition ${
+                          isActive
+                            ? 'border-primary/60 bg-primary/10'
+                            : 'border-line bg-[rgba(10,18,30,0.45)] hover:border-primary/30'
+                        }`}
+                      >
+                        <p className="font-semibold flex items-center gap-2">
+                          <span>{item.icon}</span>
+                          <span>{item.label}</span>
+                        </p>
+                        <p className="mt-1 text-xs text-textMuted">{item.description}</p>
+                      </Link>
+                    );
+                  })}
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                   <Link
@@ -187,12 +219,45 @@ function NavbarContent() {
                   </Link>
                 </div>
 
+                <div className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-3 text-xs text-textMuted">
+                  <p><strong className="text-primary">Envío 24-48h:</strong> preparación desde España</p>
+                  <p className="mt-1"><strong className="text-primary">Soporte:</strong> ticket y chat comprador ↔ tienda</p>
+                </div>
+
                 {user?.email ? <p className="text-xs text-textMuted pt-1">{t('nav.session', 'Sesión')}: {user.email}</p> : null}
               </div>
             </div>
           </div>
         </div>
       )}
+
+      <div
+        className="lg:hidden fixed inset-x-0 bottom-0 z-[65] px-3 pb-2 pointer-events-none"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+      >
+        <nav className="pointer-events-auto mx-auto w-full max-w-[560px] rounded-2xl border border-line bg-[rgba(7,14,24,0.92)] shadow-[0_14px_34px_rgba(2,8,18,0.45)] backdrop-blur-xl">
+          <ul className="grid grid-cols-5 gap-1 p-1.5">
+            {mobileBottomItems.map((item) => {
+              const isActive = isItemActive(item.href);
+              return (
+                <li key={`mobile-bottom-${item.href}`}>
+                  <Link
+                    href={item.href}
+                    className={`flex flex-col items-center justify-center rounded-xl px-1 py-2 text-[10px] font-semibold leading-tight transition ${
+                      isActive
+                        ? 'bg-primary/15 text-primary border border-primary/40'
+                        : 'text-textMuted border border-transparent hover:bg-white/5 hover:text-text'
+                    }`}
+                  >
+                    <span className="text-sm leading-none">{item.icon}</span>
+                    <span className="mt-1 truncate max-w-full">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
 
       <div className="hidden border-t border-line/60 xl:block">
         <div className="container flex flex-wrap items-center gap-6 py-2 text-[11px] text-textMuted">

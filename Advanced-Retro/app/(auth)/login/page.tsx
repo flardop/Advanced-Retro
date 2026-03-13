@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 function normalizeOrigin(raw: string): string | undefined {
@@ -66,7 +66,6 @@ function resolveAuthCallbackUrl(nextPath?: string | null): string | undefined {
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,9 +73,13 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const err = searchParams.get('error');
-    const errorDescription = safeDecode(searchParams.get('error_description'));
-    const reason = safeDecode(searchParams.get('reason'));
+    const params =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search)
+        : new URLSearchParams();
+    const err = params.get('error');
+    const errorDescription = safeDecode(params.get('error_description'));
+    const reason = safeDecode(params.get('reason'));
     if (err === 'confirm') toast.error('El enlace de confirmación ha expirado o no es válido. Inicia sesión y te podemos reenviar el correo.');
     if (err === 'missing_code' || err === 'oauth_incomplete') {
       toast.error(
@@ -95,7 +98,7 @@ function LoginForm() {
       const readable = errorDescription || err;
       toast.error(`Error OAuth: ${readable}`);
     }
-  }, [searchParams]);
+  }, []);
 
   const handleAuth = async () => {
     setLoading(true);
@@ -174,7 +177,11 @@ function LoginForm() {
       toast.error('Configura Supabase en .env.local');
       return;
     }
-    const nextPath = searchParams.get('next');
+    const params =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search)
+        : new URLSearchParams();
+    const nextPath = params.get('next');
     const safeNextPath = typeof nextPath === 'string' && nextPath.startsWith('/') ? nextPath : '/perfil';
     const redirectTo = resolveAuthCallbackUrl(safeNextPath);
     if (!redirectTo) {

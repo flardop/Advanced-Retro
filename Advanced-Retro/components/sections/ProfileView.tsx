@@ -24,6 +24,14 @@ type Ticket = {
   id: string;
   subject: string;
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  ticket_type?: 'support' | 'concierge' | string | null;
+  concierge_state?: 'open' | 'claimed' | 'needs_reassign' | 'completed' | 'cancelled' | string | null;
+  helper_user_id?: string | null;
+  helper_claimed_at?: string | null;
+  helper_terms_accepted_at?: string | null;
+  helper_inactive_deadline?: string | null;
+  access_role?: 'owner' | 'helper';
+  blocked_helper_ids?: string[] | null;
   order_id: string | null;
   created_at: string;
   updated_at: string;
@@ -36,6 +44,8 @@ type TicketMessage = {
   user_id: string | null;
   is_admin: boolean;
   message: string;
+  attachments?: Array<{ type: 'image' | 'video'; url: string }>;
+  expires_at?: string | null;
   created_at: string;
 };
 
@@ -82,6 +92,10 @@ type ProfileState = {
     phone: string;
   } | null;
   is_verified_seller: boolean;
+  helper_completed_count?: number;
+  helper_active_count?: number;
+  helper_reputation?: number;
+  preferred_language?: string | null;
 };
 
 type GamificationReward = {
@@ -178,6 +192,7 @@ type WalletWithdrawalsState = {
 type Tab = 'profile' | 'wallet' | 'orders' | 'tickets' | 'sell';
 type FavoritesVisibility = 'public' | 'members' | 'private';
 type GamificationTab = 'resumen' | 'marcos' | 'recompensas' | 'insignias' | 'actividad';
+type PreferredLanguage = 'auto' | 'es' | 'en' | 'fr' | 'de' | 'it' | 'pt';
 
 type FavoriteProduct = {
   id: string;
@@ -190,6 +205,16 @@ type FavoriteProduct = {
   platform: string | null;
   liked_at: string | null;
 };
+
+const PREFERRED_LANGUAGES: Array<{ value: PreferredLanguage; label: string }> = [
+  { value: 'auto', label: 'Automático (según navegador)' },
+  { value: 'es', label: 'Español' },
+  { value: 'en', label: 'English' },
+  { value: 'fr', label: 'Français' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'pt', label: 'Português' },
+];
 
 const PROFILE_THEMES = [
   {
@@ -318,6 +343,48 @@ function parseImageLines(input: string): string[] {
   return [...new Set(list)];
 }
 
+function parseTicketAttachments(input: string): Array<{ type: 'image' | 'video'; url: string }> {
+  const candidates = input
+    .split(/\n|,|;/g)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 6);
+
+  const normalized: Array<{ type: 'image' | 'video'; url: string }> = [];
+  for (const url of candidates) {
+    const lowered = url.toLowerCase();
+    const type =
+      lowered.endsWith('.mp4') ||
+      lowered.endsWith('.webm') ||
+      lowered.endsWith('.mov') ||
+      lowered.includes('video')
+        ? 'video'
+        : 'image';
+    normalized.push({ type, url: url.slice(0, 600) });
+  }
+  return normalized;
+}
+
+function normalizePreferredLanguage(input: unknown): PreferredLanguage {
+  const raw = String(input || '').trim().toLowerCase();
+  if (raw === 'en' || raw.startsWith('en-')) return 'en';
+  if (raw === 'fr' || raw.startsWith('fr-')) return 'fr';
+  if (raw === 'de' || raw.startsWith('de-')) return 'de';
+  if (raw === 'it' || raw.startsWith('it-')) return 'it';
+  if (raw === 'pt' || raw.startsWith('pt-')) return 'pt';
+  if (raw === 'auto') return 'auto';
+  return 'es';
+}
+
+function resolveViewerLanguage(preferred: PreferredLanguage): Exclude<PreferredLanguage, 'auto'> {
+  if (preferred !== 'auto') return preferred;
+  if (typeof navigator !== 'undefined') {
+    const fromNavigator = normalizePreferredLanguage(navigator.language);
+    if (fromNavigator !== 'auto') return fromNavigator;
+  }
+  return 'es';
+}
+
 function toEuro(cents: number): string {
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',
@@ -350,8 +417,45 @@ function isValidIban(value: string): boolean {
   return remainder === 1;
 }
 
-function isConciergeTicket(ticket: { subject?: string } | null | undefined): boolean {
+function isConciergeTicket(ticket: { subject?: string; ticket_type?: string | null } | null | undefined): boolean {
+  if (String(ticket?.ticket_type || '').toLowerCase() === 'concierge') return true;
   return String(ticket?.subject || '').toLowerCase().includes('encargo');
+}
+
+function conciergeStateLabel(stateInput: unknown): string {
+  const state = String(stateInput || '').trim().toLowerCase();
+  if (state === 'claimed') return 'Ayudante asignado';
+  if (state === 'needs_reassign') return 'Buscando nuevo ayudante';
+  if (state === 'completed') return 'Cerrado y validado';
+  if (state === 'cancelled') return 'Cancelado';
+  return 'Abierto a ayuda';
+}
+
+function conciergeStateClass(stateInput: unknown): string {
+  const state = String(stateInput || '').trim().toLowerCase();
+  if (state === 'claimed') return 'text-emerald-300 border-emerald-300/40 bg-emerald-300/10';
+  if (state === 'needs_reassign') return 'text-amber-200 border-amber-300/40 bg-amber-300/10';
+  if (state === 'completed') return 'text-cyan-200 border-cyan-300/40 bg-cyan-300/10';
+  if (state === 'cancelled') return 'text-rose-200 border-rose-300/40 bg-rose-300/10';
+  return 'text-primary border-primary/40 bg-primary/10';
+}
+
+function ticketAccessRoleLabel(role: unknown): string {
+  const value = String(role || '').trim().toLowerCase();
+  if (value === 'helper') return 'Ayudante';
+  return 'Comprador';
+}
+
+function toHelperDeadlineLabel(deadlineInput: unknown): string {
+  const deadline = new Date(String(deadlineInput || ''));
+  if (Number.isNaN(deadline.getTime())) return '';
+  const ms = deadline.getTime() - Date.now();
+  if (ms <= 0) return 'Reasignación pendiente';
+  const hours = Math.floor(ms / (1000 * 60 * 60));
+  if (hours < 1) return 'Menos de 1h para reasignar';
+  if (hours < 24) return `${hours}h para reasignar`;
+  const days = Math.floor(hours / 24);
+  return `${days} día${days === 1 ? '' : 's'} para reasignar`;
 }
 
 function isExclusiveBadge(badge: { rarity: BadgeRarity; animated?: boolean }): boolean {
@@ -395,6 +499,7 @@ export default function ProfileView() {
   const [siteTheme, setSiteThemeState] = useState<SiteThemeId>(DEFAULT_SITE_THEME);
   const [savingSiteTheme, setSavingSiteTheme] = useState(false);
   const [favoritesVisibility, setFavoritesVisibility] = useState<FavoritesVisibility>('public');
+  const [preferredLanguage, setPreferredLanguage] = useState<PreferredLanguage>('es');
   const [shippingFullName, setShippingFullName] = useState('');
   const [shippingLine1, setShippingLine1] = useState('');
   const [shippingLine2, setShippingLine2] = useState('');
@@ -412,6 +517,10 @@ export default function ProfileView() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>([]);
   const [ticketReply, setTicketReply] = useState('');
+  const [ticketAttachmentText, setTicketAttachmentText] = useState('');
+  const [conciergeActionLoading, setConciergeActionLoading] = useState(false);
+  const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
+  const [ticketsMobilePane, setTicketsMobilePane] = useState<'list' | 'chat'>('list');
 
   const [newTicketSubject, setNewTicketSubject] = useState('');
   const [newTicketMessage, setNewTicketMessage] = useState('');
@@ -444,6 +553,7 @@ export default function ProfileView() {
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [gamificationTab, setGamificationTab] = useState<GamificationTab>('resumen');
+  const viewerLanguage = resolveViewerLanguage(preferredLanguage);
 
   const openGamificationTab = (nextTab: GamificationTab) => {
     setTab('profile');
@@ -469,6 +579,7 @@ export default function ProfileView() {
           ? 'members'
           : 'public'
     );
+    setPreferredLanguage(normalizePreferredLanguage(nextProfile?.preferred_language));
     setShippingFullName(
       String(nextProfile?.shipping_address?.full_name || nextProfile?.name || shippingFullName || '')
     );
@@ -840,6 +951,64 @@ export default function ProfileView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLinkTab, deepLinkTicketId, tickets, tab]);
 
+  useEffect(() => {
+    setTranslatedMessages({});
+  }, [selectedTicketId, viewerLanguage]);
+
+  useEffect(() => {
+    if (!selectedTicketId || ticketMessages.length === 0) return;
+    if (!profile?.id) return;
+
+    const pending = ticketMessages
+      .filter((msg) => {
+        if (msg.is_admin) return false;
+        if (String(msg.user_id || '') === String(profile.id)) return false;
+        if (!String(msg.message || '').trim()) return false;
+        return !translatedMessages[msg.id];
+      })
+      .slice(0, 20);
+
+    if (pending.length === 0) return;
+
+    let cancelled = false;
+    const run = async () => {
+      const pairs = await Promise.all(
+        pending.map(async (msg) => {
+          try {
+            const res = await fetch('/api/chat/translate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                text: String(msg.message || ''),
+                targetLanguage: viewerLanguage,
+              }),
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok) return [msg.id, ''] as const;
+            const translated = String(data?.translatedText || '').trim();
+            return [msg.id, translated] as const;
+          } catch {
+            return [msg.id, ''] as const;
+          }
+        })
+      );
+
+      if (cancelled) return;
+      setTranslatedMessages((prev) => {
+        const next = { ...prev };
+        for (const [messageId, translated] of pairs) {
+          if (translated) next[messageId] = translated;
+        }
+        return next;
+      });
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTicketId, ticketMessages, profile?.id, translatedMessages, viewerLanguage]);
+
   const saveProfile = async () => {
     setSavingProfile(true);
     try {
@@ -853,6 +1022,7 @@ export default function ProfileView() {
           tagline,
           favorite_console: favoriteConsole,
           profile_theme: profileTheme,
+          preferred_language: preferredLanguage,
           shipping_address: {
             full_name: shippingFullName,
             line1: shippingLine1,
@@ -1012,6 +1182,7 @@ export default function ProfileView() {
   const openTicket = async (ticketId: string) => {
     setSelectedTicketId(ticketId);
     setTicketReply('');
+    setTicketsMobilePane('chat');
 
     const res = await fetch(`/api/chat/tickets/${ticketId}/messages`);
     const data = await res.json().catch(() => null);
@@ -1026,15 +1197,20 @@ export default function ProfileView() {
 
   const sendTicketReply = async () => {
     if (!selectedTicketId) return;
-    if (ticketReply.trim().length < 2) {
-      toast.error('Escribe un mensaje más largo');
+    if (isConciergeTicket(selectedTicket) && String(selectedTicket?.concierge_state || '').toLowerCase() === 'completed') {
+      toast.error('Este encargo está completado y no admite nuevos mensajes');
+      return;
+    }
+    const attachments = parseTicketAttachments(ticketAttachmentText);
+    if (ticketReply.trim().length < 2 && attachments.length === 0) {
+      toast.error('Escribe un mensaje o añade al menos un adjunto');
       return;
     }
 
     const res = await fetch(`/api/chat/tickets/${selectedTicketId}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: ticketReply }),
+      body: JSON.stringify({ message: ticketReply || 'Adjunto enviado', attachments }),
     });
 
     const data = await res.json().catch(() => null);
@@ -1044,8 +1220,115 @@ export default function ProfileView() {
     }
 
     setTicketReply('');
+    setTicketAttachmentText('');
     await openTicket(selectedTicketId);
     await loadTickets();
+  };
+
+  const releaseConciergeTicket = async (ticket: Ticket, blockCurrentHelper: boolean) => {
+    if (!ticket?.id) return;
+    const reason = window.prompt(
+      blockCurrentHelper
+        ? 'Motivo del bloqueo de este ayudante (obligatorio):'
+        : 'Motivo de liberación del encargo (opcional):',
+      ''
+    );
+
+    if (blockCurrentHelper && !String(reason || '').trim()) {
+      toast.error('Debes indicar motivo para bloquear al ayudante');
+      return;
+    }
+
+    setConciergeActionLoading(true);
+    try {
+      const res = await fetch(`/api/chat/concierge/${encodeURIComponent(ticket.id)}/release`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason: String(reason || '').trim(),
+          blockCurrentHelper,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo liberar el encargo');
+      }
+      toast.success(blockCurrentHelper ? 'Ayudante bloqueado y encargo reabierto' : 'Encargo reabierto');
+      await Promise.all([loadTickets(), openTicket(ticket.id)]);
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo liberar el encargo');
+    } finally {
+      setConciergeActionLoading(false);
+    }
+  };
+
+  const completeConciergeTicket = async (ticket: Ticket) => {
+    if (!ticket?.id) return;
+    const isHelperAction = ticket.access_role === 'helper';
+    const summary = window.prompt(
+      isHelperAction
+        ? 'Resumen para comprador (qué encontraste, estado y precio aproximado):'
+        : 'Resumen final (qué producto encontró el ayudante, precio y estado):',
+      ''
+    );
+    if (!String(summary || '').trim()) {
+      toast.error(
+        isHelperAction
+          ? 'Debes añadir un resumen para enviar propuesta'
+          : 'Debes añadir un resumen para cerrar el encargo'
+      );
+      return;
+    }
+
+    let resolutionForm: Record<string, unknown> | null = null;
+    if (isHelperAction) {
+      const marketplaceUrl = String(window.prompt('Enlace del anuncio encontrado (opcional):', '') || '').trim();
+      const platform = String(window.prompt('Plataforma (ej: Wallapop, eBay, Vinted):', '') || '').trim();
+      const finalPrice = String(window.prompt('Precio final estimado (€):', '') || '').trim();
+      const originality = String(window.prompt('¿Original, repro o mixto?', '') || '').trim();
+      const deliveryMode = String(window.prompt('Entrega: envío o presencial', '') || '').trim();
+      const storeReviewChoice = String(
+        window.prompt('¿Pasa por almacén de tienda para revisión? (sí/no):', 'sí') || ''
+      )
+        .trim()
+        .toLowerCase();
+      const storeReviewRequired = storeReviewChoice === 'si' || storeReviewChoice === 'sí' || storeReviewChoice === 's';
+
+      resolutionForm = {
+        marketplace_url: marketplaceUrl || null,
+        platform: platform || null,
+        final_price_eur: finalPrice || null,
+        originality: originality || null,
+        delivery_mode: deliveryMode || null,
+        store_review_required: storeReviewRequired,
+      };
+    }
+
+    setConciergeActionLoading(true);
+    try {
+      const res = await fetch(`/api/chat/concierge/${encodeURIComponent(ticket.id)}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          summary: String(summary || '').trim(),
+          resolutionForm,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudo cerrar el encargo');
+      }
+      toast.success(
+        isHelperAction
+          ? 'Propuesta enviada. El comprador debe confirmarla para cerrar el encargo.'
+          : 'Encargo cerrado y marcado como resuelto'
+      );
+      await Promise.all([loadTickets(), openTicket(ticket.id)]);
+    } catch (error: any) {
+      toast.error(error?.message || 'No se pudo cerrar el encargo');
+    } finally {
+      setConciergeActionLoading(false);
+    }
   };
 
   const createTicket = async () => {
@@ -1319,7 +1602,7 @@ export default function ProfileView() {
           </div>
 
           <div className="p-4 sm:p-6">
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)]">
+            <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
               <div className="min-w-0">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                   <div
@@ -1403,7 +1686,7 @@ export default function ProfileView() {
                 </details>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-center text-xs sm:text-sm self-start">
+              <div className="grid grid-cols-2 gap-2 text-center text-xs sm:text-sm self-start md:grid-cols-4 2xl:grid-cols-2">
                 <div className="rounded-xl border border-line px-3 py-3 bg-slate-950/35">
                   <p className="text-textMuted">Rango</p>
                   <p className="font-semibold">{userLevel}</p>
@@ -1914,6 +2197,26 @@ export default function ProfileView() {
                     </select>
                     <p className="text-xs text-textMuted">
                       Controla si otros usuarios pueden ver tu carrusel de favoritos.
+                    </p>
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-sm text-textMuted">Idioma del chat de encargos</span>
+                    <select
+                      className="bg-transparent border border-line px-3 py-2"
+                      value={preferredLanguage}
+                      onChange={(e) =>
+                        setPreferredLanguage(normalizePreferredLanguage(e.target.value))
+                      }
+                    >
+                      {PREFERRED_LANGUAGES.map((entry) => (
+                        <option key={entry.value} value={entry.value}>
+                          {entry.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-textMuted">
+                      El chat intentará traducir automáticamente los mensajes recibidos a este idioma.
                     </p>
                   </label>
 
@@ -2455,8 +2758,54 @@ export default function ProfileView() {
 
         {tab === 'tickets' && (
           <div className="grid gap-6 lg:grid-cols-[360px,1fr]">
-            <div className="glass p-4">
-              <h2 className="font-semibold mb-3">Mis tickets ({tickets.length})</h2>
+            <div className="lg:hidden rounded-xl border border-line bg-[rgba(8,16,28,0.66)] p-2">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTicketsMobilePane('list')}
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                    ticketsMobilePane === 'list'
+                      ? 'border-primary/60 bg-primary/10 text-primary'
+                      : 'border-line text-textMuted'
+                  }`}
+                >
+                  Lista
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTicketsMobilePane('chat')}
+                  disabled={!selectedTicketId}
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                    ticketsMobilePane === 'chat'
+                      ? 'border-primary/60 bg-primary/10 text-primary'
+                      : 'border-line text-textMuted'
+                  } ${!selectedTicketId ? 'opacity-50' : ''}`}
+                >
+                  Chat
+                </button>
+              </div>
+            </div>
+
+            <div className={`glass p-4 ${ticketsMobilePane === 'chat' ? 'hidden lg:block' : ''}`}>
+              <h2 className="font-semibold mb-3">Tickets y encargos ({tickets.length})</h2>
+              <div className="mb-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+                <div className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] px-2 py-2">
+                  <p className="text-textMuted">Ayudas activas</p>
+                  <p className="mt-1 font-semibold text-primary">{Number(profile?.helper_active_count || 0)}</p>
+                </div>
+                <div className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] px-2 py-2">
+                  <p className="text-textMuted">Ayudas completadas</p>
+                  <p className="mt-1 font-semibold text-primary">{Number(profile?.helper_completed_count || 0)}</p>
+                </div>
+                <div className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] px-2 py-2">
+                  <p className="text-textMuted">Reputación helper</p>
+                  <p className="mt-1 font-semibold text-primary">{Number(profile?.helper_reputation || 0)}</p>
+                </div>
+              </div>
+
+              <Link href="/servicio-compra" className="mb-3 button-secondary w-full justify-center">
+                Ver encargos abiertos para ayudar
+              </Link>
 
               <div className="space-y-2 max-h-[300px] overflow-auto pr-1 mb-4">
                 {tickets.map((ticket) => (
@@ -2467,9 +2816,23 @@ export default function ProfileView() {
                   >
                     <p className="font-semibold text-sm line-clamp-1">{ticket.subject}</p>
                     <p className="text-xs text-textMuted line-clamp-1">{ticket.last_message?.message || 'Sin mensajes'}</p>
-                    <p className="text-xs text-primary mt-1">{ticket.status}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+                      <span className="chip border-line/70">{ticket.status}</span>
+                      <span className="chip border-line/70">{ticketAccessRoleLabel(ticket.access_role)}</span>
+                      {isConciergeTicket(ticket) ? (
+                        <span className={`chip ${conciergeStateClass(ticket.concierge_state)}`}>
+                          {conciergeStateLabel(ticket.concierge_state)}
+                        </span>
+                      ) : null}
+                    </div>
                     {isConciergeTicket(ticket) ? (
                       <p className="text-[11px] text-primary mt-1">Canal verificado de encargo</p>
+                    ) : null}
+                    {isConciergeTicket(ticket) &&
+                    String(ticket.concierge_state || '').toLowerCase() === 'claimed' ? (
+                      <p className="text-[11px] text-textMuted mt-1">
+                        {toHelperDeadlineLabel(ticket.helper_inactive_deadline)}
+                      </p>
                     ) : null}
                   </button>
                 ))}
@@ -2507,7 +2870,7 @@ export default function ProfileView() {
               </div>
             </div>
 
-            <div className="glass p-6">
+            <div className={`glass p-6 ${ticketsMobilePane === 'list' ? 'hidden lg:block' : ''}`}>
               {!selectedTicket ? (
                 <p className="text-textMuted">Selecciona un ticket para ver el chat.</p>
               ) : (
@@ -2515,11 +2878,76 @@ export default function ProfileView() {
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                     <div>
                       <p className="font-semibold">{selectedTicket.subject}</p>
-                      <p className="text-xs text-textMuted">Estado: {selectedTicket.status}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-textMuted">
+                        <span>Estado: {selectedTicket.status}</span>
+                        <span className="chip border-line/70">{ticketAccessRoleLabel(selectedTicket.access_role)}</span>
+                        {isConciergeTicket(selectedTicket) ? (
+                          <span className={`chip ${conciergeStateClass(selectedTicket.concierge_state)}`}>
+                            {conciergeStateLabel(selectedTicket.concierge_state)}
+                          </span>
+                        ) : null}
+                      </div>
                       {isConciergeTicket(selectedTicket) ? (
                         <p className="text-xs text-primary mt-1">Canal verificado comprador ↔ tienda</p>
                       ) : null}
+                      {isConciergeTicket(selectedTicket) &&
+                      String(selectedTicket.concierge_state || '').toLowerCase() === 'claimed' ? (
+                        <p className="text-xs text-textMuted mt-1">
+                          {toHelperDeadlineLabel(selectedTicket.helper_inactive_deadline)}
+                        </p>
+                      ) : null}
                     </div>
+                    {isConciergeTicket(selectedTicket) ? (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          className="button-secondary lg:hidden"
+                          onClick={() => setTicketsMobilePane('list')}
+                        >
+                          Volver a lista
+                        </button>
+                        {selectedTicket.access_role === 'owner' &&
+                        selectedTicket.concierge_state === 'claimed' ? (
+                          <>
+                            <button
+                              type="button"
+                              className="button-secondary"
+                              onClick={() => completeConciergeTicket(selectedTicket)}
+                              disabled={conciergeActionLoading}
+                            >
+                              Confirmar ayuda
+                            </button>
+                            <button
+                              type="button"
+                              className="button-secondary"
+                              onClick={() => releaseConciergeTicket(selectedTicket, false)}
+                              disabled={conciergeActionLoading}
+                            >
+                              Reabrir encargo
+                            </button>
+                            <button
+                              type="button"
+                              className="button-secondary"
+                              onClick={() => releaseConciergeTicket(selectedTicket, true)}
+                              disabled={conciergeActionLoading}
+                            >
+                              Bloquear ayudante
+                            </button>
+                          </>
+                        ) : null}
+                        {selectedTicket.access_role === 'helper' &&
+                        selectedTicket.concierge_state === 'claimed' ? (
+                          <button
+                            type="button"
+                            className="button-secondary"
+                            onClick={() => completeConciergeTicket(selectedTicket)}
+                            disabled={conciergeActionLoading}
+                          >
+                            Enviar propuesta final
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="border border-line p-3 max-h-[420px] overflow-auto space-y-3">
@@ -2532,9 +2960,55 @@ export default function ProfileView() {
                           className={`p-3 border ${msg.is_admin ? 'border-primary/40 bg-primary/5' : 'border-line bg-surface'}`}
                         >
                           <p className="text-xs text-textMuted mb-1">
-                            {msg.is_admin ? 'Soporte' : 'Tú'} · {new Date(msg.created_at).toLocaleString('es-ES')}
+                            {msg.is_admin
+                              ? 'Soporte'
+                              : String(msg.user_id || '') === String(profile?.id || '')
+                                ? 'Tú'
+                                : selectedTicket.access_role === 'helper'
+                                  ? 'Comprador'
+                                  : 'Ayudante'}{' '}
+                            · {new Date(msg.created_at).toLocaleString('es-ES')}
                           </p>
                           <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                          {translatedMessages[msg.id] &&
+                          translatedMessages[msg.id] !== String(msg.message || '') ? (
+                            <div className="mt-2 rounded-lg border border-primary/35 bg-primary/10 px-2 py-1.5">
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-primary">
+                                Traducción automática ({viewerLanguage.toUpperCase()})
+                              </p>
+                              <p className="mt-1 text-sm whitespace-pre-wrap text-primary/95">
+                                {translatedMessages[msg.id]}
+                              </p>
+                            </div>
+                          ) : null}
+                          {Array.isArray(msg.attachments) && msg.attachments.length > 0 ? (
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                              {msg.attachments.map((item, index) => {
+                                const mediaUrl = String(item?.url || '').trim();
+                                if (!mediaUrl) return null;
+                                if (item.type === 'video') {
+                                  return (
+                                    <video key={`${msg.id}-video-${index}`} src={mediaUrl} controls className="w-full rounded-lg border border-line" />
+                                  );
+                                }
+                                return (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    key={`${msg.id}-img-${index}`}
+                                    src={mediaUrl}
+                                    alt="Adjunto ticket"
+                                    className="w-full rounded-lg border border-line object-cover max-h-52"
+                                    loading="lazy"
+                                  />
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                          {msg.expires_at ? (
+                            <p className="mt-2 text-[11px] text-textMuted">
+                              Archivos temporales: se eliminan automáticamente el {new Date(msg.expires_at).toLocaleString('es-ES')}.
+                            </p>
+                          ) : null}
                         </div>
                       ))
                     )}
@@ -2547,6 +3021,16 @@ export default function ProfileView() {
                       value={ticketReply}
                       onChange={(e) => setTicketReply(e.target.value)}
                     />
+                    <textarea
+                      className="w-full bg-transparent border border-line px-3 py-2 min-h-[70px]"
+                      placeholder="Adjuntos (URLs de imagen/video, una por línea). Se eliminan en 3 días."
+                      value={ticketAttachmentText}
+                      onChange={(e) => setTicketAttachmentText(e.target.value)}
+                    />
+                    <p className="text-xs text-textMuted">
+                      Traducción automática activa a: <span className="text-primary uppercase">{viewerLanguage}</span>.
+                      Archivos adjuntos temporales: eliminación automática cada 3 días.
+                    </p>
                     <button className="button-primary" onClick={sendTicketReply}>Enviar</button>
                   </div>
                 </>
