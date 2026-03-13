@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Login',
-  description: 'Acceso privado para clientes y vendedores en AdvancedRetro.es.',
+  title: 'Acceso de usuario',
+  description: 'Página de acceso privada de AdvancedRetro.es.',
   path: '/login',
   noIndex: true,
 });

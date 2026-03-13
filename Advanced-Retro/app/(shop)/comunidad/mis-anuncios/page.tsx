@@ -8,6 +8,7 @@ export const metadata: Metadata = buildPageMetadata({
     'Gestiona tus anuncios de comunidad en AdvancedRetro.es: estados, revisión, métricas y publicación rápida.',
   path: '/comunidad/mis-anuncios',
   keywords: ['mis anuncios comunidad', 'gestionar anuncios retro', 'vender en comunidad advanced retro'],
+  noIndex: true,
 });
 
 export default function CommunityMyListingsPage() {
