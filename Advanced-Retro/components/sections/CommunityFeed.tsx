@@ -8,6 +8,7 @@ import {
   inferShippingZoneFromAddress,
   type CommunityShippingZone,
 } from '@/lib/shipping';
+import { resolveCommunityListingCover } from '@/lib/communityImageUrl';
 
 type CommunityListing = {
   id: string;
@@ -637,10 +638,10 @@ export default function CommunityFeed() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4">
                 {visibleListings.map((listing) => {
-                  const image =
-                    Array.isArray(listing.images) && listing.images.length > 0
-                      ? String(listing.images[0])
-                      : '/logo.png';
+                  const image = resolveCommunityListingCover(
+                    listing.images,
+                    `${String(listing.id || '')}-${String(listing.title || '')}`
+                  );
                   const sellerName = String(listing.user?.name || 'Vendedor');
                   const sellerAvatar = String(listing.user?.avatar_url || '');
                   const sellerId = String(listing.user?.id || '').trim();

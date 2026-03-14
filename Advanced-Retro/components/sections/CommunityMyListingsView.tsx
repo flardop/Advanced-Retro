@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { resolveCommunityListingCover } from '@/lib/communityImageUrl';
 
 type ListingStatus = 'pending_review' | 'approved' | 'rejected' | string;
 
@@ -204,10 +205,10 @@ export default function CommunityMyListingsView() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {listings.map((listing) => {
-              const image =
-                Array.isArray(listing.images) && listing.images.length > 0
-                  ? String(listing.images[0])
-                  : '/logo.png';
+              const image = resolveCommunityListingCover(
+                listing.images,
+                `${String(listing.id || '')}-${String(listing.title || '')}`
+              );
 
               return (
                 <article key={listing.id} className="glass overflow-hidden">

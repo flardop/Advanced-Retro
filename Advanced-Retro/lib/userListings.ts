@@ -12,6 +12,7 @@ import {
 import { getFavoriteProductsForViewer } from '@/lib/profileFavorites';
 import { resolveCommissionConfig } from '@/lib/commissions';
 import { validateRetroListingText } from '@/lib/uploadSafety';
+import { resolveCommunityListingImages } from '@/lib/communityImageUrl';
 
 export type ListingStatus = 'pending_review' | 'approved' | 'rejected';
 export type ListingDeliveryStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
@@ -155,6 +156,8 @@ function withCommunityDefaults<T extends Record<string, any>>(listing: T): T & {
   package_size: 'small' | 'medium' | 'large' | 'oversize';
   item_color: string;
 } {
+  const seed = String(listing?.id || listing?.slug || listing?.title || listing?.created_at || 'community');
+  const listingImages = resolveCommunityListingImages(listing?.images, seed);
   const price = Math.max(0, Number(listing?.price || 0));
   const commissionRateRaw = Number(listing?.commission_rate);
   const commissionRate = Number.isFinite(commissionRateRaw) && commissionRateRaw > 0
@@ -201,6 +204,7 @@ function withCommunityDefaults<T extends Record<string, any>>(listing: T): T & {
 
   return {
     ...listing,
+    images: listingImages,
     listing_fee_cents: listingFeeCents,
     commission_rate: commissionRate,
     commission_cents: commissionCents,

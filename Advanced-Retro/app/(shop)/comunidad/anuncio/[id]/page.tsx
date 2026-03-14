@@ -5,6 +5,7 @@ import { getPublicApprovedListingWithSellerById } from '@/lib/userListings';
 import CommunityListingSocialPanel from '@/components/sections/CommunityListingSocialPanel';
 import CommunityListingShippingCard from '@/components/sections/CommunityListingShippingCard';
 import { buildPageMetadata } from '@/lib/seo';
+import { resolveCommunityListingCover, resolveCommunityListingImages } from '@/lib/communityImageUrl';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,11 +47,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const data = await getPublicApprovedListingWithSellerById(params.id);
     const listing = data.listing;
+    const cover = resolveCommunityListingCover(
+      listing.images,
+      `${String(listing.id || '')}-${String(listing.title || '')}`
+    );
     return buildPageMetadata({
       title: `Comunidad · ${listing.title}`,
       description: `${listing.description || 'Anuncio de comunidad'} · ${toEuro(Number(listing.price || 0))}`,
       path: `/comunidad/anuncio/${params.id}`,
-      image: Array.isArray(listing.images) && listing.images.length > 0 ? String(listing.images[0]) : '/logo.png',
+      image: cover,
       keywords: ['anuncio retro', String(listing.title || '').trim(), 'comunidad advanced retro'],
       type: 'article',
     });
@@ -86,7 +91,10 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
 
   const { listing, relatedBySeller } = data;
   const sellerLocationLabel = String((listing.user as any)?.public_location?.label || '').trim() || null;
-  const images = Array.isArray(listing.images) && listing.images.length > 0 ? listing.images : ['/logo.png'];
+  const images = resolveCommunityListingImages(
+    listing.images,
+    `${String(listing.id || '')}-${String(listing.title || '')}`
+  );
   const listingSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -261,7 +269,10 @@ export default async function CommunityListingDetailPage({ params }: PageProps) 
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {relatedBySeller.map((item: any) => {
-                const cover = Array.isArray(item.images) && item.images.length > 0 ? String(item.images[0]) : '/logo.png';
+                const cover = resolveCommunityListingCover(
+                  item.images,
+                  `related-${String(item.id || '')}-${String(item.title || '')}`
+                );
                 return (
                   <Link
                     key={item.id}

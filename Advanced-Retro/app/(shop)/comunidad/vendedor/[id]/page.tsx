@@ -9,6 +9,7 @@ import { getProductHref } from '@/lib/productUrl';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { buildPageMetadata } from '@/lib/seo';
 import { BADGE_RARITY_STYLES, getBadgeDefinition, getBadgeIconPng } from '@/lib/gamificationBadges';
+import { resolveCommunityListingCover } from '@/lib/communityImageUrl';
 
 export const dynamic = 'force-dynamic';
 
@@ -265,25 +266,31 @@ export default async function CommunitySellerPage({ params }: PageProps) {
             </p>
           ) : Array.isArray(favorites?.items) && favorites.items.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
-              {favorites.items.map((item) => (
-                <Link
-                  key={`fav-${item.id}`}
-                  href={getProductHref(item)}
-                  className="min-w-[220px] max-w-[220px] snap-start rounded-2xl border border-line bg-[rgba(8,16,28,0.52)] p-3 hover:shadow-glow transition-shadow"
-                >
-                  <div className="relative h-36 rounded-xl border border-line bg-surface overflow-hidden">
-                    <SafeImage
-                      src={getProductImageUrl(item)}
-                      fallbackSrc={getProductFallbackImageUrl(item)}
-                      alt={item.name}
-                      fill
-                      className="object-contain p-2"
-                    />
-                  </div>
-                  <p className="mt-3 text-sm font-semibold line-clamp-2">{item.name}</p>
-                  <p className="text-xs text-textMuted mt-1">{toEuro(Number(item.price || 0))}</p>
-                </Link>
-              ))}
+              {favorites.items.map((item) => {
+                const favoriteImage = resolveCommunityListingCover(
+                  [getProductImageUrl(item), getProductFallbackImageUrl(item)],
+                  `favorite-${String(item.id || '')}-${String(item.name || '')}`
+                );
+                return (
+                  <Link
+                    key={`fav-${item.id}`}
+                    href={getProductHref(item)}
+                    className="min-w-[220px] max-w-[220px] snap-start rounded-2xl border border-line bg-[rgba(8,16,28,0.52)] p-3 hover:shadow-glow transition-shadow"
+                  >
+                    <div className="relative h-36 rounded-xl border border-line bg-surface overflow-hidden">
+                      <SafeImage
+                        src={favoriteImage}
+                        fallbackSrc="/images/community/homemade/community-photo-001.jpeg"
+                        alt={item.name}
+                        fill
+                        className="object-contain p-2"
+                      />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold line-clamp-2">{item.name}</p>
+                    <p className="text-xs text-textMuted mt-1">{toEuro(Number(item.price || 0))}</p>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <p className="text-textMuted">Este usuario todavía no tiene favoritos marcados.</p>
@@ -327,7 +334,10 @@ export default async function CommunitySellerPage({ params }: PageProps) {
               </div>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 {showcaseListings.map((listing: any) => {
-                  const cover = Array.isArray(listing.images) && listing.images.length > 0 ? String(listing.images[0]) : '/logo.png';
+                  const cover = resolveCommunityListingCover(
+                    listing.images,
+                    `showcase-${String(listing.id || '')}-${String(listing.title || '')}`
+                  );
                   return (
                     <Link
                       key={`showcase-${listing.id}`}
@@ -354,7 +364,10 @@ export default async function CommunitySellerPage({ params }: PageProps) {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {listings.map((listing: any) => {
-                const image = Array.isArray(listing.images) && listing.images.length > 0 ? String(listing.images[0]) : '/logo.png';
+                const image = resolveCommunityListingCover(
+                  listing.images,
+                  `seller-${String(listing.id || '')}-${String(listing.title || '')}`
+                );
                 return (
                   <article key={listing.id} className="rounded-2xl border border-line bg-[rgba(8,16,28,0.52)] overflow-hidden">
                     <div className="relative h-44 bg-surface">
@@ -364,11 +377,6 @@ export default async function CommunitySellerPage({ params }: PageProps) {
                         alt={listing.title}
                         className="h-full w-full object-contain p-2"
                         loading="lazy"
-                        onError={(event) => {
-                          const t = event.currentTarget;
-                          if (t.src.endsWith('/logo.png')) return;
-                          t.src = '/logo.png';
-                        }}
                       />
                     </div>
                     <div className="p-4">
