@@ -225,7 +225,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
           <Navbar />
-          <main className="flex-1 pb-[84px] lg:pb-0">{children}</main>
+          <main className="flex-1 pb-4 lg:pb-0">{children}</main>
           <Footer />
           <ClientToaster />
           <SupportAssistantWidget />

@@ -24,13 +24,6 @@ function NavbarContent() {
     { href: '/servicio-compra', label: t('nav.concierge', 'Encargos'), icon: '🧭', description: 'Compra asistida y seguimiento' },
     { href: '/contacto', label: t('nav.contact', 'Contacto'), icon: '💬', description: 'Soporte verificado' },
   ];
-  const mobileBottomItems = [
-    { href: '/tienda', label: 'Tienda', icon: '🛍️' },
-    { href: '/comunidad', label: 'Comunidad', icon: '👥' },
-    { href: '/servicio-compra', label: 'Encargos', icon: '🧭' },
-    { href: '/carrito', label: 'Carrito', icon: '🛒' },
-    { href: user ? '/perfil' : '/login', label: user ? 'Perfil' : 'Entrar', icon: user ? '👤' : '🔐' },
-  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -145,31 +138,6 @@ function NavbarContent() {
         </div>
       </div>
 
-      <div className="lg:hidden border-t border-line/80">
-        <div className="container py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {[
-            navItems[0],
-            navItems[1],
-            navItems[6],
-          ].map((item) => {
-            const isActive = isItemActive(item.href);
-            return (
-              <Link
-                key={`mobile-quick-${item.href}`}
-                href={item.href}
-                className={`chip shrink-0 ${isActive ? 'text-primary border-primary' : ''}`}
-              >
-                <span className="mr-1">{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
-          <Link href={user ? '/perfil' : '/login'} className="chip shrink-0">
-            {user ? t('nav.profile', 'Mi perfil') : t('nav.login_mobile', 'Iniciar sesión')}
-          </Link>
-        </div>
-      </div>
-
       {open && (
         <div className="lg:hidden fixed inset-0 z-[70] bg-[rgba(2,8,16,0.72)] backdrop-blur-sm" onClick={() => setOpen(false)}>
           <div className="absolute inset-y-0 right-0 w-[min(92vw,420px)] border-l border-line bg-[rgba(7,14,24,0.98)]">
@@ -230,34 +198,6 @@ function NavbarContent() {
           </div>
         </div>
       )}
-
-      <div
-        className="lg:hidden fixed inset-x-0 bottom-0 z-[65] px-3 pb-2 pointer-events-none"
-        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
-      >
-        <nav className="pointer-events-auto mx-auto w-full max-w-[560px] rounded-2xl border border-line bg-[rgba(7,14,24,0.92)] shadow-[0_14px_34px_rgba(2,8,18,0.45)] backdrop-blur-xl">
-          <ul className="grid grid-cols-5 gap-1 p-1.5">
-            {mobileBottomItems.map((item) => {
-              const isActive = isItemActive(item.href);
-              return (
-                <li key={`mobile-bottom-${item.href}`}>
-                  <Link
-                    href={item.href}
-                    className={`flex flex-col items-center justify-center rounded-xl px-1 py-2 text-[10px] font-semibold leading-tight transition ${
-                      isActive
-                        ? 'bg-primary/15 text-primary border border-primary/40'
-                        : 'text-textMuted border border-transparent hover:bg-white/5 hover:text-text'
-                    }`}
-                  >
-                    <span className="text-sm leading-none">{item.icon}</span>
-                    <span className="mt-1 truncate max-w-full">{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      </div>
 
       <div className="hidden border-t border-line/60 xl:block">
         <div className="container flex flex-wrap items-center gap-6 py-2 text-[11px] text-textMuted">
