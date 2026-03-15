@@ -10,6 +10,7 @@ const STATIC_ROUTES = [
   '/tienda',
   '/subastas',
   '/ruleta',
+  '/kickstarter',
   '/comunidad',
   '/comunidad/vendedores',
   '/blog',

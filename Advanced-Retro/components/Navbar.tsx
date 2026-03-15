@@ -22,6 +22,7 @@ function NavbarContent() {
     { href: '/subastas', label: t('nav.auctions', 'Subastas'), icon: '⏳', description: 'Próximos eventos y pujas' },
     { href: '/ruleta', label: t('nav.roulette', 'Ruleta'), icon: '🎯', description: 'Tiradas y premios' },
     { href: '/servicio-compra', label: t('nav.concierge', 'Encargos'), icon: '🧭', description: 'Compra asistida y seguimiento' },
+    { href: '/kickstarter', label: 'Kickstarter', icon: '🚀', description: 'Campaña y donaciones' },
     { href: '/contacto', label: t('nav.contact', 'Contacto'), icon: '💬', description: 'Soporte verificado' },
   ];
 
