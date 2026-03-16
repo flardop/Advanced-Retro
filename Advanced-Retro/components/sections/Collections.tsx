@@ -118,18 +118,14 @@ export default function Collections() {
                 <h3 className="title-display text-2xl mt-2">{collection.title}</h3>
                 <p className="text-textMuted mt-2 min-h-[48px]">{collection.subtitle}</p>
 
-                <div className="photo-frame-glow relative mt-4 h-44 overflow-hidden rounded-xl border border-line bg-surface">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(75,228,214,.15),transparent_55%)]" />
+                <div className="photo-frame-glow relative mt-4 h-44 overflow-hidden rounded-xl border border-line bg-[radial-gradient(circle_at_15%_20%,rgba(75,228,214,.1),transparent_55%),rgba(9,18,31,.9)]">
                   <SafeImage
                     src={collection.cover}
                     fallbackSrc="/placeholder.svg"
                     alt={`${collection.title} portada`}
                     fill
-                    className="object-cover photo-breath photo-hover-pop"
+                    className="object-contain p-2 photo-breath photo-hover-pop"
                   />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#07111b] to-transparent p-3">
-                    <p className="text-xs text-textMuted">Entrar en {collection.title}</p>
-                  </div>
                 </div>
 
                 <div className="mt-4 flex items-center justify-between gap-2">

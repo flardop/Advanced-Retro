@@ -875,7 +875,7 @@ function CatalogContent() {
             fill
             sizes="96px"
             priority={priority}
-            className="object-cover object-center photo-hover-pop"
+            className="object-contain p-1.5 object-center photo-hover-pop"
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -1145,7 +1145,7 @@ function CatalogContent() {
           </div>
         </div>
 
-        <div className="catalog-story-strip glass p-4 sm:p-5 mb-8">
+        <div className="catalog-story-strip glass p-4 sm:p-5 mb-8 hidden sm:block">
           <p className="text-sm text-textMuted leading-relaxed">
             Cada cartucho tiene historia. Mystery Box es azar con tiradas y premios; Ruleta es el panel de giro; Encargos es compra asistida 1 a 1.
           </p>
@@ -1169,11 +1169,11 @@ function CatalogContent() {
                 </button>
               ))}
             </div>
-            <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
+            <div className="hidden sm:flex sm:flex-wrap sm:gap-2">
               {PLATFORM_FILTERS.map((filter) => (
                 <button
                   key={filter.id}
-                  className={`chip shrink-0 ${active === filter.id ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
+                  className={`chip ${active === filter.id ? 'text-text border-primary bg-[rgba(75,228,214,0.14)]' : ''}`}
                   onClick={() => setActive(filter.id)}
                 >
                   {filter.label}
@@ -1326,9 +1326,9 @@ function CatalogContent() {
                 <Link
                   key={product.id}
                   href={href}
-                  className="catalog-product-card glass p-3 sm:p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5 flex gap-3 sm:block"
+                  className="catalog-product-card glass p-3 sm:p-4 hover:shadow-glow transition-all group hover:-translate-y-0.5 block"
                 >
-                  <div className="photo-frame-glow relative h-28 w-[116px] shrink-0 sm:w-full sm:h-56 rounded-xl overflow-hidden">
+                  <div className="photo-frame-glow relative h-44 w-full sm:h-56 rounded-xl overflow-hidden bg-[radial-gradient(circle_at_18%_16%,rgba(75,228,214,.11),transparent_58%),rgba(8,16,28,.9)]">
                     <SafeImage
                       src={getProductImageUrl(product)}
                       fallbackSrc={getProductFallbackImageUrl(product)}
@@ -1336,7 +1336,7 @@ function CatalogContent() {
                       fill
                       sizes="(max-width: 640px) 34vw, (max-width: 1024px) 42vw, (max-width: 1536px) 24vw, 18vw"
                       priority={index < 2}
-                      className="object-cover object-center photo-hover-pop"
+                      className="object-contain p-2 sm:p-3 object-center photo-hover-pop"
                     />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-2">
                       <span className="chip text-xs">{product.status}</span>
@@ -1345,13 +1345,13 @@ function CatalogContent() {
                       ) : null}
                     </div>
                   </div>
-                  <div className="mt-0 sm:mt-4 min-w-0 flex-1">
+                  <div className="mt-3 sm:mt-4 min-w-0 flex-1">
                     <h3 className="font-semibold text-text leading-tight line-clamp-2 sm:min-h-[42px]">{product.name}</h3>
-                    <p className="text-textMuted text-sm line-clamp-2 mt-2 sm:min-h-[40px]">{product.description}</p>
+                    <p className="hidden sm:block text-textMuted text-sm line-clamp-2 mt-2 sm:min-h-[40px]">{product.description}</p>
                     <p className="text-primary font-semibold mt-2 sm:mt-3 text-base sm:text-lg">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
                     <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
                     {!isMysteryView ? (
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      <div className="hidden sm:flex mt-2 flex-wrap gap-2 text-xs">
                         <span className="chip">Visitas: {productMetrics?.visits ?? 0}</span>
                         <span className="chip">Favoritos: {productMetrics?.likes ?? 0}</span>
                         {productMetrics?.likedByCurrentVisitor ? (
