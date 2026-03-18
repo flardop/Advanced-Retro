@@ -28,6 +28,48 @@ import {
 export const dynamic = 'force-dynamic';
 const ENDPOINT = '/api/products/[id]/social';
 
+function mergeReviews(sqlReviews: any[], legacyReviews: any[]): any[] {
+  const merged = [...(Array.isArray(sqlReviews) ? sqlReviews : [])];
+  const seen = new Set(
+    merged.map((review: any) =>
+      [
+        String(review?.id || ''),
+        String(review?.visitorId || ''),
+        String(review?.rating || ''),
+        String(review?.comment || '').trim(),
+      ].join('::')
+    )
+  );
+
+  for (const review of Array.isArray(legacyReviews) ? legacyReviews : []) {
+    const key = [
+      String(review?.id || ''),
+      String(review?.visitorId || ''),
+      String(review?.rating || ''),
+      String(review?.comment || '').trim(),
+    ].join('::');
+    if (!seen.has(key)) {
+      merged.push(review);
+      seen.add(key);
+    }
+  }
+
+  return merged
+    .filter((review: any) => Number(review?.rating || 0) >= 1 && String(review?.comment || '').trim().length > 0)
+    .sort((a: any, b: any) => {
+      const aTime = new Date(String(a?.createdAt || 0)).getTime();
+      const bTime = new Date(String(b?.createdAt || 0)).getTime();
+      return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
+    })
+    .slice(0, 250);
+}
+
+function computeAverageRating(reviews: any[]): number {
+  if (!Array.isArray(reviews) || reviews.length === 0) return 0;
+  const total = reviews.reduce((sum, review) => sum + Number(review?.rating || 0), 0);
+  return Number((total / reviews.length).toFixed(2));
+}
+
 async function getOptionalAuthUser() {
   const supabase = createRouteHandlerClient({ cookies });
   const {
@@ -144,7 +186,29 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       canReview = await hasPurchasedProduct(user.id, productId);
     }
 
-    const reviews = socialSqlAvailable ? await getProductReviewsSql(productId) : state!.reviews;
+    const sqlReviews = socialSqlAvailable ? await getProductReviewsSql(productId) : [];
+    let reviews = socialSqlAvailable ? sqlReviews : state!.reviews;
+    let legacyState: Awaited<ReturnType<typeof readProductSocialState>> | null = null;
+
+    if (
+      socialSqlAvailable &&
+      (sqlReviews.length === 0 || Number(summary.reviewsCount || 0) > sqlReviews.length)
+    ) {
+      legacyState = await readProductSocialState(productId);
+      if (legacyState.reviews.length > 0) {
+        reviews = mergeReviews(sqlReviews, legacyState.reviews);
+      }
+    }
+
+    if (reviews.length > 0) {
+      const mergedCount = reviews.length;
+      if (Number(summary.reviewsCount || 0) < mergedCount) {
+        summary.reviewsCount = mergedCount;
+      }
+      if (Number(summary.ratingAverage || 0) <= 0) {
+        summary.ratingAverage = computeAverageRating(reviews);
+      }
+    }
 
     return respond({
       success: true,
@@ -153,7 +217,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       canReview,
       requiresPurchaseForReview: true,
       reviews,
-      updatedAt: socialSqlAvailable ? new Date().toISOString() : state!.updatedAt,
+      updatedAt: socialSqlAvailable ? legacyState?.updatedAt || new Date().toISOString() : state!.updatedAt,
     }, 200, socialSqlAvailable ? true : null);
   } catch (error: any) {
     return respond(
