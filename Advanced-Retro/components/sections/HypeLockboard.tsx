@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { useLocale } from '@/components/LocaleProvider';
 
 type HypeLaunchKind = 'mystery_drop' | 'auction_season';
 
@@ -40,10 +41,10 @@ function pad(value: number) {
   return String(value).padStart(2, '0');
 }
 
-function renderLockedVisual(kind: HypeLaunchKind) {
+function renderLockedVisual(kind: HypeLaunchKind, t: (key: string, fallback?: string) => string) {
   const isAuction = kind === 'auction_season';
   const icon = isAuction ? 'A' : 'M';
-  const label = isAuction ? 'SUBASTA' : 'MYSTERY';
+  const label = isAuction ? t('home.hype.visual.auction', 'SUBASTA') : t('home.hype.visual.mystery', 'MYSTERY');
 
   return (
     <div className="absolute inset-0 bg-[linear-gradient(145deg,#05070b,#080c14)]">
@@ -53,14 +54,14 @@ function renderLockedVisual(kind: HypeLaunchKind) {
           {label}
         </div>
         <div className="absolute right-3 top-3 rounded-md border border-line bg-[rgba(10,15,22,0.9)] px-2 py-1 text-[10px] tracking-[0.14em] text-textMuted">
-          BLOQUEADO
+          {t('home.hype.visual.locked', 'BLOQUEADO')}
         </div>
         <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
           <p className="rounded-lg border border-line bg-[rgba(12,18,27,0.9)] px-4 py-2 text-4xl font-black sm:text-5xl" aria-hidden>
             {icon}
           </p>
-          <p className="mt-3 text-[11px] uppercase tracking-[0.28em] text-textMuted">Proximamente</p>
-          <p className="mt-1 text-2xl font-black tracking-[0.2em] text-white sm:text-3xl">INCOMING</p>
+          <p className="mt-3 text-[11px] uppercase tracking-[0.28em] text-textMuted">{t('home.hype.visual.soon', 'Próximamente')}</p>
+          <p className="mt-1 text-2xl font-black tracking-[0.2em] text-white sm:text-3xl">{t('home.hype.visual.incoming', 'INCOMING')}</p>
         </div>
       </div>
     </div>
@@ -68,33 +69,34 @@ function renderLockedVisual(kind: HypeLaunchKind) {
 }
 
 export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
+  const { t } = useLocale();
   const [launches, setLaunches] = useState<HypeLaunch[]>([]);
   const [setupRequired, setSetupRequired] = useState(false);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [loading, setLoading] = useState(true);
   const [reservingKey, setReservingKey] = useState('');
 
-  const loadRoadmap = async () => {
+  const loadRoadmap = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/hype/roadmap', { cache: 'no-store' });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        toast.error(data?.error || 'No se pudo cargar el roadmap');
+        toast.error(data?.error || t('home.hype.error_roadmap', 'No se pudo cargar el roadmap'));
         return;
       }
       setSetupRequired(Boolean(data?.setupRequired));
       setLaunches(Array.isArray(data?.launches) ? data.launches : []);
     } catch {
-      toast.error('No se pudo cargar el roadmap');
+      toast.error(t('home.hype.error_roadmap', 'No se pudo cargar el roadmap'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     void loadRoadmap();
-  }, []);
+  }, [loadRoadmap]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
@@ -119,18 +121,18 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
       });
       const data = await res.json().catch(() => null);
       if (res.status === 401) {
-        toast.error('Inicia sesión para reservar plaza.');
+        toast.error(t('home.hype.error_login', 'Inicia sesión para reservar plaza.'));
         window.location.href = '/login';
         return;
       }
       if (!res.ok) {
-        toast.error(data?.error || 'No se pudo reservar plaza');
+        toast.error(data?.error || t('home.hype.error_reserve', 'No se pudo reservar plaza'));
         return;
       }
-      toast.success('Plaza reservada. Te avisaremos cuando se desbloquee.');
+      toast.success(t('home.hype.success_reserve', 'Plaza reservada. Te avisaremos cuando se desbloquee.'));
       await loadRoadmap();
     } catch {
-      toast.error('No se pudo reservar plaza');
+      toast.error(t('home.hype.error_reserve', 'No se pudo reservar plaza'));
     } finally {
       setReservingKey('');
     }
@@ -142,28 +144,28 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
         <div className="glass p-5 sm:p-7">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-primary">Pre-lanzamientos</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-primary">{t('home.hype.badge', 'Pre-lanzamientos')}</p>
               <h2 className="title-display text-2xl sm:text-3xl mt-2">
-                Lo que viene en Advanced Retro
+                {t('home.hype.title', 'Lo que viene en Advanced Retro')}
               </h2>
               <p className="text-textMuted mt-2">
-                Reservas limitadas con apertura automática cuando termine la cuenta atrás.
+                {t('home.hype.subtitle', 'Reservas limitadas con apertura automática cuando termine la cuenta atrás.')}
               </p>
             </div>
             <Link href="/subastas" className="button-secondary">
-              Ver zona de subastas
+              {t('home.hype.cta_auctions', 'Ver zona de subastas')}
             </Link>
           </div>
 
           {setupRequired ? (
             <div className="mb-4 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
-              Roadmap en modo fallback. Para persistencia real en Supabase, ejecuta:
+              {t('home.hype.fallback', 'Roadmap en modo fallback. Para persistencia real en Supabase, ejecuta:')}
               <span className="ml-2 text-primary">database/hype_future_launches.sql</span>
             </div>
           ) : null}
 
           {loading ? (
-            <div className="text-sm text-textMuted">Cargando lanzamientos...</div>
+            <div className="text-sm text-textMuted">{t('home.hype.loading', 'Cargando lanzamientos...')}</div>
           ) : (
             <div className={`grid gap-4 ${compact ? 'lg:grid-cols-2' : 'md:grid-cols-2'}`}>
               {launchesSorted.map((launch) => {
@@ -179,13 +181,13 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
                     <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(75,228,214,.23),rgba(75,228,214,0))] pointer-events-none" />
                     <div className="relative grid gap-4">
                       <div className="relative h-40 sm:h-48 rounded-xl overflow-hidden border border-line">
-                        {renderLockedVisual(launch.kind)}
+                        {renderLockedVisual(launch.kind, t)}
                         <div className="absolute inset-x-0 bottom-0 p-3 flex items-center justify-between gap-2">
                           <span className="chip border-primary/50 text-primary bg-[rgba(2,14,24,.8)]">
-                            {launch.pinned ? 'Pineado' : 'Próximo'}
+                            {launch.pinned ? t('home.hype.pinned', 'Pineado') : t('home.hype.upcoming', 'Próximo')}
                           </span>
                           <span className="chip border-warning/50 text-warning bg-[rgba(24,16,5,.55)]">
-                            {remaining.locked ? 'Bloqueado' : 'Desbloqueado'}
+                            {remaining.locked ? t('home.hype.locked', 'Bloqueado') : t('home.hype.unlocked', 'Desbloqueado')}
                           </span>
                         </div>
                       </div>
@@ -199,25 +201,26 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
                       <div className="grid grid-cols-4 gap-2">
                         <div className="rounded-xl border border-line p-2 text-center">
                           <p className="text-xl font-semibold text-primary">{remaining.days}</p>
-                          <p className="text-[10px] uppercase tracking-[0.12em] text-textMuted">Días</p>
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-textMuted">{t('home.hype.days', 'Días')}</p>
                         </div>
                         <div className="rounded-xl border border-line p-2 text-center">
                           <p className="text-xl font-semibold text-primary">{pad(remaining.hours)}</p>
-                          <p className="text-[10px] uppercase tracking-[0.12em] text-textMuted">Horas</p>
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-textMuted">{t('home.hype.hours', 'Horas')}</p>
                         </div>
                         <div className="rounded-xl border border-line p-2 text-center">
                           <p className="text-xl font-semibold text-primary">{pad(remaining.minutes)}</p>
-                          <p className="text-[10px] uppercase tracking-[0.12em] text-textMuted">Min</p>
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-textMuted">{t('home.hype.minutes', 'Min')}</p>
                         </div>
                         <div className="rounded-xl border border-line p-2 text-center">
                           <p className="text-xl font-semibold text-primary">{pad(remaining.seconds)}</p>
-                          <p className="text-[10px] uppercase tracking-[0.12em] text-textMuted">Seg</p>
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-textMuted">{t('home.hype.seconds', 'Seg')}</p>
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-xs text-textMuted">
-                          Reservas activas: <span className="text-primary">{Number(launch.reservations_count || 0)}</span>
+                          {t('home.hype.active_reservations', 'Reservas activas:')}{' '}
+                          <span className="text-primary">{Number(launch.reservations_count || 0)}</span>
                         </p>
                         <div className="flex flex-wrap items-center gap-2">
                           <button
@@ -226,13 +229,13 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
                             disabled={Boolean(reservingKey) || launch.reserved_by_current_user}
                           >
                             {launch.reserved_by_current_user
-                              ? 'Plaza reservada'
+                              ? t('home.hype.reserved', 'Plaza reservada')
                               : reservingKey === launch.launch_key
-                                ? 'Reservando...'
-                                : 'Reservar plaza'}
+                                ? t('home.hype.reserving', 'Reservando...')
+                                : t('home.hype.reserve_spot', 'Reservar plaza')}
                           </button>
                           <Link href={ctaHref} className="button-secondary">
-                            Ver detalles
+                            {t('home.hype.details', 'Ver detalles')}
                           </Link>
                         </div>
                       </div>

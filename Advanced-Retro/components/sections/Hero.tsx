@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useLocale } from '@/components/LocaleProvider';
 
 const quickLinks = [
   { label: 'Game Boy', href: '/tienda?category=platform:game-boy' },
@@ -10,6 +13,8 @@ const quickLinks = [
 ];
 
 export default function Hero() {
+  const { t } = useLocale();
+
   return (
     <section className="hero-section section relative overflow-hidden pt-6 sm:pt-8">
       <div className="absolute inset-0 bg-radial" />
@@ -18,29 +23,31 @@ export default function Hero() {
           <div className="grid gap-0 lg:grid-cols-[1.06fr,0.94fr]">
             <div className="hero-copy p-6 sm:p-8 lg:p-10">
               <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2">
-                <span className="chip">Retro verificado</span>
-                <span className="chip">Envío desde España</span>
-                <span className="chip">Soporte real</span>
+                <span className="chip">{t('home.hero.chip_verified', 'Retro verificado')}</span>
+                <span className="chip">{t('home.hero.chip_shipping', 'Envío desde España')}</span>
+                <span className="chip">{t('home.hero.chip_support', 'Soporte real')}</span>
               </div>
 
               <h1 className="title-display mt-4 text-3xl sm:text-5xl lg:text-[3.4rem]">
-                Catálogo retro profesional sin ruido.
+                {t('home.hero.title', 'Catálogo retro profesional sin ruido.')}
               </h1>
 
               <p className="mt-4 max-w-[60ch] text-base text-textMuted sm:text-lg">
-                Juegos, consolas y piezas de coleccionismo con fichas claras, stock real y opciones para
-                completar tu edición sin perder tiempo.
+                {t(
+                  'home.hero.description',
+                  'Juegos, consolas y piezas de coleccionismo con fichas claras, stock real y opciones para completar tu edición sin perder tiempo.'
+                )}
               </p>
 
               <div className="mt-6 flex flex-wrap gap-2.5">
                 <Link href="/tienda" className="button-primary text-center">
-                  Explorar tienda
+                  {t('home.hero.cta_shop', 'Explorar tienda')}
                 </Link>
                 <Link href="/comunidad" className="button-secondary text-center">
-                  Marketplace comunidad
+                  {t('home.hero.cta_community', 'Marketplace comunidad')}
                 </Link>
                 <Link href="/servicio-compra" className="button-secondary text-center">
-                  Encargo 1:1
+                  {t('home.hero.cta_request', 'Encargo 1:1')}
                 </Link>
               </div>
 
@@ -54,16 +61,22 @@ export default function Hero() {
 
               <div className="mt-7 grid gap-2.5 sm:grid-cols-3">
                 <div className="rounded-xl border border-line bg-[rgba(10,18,31,0.62)] p-3.5">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-textMuted">Preparación</p>
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-textMuted">
+                    {t('home.hero.stat_preparation', 'Preparación')}
+                  </p>
                   <p className="mt-1 text-base font-semibold text-primary">24-48h</p>
                 </div>
                 <div className="rounded-xl border border-line bg-[rgba(10,18,31,0.62)] p-3.5">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-textMuted">Cobertura</p>
-                  <p className="mt-1 text-base font-semibold text-primary">Multiconsola</p>
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-textMuted">
+                    {t('home.hero.stat_coverage', 'Cobertura')}
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-primary">{t('home.hero.stat_multiconsole', 'Multiconsola')}</p>
                 </div>
                 <div className="rounded-xl border border-line bg-[rgba(10,18,31,0.62)] p-3.5">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-textMuted">Atención</p>
-                  <p className="mt-1 text-base font-semibold text-primary">Ticket privado</p>
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-textMuted">
+                    {t('home.hero.stat_support', 'Atención')}
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-primary">{t('home.hero.stat_private_ticket', 'Ticket privado')}</p>
                 </div>
               </div>
             </div>
@@ -79,15 +92,15 @@ export default function Hero() {
                   sizes="(max-width: 1024px) 92vw, 44vw"
                 />
                 <div className="absolute left-3 top-3 rounded-full border border-primary/35 bg-[rgba(6,15,27,0.78)] px-3 py-1 text-xs text-primary">
-                  Catálogo actualizado
+                  {t('home.hero.badge_catalog_updated', 'Catálogo actualizado')}
                 </div>
                 <div className="absolute right-3 top-3 rounded-full border border-line bg-[rgba(6,15,27,0.78)] px-3 py-1 text-xs text-textMuted">
-                  Compra segura
+                  {t('home.hero.badge_secure_purchase', 'Compra segura')}
                 </div>
                 <div className="absolute inset-x-0 bottom-0 grid gap-2 border-t border-line/70 bg-[rgba(5,11,20,0.9)] p-3 sm:grid-cols-3">
                   <p className="text-xs text-textMuted">Game Boy</p>
-                  <p className="text-xs text-textMuted">Nintendo clásico</p>
-                  <p className="text-xs text-textMuted">Comunidad activa</p>
+                  <p className="text-xs text-textMuted">{t('home.hero.footer_nintendo', 'Nintendo clásico')}</p>
+                  <p className="text-xs text-textMuted">{t('home.hero.footer_community', 'Comunidad activa')}</p>
                 </div>
               </div>
             </div>

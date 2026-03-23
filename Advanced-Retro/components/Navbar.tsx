@@ -15,16 +15,15 @@ function NavbarContent() {
   const [open, setOpen] = useState(false);
 
   const navItems = [
-    { href: '/tienda', label: t('nav.shop', 'Tienda'), icon: '🛒', description: 'Catálogo completo' },
-    { href: '/comunidad', label: t('nav.community', 'Comunidad'), icon: '👥', description: 'Compra y vende entre usuarios' },
-    { href: '/blog', label: t('nav.blog', 'Blog'), icon: '📰', description: 'Guías y noticias retro' },
-    { href: '/proyecto', label: t('nav.project', 'Proyecto'), icon: '🧩', description: 'Resumen de visión y roadmap' },
-    { href: '/tienda?category=cajas-misteriosas', label: t('nav.mystery', 'Mystery'), icon: '🎁', description: 'Drops sorpresa y cajas' },
-    { href: '/subastas', label: t('nav.auctions', 'Subastas'), icon: '⏳', description: 'Próximos eventos y pujas' },
-    { href: '/ruleta', label: t('nav.roulette', 'Ruleta'), icon: '🎯', description: 'Tiradas y premios' },
-    { href: '/servicio-compra', label: t('nav.concierge', 'Encargos'), icon: '🧭', description: 'Compra asistida y seguimiento' },
-    { href: '/kickstarter', label: 'Kickstarter', icon: '🚀', description: 'Campaña y donaciones' },
-    { href: '/contacto', label: t('nav.contact', 'Contacto'), icon: '💬', description: 'Soporte verificado' },
+    { href: '/tienda', label: t('nav.shop', 'Tienda'), icon: '🛒', description: t('nav.shop_desc', 'Catálogo completo') },
+    { href: '/comunidad', label: t('nav.community', 'Comunidad'), icon: '👥', description: t('nav.community_desc', 'Compra y vende entre usuarios') },
+    { href: '/blog', label: t('nav.blog', 'Blog'), icon: '📰', description: t('nav.blog_desc', 'Guías y noticias retro') },
+    { href: '/tienda?category=cajas-misteriosas', label: t('nav.mystery', 'Mystery'), icon: '🎁', description: t('nav.mystery_desc', 'Drops sorpresa y cajas') },
+    { href: '/subastas', label: t('nav.auctions', 'Subastas'), icon: '⏳', description: t('nav.auctions_desc', 'Próximos eventos y pujas') },
+    { href: '/ruleta', label: t('nav.roulette', 'Ruleta'), icon: '🎯', description: t('nav.roulette_desc', 'Tiradas y premios') },
+    { href: '/servicio-compra', label: t('nav.concierge', 'Encargos'), icon: '🧭', description: t('nav.concierge_desc', 'Compra asistida y seguimiento') },
+    { href: '/kickstarter', label: 'Kickstarter', icon: '🚀', description: t('nav.kickstarter_desc', 'Campaña y donaciones') },
+    { href: '/contacto', label: t('nav.contact', 'Contacto'), icon: '💬', description: t('nav.contact_desc', 'Soporte verificado') },
   ];
 
   useEffect(() => {
@@ -146,7 +145,7 @@ function NavbarContent() {
             <div className="h-full overflow-auto p-4" onClick={(event) => event.stopPropagation()}>
               <div className="glass p-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs uppercase tracking-[0.18em] text-primary">Navegación móvil</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-primary">{t('nav.mobile_nav', 'Navegación móvil')}</p>
                   <button type="button" className="chip" onClick={() => setOpen(false)}>
                     {t('nav.close', 'Cerrar')}
                   </button>
@@ -190,8 +189,8 @@ function NavbarContent() {
                 </div>
 
                 <div className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-3 text-xs text-textMuted">
-                  <p><strong className="text-primary">Envío 24-48h:</strong> preparación desde España</p>
-                  <p className="mt-1"><strong className="text-primary">Soporte:</strong> ticket y chat comprador ↔ tienda</p>
+                  <p><strong className="text-primary">{t('trust.shipping_title', 'Envío 24-48h:')}</strong> {t('trust.shipping_text', 'preparación desde España')}</p>
+                  <p className="mt-1"><strong className="text-primary">{t('trust.support_title', 'Soporte:')}</strong> {t('trust.support_text', 'ticket y chat comprador ↔ tienda')}</p>
                 </div>
 
                 {user?.email ? <p className="text-xs text-textMuted pt-1">{t('nav.session', 'Sesión')}: {user.email}</p> : null}

@@ -8,6 +8,7 @@ import SafeImage from '@/components/SafeImage';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { isManualProduct } from '@/lib/productClassification';
 import { getProductHref } from '@/lib/productUrl';
+import { useLocale } from '@/components/LocaleProvider';
 
 const FEATURED_COLUMNS = [
   'id',
@@ -28,6 +29,7 @@ function filterFeaturedProducts(input: any[]): any[] {
 }
 
 export default function FeaturedProducts() {
+  const { t } = useLocale();
   const [products, setProducts] = useState<any[]>(filterFeaturedProducts(sampleProducts));
   const [metrics, setMetrics] = useState<Record<string, { visits: number; likes: number }>>({});
 
@@ -94,14 +96,14 @@ export default function FeaturedProducts() {
       <div className="container">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-primary">Selección destacada</p>
-            <h2 className="title-display mt-2 text-3xl sm:text-4xl">Trending en la tienda</h2>
-            <p className="text-textMuted">Productos con mejor tracción para empezar rápido.</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-primary">{t('home.featured.badge', 'Selección destacada')}</p>
+            <h2 className="title-display mt-2 text-3xl sm:text-4xl">{t('home.featured.title', 'Trending en la tienda')}</h2>
+            <p className="text-textMuted">{t('home.featured.subtitle', 'Productos con mejor tracción para empezar rápido.')}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <span className="chip">Top valorados</span>
-            <span className="chip">Últimas entradas</span>
-            <Link href="/tienda" className="button-secondary">Ver catálogo</Link>
+            <span className="chip">{t('home.featured.chip_top', 'Top valorados')}</span>
+            <span className="chip">{t('home.featured.chip_latest', 'Últimas entradas')}</span>
+            <Link href="/tienda" className="button-secondary">{t('home.featured.cta_catalog', 'Ver catálogo')}</Link>
           </div>
         </div>
 
@@ -126,12 +128,12 @@ export default function FeaturedProducts() {
                 <p className="mt-2 line-clamp-2 min-h-[2.45rem] text-sm text-textMuted">{product.description}</p>
                 <div className="mt-3 flex items-end justify-between gap-2">
                   <p className="text-2xl font-black text-primary">{(product.price / 100).toFixed(2)} €</p>
-                  <span className="text-xs text-textMuted">Ver ficha</span>
+                  <span className="text-xs text-textMuted">{t('home.featured.view', 'Ver ficha')}</span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
-                  <span className="chip">{metrics[product.id]?.visits ?? 0} visitas</span>
-                  <span className="chip">{metrics[product.id]?.likes ?? 0} likes</span>
-                  <span className="chip">Stock {Number(product.stock || 0)}</span>
+                  <span className="chip">{metrics[product.id]?.visits ?? 0} {t('home.featured.visits', 'visitas')}</span>
+                  <span className="chip">{metrics[product.id]?.likes ?? 0} {t('home.featured.likes', 'likes')}</span>
+                  <span className="chip">{t('home.featured.stock', 'Stock')} {Number(product.stock || 0)}</span>
                 </div>
               </div>
             </Link>
