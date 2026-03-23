@@ -18,6 +18,7 @@ function NavbarContent() {
     { href: '/tienda', label: t('nav.shop', 'Tienda'), icon: '🛒', description: 'Catálogo completo' },
     { href: '/comunidad', label: t('nav.community', 'Comunidad'), icon: '👥', description: 'Compra y vende entre usuarios' },
     { href: '/blog', label: t('nav.blog', 'Blog'), icon: '📰', description: 'Guías y noticias retro' },
+    { href: '/proyecto', label: t('nav.project', 'Proyecto'), icon: '🧩', description: 'Resumen de visión y roadmap' },
     { href: '/tienda?category=cajas-misteriosas', label: t('nav.mystery', 'Mystery'), icon: '🎁', description: 'Drops sorpresa y cajas' },
     { href: '/subastas', label: t('nav.auctions', 'Subastas'), icon: '⏳', description: 'Próximos eventos y pujas' },
     { href: '/ruleta', label: t('nav.roulette', 'Ruleta'), icon: '🎯', description: 'Tiradas y premios' },
