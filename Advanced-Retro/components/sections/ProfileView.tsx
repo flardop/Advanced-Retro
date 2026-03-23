@@ -96,6 +96,8 @@ type ProfileState = {
   helper_active_count?: number;
   helper_reputation?: number;
   preferred_language?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 type GamificationReward = {
@@ -141,6 +143,50 @@ type GamificationState = {
   };
   rewards: GamificationReward[];
   recent: GamificationRecentItem[];
+};
+
+type UsageDailyPoint = {
+  usage_date: string;
+  active_seconds: number;
+  sessions_count: number;
+  heartbeats_count: number;
+  page_views: number;
+};
+
+type UsageSummaryState = {
+  totals: {
+    active_seconds: number;
+    sessions_count: number;
+    page_views: number;
+    avg_session_seconds: number;
+    last_seen_at: string | null;
+  };
+  today: {
+    active_seconds: number;
+    sessions_count: number;
+    page_views: number;
+  };
+  last_7d: {
+    active_seconds: number;
+    sessions_count: number;
+    page_views: number;
+  };
+  last_30d: {
+    active_seconds: number;
+    sessions_count: number;
+    page_views: number;
+  };
+  daily: UsageDailyPoint[];
+  latest_session: {
+    session_id: string;
+    started_at: string | null;
+    last_seen_at: string | null;
+    ended_at: string | null;
+    active_seconds: number;
+    heartbeat_count: number;
+    page_views: number;
+    last_path: string | null;
+  } | null;
 };
 
 type WalletTransaction = {
@@ -552,6 +598,13 @@ export default function ProfileView() {
   const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false);
   const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const [usageSummary, setUsageSummary] = useState<UsageSummaryState | null>(null);
+  const [usageSetupRequired, setUsageSetupRequired] = useState(false);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [usageError, setUsageError] = useState('');
+  const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
+  const [accountAgeDays, setAccountAgeDays] = useState(0);
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [gamificationTab, setGamificationTab] = useState<GamificationTab>('resumen');
   const viewerLanguage = resolveViewerLanguage(preferredLanguage);
 
@@ -590,6 +643,9 @@ export default function ProfileView() {
     setShippingPostalCode(String(nextProfile?.shipping_address?.postal_code || shippingPostalCode || ''));
     setShippingCountry(String(nextProfile?.shipping_address?.country || shippingCountry || 'España'));
     setShippingPhone(String(nextProfile?.shipping_address?.phone || shippingPhone || ''));
+    if (typeof nextProfile?.created_at === 'string' && nextProfile.created_at.trim()) {
+      setAccountCreatedAt(nextProfile.created_at);
+    }
   };
 
   const loadFavorites = async () => {
@@ -658,6 +714,29 @@ export default function ProfileView() {
       throw new Error(data?.error || 'No se pudo cargar gamificación');
     }
     setGamification(data?.gamification || null);
+  };
+
+  const loadUsageSummary = async () => {
+    setUsageLoading(true);
+    setUsageError('');
+    try {
+      const res = await fetch('/api/profile/usage/summary', { cache: 'no-store' });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || 'No se pudieron cargar métricas de uso');
+      }
+
+      setUsageSummary(data?.summary || null);
+      setUsageSetupRequired(Boolean(data?.setupRequired));
+      setAccountCreatedAt(typeof data?.account_created_at === 'string' ? data.account_created_at : null);
+      setAccountAgeDays(Math.max(0, Number(data?.account_age_days || 0)));
+    } catch (error: any) {
+      setUsageSummary(null);
+      setUsageSetupRequired(false);
+      setUsageError(error?.message || 'No se pudieron cargar métricas de uso');
+    } finally {
+      setUsageLoading(false);
+    }
   };
 
   const loadUserSiteTheme = async () => {
@@ -801,6 +880,7 @@ export default function ProfileView() {
           loadWithdrawals(),
           loadGamification(),
           loadFavorites(),
+          loadUsageSummary(),
           loadUserSiteTheme(),
         ];
 
@@ -816,6 +896,8 @@ export default function ProfileView() {
           withdrawalsResult,
           gamificationResult,
           favoritesResult,
+          usageResult,
+          siteThemeResult,
           ordersResult,
         ] = results;
 
@@ -837,6 +919,13 @@ export default function ProfileView() {
         }
         if (favoritesResult?.status === 'rejected') {
           setFavoriteProducts([]);
+        }
+        if (usageResult?.status === 'rejected') {
+          setUsageSummary(null);
+          setUsageError('No se pudieron cargar métricas de uso');
+        }
+        if (siteThemeResult?.status === 'rejected') {
+          // ignore silently
         }
         if (ordersResult?.status === 'rejected') {
           setOrders([]);
@@ -932,6 +1021,11 @@ export default function ProfileView() {
 
     window.addEventListener(SITE_THEME_EVENT, onThemeChanged as EventListener);
     return () => window.removeEventListener(SITE_THEME_EVENT, onThemeChanged as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -1538,6 +1632,36 @@ export default function ProfileView() {
     });
   }, [userLevel]);
 
+  const usageSafe = useMemo<UsageSummaryState>(() => {
+    if (usageSummary) return usageSummary;
+    return {
+      totals: {
+        active_seconds: 0,
+        sessions_count: 0,
+        page_views: 0,
+        avg_session_seconds: 0,
+        last_seen_at: null,
+      },
+      today: {
+        active_seconds: 0,
+        sessions_count: 0,
+        page_views: 0,
+      },
+      last_7d: {
+        active_seconds: 0,
+        sessions_count: 0,
+        page_views: 0,
+      },
+      last_30d: {
+        active_seconds: 0,
+        sessions_count: 0,
+        page_views: 0,
+      },
+      daily: [],
+      latest_session: null,
+    };
+  }, [usageSummary]);
+
   const formatRecentDate = (raw: string) => {
     if (!raw) return '';
     const date = new Date(raw);
@@ -1549,6 +1673,40 @@ export default function ProfileView() {
       minute: '2-digit',
     });
   };
+
+  const formatDurationCompact = (secondsInput: number): string => {
+    const totalSeconds = Math.max(0, Math.floor(Number(secondsInput || 0)));
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
+  const formatDateTime = (value: string | null | undefined): string => {
+    if (!value) return 'Sin actividad';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Sin actividad';
+    return date.toLocaleString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const accountAgeLiveSeconds = useMemo(() => {
+    const source = accountCreatedAt || profile?.created_at || null;
+    if (!source) return 0;
+    const ts = new Date(source).getTime();
+    if (!Number.isFinite(ts)) return 0;
+    const diff = Math.floor((nowMs - ts) / 1000);
+    return Math.max(0, diff);
+  }, [accountCreatedAt, nowMs, profile?.created_at]);
+  const accountAgeDaysLive = Math.max(accountAgeDays, Math.floor(accountAgeLiveSeconds / 86400));
 
   if (!supabaseClient) {
     return (
@@ -2030,6 +2188,119 @@ export default function ProfileView() {
                   </div>
                 </div>
               ) : null}
+            </div>
+
+            <div className="glass p-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-primary">Uso de tu cuenta</p>
+                  <h2 className="text-2xl font-black mt-1">Tiempo y métricas de uso</h2>
+                  <p className="text-sm text-textMuted mt-1">
+                    Seguimiento de actividad real en la web por usuario.
+                  </p>
+                </div>
+                <button className="chip" onClick={() => void loadUsageSummary()} disabled={usageLoading}>
+                  {usageLoading ? 'Actualizando...' : 'Actualizar métricas'}
+                </button>
+              </div>
+
+              {usageSetupRequired ? (
+                <div className="mt-4 rounded-xl border border-warning/45 bg-warning/10 p-4 text-sm text-warning">
+                  Para habilitar estas métricas en Supabase ejecuta:
+                  <span className="ml-2 text-primary">database/profile_usage_metrics.sql</span>
+                </div>
+              ) : null}
+
+              {usageError ? (
+                <div className="mt-4 rounded-xl border border-rose-400/40 bg-rose-400/10 p-4 text-sm text-rose-200">
+                  {usageError}
+                </div>
+              ) : null}
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-xl border border-line bg-slate-950/40 p-3">
+                  <p className="text-xs text-textMuted">Tiempo registrado</p>
+                  <p className="mt-1 text-base font-semibold">{formatDurationCompact(accountAgeLiveSeconds)}</p>
+                  <p className="mt-1 text-[11px] text-textMuted">
+                    {accountAgeDaysLive} días · desde {formatDateTime(accountCreatedAt || profile?.created_at || null)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-line bg-slate-950/40 p-3">
+                  <p className="text-xs text-textMuted">Uso total acumulado</p>
+                  <p className="mt-1 text-base font-semibold text-primary">{formatDurationCompact(usageSafe.totals.active_seconds)}</p>
+                  <p className="mt-1 text-[11px] text-textMuted">
+                    Promedio por sesión: {formatDurationCompact(usageSafe.totals.avg_session_seconds)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-line bg-slate-950/40 p-3">
+                  <p className="text-xs text-textMuted">Sesiones registradas</p>
+                  <p className="mt-1 text-base font-semibold">{usageSafe.totals.sessions_count}</p>
+                  <p className="mt-1 text-[11px] text-textMuted">Páginas vistas: {usageSafe.totals.page_views}</p>
+                </div>
+                <div className="rounded-xl border border-line bg-slate-950/40 p-3">
+                  <p className="text-xs text-textMuted">Última actividad</p>
+                  <p className="mt-1 text-base font-semibold">
+                    {formatDateTime(usageSafe.totals.last_seen_at || usageSafe.latest_session?.last_seen_at || null)}
+                  </p>
+                  <p className="mt-1 text-[11px] text-textMuted">
+                    Ruta: {usageSafe.latest_session?.last_path || 'sin datos'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-line bg-slate-950/35 p-3">
+                  <p className="text-xs text-textMuted">Hoy</p>
+                  <p className="mt-1 font-semibold">{formatDurationCompact(usageSafe.today.active_seconds)}</p>
+                  <p className="text-[11px] text-textMuted mt-1">
+                    {usageSafe.today.sessions_count} sesiones · {usageSafe.today.page_views} vistas
+                  </p>
+                </div>
+                <div className="rounded-xl border border-line bg-slate-950/35 p-3">
+                  <p className="text-xs text-textMuted">Últimos 7 días</p>
+                  <p className="mt-1 font-semibold">{formatDurationCompact(usageSafe.last_7d.active_seconds)}</p>
+                  <p className="text-[11px] text-textMuted mt-1">
+                    {usageSafe.last_7d.sessions_count} sesiones · {usageSafe.last_7d.page_views} vistas
+                  </p>
+                </div>
+                <div className="rounded-xl border border-line bg-slate-950/35 p-3">
+                  <p className="text-xs text-textMuted">Últimos 30 días</p>
+                  <p className="mt-1 font-semibold">{formatDurationCompact(usageSafe.last_30d.active_seconds)}</p>
+                  <p className="text-[11px] text-textMuted mt-1">
+                    {usageSafe.last_30d.sessions_count} sesiones · {usageSafe.last_30d.page_views} vistas
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-line bg-slate-950/30 p-3">
+                <p className="text-xs uppercase tracking-[0.16em] text-textMuted">Últimos días</p>
+                {usageSafe.daily.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {usageSafe.daily.slice(0, 7).map((point) => {
+                      const maxBase = Math.max(1, usageSafe.last_7d.active_seconds || 1);
+                      const widthPct = Math.max(3, Math.min(100, (point.active_seconds / maxBase) * 100));
+                      return (
+                        <div key={`usage-day-${point.usage_date}`} className="space-y-1">
+                          <div className="flex items-center justify-between gap-2 text-[11px] text-textMuted">
+                            <span>{point.usage_date}</span>
+                            <span>
+                              {formatDurationCompact(point.active_seconds)} · {point.page_views} vistas
+                            </span>
+                          </div>
+                          <div className="h-2 rounded-full border border-line bg-slate-950/60 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-cyan-400/90 via-emerald-300/80 to-cyan-300/90"
+                              style={{ width: `${widthPct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-textMuted">Aún no hay uso registrado.</p>
+                )}
+              </div>
             </div>
 
             <div className="glass p-6">
