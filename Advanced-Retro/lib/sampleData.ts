@@ -64,7 +64,7 @@ export const sampleProducts = [
     curiosities: ['La selección cambia cada mes.'],
     tips: ['Ideal para regalar.'],
     images: [
-      '/images/mystery-box-5.png',
+      '/images/hype/mystery-drop.svg',
       '/images/hype/mystery-drop.svg'
     ],
     trailer_url: 'https://www.youtube.com/watch?v=6M6samPEMpM',

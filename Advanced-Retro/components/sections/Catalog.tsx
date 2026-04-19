@@ -1127,7 +1127,8 @@ function CatalogContent() {
 
   return (
     <section className="catalog-section section">
-      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
+      <div className="container">
+        <div className="wide-content-rail">
         <div className="catalog-trust-strip glass p-4 sm:p-5 mb-6">
           <div className="mobile-scroll-row no-scrollbar md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
             <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
@@ -1151,13 +1152,13 @@ function CatalogContent() {
           </p>
         </div>
 
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8">
-          <div>
+        <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8">
+          <div className="max-w-[34rem]">
             <p className="text-xs uppercase tracking-[0.2em] text-primary">Catálogo profesional</p>
-            <h1 className="title-display text-3xl">Catálogo</h1>
-            <p className="text-textMuted">Retro revisado por coleccionistas y listo para tu vitrina.</p>
+            <h1 className="title-display mt-3 text-3xl sm:text-4xl">Catálogo</h1>
+            <p className="text-textMuted mt-2">Retro revisado por coleccionistas y listo para tu vitrina.</p>
           </div>
-          <div className="flex flex-col gap-2 xl:min-w-[58%]">
+          <div className="flex flex-col gap-2 xl:min-w-[52%]">
             <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">
               {QUICK_FILTERS.map((filter) => (
                 <button
@@ -1269,8 +1270,8 @@ function CatalogContent() {
         ) : null}
 
         {!hasNoProducts && !isMysteryView ? (
-          <div className="catalog-featured-grid grid gap-3 xl:grid-cols-3 mb-6">
-            <div>
+          <div className="catalog-featured-grid grid gap-4 xl:grid-cols-3 mb-7">
+            <div className="glass p-4">
               <h2 className="font-semibold mb-1 text-lg">Trending retro</h2>
               <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-2">
                 {featuredTrending.map((product, index) =>
@@ -1278,7 +1279,7 @@ function CatalogContent() {
                 )}
               </div>
             </div>
-            <div>
+            <div className="glass p-4">
               <h2 className="font-semibold mb-1 text-lg">Más valorados</h2>
               <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-2">
                 {featuredBestRated.map((product, index) =>
@@ -1286,7 +1287,7 @@ function CatalogContent() {
                 )}
               </div>
             </div>
-            <div>
+            <div className="glass p-4">
               <h2 className="font-semibold mb-1 text-lg">Últimas entradas</h2>
               <div className="mobile-scroll-row no-scrollbar md:grid md:overflow-visible md:pb-0 gap-2">
                 {featuredLatest.map((product, index) =>
@@ -1314,7 +1315,7 @@ function CatalogContent() {
             ))}
           </div>
         ) : (
-          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {visibleProducts.map((product, index) => {
               const productId = String(product.id);
               const isComplete = completeProductIds.has(productId);
@@ -1377,6 +1378,7 @@ function CatalogContent() {
             </button>
           </div>
         ) : null}
+        </div>
       </div>
     </section>
   );

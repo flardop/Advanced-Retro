@@ -23,7 +23,6 @@ function NavbarContent() {
     { href: '/subastas', label: t('nav.auctions', 'Subastas'), icon: '⏳', description: t('nav.auctions_desc', 'Próximos eventos y pujas') },
     { href: '/ruleta', label: t('nav.roulette', 'Ruleta'), icon: '🎯', description: t('nav.roulette_desc', 'Tiradas y premios') },
     { href: '/servicio-compra', label: t('nav.concierge', 'Encargos'), icon: '🧭', description: t('nav.concierge_desc', 'Compra asistida y seguimiento') },
-    { href: '/kickstarter', label: 'Kickstarter', icon: '🚀', description: t('nav.kickstarter_desc', 'Campaña y donaciones') },
     { href: '/contacto', label: t('nav.contact', 'Contacto'), icon: '💬', description: t('nav.contact_desc', 'Soporte verificado') },
   ];
 
@@ -89,61 +88,65 @@ function NavbarContent() {
       <header
         className={`sticky top-0 z-50 border-b transition-all ${
           scrolled
-            ? 'border-line bg-[rgba(8,14,25,0.94)] backdrop-blur-xl shadow-[0_10px_28px_rgba(3,10,24,0.34)]'
-            : 'border-line/70 bg-[rgba(8,14,25,0.84)] backdrop-blur-lg'
+            ? 'border-line/80 bg-[rgba(8,14,25,0.92)] backdrop-blur-xl shadow-[0_10px_28px_rgba(3,10,24,0.22)]'
+            : 'border-line/60 bg-[rgba(8,14,25,0.78)] backdrop-blur-lg'
         }`}
       >
-        <div className="container flex h-[66px] items-center justify-between gap-3 sm:h-[70px]">
-          <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
-            <Image
-              src="/logo.png"
-              alt="Advanced Retro — Juegos y nostalgia retro"
-              width={180}
-              height={48}
-              className="h-9 sm:h-10 w-auto object-contain logo-breath"
-              priority
-            />
-          </Link>
+        <div className="container py-2">
+          <div className="header-rail">
+            <div className="flex h-[68px] items-center justify-between gap-3 rounded-[1.35rem] border border-line/80 bg-[rgba(8,14,25,0.76)] px-3 sm:h-[74px] sm:px-4">
+              <Link href="/" className="flex shrink-0 items-center rounded-lg px-1 py-1 hover:bg-white/5">
+                <Image
+                  src="/logo.png"
+                  alt="Advanced Retro — Juegos y nostalgia retro"
+                  width={180}
+                  height={48}
+                  className="h-9 w-auto object-contain logo-breath sm:h-10"
+                  priority
+                />
+              </Link>
 
-          <nav className="hidden lg:flex items-center gap-1.5 text-[0.9rem]">
-            {navItems.map((item) => {
-              const isActive = isItemActive(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`rounded-full px-3 py-2 transition ${
-                    isActive
-                      ? 'bg-primary/10 text-primary border border-primary/40'
-                      : 'text-textMuted hover:text-text hover:bg-white/5 border border-transparent'
-                  }`}
-                >
-                  {item.label}
+              <nav className="hidden xl:flex min-w-0 flex-1 items-center justify-center gap-1.5 text-[0.92rem]">
+                {navItems.map((item) => {
+                  const isActive = isItemActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`rounded-full px-3 py-2 transition ${
+                        isActive
+                          ? 'border border-primary/40 bg-primary/10 text-primary'
+                          : 'border border-transparent text-textMuted hover:bg-white/5 hover:text-text'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link href="/carrito" className="chip hover:border-primary/50 hover:text-text">
+                  {t('nav.cart', 'Carrito')}
                 </Link>
-              );
-            })}
-          </nav>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/carrito" className="chip hover:border-primary/50 hover:text-text">
-              {t('nav.cart', 'Carrito')}
-            </Link>
-            <Link href={user ? '/perfil' : '/login'} className="button-secondary hidden sm:inline-flex">
-              {user ? t('nav.profile', 'Mi perfil') : t('nav.login', 'Entrar')}
-            </Link>
-            <button
-              className={`lg:hidden chip min-w-[94px] justify-center ${open ? 'border-primary/60 text-text' : ''}`}
-              onClick={() => setOpen((value) => !value)}
-              aria-expanded={open}
-              aria-label="Abrir menú"
-            >
-              {open ? t('nav.close', 'Cerrar') : 'Explorar'}
-            </button>
+                <Link href={user ? '/perfil' : '/login'} className="button-secondary hidden sm:inline-flex">
+                  {user ? t('nav.profile', 'Mi perfil') : t('nav.login', 'Entrar')}
+                </Link>
+                <button
+                  className={`xl:hidden chip min-w-[94px] justify-center ${open ? 'border-primary/60 text-text' : ''}`}
+                  onClick={() => setOpen((value) => !value)}
+                  aria-expanded={open}
+                  aria-label="Abrir menú"
+                >
+                  {open ? t('nav.close', 'Cerrar') : 'Explorar'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {open && (
-          <div className="lg:hidden fixed inset-0 z-[70] bg-[rgba(2,8,16,0.72)] backdrop-blur-sm" onClick={() => setOpen(false)}>
+          <div className="fixed inset-0 z-[70] bg-[rgba(2,8,16,0.72)] backdrop-blur-sm xl:hidden" onClick={() => setOpen(false)}>
             <div className="absolute inset-y-0 right-0 w-[min(92vw,420px)] border-l border-line bg-[rgba(7,14,24,0.98)]">
               <div className="h-full overflow-auto p-4" onClick={(event) => event.stopPropagation()}>
                 <div className="glass p-4 space-y-3 text-sm">
@@ -203,20 +206,22 @@ function NavbarContent() {
           </div>
         )}
 
-        <div className="hidden border-t border-line/60 xl:block">
-          <div className="container flex flex-wrap items-center gap-6 py-2 text-[11px] text-textMuted">
-            <span>
-              <strong className="text-primary">{t('trust.shipping_title', 'Envío 24-48h:')}</strong>{' '}
-              {t('trust.shipping_text', 'preparación desde España')}
-            </span>
-            <span>
-              <strong className="text-primary">{t('trust.verify_title', 'Verificación:')}</strong>{' '}
-              {t('trust.verify_text', 'piezas revisadas antes de publicar')}
-            </span>
-            <span>
-              <strong className="text-primary">{t('trust.support_title', 'Soporte:')}</strong>{' '}
-              {t('trust.support_text', 'ticket y chat comprador ↔ tienda')}
-            </span>
+        <div className="hidden xl:block">
+          <div className="container pb-2">
+            <div className="header-rail flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[11px] text-textMuted">
+              <span>
+                <strong className="text-primary">{t('trust.shipping_title', 'Envío 24-48h:')}</strong>{' '}
+                {t('trust.shipping_text', 'preparación desde España')}
+              </span>
+              <span>
+                <strong className="text-primary">{t('trust.verify_title', 'Verificación:')}</strong>{' '}
+                {t('trust.verify_text', 'piezas revisadas antes de publicar')}
+              </span>
+              <span>
+                <strong className="text-primary">{t('trust.support_title', 'Soporte:')}</strong>{' '}
+                {t('trust.support_text', 'ticket y chat comprador ↔ tienda')}
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -227,18 +232,20 @@ function NavbarContent() {
 function NavbarFallback() {
   return (
     <header className="sticky top-0 z-50 border-b border-line/70 bg-[rgba(8,14,25,0.84)] backdrop-blur-lg">
-      <div className="container flex h-[66px] items-center justify-between gap-3 sm:h-[70px]">
-        <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
-          <Image
-            src="/logo.png"
-            alt="Advanced Retro — Juegos y nostalgia retro"
-            width={180}
-            height={48}
-            className="h-9 sm:h-10 w-auto object-contain logo-breath"
-            priority
-          />
-        </Link>
-        <div className="chip">Cargando menu...</div>
+      <div className="container py-2">
+        <div className="header-rail flex h-[68px] items-center justify-between gap-3 rounded-[1.35rem] border border-line/80 bg-[rgba(8,14,25,0.76)] px-3 sm:h-[74px] sm:px-4">
+          <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
+            <Image
+              src="/logo.png"
+              alt="Advanced Retro — Juegos y nostalgia retro"
+              width={180}
+              height={48}
+              className="h-9 w-auto object-contain logo-breath sm:h-10"
+              priority
+            />
+          </Link>
+          <div className="chip">Cargando menu...</div>
+        </div>
       </div>
     </header>
   );

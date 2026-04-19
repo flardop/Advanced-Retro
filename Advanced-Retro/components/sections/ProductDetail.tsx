@@ -1237,7 +1237,9 @@ export default function ProductDetail({
     return (
       <section className="section">
         <div className="container">
-          <div className="glass p-6 text-textMuted">Cargando producto...</div>
+          <div className="wide-content-rail">
+            <div className="glass p-6 text-textMuted">Cargando producto...</div>
+          </div>
         </div>
       </section>
     );
@@ -1247,12 +1249,14 @@ export default function ProductDetail({
     return (
       <section className="section">
         <div className="container">
-          <div className="glass p-6">
-            <p className="text-text font-semibold">Producto no disponible</p>
-            <p className="text-textMuted mt-2">{productLoadError || 'No hemos podido cargar esta ficha.'}</p>
-            <Link href="/tienda" className="button-secondary mt-4 inline-flex">
-              Volver a tienda
-            </Link>
+          <div className="wide-content-rail">
+            <div className="glass p-6">
+              <p className="text-text font-semibold">Producto no disponible</p>
+              <p className="text-textMuted mt-2">{productLoadError || 'No hemos podido cargar esta ficha.'}</p>
+              <Link href="/tienda" className="button-secondary mt-4 inline-flex">
+                Volver a tienda
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -1418,7 +1422,8 @@ export default function ProductDetail({
 
   return (
     <section className="section pb-32 lg:pb-14">
-      <div className="container grid gap-6 sm:gap-8 lg:grid-cols-2">
+      <div className="container">
+        <div className="wide-content-rail grid gap-6 sm:gap-8 lg:grid-cols-2">
         <div className="glass p-4 sm:p-6">
           <div className="photo-frame-glow relative w-full h-[320px] sm:h-[500px] bg-surface border border-line rounded-2xl flex items-center justify-center overflow-hidden">
             <Image
@@ -1704,47 +1709,50 @@ export default function ProductDetail({
           </div>
 
         </div>
+        </div>
       </div>
 
       {hideMarketPricing ? null : (
         <div className="container mt-8">
-          <div className="glass p-4 sm:p-6">
-            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 mb-3">
-              <p className="font-semibold">Historico de precio del producto</p>
-              <button type="button" className="chip" onClick={refreshPriceHistory} disabled={loadingPriceHistory}>
-                {loadingPriceHistory ? 'Cargando...' : 'Actualizar grafica'}
-              </button>
-            </div>
-
-            {priceHistory.length > 0 ? (
-              <div className="mx-auto w-full max-w-[1180px]">
-                <PriceHistoryChart points={priceHistory} marketOverlay={marketGuideEbay} />
-              </div>
-            ) : (
-              <p className="text-sm text-textMuted">Aun no hay datos suficientes para mostrar tendencia.</p>
-            )}
-
-            <p className="text-xs text-textMuted mt-2">
-              Fuente:{' '}
-              {priceSource === 'orders'
-                ? 'ventas reales de la tienda'
-                : shouldLabelAsEbaySource
-                  ? 'muestras de mercado eBay (listados activos)'
-                : priceSource === 'current'
-                  ? 'precio actual del catalogo'
-                  : 'sin datos'}
-            </p>
-            {priceHistoryError ? <p className="text-xs text-red-400 mt-1">{priceHistoryError}</p> : null}
-            {marketGuideEbay && !marketGuideEbay.available ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <a href={ebayDiagnosticHref} target="_blank" rel="noreferrer" className="chip text-xs">
-                  Abrir diagnóstico eBay
-                </a>
-                <button type="button" className="chip text-xs" onClick={refreshPriceHistory}>
-                  Reintentar comparativa
+          <div className="wide-content-rail">
+            <div className="glass p-4 sm:p-6">
+              <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 mb-3">
+                <p className="font-semibold">Historico de precio del producto</p>
+                <button type="button" className="chip" onClick={refreshPriceHistory} disabled={loadingPriceHistory}>
+                  {loadingPriceHistory ? 'Cargando...' : 'Actualizar grafica'}
                 </button>
               </div>
-            ) : null}
+
+              {priceHistory.length > 0 ? (
+                <div className="mx-auto w-full max-w-[1180px]">
+                  <PriceHistoryChart points={priceHistory} marketOverlay={marketGuideEbay} />
+                </div>
+              ) : (
+                <p className="text-sm text-textMuted">Aun no hay datos suficientes para mostrar tendencia.</p>
+              )}
+
+              <p className="text-xs text-textMuted mt-2">
+                Fuente:{' '}
+                {priceSource === 'orders'
+                  ? 'ventas reales de la tienda'
+                  : shouldLabelAsEbaySource
+                    ? 'muestras de mercado eBay (listados activos)'
+                  : priceSource === 'current'
+                    ? 'precio actual del catalogo'
+                    : 'sin datos'}
+              </p>
+              {priceHistoryError ? <p className="text-xs text-red-400 mt-1">{priceHistoryError}</p> : null}
+              {marketGuideEbay && !marketGuideEbay.available ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a href={ebayDiagnosticHref} target="_blank" rel="noreferrer" className="chip text-xs">
+                    Abrir diagnóstico eBay
+                  </a>
+                  <button type="button" className="chip text-xs" onClick={refreshPriceHistory}>
+                    Reintentar comparativa
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       )}
@@ -1786,6 +1794,7 @@ export default function ProductDetail({
       </div>
 
       <div ref={reviewsSectionRef} className="container mt-10">
+        <div className="wide-content-rail">
         <div className="glass p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="title-display text-2xl">Valoraciones</h2>
@@ -1884,6 +1893,7 @@ export default function ProductDetail({
               )}
             </div>
           </div>
+        </div>
         </div>
       </div>
 

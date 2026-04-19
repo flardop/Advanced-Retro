@@ -87,10 +87,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeLinksSchema) }}
       />
       <Hero />
-      <HypeLockboard />
       <FeaturedProducts />
       <Collections />
       <Benefits />
+      <HypeLockboard compact />
       <RetroStory />
       <HomeNarrative />
       <FinalCTA />

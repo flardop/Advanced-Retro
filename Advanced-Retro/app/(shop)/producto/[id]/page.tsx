@@ -469,13 +469,15 @@ export default async function ProductPage({
       />
       <section className="section pb-0">
         <div className="container">
-          <BreadcrumbsNav
-            items={[
-              { name: 'Inicio', href: '/' },
-              { name: 'Tienda', href: '/tienda' },
-              { name: productName },
-            ]}
-          />
+          <div className="wide-content-rail">
+            <BreadcrumbsNav
+              items={[
+                { name: 'Inicio', href: '/' },
+                { name: 'Tienda', href: '/tienda' },
+                { name: productName },
+              ]}
+            />
+          </div>
         </div>
       </section>
       <ProductDetail
@@ -486,35 +488,37 @@ export default async function ProductPage({
       {relatedProducts.length > 0 ? (
         <section className="section pt-0">
           <div className="container">
-            <div className="glass p-5 sm:p-6">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="title-display text-2xl">Productos relacionados</h2>
-                <Link href="/tienda" className="chip">
-                  Ver más en tienda
-                </Link>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {relatedProducts.map((item: any) => (
-                  <Link
-                    key={String(item?.id || '')}
-                    href={getProductHref(item)}
-                    className="glass p-3 sm:p-4 hover:shadow-glow transition-all group"
-                  >
-                    <div className="relative h-44 bg-surface border border-line rounded-xl overflow-hidden">
-                      <SafeImage
-                        src={String(item?.image || '/placeholder.svg')}
-                        fallbackSrc="/placeholder.svg"
-                        alt={String(item?.name || 'Producto relacionado')}
-                        fill
-                        className="object-contain p-2"
-                      />
-                    </div>
-                    <h3 className="font-semibold text-text mt-3 line-clamp-2">{String(item?.name || '')}</h3>
-                    <p className="text-primary font-semibold mt-2">
-                      {(Math.max(0, Number(item?.price || 0)) / 100).toFixed(2)} €
-                    </p>
+            <div className="wide-content-rail">
+              <div className="glass p-5 sm:p-6">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <h2 className="title-display text-2xl">Productos relacionados</h2>
+                  <Link href="/tienda" className="chip">
+                    Ver más en tienda
                   </Link>
-                ))}
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {relatedProducts.map((item: any) => (
+                    <Link
+                      key={String(item?.id || '')}
+                      href={getProductHref(item)}
+                      className="glass p-3 sm:p-4 hover:shadow-glow transition-all group"
+                    >
+                      <div className="relative h-44 bg-surface border border-line rounded-xl overflow-hidden">
+                        <SafeImage
+                          src={String(item?.image || '/placeholder.svg')}
+                          fallbackSrc="/placeholder.svg"
+                          alt={String(item?.name || 'Producto relacionado')}
+                          fill
+                          className="object-contain p-2"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-text mt-3 line-clamp-2">{String(item?.name || '')}</h3>
+                      <p className="text-primary font-semibold mt-2">
+                        {(Math.max(0, Number(item?.price || 0)) / 100).toFixed(2)} €
+                      </p>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

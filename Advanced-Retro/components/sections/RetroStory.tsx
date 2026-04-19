@@ -8,14 +8,14 @@ export default function RetroStory() {
   return (
     <section className="section">
       <div className="container">
-        <div className="glass p-7 sm:p-9 lg:p-10">
+        <div className="content-rail glass p-7 sm:p-9 lg:p-10">
           <div className="grid gap-6 lg:grid-cols-[1.2fr,0.8fr] lg:items-center">
             <div>
-              <p className="text-xs font-mono uppercase tracking-[0.16em] text-primary">{t('home.story.badge', 'Visión de tienda')}</p>
-              <h2 className="title-display mt-3 text-3xl sm:text-4xl">
+              <p className="section-kicker">{t('home.story.badge', 'Visión de tienda')}</p>
+              <h2 className="title-display mt-3 max-w-[15ch] text-3xl sm:text-4xl">
                 {t('home.story.title', 'Menos decoración vacía, más contexto real para comprar retro.')}
               </h2>
-              <p className="mt-4 max-w-[66ch] text-textMuted">
+              <p className="mt-4 max-w-[34rem] text-textMuted">
                 {t(
                   'home.story.description',
                   'Advanced Retro está construida para compra y venta de coleccionismo con claridad: filtros útiles, fichas completas, comunidad moderada y soporte postventa con seguimiento real.'
@@ -23,7 +23,7 @@ export default function RetroStory() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-line bg-[rgba(10,19,31,0.7)] p-5">
+            <div className="rounded-[1.35rem] border border-line bg-[rgba(10,19,31,0.58)] p-5">
               <p className="text-xs uppercase tracking-[0.12em] text-textMuted">{t('home.story.commitment', 'Compromiso operativo')}</p>
               <ul className="mt-4 space-y-2.5 text-sm">
                 <li className="flex gap-2">

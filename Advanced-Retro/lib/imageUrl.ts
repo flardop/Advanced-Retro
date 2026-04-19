@@ -13,39 +13,39 @@ type ComponentAssetKey = 'manual' | 'insert' | 'protector_juego' | 'protector_ca
 
 const COMPONENT_IMAGE_BY_PLATFORM: Record<PlatformAssetKey, Record<ComponentAssetKey, string>> = {
   gameboy: {
-    manual: '/images/components/gameboy-manual.svg',
-    insert: '/images/components/gameboy-insert.svg',
-    protector_juego: '/images/components/gameboy-protector-juego.svg',
-    protector_caja: '/images/components/gameboy-protector-caja.svg',
-    caja: '/images/components/gameboy-caja.svg',
+    manual: '/images/products/consoles-extra/cartridge-dmg-back.png',
+    insert: '/images/products/consoles-extra/cartridge-dmg-back.png',
+    protector_juego: '/images/products/consoles-extra/cartridge-gbc-front.png',
+    protector_caja: '/images/products/consoles-extra/cartridge-gbc-front.png',
+    caja: '/images/products/consoles-extra/cartridge-dmg-front.png',
   },
   gbc: {
-    manual: '/images/components/gbc-manual.svg',
-    insert: '/images/components/gbc-insert.svg',
-    protector_juego: '/images/components/gbc-protector-juego.svg',
-    protector_caja: '/images/components/gbc-protector-caja.svg',
-    caja: '/images/components/gbc-caja.svg',
+    manual: '/images/products/consoles-extra/cartridge-gbc-front.png',
+    insert: '/images/products/consoles-extra/cartridge-gbc-front.png',
+    protector_juego: '/images/products/consoles-extra/cartridge-gbc-front.png',
+    protector_caja: '/images/products/consoles-extra/cartridge-gbc-front.png',
+    caja: '/images/products/consoles-extra/cartridge-gbc-front.png',
   },
   gba: {
-    manual: '/images/components/gba-manual.svg',
-    insert: '/images/components/gba-insert.svg',
-    protector_juego: '/images/components/gba-protector-juego.svg',
-    protector_caja: '/images/components/gba-protector-caja.svg',
-    caja: '/images/components/gba-caja.svg',
+    manual: '/images/products/consoles-extra/cartridge-gba-front.png',
+    insert: '/images/products/consoles-extra/cartridge-gba-front.png',
+    protector_juego: '/images/products/consoles-extra/cartridge-gba-front.png',
+    protector_caja: '/images/products/consoles-extra/cartridge-gba-front.png',
+    caja: '/images/products/consoles-extra/cartridge-gba-front.png',
   },
   snes: {
-    manual: '/images/components/snes-manual.svg',
-    insert: '/images/components/snes-insert.svg',
-    protector_juego: '/images/components/snes-protector-juego.svg',
-    protector_caja: '/images/components/snes-protector-caja.svg',
-    caja: '/images/components/snes-caja.svg',
+    manual: '/images/products/consoles-extra/cartridge-snes-back-angled.png',
+    insert: '/images/products/consoles-extra/cartridge-snes-back-angled.png',
+    protector_juego: '/images/products/consoles-extra/cartridge-snes-back.png',
+    protector_caja: '/images/products/consoles-extra/cartridge-snes-back.png',
+    caja: '/images/products/consoles-extra/cartridge-snes-back-angled.png',
   },
   gamecube: {
-    manual: '/images/components/gamecube-manual.svg',
-    insert: '/images/components/gamecube-insert.svg',
-    protector_juego: '/images/components/gamecube-protector-juego.svg',
-    protector_caja: '/images/components/gamecube-protector-caja.svg',
-    caja: '/images/components/gamecube-caja.svg',
+    manual: '/images/products/console-gamecube.jpg',
+    insert: '/images/products/console-gamecube.jpg',
+    protector_juego: '/images/products/console-gamecube.jpg',
+    protector_caja: '/images/products/console-gamecube.jpg',
+    caja: '/images/products/console-gamecube.jpg',
   },
 };
 
@@ -96,38 +96,88 @@ function getConsoleImageOverride(product: any): string | null {
 
   if (!isConsoleDomain) return null;
 
-  if (componentType.includes('manual')) return '/images/generated/console-component-manual.svg';
-  if (componentType.includes('insert')) return '/images/generated/console-component-insert.svg';
-  if (componentType.includes('protector')) return '/images/generated/console-component-protector.svg';
-  if (componentType === 'caja' || name.includes('caja consola')) return '/images/generated/console-component-box.svg';
+  if (componentType.includes('manual')) return '/images/products/consoles-extra/cartridge-dmg-back.png';
+  if (componentType.includes('insert')) return '/images/products/consoles-extra/cartridge-dmg-back.png';
+  if (componentType.includes('protector')) return '/images/products/consoles-extra/cartridge-gbc-front.png';
+  if (componentType === 'caja' || name.includes('caja consola')) return '/images/products/consoles-extra/cartridge-dmg-front.png';
 
-  if (name.includes('panasonic q')) return '/images/generated/console-special-panasonic-q.svg';
-  if (name.includes('game boy light')) return '/images/generated/console-special-gameboy-light.svg';
-  if (name.includes('pikachu')) return '/images/generated/console-special-gbc-pikachu.svg';
+  if (name.includes('panasonic q')) return '/images/products/special-editions/console-special-panasonic-q.jpg';
+  if (name.includes('game boy light')) return '/images/products/special-editions/console-special-gameboy-light.png';
+  if (name.includes('pikachu')) return '/images/products/special-editions/console-special-gbc-pikachu.jpg';
   if (name.includes('nes classic') || name.includes('sp nes')) {
-    return '/images/generated/console-special-gba-sp-nes.svg';
+    return '/images/products/special-editions/console-special-gba-sp-nes.jpg';
   }
   if (name.includes('famicom jr') || name.includes('snes jr')) {
-    return '/images/generated/console-special-snes-jr.svg';
+    return '/images/products/special-editions/console-special-snes-jr.jpg';
+  }
+
+  if (name.includes('playstation 2') || platform.includes('playstation-2') || platform.includes('ps2')) {
+    return '/images/products/consoles-extra/console-ps2-slim.png';
+  }
+  if (name.includes('dreamcast') || platform.includes('dreamcast')) {
+    return '/images/products/consoles-extra/console-dreamcast.png';
+  }
+  if (
+    name.includes('playstation') ||
+    name.includes('ps1') ||
+    name.includes('ps one') ||
+    name.includes('psx') ||
+    platform.includes('playstation') ||
+    platform.includes('ps1') ||
+    platform.includes('psx')
+  ) {
+    return '/images/products/consoles-extra/console-ps1.png';
+  }
+  if (name.includes('sega saturn') || name.includes('saturn') || platform.includes('saturn')) {
+    return '/images/products/consoles-extra/console-sega-saturn.png';
+  }
+  if (name.includes('mega drive') || name.includes('genesis') || platform.includes('mega-drive') || platform.includes('genesis')) {
+    return '/images/products/consoles-extra/console-genesis.png';
+  }
+  if (
+    name.includes('nintendo 64') ||
+    name.includes(' n64') ||
+    name.startsWith('n64') ||
+    platform.includes('nintendo-64') ||
+    platform.includes('n64')
+  ) {
+    return '/images/products/consoles-extra/console-n64.png';
+  }
+  if (
+    name.includes('nintendo entertainment system') ||
+    name.includes(' family computer') ||
+    name.includes('famicom') ||
+    name === 'nes' ||
+    name.startsWith('nes ') ||
+    platform.includes('nes') ||
+    platform.includes('famicom')
+  ) {
+    return '/images/products/consoles-extra/console-nes-modern.png';
   }
 
   if (name.includes('gamecube') || name.includes('game cube') || platform.includes('gamecube')) {
-    return '/images/generated/console-gamecube.svg';
+    return '/images/products/console-gamecube.jpg';
   }
   if (name.includes('super nintendo') || name.includes('snes') || platform.includes('super-nintendo')) {
-    return '/images/generated/console-snes.svg';
+    return '/images/products/console-snes-pal.jpg';
+  }
+  if (name.includes('game boy advance sp') || name.includes('gba sp')) {
+    return '/images/products/consoles-extra/console-gba-sp.png';
   }
   if (name.includes('game boy advance') || platform.includes('game-boy-advance') || platform.includes('gba')) {
-    return '/images/generated/console-gba.svg';
+    return '/images/products/console-gba.jpg';
   }
   if (name.includes('game boy color') || platform.includes('game-boy-color') || platform.includes('gbc')) {
-    return '/images/generated/console-gbc.svg';
+    return '/images/products/console-gbc.jpg';
+  }
+  if (name.includes('game boy pocket')) {
+    return '/images/products/consoles-extra/console-gameboy-pocket.png';
   }
   if (name.includes('game boy') || platform.includes('game-boy') || platform.includes('gb')) {
-    return '/images/generated/console-game-boy.svg';
+    return '/images/products/console-gb-dmg.jpg';
   }
 
-  return '/images/generated/console-game-boy.svg';
+  return '/images/products/console-gb-dmg.jpg';
 }
 
 function isValidImageUrl(url: unknown): url is string {
@@ -263,7 +313,7 @@ export function getProductFallbackImageUrl(product: any): string {
   }
 
   if (category.includes('misterios') || category.includes('mystery') || Boolean(product?.is_mystery_box)) {
-    return '/images/mystery-box-5.png';
+    return '/images/hype/mystery-drop.svg';
   }
 
   if (

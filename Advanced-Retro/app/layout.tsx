@@ -27,6 +27,9 @@ const LanguageSwitcherPopup = dynamic(() => import('@/components/LanguageSwitche
 const ClientToaster = dynamic(() => import('@/components/ClientToaster'), {
   ssr: false,
 });
+const ThemeStyleMenu = dynamic(() => import('@/components/ThemeStyleMenu'), {
+  ssr: false,
+});
 const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBanner'), {
   ssr: false,
 });
@@ -230,6 +233,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ClientToaster />
           <SupportAssistantWidget />
           <LanguageSwitcherPopup />
+          <ThemeStyleMenu />
           <CookieConsentBanner />
           <OptionalAnalytics />
         </LocaleProvider>

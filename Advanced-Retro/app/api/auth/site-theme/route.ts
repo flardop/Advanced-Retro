@@ -34,6 +34,14 @@ export async function GET() {
       source: 'auth_user_metadata',
     });
   } catch (error: any) {
+    if (error instanceof ApiError && error.status === 401) {
+      return NextResponse.json({
+        theme: DEFAULT_SITE_THEME,
+        defaultTheme: DEFAULT_SITE_THEME,
+        availableThemes: SITE_THEME_IDS,
+        source: 'default',
+      });
+    }
     return handleError(error);
   }
 }

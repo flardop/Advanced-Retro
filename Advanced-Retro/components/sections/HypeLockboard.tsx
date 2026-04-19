@@ -109,6 +109,10 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
       return Number(a.priority || 0) - Number(b.priority || 0);
     });
   }, [launches]);
+  const visibleLaunches = useMemo(
+    () => (compact ? launchesSorted.slice(0, 2) : launchesSorted),
+    [compact, launchesSorted]
+  );
 
   const reserveSpot = async (launchKey: string) => {
     if (!launchKey) return;
@@ -141,7 +145,7 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
   return (
     <section className={`section ${compact ? 'pt-6 sm:pt-8' : ''}`}>
       <div className="container">
-        <div className="glass p-5 sm:p-7">
+        <div className="content-rail glass p-5 sm:p-7">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-primary">{t('home.hype.badge', 'Pre-lanzamientos')}</p>
@@ -168,7 +172,7 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
             <div className="text-sm text-textMuted">{t('home.hype.loading', 'Cargando lanzamientos...')}</div>
           ) : (
             <div className={`grid gap-4 ${compact ? 'lg:grid-cols-2' : 'md:grid-cols-2'}`}>
-              {launchesSorted.map((launch) => {
+              {visibleLaunches.map((launch) => {
                 const remaining = getRemaining(launch.lock_until, nowMs);
                 const isAuction = launch.kind === 'auction_season';
                 const ctaHref = isAuction ? '/subastas' : '/tienda?category=cajas-misteriosas';

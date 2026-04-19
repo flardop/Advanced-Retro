@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import BreadcrumbsNav from '@/components/BreadcrumbsNav';
+import BlogDiscussionsPanel from '@/components/blog/BlogDiscussionsPanel';
 import { BLOG_POSTS, getBlogPostBySlug } from '@/lib/blogPosts';
 import { absoluteUrl } from '@/lib/siteConfig';
 import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
@@ -96,7 +97,7 @@ export default async function BlogArticlePage({ params }: BlogArticlePageProps) 
       </section>
 
       <article className="section pt-6">
-        <div className="container glass p-6 sm:p-8 space-y-5">
+        <div className="reading-rail glass p-6 sm:p-8 space-y-5">
           <p className="text-xs uppercase tracking-[0.2em] text-primary">{post.category}</p>
           <h1 className="title-display text-3xl">{post.title}</h1>
           <p className="text-textMuted">
@@ -116,7 +117,19 @@ export default async function BlogArticlePage({ params }: BlogArticlePageProps) 
           ))}
         </div>
       </article>
+
+      <section className="section pt-0">
+        <div className="wide-content-rail">
+          <BlogDiscussionsPanel
+            blogSlug={post.slug}
+            blogTitle={post.title}
+            title="Discusión de la comunidad"
+            subtitle="Si el artículo te ha abierto dudas o quieres añadir experiencia real, este es el sitio para dejar el hilo vivo."
+            limit={10}
+            showComposer
+          />
+        </div>
+      </section>
     </>
   );
 }
-

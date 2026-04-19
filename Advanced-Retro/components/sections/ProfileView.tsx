@@ -1708,6 +1708,61 @@ export default function ProfileView() {
   }, [accountCreatedAt, nowMs, profile?.created_at]);
   const accountAgeDaysLive = Math.max(accountAgeDays, Math.floor(accountAgeLiveSeconds / 86400));
 
+  const profileTabItems: Array<{
+    id: Tab;
+    label: string;
+    kicker: string;
+    description: string;
+    badge: string;
+  }> = [
+    {
+      id: 'profile',
+      label: 'Cuenta',
+      kicker: 'Tu base de perfil',
+      description:
+        'Personalización, progreso, métricas de uso, favoritos y ajustes principales de tu cuenta.',
+      badge: `${profileBadges.length} insignias`,
+    },
+    {
+      id: 'wallet',
+      label: 'Cartera',
+      kicker: 'Saldo y retiros',
+      description:
+        'Consulta balance, movimientos, comisiones y solicitudes de retirada desde un único sitio.',
+      badge: toEuro(wallet?.account?.balance_cents || 0),
+    },
+    {
+      id: 'orders',
+      label: 'Pedidos',
+      kicker: 'Compras y seguimiento',
+      description:
+        'Revisa tu historial, el estado de cada pedido y abre soporte si algo necesita seguimiento.',
+      badge: `${orders.length} pedidos`,
+    },
+    {
+      id: 'tickets',
+      label: 'Tickets',
+      kicker: 'Soporte y encargos',
+      description:
+        'Gestiona tus conversaciones activas con soporte y el canal de ayuda para servicio de compra.',
+      badge: `${tickets.length} abiertos`,
+    },
+    {
+      id: 'sell',
+      label: 'Vender',
+      kicker: 'Marketplace comunidad',
+      description:
+        'Prepara publicaciones, revisa tus anuncios y controla el estado de tus ventas en comunidad.',
+      badge:
+        profile && (profile.is_verified_seller || profile.role === 'admin')
+          ? `${listings.length} publicaciones`
+          : 'Verificación pendiente',
+    },
+  ];
+
+  const activeTabMeta =
+    profileTabItems.find((entry) => entry.id === tab) || profileTabItems[0];
+
   if (!supabaseClient) {
     return (
       <section className="section">

@@ -82,7 +82,7 @@ export default function ThemeStyleMenu() {
   return (
     <div className="fixed bottom-16 left-3 z-[80] sm:bottom-5 sm:left-5">
       {open ? (
-        <div className="theme-menu-panel w-[300px] rounded-2xl border border-line bg-[rgba(8,14,24,0.96)] p-3 shadow-[0_18px_36px_rgba(0,0,0,0.4)] backdrop-blur-md">
+        <div className="theme-menu-panel w-[320px] rounded-2xl border border-line bg-[rgba(8,14,24,0.96)] p-3 shadow-[0_18px_36px_rgba(0,0,0,0.4)] backdrop-blur-md">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-semibold text-text">Mod Menu · Estilo</p>
             <button
@@ -111,8 +111,22 @@ export default function ThemeStyleMenu() {
                       : 'border-line bg-[rgba(11,20,35,0.72)] text-textMuted hover:text-text'
                   }`}
                 >
-                  <p className="text-sm font-semibold">{entry.label}</p>
-                  <p className="mt-0.5 text-xs">{entry.description}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold">{entry.label}</p>
+                      <p className="mt-0.5 text-xs">{entry.description}</p>
+                    </div>
+                    <div className="inline-flex items-center rounded-full border border-line/70 bg-black/20 p-1">
+                      {entry.palette.map((hex) => (
+                        <span
+                          key={`${entry.id}-${hex}`}
+                          className="h-3 w-3 rounded-full border border-white/25 first:ml-0 ml-1"
+                          style={{ backgroundColor: hex }}
+                          aria-hidden
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </button>
               );
             })}

@@ -35,19 +35,20 @@ export default function Benefits() {
   return (
     <section className="section">
       <div className="container">
-        <div className="mb-7 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-primary">{t('home.benefits.badge', 'Por qué funciona')}</p>
-            <h2 className="title-display mt-2 text-3xl sm:text-4xl">{t('home.benefits.title', 'Confianza medible en cada compra')}</h2>
+        <div className="section-heading">
+          <div className="section-copy">
+            <p className="section-kicker">{t('home.benefits.badge', 'Por qué funciona')}</p>
+            <h2 className="title-display mt-3 text-3xl sm:text-4xl">{t('home.benefits.title', 'Confianza medible en cada compra')}</h2>
           </div>
           <span className="chip">{t('home.benefits.chip', 'Flujo pensado para convertir')}</span>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="content-rail grid gap-4 lg:grid-cols-3">
           {benefits.map((benefit) => (
-            <article key={benefit.title} className="glass p-5 sm:p-6">
-              <p className="text-xs font-mono tracking-[0.14em] text-primary">ADVANCED RETRO · {benefit.badge}</p>
-              <h3 className="mt-2 text-lg font-semibold text-text">{benefit.title}</h3>
+            <article key={benefit.title} className="glass relative p-6 sm:p-7">
+              <span className="absolute right-5 top-5 text-xs font-mono tracking-[0.18em] text-primary/70">{benefit.badge}</span>
+              <p className="text-xs font-mono tracking-[0.14em] text-primary">ADVANCED RETRO</p>
+              <h3 className="mt-3 text-xl font-semibold text-text">{benefit.title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-textMuted">{benefit.text}</p>
             </article>
           ))}
