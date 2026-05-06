@@ -74,22 +74,29 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
   const [setupRequired, setSetupRequired] = useState(false);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [loading, setLoading] = useState(true);
+  const [loadMessage, setLoadMessage] = useState('');
   const [reservingKey, setReservingKey] = useState('');
 
   const loadRoadmap = useCallback(async () => {
     setLoading(true);
+    setLoadMessage('');
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 5000);
     try {
-      const res = await fetch('/api/hype/roadmap', { cache: 'no-store' });
+      const res = await fetch('/api/hype/roadmap', { cache: 'no-store', signal: controller.signal });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        toast.error(data?.error || t('home.hype.error_roadmap', 'No se pudo cargar el roadmap'));
+        setLaunches([]);
+        setLoadMessage(t('home.hype.empty', 'No hay lanzamientos próximos por ahora. Vuelve pronto.'));
         return;
       }
       setSetupRequired(Boolean(data?.setupRequired));
       setLaunches(Array.isArray(data?.launches) ? data.launches : []);
     } catch {
-      toast.error(t('home.hype.error_roadmap', 'No se pudo cargar el roadmap'));
+      setLaunches([]);
+      setLoadMessage(t('home.hype.empty', 'No hay lanzamientos próximos por ahora. Vuelve pronto.'));
     } finally {
+      window.clearTimeout(timeoutId);
       setLoading(false);
     }
   }, [t]);
@@ -170,6 +177,10 @@ export default function HypeLockboard({ compact = false }: HypeLockboardProps) {
 
           {loading ? (
             <div className="text-sm text-textMuted">{t('home.hype.loading', 'Cargando lanzamientos...')}</div>
+          ) : visibleLaunches.length === 0 ? (
+            <div className="rounded-2xl border border-line bg-[rgba(9,14,24,.55)] p-5 text-sm text-textMuted">
+              {loadMessage || t('home.hype.empty', 'No hay lanzamientos próximos por ahora. Vuelve pronto.')}
+            </div>
           ) : (
             <div className={`grid gap-4 ${compact ? 'lg:grid-cols-2' : 'md:grid-cols-2'}`}>
               {visibleLaunches.map((launch) => {

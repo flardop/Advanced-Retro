@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { buildPageMetadata } from '@/lib/seo';
+import { PRIVACY_CONTACT_EMAIL, PUBLIC_SUPPORT_EMAIL } from '@/lib/legal';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Política de privacidad',
@@ -21,8 +22,8 @@ export default function PrivacyPage() {
         <div>
           <h2 className="text-xl font-semibold">1. Responsable del tratamiento</h2>
           <p className="text-textMuted mt-2">
-            Responsable: ADVANCED RETRO. Contacto principal: admin@advancedretro.es.
-            Soporte y derechos RGPD: atencionalcliente@advancedretro.es.
+            Responsable: ADVANCED RETRO. Contacto principal: {PUBLIC_SUPPORT_EMAIL}.
+            Soporte y derechos RGPD: {PRIVACY_CONTACT_EMAIL}.
           </p>
         </div>
 
@@ -69,7 +70,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold">6. Derechos RGPD</h2>
           <p className="text-textMuted mt-2">
             Puedes ejercer derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad.
-            Solicitudes: atencionalcliente@advancedretro.es. Respuesta en plazo legal.
+            Solicitudes: {PRIVACY_CONTACT_EMAIL}. Respuesta en plazo legal.
           </p>
         </div>
 
@@ -84,7 +85,16 @@ export default function PrivacyPage() {
         <div>
           <h2 className="text-xl font-semibold">8. Reclamaciones</h2>
           <p className="text-textMuted mt-2">
-            Si consideras que tus derechos no han sido atendidos, puedes reclamar ante la autoridad de control competente.
+            Si consideras que tus derechos no han sido atendidos, puedes reclamar ante la{' '}
+            <strong>Agencia Española de Protección de Datos (AEPD)</strong>:{' '}
+            <a
+              href="https://www.aepd.es"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              www.aepd.es
+            </a>
           </p>
         </div>
       </div>

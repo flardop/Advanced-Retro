@@ -5,13 +5,14 @@ import {
   getRetroStorageAuctionBlueprintSummary,
   listRetroStorageAuctions,
 } from '@/lib/retroStorageAuctions';
-import { buildPageMetadata } from '@/lib/seo';
+import { buildCollectionPageJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Subastas retro verificadas | Retro Storage Auctions',
   description:
     'Lotes retro verificados con puja, apertura publica, recordatorios y trazabilidad dentro de Advanced Retro.',
   path: '/subastas',
+  image: '/images/auctions/vault-kanto-07.svg',
   keywords: [
     'subastas retro',
     'subastas videojuegos retro',
@@ -23,6 +24,23 @@ export const metadata: Metadata = buildPageMetadata({
 
 export default async function AuctionsPage() {
   const auctions = await listRetroStorageAuctions(null);
+  const collectionSchema = buildCollectionPageJsonLd({
+    name: 'Retro Storage Auctions',
+    path: '/subastas',
+    description:
+      'Subastas retro verificadas con lotes documentados, recordatorios, apertura pública y trazabilidad dentro de Advanced Retro.',
+    image: '/images/auctions/vault-kanto-07.svg',
+    about: ['subastas retro', 'videojuegos retro', 'coleccionismo verificado'],
+  });
+  const itemListSchema = buildItemListJsonLd(
+    auctions.map((auction) => ({
+      name: auction.title,
+      path: `/subastas/${auction.slug}`,
+      image: auction.image,
+      description: `${auction.subtitle}. ${auction.guaranteedMinimum}`,
+    })),
+    'Lotes verificados de Advanced Retro'
+  );
   const initialData = {
     auctions,
     leaderboard: getAuctionLeaderboardSource(auctions).slice(0, 5),
@@ -31,5 +49,17 @@ export default async function AuctionsPage() {
     isAuthenticated: false,
   };
 
-  return <RetroStorageAuctionsHub initialData={initialData} />;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+      />
+      <RetroStorageAuctionsHub initialData={initialData} />
+    </>
+  );
 }

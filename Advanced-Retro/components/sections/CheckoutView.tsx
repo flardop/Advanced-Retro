@@ -3,17 +3,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cartStore';
-import { stripePromise } from '@/lib/stripe';
 import toast from 'react-hot-toast';
 import { calculateShippingQuoteFromArenys } from '@/lib/shipping';
+import EmbeddedCheckoutModal from '@/components/checkout/EmbeddedCheckout';
 
 function toEuro(cents: number): string {
   return `${(Number(cents || 0) / 100).toFixed(2)} €`;
 }
 
 export default function CheckoutView() {
-  const { items, clear } = useCartStore();
+  const { items } = useCartStore();
   const [loading, setLoading] = useState(false);
+  const [showEmbeddedCheckout, setShowEmbeddedCheckout] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
@@ -120,6 +121,30 @@ export default function CheckoutView() {
     }
   };
 
+  const shippingAddress = useMemo(
+    () => ({
+      full_name: fullName,
+      line1,
+      line2,
+      city,
+      state,
+      postal_code: postalCode,
+      country,
+      phone,
+    }),
+    [fullName, line1, line2, city, state, postalCode, country, phone]
+  );
+
+  const persistShippingAddress = async () => {
+    await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shipping_address: shippingAddress,
+      }),
+    }).catch(() => null);
+  };
+
   const handleCheckout = async () => {
     if (items.length === 0) {
       toast.error('Tu carrito está vacío');
@@ -137,61 +162,8 @@ export default function CheckoutView() {
 
     setLoading(true);
     try {
-      // Best-effort: guarda la dirección para futuros pedidos.
-      await fetch('/api/auth/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shipping_address: {
-            full_name: fullName,
-            line1,
-            line2,
-            city,
-            state,
-            postal_code: postalCode,
-            country,
-            phone,
-          },
-        }),
-      }).catch(() => null);
-
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: items.map((i) => ({
-            product_id: i.id,
-            name: i.name,
-            price: i.price,
-            quantity: i.quantity,
-          })),
-          couponCode: couponAppliedCode || couponCode,
-          shippingMethod,
-          shippingCost,
-          shippingAddress: {
-            full_name: fullName,
-            line1,
-            line2,
-            city,
-            state,
-            postal_code: postalCode,
-            country,
-            phone,
-          },
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      if (data?.directSuccess && data?.redirectUrl) {
-        clear();
-        window.location.href = data.redirectUrl;
-        return;
-      }
-
-      const stripe = await stripePromise;
-      await stripe?.redirectToCheckout({ sessionId: data.sessionId });
-      clear();
+      await persistShippingAddress();
+      setShowEmbeddedCheckout(true);
     } catch (error: any) {
       toast.error(error.message || 'Error en el pago');
     } finally {
@@ -307,12 +279,28 @@ export default function CheckoutView() {
               </label>
             </div>
 
-            <p className="text-textMuted text-sm mt-4">Pago seguro con Stripe (tarjeta, Apple Pay y Google Pay).</p>
+            <p className="text-textMuted text-sm mt-4">
+              Pago seguro dentro de Advanced Retro con Stripe Checkout embebido.
+            </p>
             <button className="button-primary w-full mt-4" onClick={handleCheckout} disabled={loading}>
-              {loading ? 'Procesando...' : 'Pagar ahora'}
+              {loading ? 'Preparando pago...' : 'Abrir pago seguro'}
             </button>
           </div>
         </div>
+
+        {showEmbeddedCheckout ? (
+          <EmbeddedCheckoutModal
+            cartItems={items.map((item) => ({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+            }))}
+            couponCode={couponAppliedCode || couponCode}
+            shippingAddress={shippingAddress}
+            onClose={() => setShowEmbeddedCheckout(false)}
+          />
+        ) : null}
       </div>
     </section>
   );

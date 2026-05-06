@@ -16,6 +16,7 @@ export const metadata: Metadata = buildPageMetadata({
     'Campaña Kickstarter de Advanced Retro para financiar catálogo, comunidad y herramientas de coleccionismo con recompensas por niveles.',
   path: '/kickstarter',
   keywords: ['kickstarter advanced retro', 'donaciones retro', 'crowdfunding tienda retro', 'recompensas backers'],
+  noIndex: true,
 });
 
 function toEuro(cents: number): string {
@@ -260,4 +261,3 @@ export default async function KickstarterPage() {
     </>
   );
 }
-

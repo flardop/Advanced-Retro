@@ -93,6 +93,13 @@ export default function RetroStorageAuctionDetailView({
     if (!auction) return '';
     return toEuro(auction.nextBidCents);
   }, [auction]);
+  const auctionInterestChips = auction
+    ? [
+        auction.remindersCount > 0 ? `Recordatorios ${auction.remindersCount}` : null,
+        auction.buyRequestsCount > 0 ? `Compra ${auction.buyRequestsCount}` : null,
+        auction.rentRequestsCount > 0 ? `Alquiler ${auction.rentRequestsCount}` : null,
+      ].filter((value): value is string => Boolean(value))
+    : [];
 
   const updateAuctionFromResponse = async (res: Response, fallbackMessage: string) => {
     const data = await res.json().catch(() => null);
@@ -239,27 +246,30 @@ export default function RetroStorageAuctionDetailView({
       <div className="wide-content-rail space-y-6">
         <div className="glass overflow-hidden p-6 sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[440px,1fr]">
-            <div className={`auction-vault-panel relative overflow-hidden rounded-[1.4rem] border border-line/80 ${auction.status === 'live' ? 'auction-live-shell' : ''}`}>
+            <div className={`auction-vault-panel relative aspect-[4/3] overflow-hidden rounded-[1.4rem] border border-line/80 ${auction.status === 'live' ? 'auction-live-shell' : ''}`}>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(56,189,248,0.2),transparent_35%),radial-gradient(circle_at_84%_20%,rgba(232,121,249,0.22),transparent_36%)]" />
               <Image
                 src={auction.image}
                 alt={auction.title}
                 width={900}
                 height={900}
-                className={`h-full min-h-[340px] w-full object-contain p-8 transition duration-700 ${
+                className={`h-full w-full object-cover transition duration-700 ${
                   auction.previewMode === 'blur' && !auction.isRevealed
-                    ? 'scale-[1.08] blur-[11px] opacity-70'
+                    ? 'scale-[1.06] blur-[11px] opacity-70'
                     : auction.previewMode === 'partial' && !auction.isRevealed
-                      ? 'scale-[1.03]'
+                      ? 'scale-[1.04]'
                       : ''
                 }`}
               />
               {auction.previewMode === 'partial' && !auction.isRevealed ? (
-                <div className="absolute inset-y-0 right-0 w-[34%] bg-[linear-gradient(90deg,transparent,rgba(8,14,25,0.66)_35%,rgba(8,14,25,0.97))]" />
+                <div className="absolute inset-y-0 right-0 w-[28%] bg-[linear-gradient(90deg,transparent,rgba(8,14,25,0.66)_35%,rgba(8,14,25,0.97))]" />
               ) : null}
               <div className="absolute left-4 top-4 flex flex-wrap gap-2">
                 <span className="chip border-cyan-400/40 bg-cyan-400/10 text-cyan-200">{statusLabel(auction.status)}</span>
                 <span className="chip border-white/10 bg-[rgba(8,14,25,0.72)] text-white/80">{auction.warehouseCode}</span>
+              </div>
+              <div className="absolute right-4 top-4">
+                <span className="chip border-white/10 bg-[rgba(8,14,25,0.72)] text-white/80">Preview del almacén</span>
               </div>
               <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-white/10 bg-[rgba(8,14,25,0.72)] p-3">
                 <p className="text-xs uppercase tracking-[0.16em] text-primary">Minimo garantizado</p>
@@ -336,9 +346,9 @@ export default function RetroStorageAuctionDetailView({
                     ) : null}
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs text-textMuted">
-                    <span className="chip">Recordatorios {auction.remindersCount}</span>
-                    <span className="chip">Compra {auction.buyRequestsCount}</span>
-                    <span className="chip">Alquiler {auction.rentRequestsCount}</span>
+                    {auctionInterestChips.map((chip) => (
+                      <span key={`${auction.slug}-${chip}`} className="chip">{chip}</span>
+                    ))}
                     {auction.isExtended ? <span className="chip border-cyan-400/30 bg-cyan-400/10 text-cyan-200">Extension activa</span> : null}
                   </div>
                 </div>
@@ -471,7 +481,7 @@ export default function RetroStorageAuctionDetailView({
                   <p className="text-xs uppercase tracking-[0.18em] text-primary">Chat del evento</p>
                   <h2 className="mt-2 text-xl font-semibold">Canal en directo</h2>
                 </div>
-                <span className="chip">Moderacion {auction.reportsCount}</span>
+                {auction.reportsCount > 0 ? <span className="chip">Moderacion {auction.reportsCount}</span> : null}
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">

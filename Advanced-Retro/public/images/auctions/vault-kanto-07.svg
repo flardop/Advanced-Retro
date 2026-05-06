@@ -1,0 +1,43 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-kanto" x1="120" y1="80" x2="1080" y2="820" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C1630"/>
+      <stop offset="0.52" stop-color="#1C1740"/>
+      <stop offset="1" stop-color="#070B17"/>
+    </linearGradient>
+    <linearGradient id="vault-kanto" x1="315" y1="212" x2="846" y2="676" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1A345F"/>
+      <stop offset="1" stop-color="#0A1122"/>
+    </linearGradient>
+    <linearGradient id="accent-kanto" x1="345" y1="255" x2="820" y2="612" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#66E8FF"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+    <radialGradient id="glow-kanto" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(604 320) rotate(90) scale(295 390)">
+      <stop stop-color="#35D8FF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#35D8FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="900" rx="48" fill="url(#bg-kanto)"/>
+  <ellipse cx="600" cy="760" rx="352" ry="66" fill="#050811" fill-opacity="0.6"/>
+  <rect x="176" y="718" width="848" height="8" rx="4" fill="#58DCFF" fill-opacity="0.38"/>
+  <circle cx="182" cy="718" r="32" fill="#2AD3FF" fill-opacity="0.18"/>
+  <circle cx="1018" cy="718" r="32" fill="#FF62D8" fill-opacity="0.18"/>
+  <rect x="278" y="198" width="644" height="424" rx="40" fill="url(#vault-kanto)" stroke="url(#accent-kanto)" stroke-width="4"/>
+  <rect x="310" y="232" width="580" height="356" rx="28" fill="#0C152B" stroke="#2BD7FF" stroke-opacity="0.28"/>
+  <rect x="340" y="260" width="520" height="180" rx="24" fill="url(#glow-kanto)"/>
+  <rect x="360" y="476" width="218" height="72" rx="18" fill="#111F3D" stroke="#4AE2FF" stroke-opacity="0.32"/>
+  <rect x="600" y="476" width="222" height="72" rx="18" fill="#161534" stroke="#B269FF" stroke-opacity="0.32"/>
+  <path d="M600 166L714 230V358L600 422L486 358V230L600 166Z" fill="#0C142B" stroke="#6DEBFF" stroke-width="3"/>
+  <path d="M600 202L682 249V339L600 386L518 339V249L600 202Z" fill="#10234C"/>
+  <path d="M600 222L657 255V323L600 356L543 323V255L600 222Z" fill="#1B77C8" fill-opacity="0.82"/>
+  <circle cx="416" cy="512" r="11" fill="#2BD7FF"/>
+  <circle cx="635" cy="512" r="11" fill="#C16BFF"/>
+  <rect x="344" y="136" width="178" height="42" rx="21" fill="#10182F" stroke="#2AD3FF" stroke-opacity="0.35"/>
+  <text x="433" y="162" fill="#D8F8FF" font-family="Arial, Helvetica, sans-serif" font-size="18" text-anchor="middle" letter-spacing="3">VAULT KANTO</text>
+  <rect x="700" y="136" width="150" height="42" rx="21" fill="#121228" stroke="#FF62D8" stroke-opacity="0.35"/>
+  <text x="775" y="162" fill="#FFE5FA" font-family="Arial, Helvetica, sans-serif" font-size="18" text-anchor="middle" letter-spacing="3">AR-VLT-07</text>
+  <rect x="360" y="660" width="480" height="20" rx="10" fill="#0E162B" stroke="#22355D"/>
+  <rect x="360" y="660" width="324" height="20" rx="10" fill="url(#accent-kanto)"/>
+  <text x="600" y="818" fill="#A7C6DF" font-family="Arial, Helvetica, sans-serif" font-size="28" text-anchor="middle">Almacén sellado · vista holográfica de custodia</text>
+</svg>

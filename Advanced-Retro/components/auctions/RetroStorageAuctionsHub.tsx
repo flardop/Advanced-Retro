@@ -229,29 +229,32 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
                       auction.status === 'live' ? 'auction-live-shell' : ''
                     }`}
                   >
-                    <div className="grid gap-4 md:grid-cols-[220px,1fr]">
-                      <div className="relative min-h-[220px] overflow-hidden rounded-[1rem] border border-line/80 bg-[radial-gradient(circle_at_top,rgba(90,170,255,0.18),rgba(8,14,25,0.92))]">
+                    <div className="grid gap-4 md:grid-cols-[240px,1fr]">
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-[1rem] border border-line/80 bg-[radial-gradient(circle_at_top,rgba(90,170,255,0.18),rgba(8,14,25,0.92))]">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(38,229,255,0.16),transparent_38%),radial-gradient(circle_at_80%_18%,rgba(255,78,207,0.18),transparent_36%)]" />
                         <Image
                           src={auction.image}
                           alt={auction.title}
                           fill
-                          className={`object-contain p-5 transition duration-700 ${
+                          className={`object-cover transition duration-700 ${
                             auction.previewMode === 'blur' && !auction.isRevealed
-                              ? 'scale-[1.08] blur-[12px] opacity-75'
+                              ? 'scale-[1.06] blur-[12px] opacity-72'
                               : auction.previewMode === 'partial' && !auction.isRevealed
-                                ? 'scale-[1.02] opacity-90'
+                                ? 'scale-[1.04] opacity-92'
                                 : 'opacity-100'
                           }`}
                         />
                         {auction.previewMode === 'partial' && !auction.isRevealed ? (
-                          <div className="absolute inset-y-0 right-0 w-[36%] bg-[linear-gradient(90deg,transparent,rgba(8,14,25,0.62)_30%,rgba(8,14,25,0.96))]" />
+                          <div className="absolute inset-y-0 right-0 w-[30%] bg-[linear-gradient(90deg,transparent,rgba(8,14,25,0.62)_28%,rgba(8,14,25,0.96))]" />
                         ) : null}
                         <div className="absolute left-3 top-3">
                           <span className={`chip ${statusClasses(auction.status)}`}>{statusLabel(auction.status)}</span>
                         </div>
                         <div className="absolute bottom-3 left-3">
                           <span className="chip border-white/10 bg-[rgba(8,14,25,0.72)] text-white/80">{auction.warehouseCode}</span>
+                        </div>
+                        <div className="absolute bottom-3 right-3">
+                          <span className="chip border-white/10 bg-[rgba(8,14,25,0.72)] text-white/80">Vista del almacén</span>
                         </div>
                       </div>
 
@@ -302,10 +305,10 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 text-xs text-textMuted">
-                          <span className="chip">Pujas {auction.bidsCount}</span>
-                          <span className="chip">Recordatorios {auction.remindersCount}</span>
-                          <span className="chip">Compra directa {auction.buyRequestsCount}</span>
-                          <span className="chip">Alquiler {auction.rentRequestsCount}</span>
+                          {auction.bidsCount > 0 ? <span className="chip">Pujas {auction.bidsCount}</span> : null}
+                          {auction.remindersCount > 0 ? <span className="chip">Recordatorios {auction.remindersCount}</span> : null}
+                          {auction.buyRequestsCount > 0 ? <span className="chip">Compra directa {auction.buyRequestsCount}</span> : null}
+                          {auction.rentRequestsCount > 0 ? <span className="chip">Alquiler {auction.rentRequestsCount}</span> : null}
                           {auction.leaderName ? <span className="chip text-primary">Lider {auction.leaderName}</span> : null}
                           {auction.isExtended ? <span className="chip border-cyan-400/30 bg-cyan-400/10 text-cyan-200">Extension activa</span> : null}
                           {auction.isRevealed ? <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-200">Contenido revelado</span> : null}

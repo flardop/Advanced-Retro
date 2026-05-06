@@ -719,29 +719,44 @@ export default function CommunityFeed() {
                           </button>
                         </div>
 
-                        <h3 className="mt-2 line-clamp-2 text-base font-semibold">
-                          <Link href={`/comunidad/anuncio/${listing.id}`} className="hover:text-primary">
-                            {listing.title}
-                          </Link>
-                        </h3>
-                        <p className="mt-1 line-clamp-2 text-sm text-textMuted">{listing.description}</p>
+                        {(() => {
+                          const listingSocialChips = [
+                            social.likes > 0 ? `${social.likes} likes` : null,
+                            social.commentsCount > 0 ? `${social.commentsCount} comentarios` : null,
+                            social.visits > 0 ? `${social.visits} visitas` : null,
+                          ].filter((value): value is string => Boolean(value));
 
-                        <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-                          <span className="chip">{toCategoryLabel(String(listing.category || ''))}</span>
-                          <span className="chip">{toConditionLabel(String(listing.condition || 'used'))}</span>
-                          <span className="chip">{toOriginalityLabel(String(listing.originality_status || ''))}</span>
-                          {String(listing.pegi_rating || 'none') !== 'none' ? (
-                            <span className="chip">PEGI {String(listing.pegi_rating)}</span>
-                          ) : null}
-                        </div>
+                          return (
+                            <>
 
-                        <div className="mt-3 rounded-xl border border-line bg-[rgba(10,18,30,0.62)] p-2.5">
-                          <div className="flex flex-wrap gap-1.5 text-[11px] text-textMuted">
-                            <span className="chip">{social.likes} likes</span>
-                            <span className="chip">{social.commentsCount} comentarios</span>
-                            <span className="chip">{social.visits} visitas</span>
-                          </div>
-                        </div>
+                              <h3 className="mt-2 line-clamp-2 text-base font-semibold">
+                                <Link href={`/comunidad/anuncio/${listing.id}`} className="hover:text-primary">
+                                  {listing.title}
+                                </Link>
+                              </h3>
+                              <p className="mt-1 line-clamp-2 text-sm text-textMuted">{listing.description}</p>
+
+                              <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                                <span className="chip">{toCategoryLabel(String(listing.category || ''))}</span>
+                                <span className="chip">{toConditionLabel(String(listing.condition || 'used'))}</span>
+                                <span className="chip">{toOriginalityLabel(String(listing.originality_status || ''))}</span>
+                                {String(listing.pegi_rating || 'none') !== 'none' ? (
+                                  <span className="chip">PEGI {String(listing.pegi_rating)}</span>
+                                ) : null}
+                              </div>
+
+                              {listingSocialChips.length > 0 ? (
+                                <div className="mt-3 rounded-xl border border-line bg-[rgba(10,18,30,0.62)] p-2.5">
+                                  <div className="flex flex-wrap gap-1.5 text-[11px] text-textMuted">
+                                    {listingSocialChips.map((chip) => (
+                                      <span key={`${listing.id}-${chip}`} className="chip">{chip}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null}
+                            </>
+                          );
+                        })()}
 
                         <div className="mt-3 flex items-center gap-2">
                           <div className="h-9 w-9 rounded-full border border-line bg-surface overflow-hidden flex items-center justify-center text-xs font-semibold">
@@ -820,17 +835,26 @@ export default function CommunityFeed() {
                 ) : (
                   sellerRanking.slice(0, 5).map((row, index) => {
                     const sellerId = String(row?.seller?.id || '').trim();
+                    const rankingChips = [
+                      Number(row.stats?.total_likes || 0) > 0 ? `${Number(row.stats?.total_likes || 0)} likes` : null,
+                      Number(row.stats?.active_listings || 0) > 0 ? `${Number(row.stats?.active_listings || 0)} activos` : null,
+                      Number(row.stats?.delivered_sales || 0) > 0 ? `${Number(row.stats?.delivered_sales || 0)} ventas` : null,
+                    ].filter((value): value is string => Boolean(value));
                     return (
                       <div key={`${sellerId}-${index}`} className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-3">
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-semibold line-clamp-1">#{index + 1} {String(row.seller?.name || 'Vendedor')}</p>
                           {row.seller?.is_verified_seller ? <span className="chip border-primary text-primary">Verificado</span> : null}
                         </div>
-                        <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
-                          <span className="chip">{Number(row.stats?.total_likes || 0)} likes</span>
-                          <span className="chip">{Number(row.stats?.active_listings || 0)} activos</span>
-                          <span className="chip">{Number(row.stats?.delivered_sales || 0)} ventas</span>
-                        </div>
+                        {rankingChips.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
+                            {rankingChips.map((chip) => (
+                              <span key={`${sellerId}-${chip}`} className="chip">{chip}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-[11px] text-textMuted">Actividad inicial en seguimiento.</p>
+                        )}
                         {sellerId ? (
                           <Link href={`/comunidad/vendedor/${sellerId}`} className="mt-2 inline-flex text-xs text-primary hover:underline">
                             Ver perfil

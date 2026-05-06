@@ -152,6 +152,12 @@ export default function CommunitySellersDirectory() {
               const sellerId = String(row.seller?.id || '').trim();
               const sellerName = String(row.seller?.name || 'Coleccionista');
               const avatar = String(row.seller?.avatar_url || '');
+              const sellerStatChips = [
+                Number(row.stats?.total_likes || 0) > 0 ? `${Number(row.stats?.total_likes || 0)} likes` : null,
+                Number(row.stats?.active_listings || 0) > 0 ? `${Number(row.stats?.active_listings || 0)} activos` : null,
+                Number(row.stats?.delivered_sales || 0) > 0 ? `${Number(row.stats?.delivered_sales || 0)} ventas` : null,
+                Number(row.stats?.listing_comments || 0) > 0 ? `${Number(row.stats?.listing_comments || 0)} comentarios` : null,
+              ].filter((value): value is string => Boolean(value));
 
               return (
                 <article key={`${sellerId}-${index}`} className="glass p-4">
@@ -190,12 +196,15 @@ export default function CommunitySellersDirectory() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <span className="chip justify-center">{Number(row.stats?.total_likes || 0)} likes</span>
-                    <span className="chip justify-center">{Number(row.stats?.active_listings || 0)} activos</span>
-                    <span className="chip justify-center">{Number(row.stats?.delivered_sales || 0)} ventas</span>
-                    <span className="chip justify-center">{Number(row.stats?.listing_comments || 0)} comentarios</span>
-                  </div>
+                  {sellerStatChips.length > 0 ? (
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                      {sellerStatChips.map((chip) => (
+                        <span key={`${sellerId}-${chip}`} className="chip justify-center">{chip}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-xs text-textMuted">Perfil en fase inicial de actividad.</p>
+                  )}
 
                   <div className="mt-3 rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-3">
                     <p className="text-xs text-textMuted">Precio medio anuncios</p>

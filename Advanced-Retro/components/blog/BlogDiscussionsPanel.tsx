@@ -51,6 +51,10 @@ function trimText(value: string, max = 180) {
   return `${clean.slice(0, max).trim()}...`;
 }
 
+function isStarterEditorialPersona(userId: string) {
+  return String(userId || '').startsWith('starter-editorial:');
+}
+
 export default function BlogDiscussionsPanel({
   blogSlug,
   blogTitle,
@@ -343,6 +347,12 @@ export default function BlogDiscussionsPanel({
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-textMuted">
                     <span>{discussion.authorName}</span>
+                    {isStarterEditorialPersona(discussion.userId) ? (
+                      <>
+                        <span>•</span>
+                        <span className="chip border-cyan-400/30 bg-cyan-400/10 text-cyan-100">Starter AR</span>
+                      </>
+                    ) : null}
                     <span>•</span>
                     <span>{discussion.score} votos</span>
                     <span>•</span>

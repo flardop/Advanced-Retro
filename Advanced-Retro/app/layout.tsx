@@ -2,43 +2,27 @@ import type { Metadata } from 'next';
 import '../styles/globals.css';
 import Script from 'next/script';
 import { JetBrains_Mono, Manrope, Sora } from 'next/font/google';
-import dynamic from 'next/dynamic';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { LocaleProvider } from '@/components/LocaleProvider';
+import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
+import StoreChromeShell from '@/components/StoreChromeShell';
 import { absoluteUrl, getSiteUrl } from '@/lib/siteConfig';
 import { SEO_BASE_KEYWORDS, SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE } from '@/lib/seo';
-import { DEFAULT_SITE_THEME, SITE_THEME_IDS } from '@/lib/siteThemes';
+import {
+  LEGAL_CITY,
+  LEGAL_COUNTRY,
+  LEGAL_REGION,
+  PUBLIC_CONTACT_PHONE,
+  PUBLIC_SUPPORT_EMAIL,
+} from '@/lib/legal';
 
 const siteUrl = getSiteUrl();
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
-const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@advancedretro.es';
-const contactPhone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '';
+const contactEmail = PUBLIC_SUPPORT_EMAIL;
+const contactPhone = PUBLIC_CONTACT_PHONE;
 const socialProfiles = String(process.env.NEXT_PUBLIC_SOCIAL_PROFILES || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean);
-const SupportAssistantWidget = dynamic(() => import('@/components/SupportAssistantWidget'), {
-  ssr: false,
-});
-const LanguageSwitcherPopup = dynamic(() => import('@/components/LanguageSwitcherPopup'), {
-  ssr: false,
-});
-const ClientToaster = dynamic(() => import('@/components/ClientToaster'), {
-  ssr: false,
-});
-const ThemeStyleMenu = dynamic(() => import('@/components/ThemeStyleMenu'), {
-  ssr: false,
-});
-const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBanner'), {
-  ssr: false,
-});
-const OptionalAnalytics = dynamic(() => import('@/components/OptionalAnalytics'), {
-  ssr: false,
-});
-const AnimatedFavicon = dynamic(() => import('@/components/AnimatedFavicon'), {
-  ssr: false,
-});
 
 const displayFont = Sora({
   subsets: ['latin'],
@@ -130,8 +114,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const allowedSiteThemes = JSON.stringify(SITE_THEME_IDS);
-  const defaultSiteTheme = JSON.stringify(DEFAULT_SITE_THEME);
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -201,42 +183,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     telephone: contactPhone || undefined,
     address: {
       '@type': 'PostalAddress',
-      addressCountry: 'ES',
-      addressLocality: 'Arenys de Mar',
-      addressRegion: 'Cataluña',
+      addressCountry: LEGAL_COUNTRY || 'ES',
+      addressLocality: LEGAL_CITY || undefined,
+      addressRegion: LEGAL_REGION || undefined,
     },
   };
 
   return (
     <html lang="es" data-site-theme="steam-market" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body className="font-body min-h-screen flex flex-col overflow-x-hidden">
-        <LocaleProvider>
-          <Script
-            id="theme-bootstrap"
-            strategy="beforeInteractive"
-            dangerouslySetInnerHTML={{
-              __html:
-                `(function(){try{var key='advancedretro:site-theme';var allowed=${allowedSiteThemes};var fallback=${defaultSiteTheme};var v=localStorage.getItem(key);if(v&&allowed.indexOf(v)!==-1){document.documentElement.setAttribute('data-site-theme',v);}else{document.documentElement.setAttribute('data-site-theme',fallback);}}catch(e){document.documentElement.setAttribute('data-site-theme',${defaultSiteTheme});}})();`,
-            }}
-          />
-          <AnimatedFavicon />
-          <Script
-            id="schema-org"
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify([organizationSchema, websiteSchema, onlineStoreSchema, localBusinessSchema]),
-            }}
-          />
-          <Navbar />
-          <main className="flex-1 pb-4 lg:pb-0">{children}</main>
-          <Footer />
-          <ClientToaster />
-          <SupportAssistantWidget />
-          <LanguageSwitcherPopup />
-          <ThemeStyleMenu />
-          <CookieConsentBanner />
-          <OptionalAnalytics />
-        </LocaleProvider>
+        <GlobalErrorBoundary>
+          <LocaleProvider>
+            <Script
+              id="schema-org"
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify([organizationSchema, websiteSchema, onlineStoreSchema, localBusinessSchema]),
+              }}
+            />
+            <StoreChromeShell>{children}</StoreChromeShell>
+          </LocaleProvider>
+        </GlobalErrorBoundary>
       </body>
     </html>
   );

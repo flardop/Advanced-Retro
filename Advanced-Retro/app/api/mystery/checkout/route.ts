@@ -151,7 +151,7 @@ export async function POST(req: Request) {
       console.warn('Mystery order stripe_session_id update skipped:', stripeSessionUpdateError);
     }
 
-    return NextResponse.json({ success: true, sessionId: session.id });
+    return NextResponse.json({ success: true, sessionId: session.id, url: session.url });
   } catch (error: any) {
     if (isMysterySetupMissing(error)) {
       return NextResponse.json(

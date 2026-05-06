@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createMiddlewareSupabaseClient } from '@/lib/supabase/middleware';
 
 const isProduction =
   process.env.VERCEL_ENV === 'production' || process.env.ENFORCE_CANONICAL_HOST === 'true';
@@ -34,14 +35,75 @@ function applyNoIndexHeaderIfNeeded(response: NextResponse, request: NextRequest
   return response;
 }
 
-export function middleware(request: NextRequest) {
+function isAdminRoute(pathname: string) {
+  return pathname === '/admin' || pathname.startsWith('/admin/');
+}
+
+async function resolveUserRole(request: NextRequest, response: NextResponse, userId: string) {
+  try {
+    const supabase = createMiddlewareSupabaseClient(request, response);
+    const profileRes = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
+    const profileRole = String(profileRes.data?.role || '').trim();
+    if (profileRole) return profileRole;
+
+    const legacyRes = await supabase.from('users').select('role').eq('id', userId).maybeSingle();
+    return String(legacyRes.data?.role || 'user').trim() || 'user';
+  } catch {
+    return 'user';
+  }
+}
+
+async function handleAdminAccess(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  if (!isAdminRoute(pathname)) {
+    return null;
+  }
+
+  const isLoginRoute = pathname === '/admin/login';
+  const response = NextResponse.next();
+  const supabase = createMiddlewareSupabaseClient(request, response);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user && !isLoginRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/login';
+    url.searchParams.set('redirectedFrom', pathname);
+    return NextResponse.redirect(url);
+  }
+
+  if (!user) {
+    return response;
+  }
+
+  const role = await resolveUserRole(request, response, user.id);
+  if (isLoginRoute && role === 'admin') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/dashboard';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
+
+  if (role !== 'admin') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    url.search = '';
+    url.searchParams.set('error', 'admin-only');
+    return NextResponse.redirect(url);
+  }
+
+  return response;
+}
+
+function handleCanonicalHost(request: NextRequest, baseResponse?: NextResponse) {
   if (!isProduction) {
-    return applyNoIndexHeaderIfNeeded(NextResponse.next(), request);
+    return applyNoIndexHeaderIfNeeded(baseResponse || NextResponse.next(), request);
   }
 
   const canonicalHost = getCanonicalHost();
   if (!canonicalHost) {
-    return applyNoIndexHeaderIfNeeded(NextResponse.next(), request);
+    return applyNoIndexHeaderIfNeeded(baseResponse || NextResponse.next(), request);
   }
 
   const incomingHost = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '')
@@ -51,18 +113,26 @@ export function middleware(request: NextRequest) {
   const shouldBeHttps = forwardedProto !== 'https';
 
   if (!incomingHost || isLocalHost(incomingHost)) {
-    return applyNoIndexHeaderIfNeeded(NextResponse.next(), request);
+    return applyNoIndexHeaderIfNeeded(baseResponse || NextResponse.next(), request);
   }
 
   const hostChanged = incomingHost !== canonicalHost;
   if (!hostChanged && !shouldBeHttps) {
-    return applyNoIndexHeaderIfNeeded(NextResponse.next(), request);
+    return applyNoIndexHeaderIfNeeded(baseResponse || NextResponse.next(), request);
   }
 
   const url = request.nextUrl.clone();
   url.protocol = 'https:';
   url.host = canonicalHost;
   return NextResponse.redirect(url, 308);
+}
+
+export async function middleware(request: NextRequest) {
+  const adminResponse = await handleAdminAccess(request);
+  if (adminResponse && adminResponse.status !== 200) {
+    return adminResponse;
+  }
+  return handleCanonicalHost(request, adminResponse || undefined);
 }
 
 export const config = {

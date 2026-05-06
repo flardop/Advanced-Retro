@@ -4,7 +4,6 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { supabaseClient } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import SafeImage from '@/components/SafeImage';
-import { sampleProducts } from '@/lib/sampleData';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { getProductHref } from '@/lib/productUrl';
 import {
@@ -387,6 +386,9 @@ function pickFeaturedColumn(source: any[], take: number, used: Set<string>): any
 
 function CatalogContent() {
   const [products, setProducts] = useState<any[]>([]);
+  const [catalogStatus, setCatalogStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [catalogNotice, setCatalogNotice] = useState<string | null>(null);
   const [active, setActive] = useState<string>('all');
   const [metrics, setMetrics] = useState<Record<string, ProductMetric>>({});
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -479,12 +481,22 @@ function CatalogContent() {
 
   useEffect(() => {
     const load = async () => {
+      setCatalogStatus('loading');
+      setCatalogError(null);
+      setCatalogNotice(null);
+
       try {
         const res = await fetch('/api/catalog/public', { cache: 'no-store' });
         const data = await res.json();
-        if (res.ok && Array.isArray(data?.products) && data.products.length > 0) {
-          setProducts(data.products);
-          return;
+        if (Array.isArray(data?.products)) {
+          if (res.ok && data?.source !== 'sample') {
+            setProducts(data.products);
+            setCatalogStatus('ready');
+            if (data.products.length === 0) {
+              setCatalogNotice('No hay productos disponibles en este momento.');
+            }
+            return;
+          }
         }
       } catch {
         // Fallbacks below.
@@ -496,13 +508,19 @@ function CatalogContent() {
           .select(CATALOG_QUERY_COLUMNS)
           .order('created_at', { ascending: false })
           .limit(FALLBACK_QUERY_LIMIT);
-        if (Array.isArray(prods) && prods.length > 0) {
+        if (Array.isArray(prods)) {
           setProducts(prods);
+          setCatalogStatus('ready');
+          if (prods.length === 0) {
+            setCatalogNotice('No hay productos disponibles en este momento.');
+          }
           return;
         }
       }
 
-      setProducts(sampleProducts);
+      setProducts([]);
+      setCatalogStatus('error');
+      setCatalogError('No se pudo cargar el catálogo. Inténtalo de nuevo.');
     };
     void load();
   }, []);
@@ -1186,7 +1204,34 @@ function CatalogContent() {
 
         {filterPanel}
 
-        {active === 'all' && consoleHighlights.length > 0 ? (
+        {catalogNotice ? (
+          <div className="mb-6 rounded-2xl border border-primary/30 bg-primary/8 p-4 text-sm text-textMuted">
+            {catalogNotice}
+          </div>
+        ) : null}
+
+        {catalogStatus === 'error' ? (
+          <div className="glass p-6 mb-8">
+            <p className="text-base font-semibold text-text">No se pudo cargar el catálogo.</p>
+            <p className="text-sm text-textMuted mt-2">{catalogError || 'Inténtalo de nuevo dentro de unos minutos.'}</p>
+          </div>
+        ) : null}
+
+        {catalogStatus === 'loading' ? (
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3 mb-8">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={`catalog-skeleton-${index}`} className="glass p-3 sm:p-4 animate-pulse">
+                <div className="h-44 sm:h-56 rounded-xl border border-line bg-surface" />
+                <div className="mt-4 h-5 w-3/4 rounded bg-surface" />
+                <div className="mt-3 h-4 w-full rounded bg-surface" />
+                <div className="mt-2 h-4 w-2/3 rounded bg-surface" />
+                <div className="mt-4 h-5 w-24 rounded bg-surface" />
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {catalogStatus === 'ready' && active === 'all' && consoleHighlights.length > 0 ? (
           <div className="glass p-4 sm:p-5 mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div>
@@ -1229,7 +1274,7 @@ function CatalogContent() {
           </div>
         ) : null}
 
-        {active === 'all' && specialConsoleHighlights.length > 0 ? (
+        {catalogStatus === 'ready' && active === 'all' && specialConsoleHighlights.length > 0 ? (
           <div className="glass p-4 sm:p-5 mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div>
@@ -1269,7 +1314,7 @@ function CatalogContent() {
           </div>
         ) : null}
 
-        {!hasNoProducts && !isMysteryView ? (
+        {catalogStatus === 'ready' && !hasNoProducts && !isMysteryView ? (
           <div className="catalog-featured-grid grid gap-4 xl:grid-cols-3 mb-7">
             <div className="glass p-4">
               <h2 className="font-semibold mb-1 text-lg">Trending retro</h2>
@@ -1298,23 +1343,21 @@ function CatalogContent() {
           </div>
         ) : null}
 
-        <p className="text-sm text-textMuted mb-4">
-          Resultados: {sorted.length}{isMysteryView ? ' · Cajas misteriosas activas' : ''}
-          {usingFallbackCatalog ? ' · Mostrando selección recomendada mientras ajustas filtros/categorías.' : ''}
-        </p>
+        {catalogStatus === 'ready' ? (
+          <p className="text-sm text-textMuted mb-4">
+            Resultados: {sorted.length}{isMysteryView ? ' · Cajas misteriosas activas' : ''}
+            {usingFallbackCatalog ? ' · Mostrando selección recomendada mientras ajustas filtros/categorías.' : ''}
+          </p>
+        ) : null}
 
-        {hasNoProducts ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div key={`placeholder-${index}`} className="glass p-4">
-                <div className="w-full h-56 bg-surface border border-line animate-pulse" />
-                <div className="mt-4 h-4 bg-surface animate-pulse" />
-                <div className="mt-2 h-4 bg-surface animate-pulse w-2/3" />
-                <p className="text-xs text-textMuted mt-4">Próximas entradas retro</p>
-              </div>
-            ))}
+        {catalogStatus === 'ready' && hasNoProducts ? (
+          <div className="glass p-6">
+            <p className="text-base font-semibold text-text">No hay productos disponibles en este momento.</p>
+            <p className="text-sm text-textMuted mt-2">
+              Si estás usando filtros, prueba a limpiarlos. Si no, vuelve un poco más tarde porque el catálogo se actualiza con frecuencia.
+            </p>
           </div>
-        ) : (
+        ) : catalogStatus === 'ready' ? (
           <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {visibleProducts.map((product, index) => {
               const productId = String(product.id);
@@ -1322,6 +1365,10 @@ function CatalogContent() {
               const isCompleteView = String(active).toLowerCase() === COMPLETE_GAMES_CATEGORY;
               const href = getProductHref(product, { complete: isCompleteView });
               const productMetrics = metrics[productId];
+              const metricChips = [
+                Number(productMetrics?.visits || 0) > 0 ? `Visitas: ${Number(productMetrics?.visits || 0)}` : null,
+                Number(productMetrics?.likes || 0) > 0 ? `Favoritos: ${Number(productMetrics?.likes || 0)}` : null,
+              ].filter((value): value is string => Boolean(value));
 
               return (
                 <Link
@@ -1351,10 +1398,11 @@ function CatalogContent() {
                     <p className="hidden sm:block text-textMuted text-sm line-clamp-2 mt-2 sm:min-h-[40px]">{product.description}</p>
                     <p className="text-primary font-semibold mt-2 sm:mt-3 text-base sm:text-lg">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
                     <p className="text-xs text-textMuted mt-1">Stock: {product.stock}</p>
-                    {!isMysteryView ? (
+                    {!isMysteryView && (metricChips.length > 0 || productMetrics?.likedByCurrentVisitor) ? (
                       <div className="hidden sm:flex mt-2 flex-wrap gap-2 text-xs">
-                        <span className="chip">Visitas: {productMetrics?.visits ?? 0}</span>
-                        <span className="chip">Favoritos: {productMetrics?.likes ?? 0}</span>
+                        {metricChips.map((chip) => (
+                          <span key={`${productId}-${chip}`} className="chip">{chip}</span>
+                        ))}
                         {productMetrics?.likedByCurrentVisitor ? (
                           <span className="chip border-primary text-primary">Favorito</span>
                         ) : null}
@@ -1369,7 +1417,7 @@ function CatalogContent() {
               );
             })}
           </div>
-        )}
+        ) : null}
 
         {!hasNoProducts && hasMoreProducts ? (
           <div className="mt-6 flex justify-center">

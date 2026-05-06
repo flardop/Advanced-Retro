@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
+import { PUBLIC_CONTACT_PHONE, PUBLIC_SUPPORT_EMAIL } from '@/lib/legal';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Contacto | Soporte y atención al cliente retro',
@@ -51,7 +52,8 @@ export default function ContactPage() {
                 <h2 className="title-display text-2xl">ADVANCED RETRO Studio</h2>
                 <p className="text-textMuted mt-2">Atención especializada para coleccionistas.</p>
                 <div className="mt-6 space-y-3 text-textMuted">
-                  <p>Email: admin@advancedretro.es</p>
+                  <p>Email: {PUBLIC_SUPPORT_EMAIL}</p>
+                  {PUBLIC_CONTACT_PHONE ? <p>Teléfono: {PUBLIC_CONTACT_PHONE}</p> : null}
                   <p>Horario: Lun - Vie / 10:00 - 19:00</p>
                   <p>Soporte: Envíos, autenticidad, garantías.</p>
                 </div>

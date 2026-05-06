@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { buildPageMetadata } from '@/lib/seo';
+import { PUBLIC_SUPPORT_EMAIL } from '@/lib/legal';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Accesibilidad',
@@ -49,7 +50,7 @@ export default function AccessibilityPage() {
         <div>
           <h2 className="text-xl font-semibold">4. Canal de incidencias</h2>
           <p className="text-textMuted mt-2">
-            Si encuentras barreras de accesibilidad, escribe a atencionalcliente@advancedretro.es
+            Si encuentras barreras de accesibilidad, escribe a {PUBLIC_SUPPORT_EMAIL}
             indicando página, dispositivo/navegador y pasos para reproducir.
           </p>
         </div>
@@ -64,4 +65,3 @@ export default function AccessibilityPage() {
     </section>
   );
 }
-

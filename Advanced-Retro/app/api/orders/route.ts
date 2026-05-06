@@ -1,353 +1,45 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { supabaseServer } from '@/lib/supabaseServer';
-import { normalizeCouponCode, validateCouponForCheckout } from '@/lib/coupons';
-import { applyPaidOrderWithStockUpdate } from '@/lib/orderSettlement';
-import { calculateShippingQuoteFromArenys } from '@/lib/shipping';
-import { computeCommission } from '@/lib/commissions';
+import { createOrderCheckoutSession } from '@/lib/orderCheckoutSession';
 
 export const dynamic = 'force-dynamic';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-06-20',
-});
-
-type ShippingAddress = {
-  full_name: string;
-  line1: string;
-  line2: string;
-  city: string;
-  state: string;
-  postal_code: string;
-  country: string;
-  phone: string;
-};
-
-function normalizeShippingAddress(input: any): ShippingAddress | null {
-  const payload: ShippingAddress = {
-    full_name: String(input?.full_name || '').trim().slice(0, 120),
-    line1: String(input?.line1 || '').trim().slice(0, 200),
-    line2: String(input?.line2 || '').trim().slice(0, 200),
-    city: String(input?.city || '').trim().slice(0, 120),
-    state: String(input?.state || '').trim().slice(0, 120),
-    postal_code: String(input?.postal_code || '').trim().slice(0, 30),
-    country: String(input?.country || '').trim().slice(0, 80),
-    phone: String(input?.phone || '').trim().slice(0, 50),
-  };
-
-  if (!payload.full_name || !payload.line1 || !payload.city || !payload.postal_code || !payload.country) {
-    return null;
-  }
-
-  return payload;
-}
-
 export async function POST(req: Request) {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 });
-  }
+  try {
+    const supabase = supabaseServer();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const supabase = supabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const body = await req.json().catch(() => null);
-  const items = body?.items;
-  if (!Array.isArray(items) || items.length === 0) {
-    return NextResponse.json({ error: 'Invalid items payload' }, { status: 400 });
-  }
-
-  const shippingAddress = normalizeShippingAddress(body?.shippingAddress);
-  if (!shippingAddress) {
-    return NextResponse.json(
-      { error: 'Faltan datos de envío (nombre, dirección, ciudad, CP y país)' },
-      { status: 400 }
-    );
-  }
-
-  const shippingQuote = calculateShippingQuoteFromArenys(shippingAddress);
-  const shippingMethod = shippingQuote.method;
-  const shippingCost = shippingQuote.costCents;
-  const couponCode = normalizeCouponCode(body?.couponCode);
-
-  const itemQuantities = new Map<string, number>();
-  for (const rawItem of items) {
-    if (!rawItem || typeof rawItem !== 'object') {
-      return NextResponse.json({ error: 'Invalid item format' }, { status: 400 });
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const item = rawItem as Record<string, unknown>;
-    const productId = item.product_id;
-    const quantity = Number(item.quantity);
-
-    if (typeof productId !== 'string' || !productId.trim()) {
-      return NextResponse.json({ error: 'Invalid product_id' }, { status: 400 });
-    }
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
-      return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 });
-    }
-
-    itemQuantities.set(productId, (itemQuantities.get(productId) ?? 0) + quantity);
-  }
-
-  const productIds = [...itemQuantities.keys()];
-
-  if (!supabaseAdmin) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
-  const { data: products, error: productsError } = await supabaseAdmin
-    .from('products')
-    .select('id, name, price, stock')
-    .in('id', productIds);
-
-  if (productsError) {
-    return NextResponse.json({ error: productsError.message }, { status: 500 });
-  }
-  if (!products || products.length !== productIds.length) {
-    return NextResponse.json({ error: 'Some products no longer exist' }, { status: 400 });
-  }
-
-  const productById = new Map(products.map((product) => [product.id, product]));
-
-  let subtotal = 0;
-  const orderItems: Array<{ order_id: string; product_id: string; quantity: number; unit_price: number }> = [];
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-
-  for (const [productId, quantity] of itemQuantities) {
-    const product = productById.get(productId);
-    if (!product) {
-      return NextResponse.json({ error: 'Invalid product selection' }, { status: 400 });
-    }
-
-    if (!Number.isInteger(product.price) || product.price < 0) {
-      return NextResponse.json({ error: `Invalid price for ${product.name}` }, { status: 500 });
-    }
-
-    if (!Number.isInteger(product.stock) || product.stock < quantity) {
-      return NextResponse.json(
-        { error: `Stock insuficiente para "${product.name}"` },
-        { status: 409 }
-      );
-    }
-
-    subtotal += product.price * quantity;
-    lineItems.push({
-      price_data: {
-        currency: 'eur',
-        product_data: { name: product.name },
-        unit_amount: product.price,
+    const body = await req.json().catch(() => null);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+    const result = await createOrderCheckoutSession({
+      payload: {
+        items: body?.items,
+        shippingAddress: body?.shippingAddress,
+        couponCode: body?.couponCode,
+        customerEmail: user.email || null,
       },
-      quantity,
-    });
-  }
-
-  if (lineItems.length === 0) {
-    return NextResponse.json({ error: 'No valid items to checkout' }, { status: 400 });
-  }
-
-  if (shippingCost > 0) {
-    lineItems.push({
-      price_data: {
-        currency: 'eur',
-        product_data: { name: 'Envío' },
-        unit_amount: shippingCost,
-      },
-      quantity: 1,
-    });
-  }
-
-  let couponValidation: Awaited<ReturnType<typeof validateCouponForCheckout>> = null;
-  let couponDiscount = 0;
-
-  const checkoutSubtotal = subtotal + shippingCost;
-  if (couponCode) {
-    couponValidation = await validateCouponForCheckout({
-      supabaseAdmin,
-      code: couponCode,
+      siteUrl,
       userId: user.id,
-      subtotalCents: checkoutSubtotal,
+      uiMode: 'hosted',
     });
 
-    if (!couponValidation) {
-      return NextResponse.json({ error: 'Cupón no válido o agotado' }, { status: 400 });
-    }
-
-    couponDiscount = couponValidation.discountCents;
-  }
-
-  const total = Math.max(0, checkoutSubtotal - couponDiscount);
-  const commission = computeCommission({
-    source: 'catalog',
-    // La base de comisión excluye envío para no comisionar costes logísticos.
-    baseCents: Math.max(0, total - shippingCost),
-    grossCents: total,
-  });
-
-  const legacyItems = [...itemQuantities.entries()]
-    .map(([productId, quantity]) => {
-      const product = productById.get(productId);
-      if (!product) return null;
-      return {
-        product_id: product.id,
-        product_name: product.name,
-        quantity,
-        unit_price: product.price,
-        price: product.price,
-      };
-    })
-    .filter(Boolean);
-
-  const orderPayload: Record<string, unknown> = {
-    user_id: user.id,
-    items: legacyItems,
-    total,
-    status: 'pending',
-    shipping_address: shippingAddress,
-    shipping_method: shippingMethod || null,
-    shipping_cost: shippingCost,
-    coupon_code: couponValidation?.coupon?.code || null,
-    coupon_id: couponValidation?.coupon?.id || null,
-    coupon_discount: couponDiscount,
-    commission_source: commission.source,
-    commission_rate: commission.ratePercent,
-    commission_base_cents: commission.baseCents,
-    commission_amount_cents: commission.amountCents,
-    gross_amount_cents: commission.grossCents,
-    net_amount_cents: commission.netCents,
-    updated_at: new Date().toISOString(),
-  };
-
-  let order: any = null;
-  let orderError: any = null;
-
-  const insertAttempt = await supabaseAdmin
-    .from('orders')
-    .insert(orderPayload)
-    .select('id')
-    .single();
-
-  order = insertAttempt.data;
-  orderError = insertAttempt.error;
-
-  if (orderError && String(orderError.message || '').toLowerCase().includes('column')) {
-    // Fallback para instalaciones que todavía no ejecutaron la migración de comisiones.
-    const fallbackAttempt = await supabaseAdmin
-      .from('orders')
-      .insert({
-        user_id: user.id,
-        items: legacyItems,
-        total,
-        status: 'pending',
-      })
-      .select('id')
-      .single();
-    order = fallbackAttempt.data;
-    orderError = fallbackAttempt.error;
-  }
-
-  if (orderError || !order) return NextResponse.json({ error: orderError?.message || 'Could not create order' }, { status: 500 });
-
-  for (const [productId, quantity] of itemQuantities) {
-    const product = productById.get(productId);
-    if (!product) continue;
-    orderItems.push({
-      order_id: order.id,
-      product_id: product.id,
-      quantity,
-      unit_price: product.price,
-    });
-  }
-
-  const { error: orderItemsError } = await supabaseAdmin.from('order_items').insert(orderItems);
-  if (orderItemsError) {
-    await supabaseAdmin.from('orders').delete().eq('id', order.id);
-    return NextResponse.json({ error: orderItemsError.message }, { status: 500 });
-  }
-
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
-
-  if (total <= 0) {
-    // Pedido a 0€ (cupón total): se liquida sin pasar por Stripe.
-    try {
-      await applyPaidOrderWithStockUpdate({
-        supabaseAdmin,
-        orderId: order.id,
-      });
+    if (result.mode === 'direct') {
       return NextResponse.json({
         success: true,
         directSuccess: true,
-        orderId: order.id,
-        redirectUrl: `${siteUrl}/success?orderId=${order.id}`,
+        orderId: result.orderId,
+        redirectUrl: result.redirectUrl,
       });
-    } catch (settlementError: any) {
-      return NextResponse.json(
-        { error: settlementError?.message || 'No se pudo liquidar el pedido con cupón' },
-        { status: 500 }
-      );
     }
+
+    return NextResponse.json({ sessionId: result.sessionId, orderId: result.orderId });
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
   }
-
-  let stripeDiscounts: Stripe.Checkout.SessionCreateParams.Discount[] | undefined;
-  if (couponValidation) {
-    const couponType = String(couponValidation.coupon.type || 'percent');
-    const couponValue = Number(couponValidation.coupon.value || 0);
-
-    const stripeCoupon =
-      couponType === 'fixed'
-        ? await stripe.coupons.create({
-            amount_off: Math.max(0, couponValidation.discountCents),
-            currency: 'eur',
-            duration: 'once',
-            name: couponValidation.coupon.code,
-          })
-        : await stripe.coupons.create({
-            percent_off: couponType === 'free_order' ? 100 : Math.max(0, Math.min(100, couponValue)),
-            duration: 'once',
-            name: couponValidation.coupon.code,
-          });
-
-    stripeDiscounts = [{ coupon: stripeCoupon.id }];
-  }
-
-  let session: Stripe.Checkout.Session;
-  try {
-    session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      discounts: stripeDiscounts,
-      success_url: `${siteUrl}/success?orderId=${order.id}`,
-      cancel_url: `${siteUrl}/carrito`,
-      metadata: {
-        // Metadata usada en webhook para conciliar pago + comisión.
-        orderId: order.id,
-        commissionSource: commission.source,
-        commissionRate: String(commission.ratePercent),
-        commissionBaseCents: String(commission.baseCents),
-        commissionAmountCents: String(commission.amountCents),
-      },
-    });
-  } catch (stripeError) {
-    await supabaseAdmin.from('orders').delete().eq('id', order.id);
-    const message = stripeError instanceof Error ? stripeError.message : 'Error creating checkout session';
-    return NextResponse.json({ error: message }, { status: 502 });
-  }
-
-  // Guardado best-effort de la sesión Stripe para trazabilidad.
-  const { error: stripeSessionUpdateError } = await supabaseAdmin
-    .from('orders')
-    .update({
-      stripe_session_id: session.id,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', order.id);
-  if (stripeSessionUpdateError) {
-    console.warn('Order stripe_session_id update skipped:', stripeSessionUpdateError);
-  }
-
-  return NextResponse.json({ sessionId: session.id, orderId: order.id });
 }

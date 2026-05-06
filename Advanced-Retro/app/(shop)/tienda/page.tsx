@@ -5,10 +5,11 @@ import Catalog from '@/components/sections/Catalog';
 import HypeLockboard from '@/components/sections/HypeLockboard';
 import BreadcrumbsNav from '@/components/BreadcrumbsNav';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { sampleProducts } from '@/lib/sampleData';
 import { getProductHref } from '@/lib/productUrl';
 import { getPlatformLandingConfig, PLATFORM_LANDING_SLUGS } from '@/lib/platformSeo';
+import { getPublicCatalogProducts } from '@/lib/publicCatalog';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Tienda retro | Catálogo completo de juegos y consolas',
@@ -48,39 +49,20 @@ export default async function StorePage() {
     },
   ]);
 
-  const featuredProducts = (() => {
-    const mapItem = (product: any) => ({
-      name: String(product?.name || 'Producto retro'),
-      path: getProductHref(product),
-      image: String(product?.image || '/logo.png'),
-      description: String(product?.description || '').slice(0, 180),
-    });
+  const { products: seoProducts, source: seoSource } = await getPublicCatalogProducts(24);
+  const itemListItems =
+    seoSource === 'sample'
+      ? []
+      : seoProducts
+          .filter((product) => Number(product?.price || 0) > 0)
+          .map((product) => ({
+            name: String(product?.name || 'Producto retro'),
+            path: getProductHref(product),
+            image: String(product?.image || '/logo.png'),
+            description: String(product?.description || '').slice(0, 180),
+          }));
 
-    if (!supabaseAdmin) {
-      return sampleProducts.slice(0, 12).map(mapItem);
-    }
-
-    return null;
-  })();
-
-  let itemListItems = featuredProducts;
-  if (!itemListItems && supabaseAdmin) {
-    const { data } = await supabaseAdmin
-      .from('products')
-      .select('id,name,slug,price,image,description,stock,status,category,platform,is_mystery_box')
-      .gt('price', 0)
-      .order('updated_at', { ascending: false })
-      .limit(24);
-
-    itemListItems = (data || []).map((product: any) => ({
-      name: String(product?.name || 'Producto retro'),
-      path: getProductHref(product),
-      image: String(product?.image || '/logo.png'),
-      description: String(product?.description || '').slice(0, 180),
-    }));
-  }
-
-  const itemListSchema = buildItemListJsonLd(itemListItems || [], 'Catálogo de tienda retro');
+  const itemListSchema = buildItemListJsonLd(itemListItems, 'Catálogo de tienda retro');
   const platformLandingLinks = PLATFORM_LANDING_SLUGS.map((slug) => getPlatformLandingConfig(slug)).filter(
     (landing): landing is NonNullable<ReturnType<typeof getPlatformLandingConfig>> => Boolean(landing)
   );

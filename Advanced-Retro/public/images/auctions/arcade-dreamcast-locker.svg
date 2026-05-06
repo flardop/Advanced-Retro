@@ -1,0 +1,40 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-dc" x1="80" y1="80" x2="1100" y2="850" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#090E1D"/>
+      <stop offset="0.48" stop-color="#151735"/>
+      <stop offset="1" stop-color="#05070F"/>
+    </linearGradient>
+    <linearGradient id="locker-shell" x1="280" y1="170" x2="932" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#152948"/>
+      <stop offset="1" stop-color="#0A0F1D"/>
+    </linearGradient>
+    <linearGradient id="locker-edge" x1="300" y1="205" x2="878" y2="635" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4CD7FF"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" rx="48" fill="url(#bg-dc)"/>
+  <ellipse cx="594" cy="766" rx="344" ry="64" fill="#040710" fill-opacity="0.62"/>
+  <rect x="224" y="720" width="752" height="10" rx="5" fill="#61E7FF" fill-opacity="0.32"/>
+  <rect x="270" y="186" width="660" height="456" rx="42" fill="url(#locker-shell)" stroke="url(#locker-edge)" stroke-width="4"/>
+  <rect x="312" y="228" width="576" height="372" rx="30" fill="#0A1323" stroke="#65DDFE" stroke-opacity="0.22"/>
+  <rect x="360" y="264" width="166" height="300" rx="22" fill="#121E35" stroke="#5BDCFD" stroke-opacity="0.25"/>
+  <rect x="542" y="264" width="146" height="300" rx="22" fill="#111A33" stroke="#5BDCFD" stroke-opacity="0.25"/>
+  <rect x="704" y="264" width="144" height="300" rx="22" fill="#15132E" stroke="#D26EFF" stroke-opacity="0.24"/>
+  <circle cx="442" cy="320" r="38" fill="#1D84D9" fill-opacity="0.82"/>
+  <circle cx="615" cy="316" r="34" fill="#F97316" fill-opacity="0.84"/>
+  <circle cx="777" cy="318" r="34" fill="#A855F7" fill-opacity="0.84"/>
+  <rect x="394" y="392" width="98" height="18" rx="9" fill="#6BE9FF" fill-opacity="0.78"/>
+  <rect x="576" y="392" width="78" height="18" rx="9" fill="#FBBF24" fill-opacity="0.82"/>
+  <rect x="734" y="392" width="84" height="18" rx="9" fill="#F472B6" fill-opacity="0.82"/>
+  <path d="M930 300H1000L1042 348V554L1000 602H930" fill="#0C1325" stroke="#334A78" stroke-width="3"/>
+  <path d="M270 300H202L160 348V554L202 602H270" fill="#0C1325" stroke="#334A78" stroke-width="3"/>
+  <rect x="326" y="142" width="230" height="42" rx="21" fill="#0E172B" stroke="#53DAFF" stroke-opacity="0.35"/>
+  <text x="441" y="168" fill="#D8F8FF" font-family="Arial, Helvetica, sans-serif" font-size="18" text-anchor="middle" letter-spacing="3">ARCADE LOCKER</text>
+  <rect x="706" y="142" width="182" height="42" rx="21" fill="#131327" stroke="#C56BFF" stroke-opacity="0.35"/>
+  <text x="797" y="168" fill="#F8E7FF" font-family="Arial, Helvetica, sans-serif" font-size="18" text-anchor="middle" letter-spacing="3">AR-DRM-11</text>
+  <rect x="358" y="668" width="484" height="20" rx="10" fill="#0D1529" stroke="#233357"/>
+  <rect x="358" y="668" width="276" height="20" rx="10" fill="url(#locker-edge)"/>
+  <text x="600" y="816" fill="#A7C6DF" font-family="Arial, Helvetica, sans-serif" font-size="28" text-anchor="middle">Locker de subasta en directo · hardware protegido y trazado</text>
+</svg>

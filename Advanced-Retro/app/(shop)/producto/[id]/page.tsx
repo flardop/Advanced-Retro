@@ -8,7 +8,9 @@ import { getProductHref, getProductRouteSegment, parseProductRouteParam } from '
 import { sampleProducts } from '@/lib/sampleData';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata, buildProductSeoDescription } from '@/lib/seo';
 import { getProductReviewsSql } from '@/lib/productSocialSql';
-import { permanentRedirect } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
+import { isRedirectError } from 'next/dist/client/components/redirect';
+import { isNotFoundError } from 'next/dist/client/components/not-found';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
@@ -91,113 +93,116 @@ async function getProductByIdentifier(identifier: string) {
 
   if (!db) return resolveFromRows(sampleProducts);
 
-  const findByIdPrefix = async (prefix: string) => {
-    const safePrefix = String(prefix || '').trim().toLowerCase();
-    if (!safePrefix) return null;
+  try {
+    const findByIdPrefix = async (prefix: string) => {
+      const safePrefix = String(prefix || '').trim().toLowerCase();
+      if (!safePrefix) return null;
 
-    // Fast path: works when id is text-compatible for ilike.
-    const direct = await db
-      .from('products')
-      .select('*')
-      .ilike('id', `${safePrefix}%`)
-      .limit(2);
-    if (!direct.error && Array.isArray(direct.data) && direct.data.length === 1) {
-      return direct.data[0];
-    }
-
-    // Fallback: for UUID columns where ilike can fail, scan ids and resolve prefix in JS.
-    const scan = await db
-      .from('products')
-      .select('id')
-      .order('updated_at', { ascending: false })
-      .limit(3000);
-    if (scan.error || !Array.isArray(scan.data) || scan.data.length === 0) return null;
-
-    const matches = scan.data.filter((row: any) =>
-      String(row?.id || '').toLowerCase().startsWith(safePrefix)
-    );
-    if (matches.length !== 1) return null;
-
-    const resolvedId = String(matches[0]?.id || '').trim();
-    if (!resolvedId) return null;
-
-    const full = await db
-      .from('products')
-      .select('*')
-      .eq('id', resolvedId)
-      .maybeSingle();
-    return full.data || null;
-  };
-
-  if (parsed.idCandidate) {
-    const { data } = await db
-      .from('products')
-      .select('*')
-      .eq('id', parsed.idCandidate)
-      .maybeSingle();
-    if (data) return data;
-  }
-
-  if (parsed.idPrefixCandidate) {
-    const byPrefix = await findByIdPrefix(parsed.idPrefixCandidate);
-    if (byPrefix) {
-      return byPrefix;
-    }
-  }
-
-  if (parsed.slugCandidate) {
-    const { data, error } = await db
-      .from('products')
-      .select('*')
-      .eq('slug', parsed.slugCandidate)
-      .order('updated_at', { ascending: false })
-      .limit(1);
-    if (!error && Array.isArray(data) && data.length > 0) return data[0];
-
-    const nameQuery = parsed.slugCandidate.replace(/-/g, ' ').trim();
-    if (nameQuery) {
-      const byName = await db
+      const direct = await db
         .from('products')
         .select('*')
-        .ilike('name', `${nameQuery}%`)
+        .ilike('id', `${safePrefix}%`)
+        .limit(2);
+      if (!direct.error && Array.isArray(direct.data) && direct.data.length === 1) {
+        return direct.data[0];
+      }
+
+      const scan = await db
+        .from('products')
+        .select('id')
+        .order('updated_at', { ascending: false })
+        .limit(3000);
+      if (scan.error || !Array.isArray(scan.data) || scan.data.length === 0) return null;
+
+      const matches = scan.data.filter((row: any) =>
+        String(row?.id || '').toLowerCase().startsWith(safePrefix)
+      );
+      if (matches.length !== 1) return null;
+
+      const resolvedId = String(matches[0]?.id || '').trim();
+      if (!resolvedId) return null;
+
+      const full = await db
+        .from('products')
+        .select('*')
+        .eq('id', resolvedId)
+        .maybeSingle();
+      return full.data || null;
+    };
+
+    if (parsed.idCandidate) {
+      const { data } = await db
+        .from('products')
+        .select('*')
+        .eq('id', parsed.idCandidate)
+        .maybeSingle();
+      if (data) return data;
+    }
+
+    if (parsed.idPrefixCandidate) {
+      const byPrefix = await findByIdPrefix(parsed.idPrefixCandidate);
+      if (byPrefix) return byPrefix;
+    }
+
+    if (parsed.slugCandidate) {
+      const { data, error } = await db
+        .from('products')
+        .select('*')
+        .eq('slug', parsed.slugCandidate)
         .order('updated_at', { ascending: false })
         .limit(1);
-      if (!byName.error && Array.isArray(byName.data) && byName.data.length > 0) {
-        return byName.data[0];
+      if (!error && Array.isArray(data) && data.length > 0) return data[0];
+
+      const nameQuery = parsed.slugCandidate.replace(/-/g, ' ').trim();
+      if (nameQuery) {
+        const byName = await db
+          .from('products')
+          .select('*')
+          .ilike('name', `${nameQuery}%`)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        if (!byName.error && Array.isArray(byName.data) && byName.data.length > 0) {
+          return byName.data[0];
+        }
       }
     }
+
+    const { data: snapshotRows } = await db
+      .from('products')
+      .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(PRODUCT_FALLBACK_LIMIT);
+    const bySnapshot = resolveFromRows(snapshotRows as any[]);
+    if (bySnapshot) return bySnapshot;
+
+    return resolveFromRows(sampleProducts);
+  } catch (error) {
+    console.error('Error resolving product by identifier:', error);
+    return resolveFromRows(sampleProducts);
   }
-
-  // Hard fallback: resolve from a broad public snapshot when direct queries fail
-  // (helps with mixed schemas, short-id URLs and permissive/legacy setups).
-  const { data: snapshotRows } = await db
-    .from('products')
-    .select('*')
-    .order('updated_at', { ascending: false })
-    .limit(PRODUCT_FALLBACK_LIMIT);
-  const bySnapshot = resolveFromRows(snapshotRows as any[]);
-  if (bySnapshot) return bySnapshot;
-
-  // Last fallback to local sample to avoid hard 404 when DB env or policies are misconfigured.
-  return resolveFromRows(sampleProducts);
 }
 
 async function getProductSocialSummary(productId: string) {
   if (!supabaseAdmin || !productId) return null;
-  const { data, error } = await supabaseAdmin
-    .from('product_social_summary')
-    .select('reviews_count,rating_average')
-    .eq('product_id', productId)
-    .maybeSingle();
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('product_social_summary')
+      .select('reviews_count,rating_average')
+      .eq('product_id', productId)
+      .maybeSingle();
 
-  if (error || !data) return null;
-  const reviewsCount = Number((data as any).reviews_count || 0);
-  const ratingAverage = Number((data as any).rating_average || 0);
-  if (!Number.isFinite(reviewsCount) || !Number.isFinite(ratingAverage)) return null;
-  return {
-    reviewsCount: Math.max(0, Math.round(reviewsCount)),
-    ratingAverage: Math.max(0, Number(ratingAverage.toFixed(2))),
-  };
+    if (error || !data) return null;
+    const reviewsCount = Number((data as any).reviews_count || 0);
+    const ratingAverage = Number((data as any).rating_average || 0);
+    if (!Number.isFinite(reviewsCount) || !Number.isFinite(ratingAverage)) return null;
+    return {
+      reviewsCount: Math.max(0, Math.round(reviewsCount)),
+      ratingAverage: Math.max(0, Number(ratingAverage.toFixed(2))),
+    };
+  } catch (error) {
+    console.error('Error loading product social summary:', error);
+    return null;
+  }
 }
 
 async function getRelatedProducts(product: any, limit = 6) {
@@ -207,62 +212,105 @@ async function getRelatedProducts(product: any, limit = 6) {
 
   if (!productId) return [];
 
-  if (!supabaseAdmin) {
-    return sampleProducts
-      .filter((candidate: any) => {
-        if (!candidate || String(candidate?.id || '') === productId) return false;
-        if (Number(candidate?.price || 0) <= 0) return false;
-        const sameCategory = productCategory && String(candidate?.category || '') === productCategory;
-        const samePlatform =
-          productPlatform &&
-          String(candidate?.platform || '')
-            .trim()
-            .toLowerCase() === productPlatform.toLowerCase();
-        return sameCategory || samePlatform;
-      })
-      .slice(0, limit);
-  }
-
-  const selectColumns = 'id,name,slug,image,price,stock,category,platform,updated_at,created_at';
-  const relatedMap = new Map<string, any>();
-
-  if (productCategory) {
-    const { data } = await supabaseAdmin
-      .from('products')
-      .select(selectColumns)
-      .eq('category', productCategory)
-      .gt('price', 0)
-      .neq('id', productId)
-      .order('updated_at', { ascending: false })
-      .limit(limit * 3);
-
-    for (const row of data || []) {
-      relatedMap.set(String((row as any)?.id || ''), row);
+  try {
+    if (!supabaseAdmin) {
+      return sampleProducts
+        .filter((candidate: any) => {
+          if (!candidate || String(candidate?.id || '') === productId) return false;
+          if (Number(candidate?.price || 0) <= 0) return false;
+          const sameCategory = productCategory && String(candidate?.category || '') === productCategory;
+          const samePlatform =
+            productPlatform &&
+            String(candidate?.platform || '')
+              .trim()
+              .toLowerCase() === productPlatform.toLowerCase();
+          return sameCategory || samePlatform;
+        })
+        .slice(0, limit);
     }
-  }
 
-  if (relatedMap.size < limit && productPlatform) {
-    const { data } = await supabaseAdmin
-      .from('products')
-      .select(selectColumns)
-      .ilike('platform', productPlatform)
-      .gt('price', 0)
-      .neq('id', productId)
-      .order('updated_at', { ascending: false })
-      .limit(limit * 3);
+    const selectColumns = 'id,name,slug,image,price,stock,category,platform,updated_at,created_at';
+    const relatedMap = new Map<string, any>();
 
-    for (const row of data || []) {
-      relatedMap.set(String((row as any)?.id || ''), row);
+    if (productCategory) {
+      const { data } = await supabaseAdmin
+        .from('products')
+        .select(selectColumns)
+        .eq('category', productCategory)
+        .gt('price', 0)
+        .neq('id', productId)
+        .order('updated_at', { ascending: false })
+        .limit(limit * 3);
+
+      for (const row of data || []) {
+        relatedMap.set(String((row as any)?.id || ''), row);
+      }
     }
-  }
 
-  return [...relatedMap.values()].slice(0, limit);
+    if (relatedMap.size < limit && productPlatform) {
+      const { data } = await supabaseAdmin
+        .from('products')
+        .select(selectColumns)
+        .ilike('platform', productPlatform)
+        .gt('price', 0)
+        .neq('id', productId)
+        .order('updated_at', { ascending: false })
+        .limit(limit * 3);
+
+      for (const row of data || []) {
+        relatedMap.set(String((row as any)?.id || ''), row);
+      }
+    }
+
+    return [...relatedMap.values()].slice(0, limit);
+  } catch (error) {
+    console.error('Error loading related products:', error);
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const product = await getProductByIdentifier(resolvedParams.id);
-  if (!product) {
+  try {
+    const product = await getProductByIdentifier(resolvedParams.id);
+    if (!product) {
+      return buildPageMetadata({
+        title: 'Producto retro',
+        description: 'Ficha de producto en AdvancedRetro.es',
+        path: `/producto/${encodeURIComponent(resolvedParams.id)}`,
+        keywords: ['producto retro'],
+      });
+    }
+
+    const title = `${String(product.name || '').trim()} | Comprar producto retro`;
+    const description = buildProductSeoDescription({
+      name: String(product.name || ''),
+      shortDescription:
+        String((product as any)?.long_description || '').trim() ||
+        String(product.description || '').trim(),
+      category: String((product as any)?.category || ''),
+      platform: String((product as any)?.platform || ''),
+      priceCents: Number((product as any)?.price || 0),
+      stock: Number((product as any)?.stock || 0),
+    });
+    const imageUrl = String(product.image || absoluteUrl('/logo.png'));
+    const canonicalPath = getProductHref(product);
+
+    return buildPageMetadata({
+      title,
+      description,
+      path: canonicalPath,
+      image: imageUrl,
+      keywords: [
+        String(product?.name || '').trim(),
+        String(product?.platform || '').trim(),
+        String(product?.category || '').trim(),
+        'precio videojuego retro',
+      ].filter(Boolean),
+      type: 'article',
+    });
+  } catch (error) {
+    console.error('Error generating product metadata:', error);
     return buildPageMetadata({
       title: 'Producto retro',
       description: 'Ficha de producto en AdvancedRetro.es',
@@ -270,34 +318,6 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       keywords: ['producto retro'],
     });
   }
-
-  const title = `${String(product.name || '').trim()} | Comprar producto retro`;
-  const description = buildProductSeoDescription({
-    name: String(product.name || ''),
-    shortDescription:
-      String((product as any)?.long_description || '').trim() ||
-      String(product.description || '').trim(),
-    category: String((product as any)?.category || ''),
-    platform: String((product as any)?.platform || ''),
-    priceCents: Number((product as any)?.price || 0),
-    stock: Number((product as any)?.stock || 0),
-  });
-  const imageUrl = String(product.image || absoluteUrl('/logo.png'));
-  const canonicalPath = getProductHref(product);
-
-  return buildPageMetadata({
-    title,
-    description,
-    path: canonicalPath,
-    image: imageUrl,
-    keywords: [
-      String(product?.name || '').trim(),
-      String(product?.platform || '').trim(),
-      String(product?.category || '').trim(),
-      'precio videojuego retro',
-    ].filter(Boolean),
-    type: 'article',
-  });
 }
 
 export default async function ProductPage({
@@ -307,151 +327,177 @@ export default async function ProductPage({
   const resolvedParams = await params;
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const prefillComplete = parseBooleanQuery(resolvedSearchParams?.complete);
-  const product = await getProductByIdentifier(resolvedParams.id);
-  const parsedRoute = parseProductRouteParam(resolvedParams.id);
-  const productId =
-    String((product as any)?.id || '').trim() ||
-    parsedRoute.idCandidate ||
-    resolvedParams.id;
 
-  if (product) {
+  try {
+    const product = await getProductByIdentifier(resolvedParams.id);
+    if (!product) {
+      notFound();
+    }
+
+    const parsedRoute = parseProductRouteParam(resolvedParams.id);
+    const productId =
+      String((product as any)?.id || '').trim() ||
+      parsedRoute.idCandidate ||
+      resolvedParams.id;
+
     const requestedSegment = decodeURIComponent(String(resolvedParams.id || '').trim());
     const expectedSegment = getProductRouteSegment(product);
     if (requestedSegment && expectedSegment && requestedSegment !== expectedSegment) {
       permanentRedirect(getProductHref(product, { complete: prefillComplete }));
     }
-  }
 
-  const canonicalPath = product ? getProductHref(product) : `/producto/${encodeURIComponent(resolvedParams.id)}`;
-  const productName = String(product?.name || 'Producto retro').trim();
-  const productDescription = String(product?.description || 'Producto de coleccionismo retro disponible en AdvancedRetro.es.');
-  const productImage = absoluteUrl(String(product?.image || '/logo.png'));
-  const priceCents = Number(product?.price || 0);
-  const availability = Number(product?.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
-  const socialSummary = await getProductSocialSummary(String((product as any)?.id || ''));
-  const reviewCount = Number(socialSummary?.reviewsCount || 0);
-  const ratingAverage = Number(socialSummary?.ratingAverage || 0);
-  const reviewProductId = String((product as any)?.id || '').trim();
-  const reviewRows = reviewProductId ? await getProductReviewsSql(reviewProductId, 3) : [];
-  const reviewsSchema = reviewRows
-    .filter((review) => Number(review?.rating || 0) > 0 && String(review?.comment || '').trim().length > 0)
-    .slice(0, 3)
-    .map((review) => ({
-      '@type': 'Review',
-      reviewRating: {
-        '@type': 'Rating',
-        ratingValue: Math.max(1, Math.min(5, Number(review.rating || 0))),
-      },
-      author: {
-        '@type': 'Person',
-        name: String(review.authorName || 'Coleccionista').trim().slice(0, 80),
-      },
-      reviewBody: String(review.comment || '').trim().slice(0, 600),
-      datePublished: String(review.createdAt || '').slice(0, 10) || undefined,
-    }));
-
-  const productSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: productName,
-    description: productDescription,
-    image: [productImage],
-    sku: String(product?.id || productId),
-    category: String(product?.category || 'retro-gaming'),
-    brand: {
-      '@type': 'Brand',
-      name: 'AdvancedRetro.es',
-    },
-    offers: {
-      '@type': 'Offer',
-      url: absoluteUrl(canonicalPath),
-      priceCurrency: 'EUR',
-      price: (Math.max(0, priceCents) / 100).toFixed(2),
-      availability,
-      itemCondition: 'https://schema.org/UsedCondition',
-      priceValidUntil: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 10),
-      shippingDetails: [
-        {
-          '@type': 'OfferShippingDetails',
-          shippingDestination: {
-            '@type': 'DefinedRegion',
-            addressCountry: 'ES',
-          },
-          shippingRate: {
-            '@type': 'MonetaryAmount',
-            value: '0.00',
-            currency: 'EUR',
-          },
-          deliveryTime: {
-            '@type': 'ShippingDeliveryTime',
-            handlingTime: {
-              '@type': 'QuantitativeValue',
-              minValue: 1,
-              maxValue: 2,
-              unitCode: 'DAY',
-            },
-            transitTime: {
-              '@type': 'QuantitativeValue',
-              minValue: 1,
-              maxValue: 4,
-              unitCode: 'DAY',
-            },
-          },
+    const canonicalPath = getProductHref(product);
+    const productName = String(product?.name || 'Producto retro').trim();
+    const productDescription = String(
+      product?.description || 'Producto de coleccionismo retro disponible en AdvancedRetro.es.'
+    );
+    const imageCandidates = [
+      String(product?.image || '').trim(),
+      ...(Array.isArray((product as any)?.images)
+        ? (product as any).images.map((value: unknown) => String(value || '').trim())
+        : []),
+    ].filter(Boolean);
+    const productImages = [...new Set(imageCandidates.map((image) => absoluteUrl(image)))];
+    const productImage = productImages[0] || absoluteUrl('/logo.png');
+    const priceCents = Number(product?.price || 0);
+    const availability = Number(product?.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
+    const reviewProductId = String((product as any)?.id || '').trim();
+    const [socialSummary, reviewRows, relatedProducts] = await Promise.all([
+      getProductSocialSummary(reviewProductId).catch((error) => {
+        console.error('Error loading social summary in product page:', error);
+        return null;
+      }),
+      reviewProductId
+        ? getProductReviewsSql(reviewProductId, 3).catch((error) => {
+            console.error('Error loading product reviews:', error);
+            return [];
+          })
+        : Promise.resolve([]),
+      getRelatedProducts(product, 6).catch((error) => {
+        console.error('Error loading related products in page:', error);
+        return [];
+      }),
+    ]);
+    const reviewCount = Number(socialSummary?.reviewsCount || 0);
+    const ratingAverage = Number(socialSummary?.ratingAverage || 0);
+    const reviewsSchema = reviewRows
+      .filter((review) => Number(review?.rating || 0) > 0 && String(review?.comment || '').trim().length > 0)
+      .slice(0, 3)
+      .map((review) => ({
+        '@type': 'Review',
+        reviewRating: {
+          '@type': 'Rating',
+          ratingValue: Math.max(1, Math.min(5, Number(review.rating || 0))),
         },
-      ],
-      hasMerchantReturnPolicy: {
-        '@type': 'MerchantReturnPolicy',
-        applicableCountry: 'ES',
-        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-        merchantReturnDays: 14,
-        returnMethod: 'https://schema.org/ReturnByMail',
-      },
-      seller: {
-        '@type': 'Organization',
+        author: {
+          '@type': 'Person',
+          name: String(review.authorName || 'Coleccionista').trim().slice(0, 80),
+        },
+        reviewBody: String(review.comment || '').trim().slice(0, 600),
+        datePublished: String(review.createdAt || '').slice(0, 10) || undefined,
+      }));
+
+    const productSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: productName,
+      description: productDescription,
+      image: productImages.length > 0 ? productImages : [productImage],
+      sku: String(product?.id || productId),
+      category: String(product?.category || 'retro-gaming'),
+      brand: {
+        '@type': 'Brand',
         name: 'AdvancedRetro.es',
       },
-    },
-    aggregateRating:
-      reviewCount > 0 && ratingAverage > 0
-        ? {
-            '@type': 'AggregateRating',
-            ratingValue: Number(ratingAverage.toFixed(2)),
-            reviewCount,
-          }
-        : undefined,
-    review: reviewsSchema.length > 0 ? reviewsSchema : undefined,
-  };
+      offers: {
+        '@type': 'Offer',
+        url: absoluteUrl(canonicalPath),
+        priceCurrency: 'EUR',
+        price: (Math.max(0, priceCents) / 100).toFixed(2),
+        availability,
+        itemCondition: 'https://schema.org/UsedCondition',
+        priceValidUntil: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 10),
+        shippingDetails: [
+          {
+            '@type': 'OfferShippingDetails',
+            shippingDestination: {
+              '@type': 'DefinedRegion',
+              addressCountry: 'ES',
+            },
+            shippingRate: {
+              '@type': 'MonetaryAmount',
+              value: '0.00',
+              currency: 'EUR',
+            },
+            deliveryTime: {
+              '@type': 'ShippingDeliveryTime',
+              handlingTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 1,
+                maxValue: 2,
+                unitCode: 'DAY',
+              },
+              transitTime: {
+                '@type': 'QuantitativeValue',
+                minValue: 1,
+                maxValue: 4,
+                unitCode: 'DAY',
+              },
+            },
+          },
+        ],
+        hasMerchantReturnPolicy: {
+          '@type': 'MerchantReturnPolicy',
+          applicableCountry: 'ES',
+          returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+          merchantReturnDays: 14,
+          returnMethod: 'https://schema.org/ReturnByMail',
+        },
+        seller: {
+          '@type': 'Organization',
+          name: 'AdvancedRetro.es',
+        },
+      },
+      aggregateRating:
+        reviewCount > 0 && ratingAverage > 0
+          ? {
+              '@type': 'AggregateRating',
+              ratingValue: Number(ratingAverage.toFixed(2)),
+              reviewCount,
+            }
+          : undefined,
+      review: reviewsSchema.length > 0 ? reviewsSchema : undefined,
+    };
 
-  const breadcrumbSchema = buildBreadcrumbJsonLd([
-    { name: 'Inicio', path: '/' },
-    { name: 'Tienda', path: '/tienda' },
-    { name: productName, path: canonicalPath },
-  ]);
-  const faqSchema = buildFaqJsonLd([
-    {
-      question: `¿El producto ${productName} está disponible para compra inmediata?`,
-      answer:
-        Number(product?.stock || 0) > 0
-          ? `Sí. Actualmente hay stock de ${productName} y se puede comprar desde la ficha.`
-          : `Ahora mismo ${productName} está sin stock. Puedes revisar alternativas relacionadas en esta misma página.`,
-    },
-    {
-      question: `¿Qué incluye exactamente ${productName}?`,
-      answer:
-        'La ficha muestra precio, estado, imágenes reales y opciones adicionales (caja, manual, insert o protectores) cuando hay compatibilidad disponible.',
-    },
-    {
-      question: '¿Cuál es el plazo y política de devolución?',
-      answer:
-        'La tienda trabaja con envío en España y política de devolución según condiciones publicadas, con ventana general de 14 días cuando aplique.',
-    },
-    {
-      question: '¿Puedo comparar original vs repro antes de comprar?',
-      answer:
-        'Sí. En productos compatibles verás selección de componentes y edición para que puedas comprar con criterio de coleccionismo.',
-    },
-  ]);
-  const relatedProducts = product ? await getRelatedProducts(product, 6) : [];
+    const breadcrumbSchema = buildBreadcrumbJsonLd([
+      { name: 'Inicio', path: '/' },
+      { name: 'Tienda', path: '/tienda' },
+      { name: productName, path: canonicalPath },
+    ]);
+    const faqSchema = buildFaqJsonLd([
+      {
+        question: `¿El producto ${productName} está disponible para compra inmediata?`,
+        answer:
+          Number(product?.stock || 0) > 0
+            ? `Sí. Actualmente hay stock de ${productName} y se puede comprar desde la ficha.`
+            : `Ahora mismo ${productName} está sin stock. Puedes revisar alternativas relacionadas en esta misma página.`,
+      },
+      {
+        question: `¿Qué incluye exactamente ${productName}?`,
+        answer:
+          'La ficha muestra precio, estado, imágenes reales y opciones adicionales (caja, manual, insert o protectores) cuando hay compatibilidad disponible.',
+      },
+      {
+        question: '¿Cuál es el plazo y política de devolución?',
+        answer:
+          'La tienda trabaja con envío en España y política de devolución según condiciones publicadas, con ventana general de 14 días cuando aplique.',
+      },
+      {
+        question: '¿Puedo comparar original vs repro antes de comprar?',
+        answer:
+          'Sí. En productos compatibles verás selección de componentes y edición para que puedas comprar con criterio de coleccionismo.',
+      },
+    ]);
 
   return (
     <>
@@ -526,4 +572,11 @@ export default async function ProductPage({
       ) : null}
     </>
   );
+  } catch (error) {
+    if (isRedirectError(error) || isNotFoundError(error)) {
+      throw error;
+    }
+    console.error('Error loading product page:', error);
+    notFound();
+  }
 }

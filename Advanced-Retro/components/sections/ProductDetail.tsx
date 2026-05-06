@@ -1420,6 +1420,12 @@ export default function ProductDetail({
     toast.success(`Añadidos ${picked.length} articulo(s) al carrito`);
   };
 
+  const socialHighlightChips = [
+    socialSummary.visits > 0 ? `Visitas: ${socialSummary.visits}` : null,
+    socialSummary.likes > 0 ? `Favoritos: ${socialSummary.likes}` : null,
+    socialSummary.reviewsCount > 0 ? `Valoraciones: ${socialSummary.reviewsCount}` : null,
+  ].filter((value): value is string => Boolean(value));
+
   return (
     <section className="section pb-32 lg:pb-14">
       <div className="container">
@@ -1463,11 +1469,13 @@ export default function ProductDetail({
         <div className="glass p-4 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <p className="text-xs text-textMuted font-mono">Stock: {product.stock}</p>
-            <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:items-center sm:gap-2 sm:overflow-visible sm:pb-0 text-xs text-textMuted">
-              <span className="chip">Visitas: {socialSummary.visits}</span>
-              <span className="chip">Favoritos: {socialSummary.likes}</span>
-              <span className="chip">Valoraciones: {socialSummary.reviewsCount}</span>
-            </div>
+            {socialHighlightChips.length > 0 ? (
+              <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:items-center sm:gap-2 sm:overflow-visible sm:pb-0 text-xs text-textMuted">
+                {socialHighlightChips.map((chip) => (
+                  <span key={chip} className="chip">{chip}</span>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <h1 className="title-display text-[1.85rem] sm:text-4xl mt-3 leading-[1.1]">{product.name}</h1>

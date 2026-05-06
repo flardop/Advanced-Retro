@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { buildPageMetadata } from '@/lib/seo';
 import OpenCookieSettingsButton from '@/components/OpenCookieSettingsButton';
+import { PRIVACY_CONTACT_EMAIL, PUBLIC_SUPPORT_EMAIL } from '@/lib/legal';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Política de cookies',
@@ -22,7 +23,7 @@ export default function CookiesPage() {
         <div>
           <h2 className="text-xl font-semibold">1. Responsable</h2>
           <p className="text-textMuted mt-2">
-            Responsable del sitio: ADVANCED RETRO. Contacto: admin@advancedretro.es.
+            Responsable del sitio: ADVANCED RETRO. Contacto: {PUBLIC_SUPPORT_EMAIL}.
           </p>
         </div>
 
@@ -90,7 +91,7 @@ export default function CookiesPage() {
         <div>
           <h2 className="text-xl font-semibold">5. Contacto</h2>
           <p className="text-textMuted mt-2">
-            Para dudas sobre cookies y privacidad: admin@advancedretro.es y atencionalcliente@advancedretro.es.
+            Para dudas sobre cookies y privacidad: {PUBLIC_SUPPORT_EMAIL} y {PRIVACY_CONTACT_EMAIL}.
           </p>
         </div>
       </div>

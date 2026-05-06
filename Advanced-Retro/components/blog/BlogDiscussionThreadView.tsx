@@ -40,6 +40,10 @@ function avatarFallback(name: string) {
   return (clean || 'AR').slice(0, 2).toUpperCase();
 }
 
+function isStarterEditorialPersona(userId: string) {
+  return String(userId || '').startsWith('starter-editorial:');
+}
+
 export default function BlogDiscussionThreadView({
   discussionId,
   initialDiscussion,
@@ -272,7 +276,9 @@ export default function BlogDiscussionThreadView({
                 </div>
                 <div>
                   <p className="font-semibold">{discussion.authorName}</p>
-                  <p className="text-xs text-textMuted">Autor del hilo</p>
+                  <p className="text-xs text-textMuted">
+                    {isStarterEditorialPersona(discussion.userId) ? 'Starter editorial · rompehielos de comunidad' : 'Autor del hilo'}
+                  </p>
                 </div>
               </div>
 
@@ -372,6 +378,9 @@ export default function BlogDiscussionThreadView({
                         {comment.userId === discussion.userId ? (
                           <span className="chip">OP</span>
                         ) : null}
+                        {isStarterEditorialPersona(comment.userId) ? (
+                          <span className="chip border-cyan-400/30 bg-cyan-400/10 text-cyan-100">Starter AR</span>
+                        ) : null}
                       </div>
                       <p className="text-xs text-textMuted">{relativeDate(comment.createdAt)}</p>
                     </div>
@@ -452,6 +461,9 @@ export default function BlogDiscussionThreadView({
                               <p className="text-sm font-semibold">{reply.authorName}</p>
                               {reply.userId === discussion.userId ? (
                                 <span className="chip">OP</span>
+                              ) : null}
+                              {isStarterEditorialPersona(reply.userId) ? (
+                                <span className="chip border-cyan-400/30 bg-cyan-400/10 text-cyan-100">Starter AR</span>
                               ) : null}
                               <span className="text-xs text-textMuted">
                                 {relativeDate(reply.createdAt)}

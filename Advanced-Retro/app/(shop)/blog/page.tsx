@@ -63,7 +63,9 @@ export default function BlogPage() {
             Ahora también puedes convertir cada artículo en un debate abierto: lanzar dudas,
             contrastar autenticidad, discutir precios y responder como en una comunidad tipo
             Reddit, pero enfocada al retro gaming de AdvancedRetro.es. Y si no quieres hablar de
-            un artículo concreto, también tienes un espacio libre de comunidad.
+            un artículo concreto, también tienes un espacio libre de comunidad. Verás además
+            algunos hilos starter del equipo para romper el hielo sin esconder que son
+            conversaciones semilla.
           </p>
         </div>
       </section>

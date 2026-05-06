@@ -36,6 +36,39 @@ function clampText(value: string, max: number): string {
   return `${text.slice(0, Math.max(0, max - 1)).trimEnd()}…`;
 }
 
+function normalizeSeoTokens(value: string): string {
+  return cleanText(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function inferSeoProductLead(input: { name: string; category?: string; platform?: string; shortDescription?: string }) {
+  const source = normalizeSeoTokens(
+    `${input.name} ${input.category || ''} ${input.platform || ''} ${input.shortDescription || ''}`
+  );
+
+  if (source.includes('protector') && (source.includes('caja') || source.includes('box'))) {
+    return 'Protector para caja retro orientado a coleccionismo, conservación y exposición.';
+  }
+  if (source.includes('protector') && (source.includes('juego') || source.includes('cartucho') || source.includes('game'))) {
+    return 'Protector para juego retro pensado para conservar cartucho, funda o edición suelta.';
+  }
+  if (source.includes('manual')) {
+    return 'Manual retro para completar edición, colección o reposición de contenido original.';
+  }
+  if (source.includes('insert') || source.includes('inlay') || source.includes('interior')) {
+    return 'Insert interior para completar presentación y conservación de una edición retro.';
+  }
+  if (source.includes('caja') || source.includes('box')) {
+    return 'Caja retro orientada a completar juegos y mejorar el valor de colección.';
+  }
+  if (source.includes('consola') || source.includes('console') || source.includes('hardware')) {
+    return 'Consola retro para colección, exposición o juego dentro del catálogo verificado de AdvancedRetro.es.';
+  }
+  return 'Artículo retro de coleccionismo revisado para catálogo, compatibilidad y disponibilidad.';
+}
+
 function uniqueKeywords(values: string[]): string[] {
   const seen = new Set<string>();
   const output: string[] = [];
@@ -175,6 +208,61 @@ export function buildItemListJsonLd(
   };
 }
 
+export function buildCollectionPageJsonLd(input: {
+  name: string;
+  path: string;
+  description: string;
+  image?: string;
+  about?: string[];
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: cleanText(input.name),
+    url: absoluteUrl(input.path),
+    description: clampText(input.description, 240),
+    image: input.image ? absoluteUrl(input.image) : undefined,
+    about: (input.about || [])
+      .map((entry) => cleanText(entry))
+      .filter(Boolean)
+      .map((entry) => ({
+        '@type': 'Thing',
+        name: entry,
+      })),
+  };
+}
+
+export function buildDiscussionForumPostingJsonLd(input: {
+  title: string;
+  body: string;
+  path: string;
+  authorName: string;
+  publishedAt: string;
+  updatedAt?: string;
+  discussionLabel?: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'DiscussionForumPosting',
+    headline: clampText(input.title, 110),
+    articleBody: cleanText(input.body),
+    url: absoluteUrl(input.path),
+    mainEntityOfPage: absoluteUrl(input.path),
+    datePublished: input.publishedAt,
+    dateModified: input.updatedAt || input.publishedAt,
+    author: {
+      '@type': 'Person',
+      name: cleanText(input.authorName) || 'Coleccionista',
+    },
+    about: input.discussionLabel
+      ? {
+          '@type': 'Thing',
+          name: cleanText(input.discussionLabel),
+        }
+      : undefined,
+  };
+}
+
 export function buildProductSeoDescription(input: {
   name: string;
   shortDescription?: string;
@@ -190,11 +278,22 @@ export function buildProductSeoDescription(input: {
   const short = cleanText(input.shortDescription || '');
   const price = Number(input.priceCents || 0);
   const stock = Number(input.stock || 0);
+  const descriptiveCopy =
+    short.length >= 70
+      ? short
+      : [
+          short,
+          inferSeoProductLead(input),
+          platform ? `Plataforma: ${platform}.` : '',
+          category ? `Categoría: ${category}.` : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
 
   if (name) parts.push(name);
   if (platform) parts.push(platform);
   if (category) parts.push(category);
-  if (short) parts.push(short);
+  if (descriptiveCopy) parts.push(descriptiveCopy);
   if (price > 0) parts.push(`Precio: ${(price / 100).toFixed(2)}€`);
   if (stock > 0) parts.push(`Stock disponible: ${stock}`);
   if (stock <= 0) parts.push('Sin stock temporal');

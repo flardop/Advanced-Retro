@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
           '/perfil',
           '/carrito',
           '/checkout',
+          '/pedido/confirmacion',
           '/success',
           '/test-images',
           '/update-images',

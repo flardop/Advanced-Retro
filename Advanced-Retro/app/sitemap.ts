@@ -4,16 +4,17 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getProductHref } from '@/lib/productUrl';
 import { BLOG_POSTS } from '@/lib/blogPosts';
 import { PLATFORM_LANDING_SLUGS } from '@/lib/platformSeo';
+import { listRetroStorageAuctions } from '@/lib/retroStorageAuctions';
 
 const STATIC_ROUTES = [
   '/',
   '/tienda',
   '/subastas',
   '/ruleta',
-  '/kickstarter',
   '/comunidad',
   '/comunidad/vendedores',
   '/blog',
+  '/verificacion',
   '/servicio-compra',
   '/contacto',
   '/terminos',
@@ -47,8 +48,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.72,
   }));
 
+  const auctions = await listRetroStorageAuctions();
+  const auctionEntries: MetadataRoute.Sitemap = auctions.map((auction) => ({
+    url: `${siteUrl}/subastas/${auction.slug}`,
+    lastModified: auction.effectiveEndsAt ? new Date(auction.effectiveEndsAt) : now,
+    changeFrequency: auction.status === 'live' ? 'daily' : auction.status === 'upcoming' ? 'weekly' : 'monthly',
+    priority: auction.status === 'live' ? 0.76 : 0.68,
+  }));
+
   if (!supabaseAdmin) {
-    return [...staticEntries, ...platformEntries, ...blogEntries];
+    return [...staticEntries, ...platformEntries, ...blogEntries, ...auctionEntries];
   }
 
   const { data: products } = await supabaseAdmin
@@ -101,5 +110,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  return [...staticEntries, ...platformEntries, ...blogEntries, ...productEntries, ...communityEntries];
+  return [...staticEntries, ...platformEntries, ...blogEntries, ...auctionEntries, ...productEntries, ...communityEntries];
 }

@@ -149,8 +149,12 @@ export default function MysteryRoulette() {
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'No se pudo iniciar pago de tirada');
 
-      const stripe = await stripePromise;
-      await stripe?.redirectToCheckout({ sessionId: data.sessionId });
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+
+      throw new Error('No se recibió una URL válida para el pago');
     } catch (error: any) {
       toast.error(error?.message || 'No se pudo iniciar checkout');
     }

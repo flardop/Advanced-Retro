@@ -17,8 +17,7 @@ import {
   getBadgeIconPng,
   type BadgeRarity,
 } from '@/lib/gamificationBadges';
-import { DEFAULT_SITE_THEME, SITE_THEMES, isValidSiteTheme, type SiteThemeId } from '@/lib/siteThemes';
-import { SITE_THEME_EVENT, applySiteTheme, setSiteTheme } from '@/lib/clientSiteTheme';
+import { buildProfileHonorSnapshot } from '@/lib/profileHonor';
 
 type Ticket = {
   id: string;
@@ -542,8 +541,6 @@ export default function ProfileView() {
   const [tagline, setTagline] = useState('');
   const [favoriteConsole, setFavoriteConsole] = useState('');
   const [profileTheme, setProfileTheme] = useState('neon-grid');
-  const [siteTheme, setSiteThemeState] = useState<SiteThemeId>(DEFAULT_SITE_THEME);
-  const [savingSiteTheme, setSavingSiteTheme] = useState(false);
   const [favoritesVisibility, setFavoritesVisibility] = useState<FavoritesVisibility>('public');
   const [preferredLanguage, setPreferredLanguage] = useState<PreferredLanguage>('es');
   const [shippingFullName, setShippingFullName] = useState('');
@@ -739,42 +736,6 @@ export default function ProfileView() {
     }
   };
 
-  const loadUserSiteTheme = async () => {
-    try {
-      const res = await fetch('/api/auth/site-theme', { cache: 'no-store' });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) return;
-      const next = typeof data?.theme === 'string' ? data.theme : '';
-      if (!next || !isValidSiteTheme(next)) return;
-      setSiteThemeState(next);
-      applySiteTheme(next);
-    } catch {
-      // ignore
-    }
-  };
-
-  const saveUserSiteTheme = async (next: SiteThemeId) => {
-    setSiteThemeState(next);
-    setSiteTheme(next);
-    setSavingSiteTheme(true);
-    try {
-      const res = await fetch('/api/auth/site-theme', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme: next }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.error || 'No se pudo guardar el estilo global');
-      }
-      toast.success('Estilo global guardado para tu cuenta');
-    } catch (error: any) {
-      toast.error(error?.message || 'No se pudo guardar el estilo global');
-    } finally {
-      setSavingSiteTheme(false);
-    }
-  };
-
   const loadOrders = async (userId: string) => {
     if (!supabaseClient || !userId) return;
 
@@ -881,7 +842,6 @@ export default function ProfileView() {
           loadGamification(),
           loadFavorites(),
           loadUsageSummary(),
-          loadUserSiteTheme(),
         ];
 
         if (authUserId) {
@@ -897,7 +857,6 @@ export default function ProfileView() {
           gamificationResult,
           favoritesResult,
           usageResult,
-          siteThemeResult,
           ordersResult,
         ] = results;
 
@@ -923,9 +882,6 @@ export default function ProfileView() {
         if (usageResult?.status === 'rejected') {
           setUsageSummary(null);
           setUsageError('No se pudieron cargar métricas de uso');
-        }
-        if (siteThemeResult?.status === 'rejected') {
-          // ignore silently
         }
         if (ordersResult?.status === 'rejected') {
           setOrders([]);
@@ -1008,19 +964,6 @@ export default function ProfileView() {
     loadAll();
     // loadAll is intentionally triggered once on mount for profile bootstrap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const onThemeChanged = (event: Event) => {
-      const custom = event as CustomEvent<{ theme?: string }>;
-      const next = custom?.detail?.theme || '';
-      if (next && isValidSiteTheme(next)) {
-        setSiteThemeState(next);
-      }
-    };
-
-    window.addEventListener(SITE_THEME_EVENT, onThemeChanged as EventListener);
-    return () => window.removeEventListener(SITE_THEME_EVENT, onThemeChanged as EventListener);
   }, []);
 
   useEffect(() => {
@@ -1115,7 +1058,6 @@ export default function ProfileView() {
           bio,
           tagline,
           favorite_console: favoriteConsole,
-          profile_theme: profileTheme,
           preferred_language: preferredLanguage,
           shipping_address: {
             full_name: shippingFullName,
@@ -1707,6 +1649,52 @@ export default function ProfileView() {
     return Math.max(0, diff);
   }, [accountCreatedAt, nowMs, profile?.created_at]);
   const accountAgeDaysLive = Math.max(accountAgeDays, Math.floor(accountAgeLiveSeconds / 86400));
+  const qualifyingOrders = useMemo(
+    () =>
+      orders.filter((order) =>
+        ['processing', 'paid', 'shipped', 'delivered'].includes(String(order?.status || '').toLowerCase())
+      ),
+    [orders]
+  );
+  const deliveredOrdersCount = useMemo(
+    () => orders.filter((order) => String(order?.status || '').toLowerCase() === 'delivered').length,
+    [orders]
+  );
+  const totalSpentCents = useMemo(
+    () =>
+      qualifyingOrders.reduce(
+        (total, order) => total + Math.max(0, Number(order?.total || order?.total_cents || 0)),
+        0
+      ),
+    [qualifyingOrders]
+  );
+  const honorProfile = useMemo(
+    () =>
+      buildProfileHonorSnapshot({
+        accountAgeDays: accountAgeDaysLive,
+        activeSeconds: usageSafe.totals.active_seconds,
+        sessionsCount: usageSafe.totals.sessions_count,
+        pageViews: usageSafe.totals.page_views,
+        paidOrdersCount: qualifyingOrders.length,
+        deliveredOrdersCount,
+        totalSpendCents: totalSpentCents,
+        badgesCount: profileBadgesDetailed.length,
+        helperReputation: Number(profile?.helper_reputation || 0),
+        xpTotal: Number(gamification?.xp_total || 0),
+      }),
+    [
+      accountAgeDaysLive,
+      deliveredOrdersCount,
+      gamification?.xp_total,
+      profile?.helper_reputation,
+      profileBadgesDetailed.length,
+      qualifyingOrders.length,
+      totalSpentCents,
+      usageSafe.totals.active_seconds,
+      usageSafe.totals.page_views,
+      usageSafe.totals.sessions_count,
+    ]
+  );
 
   const profileTabItems: Array<{
     id: Tab;
@@ -2251,7 +2239,7 @@ export default function ProfileView() {
                   <p className="text-xs uppercase tracking-[0.22em] text-primary">Uso de tu cuenta</p>
                   <h2 className="text-2xl font-black mt-1">Tiempo y métricas de uso</h2>
                   <p className="text-sm text-textMuted mt-1">
-                    Seguimiento de actividad real en la web por usuario.
+                    Seguimiento consolidado por usuario. Se registra al cambiar de página, al salir y en latidos más espaciados para no castigar backend.
                   </p>
                 </div>
                 <button className="chip" onClick={() => void loadUsageSummary()} disabled={usageLoading}>
@@ -2271,6 +2259,80 @@ export default function ProfileView() {
                   {usageError}
                 </div>
               ) : null}
+
+              <div className="mt-4 grid gap-4 xl:grid-cols-[1.15fr,0.85fr]">
+                <div className={`rounded-[1.4rem] border bg-[rgba(8,16,28,0.52)] p-4 sm:p-5 ${honorProfile.tier.glowClassName}`}>
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <p className="text-xs uppercase tracking-[0.18em] text-primary">Honorabilidad Advanced Retro</p>
+                      <h3 className={`text-2xl font-black ${honorProfile.tier.accentClassName}`}>{honorProfile.tier.label}</h3>
+                      <p className="max-w-2xl text-sm text-textMuted">
+                        Medalla de servicio calculada con antigüedad, uso real, compras verificadas e implicación en la comunidad.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-line bg-[rgba(4,12,24,0.62)] px-4 py-3 text-right">
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-textMuted">Puntuación</p>
+                      <p className="mt-1 text-3xl font-black text-primary">{honorProfile.score}</p>
+                      <p className="text-xs text-textMuted">de {honorProfile.maxScore}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between gap-3 text-xs text-textMuted">
+                      <span>Progreso de medalla</span>
+                      <span>
+                        {honorProfile.nextTier
+                          ? `Siguiente: ${honorProfile.nextTier.label}`
+                          : 'Rango máximo alcanzado'}
+                      </span>
+                    </div>
+                    <div className="mt-2 h-3 overflow-hidden rounded-full border border-line bg-slate-950/70">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-primary to-fuchsia-400"
+                        style={{ width: `${honorProfile.progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-xl border border-line bg-slate-950/35 p-3">
+                      <p className="text-xs text-textMuted">Pedidos válidos</p>
+                      <p className="mt-1 font-semibold">{qualifyingOrders.length}</p>
+                    </div>
+                    <div className="rounded-xl border border-line bg-slate-950/35 p-3">
+                      <p className="text-xs text-textMuted">Entregados</p>
+                      <p className="mt-1 font-semibold">{deliveredOrdersCount}</p>
+                    </div>
+                    <div className="rounded-xl border border-line bg-slate-950/35 p-3">
+                      <p className="text-xs text-textMuted">Gasto verificado</p>
+                      <p className="mt-1 font-semibold">{toEuro(totalSpentCents)}</p>
+                    </div>
+                    <div className="rounded-xl border border-line bg-slate-950/35 p-3">
+                      <p className="text-xs text-textMuted">Insignias</p>
+                      <p className="mt-1 font-semibold">{profileBadgesDetailed.length}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.4rem] border border-line bg-[rgba(8,16,28,0.38)] p-4 sm:p-5">
+                  <p className="text-xs uppercase tracking-[0.18em] text-primary">Señales fuertes</p>
+                  <div className="mt-4 space-y-3">
+                    {honorProfile.highlights.map((highlight) => (
+                      <div key={highlight} className="rounded-xl border border-line bg-slate-950/35 px-3 py-2 text-sm text-textMuted">
+                        {highlight}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {honorProfile.breakdown.slice(0, 3).map((item) => (
+                      <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-textMuted">{item.label}</span>
+                        <span className="font-semibold text-primary">+{item.points}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-line bg-slate-950/40 p-3">
@@ -2423,7 +2485,7 @@ export default function ProfileView() {
                   <p className="text-xs uppercase tracking-[0.22em] text-primary">Identidad del perfil</p>
                   <h2 className="text-2xl font-black mt-1">Personalización pública</h2>
                   <p className="text-sm text-textMuted mt-1">
-                    Configura tu portada, estilo visual y cómo te ven otros coleccionistas.
+                    Configura tu portada y cómo te ven otros coleccionistas, sin opciones visuales extra que ya no estás usando.
                   </p>
                 </div>
 
@@ -2462,44 +2524,6 @@ export default function ProfileView() {
                         <option key={consoleName} value={consoleName} />
                       ))}
                     </datalist>
-                  </label>
-
-                  <label className="grid gap-2">
-                    <span className="text-sm text-textMuted">Tema del perfil</span>
-                    <select
-                      className="bg-transparent border border-line px-3 py-2"
-                      value={profileTheme}
-                      onChange={(e) => setProfileTheme(e.target.value)}
-                    >
-                      {PROFILE_THEMES.map((theme) => (
-                        <option key={theme.id} value={theme.id}>
-                          {theme.label} · {theme.description}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="grid gap-2">
-                    <span className="text-sm text-textMuted">Estilo global de la tienda (tu cuenta)</span>
-                    <select
-                      className="bg-transparent border border-line px-3 py-2"
-                      value={siteTheme}
-                      onChange={(e) => {
-                        const next = e.target.value;
-                        if (!isValidSiteTheme(next)) return;
-                        void saveUserSiteTheme(next);
-                      }}
-                      disabled={savingSiteTheme}
-                    >
-                      {SITE_THEMES.map((themeOption) => (
-                        <option key={themeOption.id} value={themeOption.id}>
-                          {themeOption.label} · {themeOption.description}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-textMuted">
-                      Este estilo se aplica por defecto cuando inicias sesión.
-                    </p>
                   </label>
 
                   <label className="grid gap-2">
@@ -2783,7 +2807,7 @@ export default function ProfileView() {
               <div>
                 <p className="font-semibold">Guardar cambios del perfil</p>
                 <p className="text-xs text-textMuted">
-                  Se actualizan nombre, bio, frase, portada, consola favorita, tema visual y privacidad de favoritos.
+                  Se actualizan nombre, bio, frase, portada, consola favorita, idioma y privacidad de favoritos.
                 </p>
               </div>
               <button

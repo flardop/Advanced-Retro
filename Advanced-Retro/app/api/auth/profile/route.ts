@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { ApiError, requireUserContext } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { awardProfileMilestones, getGamificationSnapshot } from '@/lib/gamificationServer';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,17 @@ function handleError(error: any) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
   return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
+}
+
+function getRequesterIp(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip')?.trim() || 'unknown';
+}
+
+function tooManyRequests(message: string, retryAfterSeconds: number) {
+  return NextResponse.json(
+    { error: message },
+    { status: 429, headers: { 'Retry-After': String(Math.max(1, retryAfterSeconds)) } }
+  );
 }
 
 function sanitizeShippingAddress(input: unknown) {
@@ -85,6 +97,18 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   try {
     const { user, profile: currentProfile } = await requireUserContext();
+    const requesterIp = getRequesterIp(req);
+    const rl = checkRateLimit({
+      key: `profile:update:${user.id || requesterIp}`,
+      maxRequests: 20,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return tooManyRequests(
+        'Demasiadas actualizaciones de perfil en poco tiempo. Espera un minuto.',
+        Math.ceil((rl.resetAt - Date.now()) / 1000)
+      );
+    }
     if (!supabaseAdmin) {
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }

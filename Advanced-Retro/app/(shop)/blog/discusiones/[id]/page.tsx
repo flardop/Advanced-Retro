@@ -3,10 +3,18 @@ import BreadcrumbsNav from '@/components/BreadcrumbsNav';
 import BlogDiscussionThreadView from '@/components/blog/BlogDiscussionThreadView';
 import { isBlogDiscussionGeneralSlug } from '@/lib/blogDiscussionChannels';
 import { getBlogDiscussionById } from '@/lib/blogDiscussions';
-import { buildPageMetadata } from '@/lib/seo';
+import {
+  buildBreadcrumbJsonLd,
+  buildDiscussionForumPostingJsonLd,
+  buildPageMetadata,
+} from '@/lib/seo';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
+
+function isStarterEditorialPersona(userId: string | null | undefined): boolean {
+  return String(userId || '').startsWith('starter-editorial:');
+}
 
 type BlogDiscussionPageProps = {
   params: Promise<{ id: string }>;
@@ -50,9 +58,38 @@ export default async function BlogDiscussionPage({
       : [{ name: discussion.blogTitle, href: `/blog/${discussion.blogSlug}` }]),
     { name: 'Discusión' },
   ];
+  const breadcrumbSchema = buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/' },
+    { name: 'Blog', path: '/blog' },
+    ...(isBlogDiscussionGeneralSlug(discussion.blogSlug)
+      ? [{ name: discussion.blogTitle, path: '/blog' }]
+      : [{ name: discussion.blogTitle, path: `/blog/${discussion.blogSlug}` }]),
+    { name: discussion.title, path: `/blog/discusiones/${discussion.id}` },
+  ]);
+  const discussionSchema = isStarterEditorialPersona(discussion.userId)
+    ? null
+    : buildDiscussionForumPostingJsonLd({
+        title: discussion.title,
+        body: discussion.body,
+        path: `/blog/discusiones/${discussion.id}`,
+        authorName: discussion.authorName,
+        publishedAt: discussion.createdAt,
+        updatedAt: discussion.updatedAt,
+        discussionLabel: discussion.blogTitle,
+      });
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      {discussionSchema ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(discussionSchema) }}
+        />
+      ) : null}
       <section className="section pb-0">
         <div className="container">
           <BreadcrumbsNav items={breadcrumbItems} />

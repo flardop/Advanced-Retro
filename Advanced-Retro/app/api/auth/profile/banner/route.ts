@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rateLimit';
 import { ApiError, requireUserContext } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { validateImageBinarySignature } from '@/lib/uploadSafety';
@@ -70,6 +71,17 @@ function handleError(error: any) {
   return NextResponse.json({ error: error?.message || 'Unexpected error' }, { status: 500 });
 }
 
+function getRequesterIp(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip')?.trim() || 'unknown';
+}
+
+function tooManyRequests(message: string, retryAfterSeconds: number) {
+  return NextResponse.json(
+    { error: message },
+    { status: 429, headers: { 'Retry-After': String(Math.max(1, retryAfterSeconds)) } }
+  );
+}
+
 function isFileLike(value: unknown): value is File {
   if (!value || typeof value !== 'object') return false;
   return typeof (value as any).arrayBuffer === 'function' && typeof (value as any).name === 'string';
@@ -102,6 +114,18 @@ function resolveMimeAndExt(file: File): { mime: string; ext: string } | null {
 export async function POST(req: Request) {
   try {
     const { user } = await requireUserContext();
+    const requesterIp = getRequesterIp(req);
+    const rl = checkRateLimit({
+      key: `profile-banner:upload:${user.id || requesterIp}`,
+      maxRequests: 4,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return tooManyRequests(
+        'Demasiadas subidas de portada en poco tiempo. Espera un minuto.',
+        Math.ceil((rl.resetAt - Date.now()) / 1000)
+      );
+    }
     if (!supabaseAdmin) {
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }
@@ -147,7 +171,7 @@ export async function POST(req: Request) {
       .from(BANNER_BUCKET)
       .upload(filePath, bytes, {
         contentType: mime,
-        upsert: true,
+        upsert: false,
         cacheControl: '3600',
       });
 

@@ -6,7 +6,7 @@ import {
   getRetroStorageAuctionSeed,
   hasRetroStorageAuctionSeed,
 } from '@/lib/retroStorageAuctions';
-import { buildPageMetadata } from '@/lib/seo';
+import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd, buildPageMetadata } from '@/lib/seo';
 
 type PageProps = {
   params: { slug: string };
@@ -47,5 +47,30 @@ export default async function AuctionDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  return <RetroStorageAuctionDetailView slug={params.slug} initialAuction={initialAuction} />;
+  const collectionSchema = buildCollectionPageJsonLd({
+    name: initialAuction.title,
+    path: `/subastas/${initialAuction.slug}`,
+    description: `${initialAuction.subtitle}. ${initialAuction.guaranteedMinimum}`,
+    image: initialAuction.image,
+    about: [initialAuction.category, initialAuction.rarityLabel, 'subasta retro verificada'],
+  });
+  const breadcrumbSchema = buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/' },
+    { name: 'Subastas', path: '/subastas' },
+    { name: initialAuction.title, path: `/subastas/${initialAuction.slug}` },
+  ]);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <RetroStorageAuctionDetailView slug={params.slug} initialAuction={initialAuction} />
+    </>
+  );
 }

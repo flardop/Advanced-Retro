@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLocale } from '@/components/LocaleProvider';
+import { PUBLIC_SUPPORT_EMAIL } from '@/lib/legal';
 
 export default function Footer() {
   const { t } = useLocale();
@@ -37,8 +38,17 @@ export default function Footer() {
                 {t('footer.attention_value', 'ticket privado comprador ↔ tienda')}
               </p>
               <p className="mt-1">
-                {t('footer.contact_emails', 'Emails de contacto:')} <span className="text-text">admin@advancedretro.es</span>
+                {t('footer.contact_emails', 'Atención al cliente:')} <span className="text-text">{PUBLIC_SUPPORT_EMAIL}</span>
               </p>
+            </div>
+            <div className="rounded-xl border border-line bg-[rgba(11,20,34,0.6)] p-3 text-xs">
+              <p className="text-text font-semibold">{t('footer.payment_methods', 'Pago seguro')}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Image src="/icons/payments/visa.svg" alt="Visa" width={96} height={32} className="h-8 w-auto" />
+                <Image src="/icons/payments/mastercard.svg" alt="Mastercard" width={96} height={32} className="h-8 w-auto" />
+                <Image src="/icons/payments/sepa.svg" alt="SEPA" width={96} height={32} className="h-8 w-auto" />
+                <Image src="/icons/payments/bizum.svg" alt="Bizum" width={96} height={32} className="h-8 w-auto" />
+              </div>
             </div>
           </div>
 

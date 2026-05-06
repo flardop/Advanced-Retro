@@ -7,6 +7,7 @@ import type {
   BlogDiscussionThread,
 } from '@/lib/blogDiscussionTypes';
 import {
+  BLOG_DISCUSSION_GENERAL_SLUG,
   isSupportedBlogDiscussionSlug,
   listBlogDiscussionSlugs,
   resolveBlogDiscussionTitle,
@@ -18,6 +19,7 @@ const BLOG_DISCUSSION_MAX_PER_POST = 160;
 const BLOG_DISCUSSION_MAX_COMMENTS = 220;
 const BLOG_DISCUSSION_MAX_REPLIES = 60;
 const BLOG_SOCIAL_BUCKET = 'product-social';
+const STARTER_EDITORIAL_PREFIX = 'starter-editorial:';
 
 export type BlogDiscussion = {
   id: string;
@@ -50,9 +52,249 @@ function discussionStatePath(slug: string) {
   return `blog/discussions/${slug}.json`;
 }
 
-function defaultState(): BlogDiscussionState {
+function starterUserId(handle: string) {
+  return `${STARTER_EDITORIAL_PREFIX}${handle}`;
+}
+
+function makeStarterReply(input: {
+  id: string;
+  handle: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}): BlogDiscussionReply {
   return {
-    discussions: [],
+    id: input.id,
+    userId: starterUserId(input.handle),
+    authorName: input.authorName,
+    authorAvatarUrl: null,
+    body: input.body,
+    createdAt: input.createdAt,
+  };
+}
+
+function makeStarterComment(input: {
+  id: string;
+  handle: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+  replies?: BlogDiscussionReply[];
+}): BlogDiscussionComment {
+  return {
+    id: input.id,
+    userId: starterUserId(input.handle),
+    authorName: input.authorName,
+    authorAvatarUrl: null,
+    body: input.body,
+    createdAt: input.createdAt,
+    replies: input.replies || [],
+  };
+}
+
+function makeStarterDiscussion(input: {
+  id: string;
+  blogSlug: string;
+  handle: string;
+  authorName: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt?: string;
+  votesByUser?: Record<string, 1 | -1>;
+  comments?: BlogDiscussionComment[];
+}): BlogDiscussion {
+  return {
+    id: input.id,
+    blogSlug: input.blogSlug,
+    userId: starterUserId(input.handle),
+    authorName: input.authorName,
+    authorAvatarUrl: null,
+    title: input.title,
+    body: input.body,
+    createdAt: input.createdAt,
+    updatedAt: input.updatedAt || input.createdAt,
+    votesByUser: input.votesByUser || {},
+    comments: input.comments || [],
+  };
+}
+
+const STARTER_DISCUSSIONS: Record<string, BlogDiscussion[]> = {
+  [BLOG_DISCUSSION_GENERAL_SLUG]: [
+    makeStarterDiscussion({
+      id: 'starter-general-kicks',
+      blogSlug: BLOG_DISCUSSION_GENERAL_SLUG,
+      handle: 'pixelnora',
+      authorName: 'PixelNora',
+      title: '¿Qué revisión de Game Boy Color os parece más fiable para empezar colección?',
+      body:
+        'Estoy ayudando a un amigo a arrancar colección y me interesa saber qué revisión o variante os parece mejor punto de entrada entre precio, durabilidad y facilidad para completar accesorios originales.',
+      createdAt: '2026-04-19T19:40:00.000Z',
+      votesByUser: {
+        [starterUserId('marta-pocket')]: 1,
+        [starterUserId('hexa-cart')]: 1,
+      },
+      comments: [
+        makeStarterComment({
+          id: 'starter-general-kicks-c1',
+          handle: 'marta-pocket',
+          authorName: 'MartaPocket',
+          body:
+            'Para entrar sin sufrir demasiado, GBC estándar. Tiene recambio, variedad de shell y no te obliga a irte a ediciones locas desde el día uno.',
+          createdAt: '2026-04-19T20:02:00.000Z',
+          replies: [
+            makeStarterReply({
+              id: 'starter-general-kicks-c1-r1',
+              handle: 'vault-raul',
+              authorName: 'VaultRaul',
+              body:
+                'Coincido. Si además quieres exposición bonita, una transparente violeta te da look de colección sin disparar presupuesto.',
+              createdAt: '2026-04-19T20:16:00.000Z',
+            }),
+          ],
+        }),
+        makeStarterComment({
+          id: 'starter-general-kicks-c2',
+          handle: 'hexa-cart',
+          authorName: 'HexaCart',
+          body:
+            'Si el objetivo es jugar mucho y no solo vitrina, también miraría GBA clásica. Menos purista, pero muy disfrutable como consola real de uso.',
+          createdAt: '2026-04-19T20:19:00.000Z',
+        }),
+      ],
+    }),
+    makeStarterDiscussion({
+      id: 'starter-general-weekly',
+      blogSlug: BLOG_DISCUSSION_GENERAL_SLUG,
+      handle: 'arcade-clara',
+      authorName: 'ArcadeClara',
+      title: 'Hilo semanal de cazas retro: ¿qué pieza habéis visto esta semana y os ha tentado?',
+      body:
+        'Abro hilo para compartir hallazgos, dudas de precio y compras que os han hecho parar dos veces antes de pagar. Puede servir para contrastar si algo estaba bien de precio o no.',
+      createdAt: '2026-04-20T10:05:00.000Z',
+      votesByUser: {
+        [starterUserId('pixelnora')]: 1,
+        [starterUserId('marta-pocket')]: 1,
+      },
+      comments: [
+        makeStarterComment({
+          id: 'starter-general-weekly-c1',
+          handle: 'retro-ivan',
+          authorName: 'RetroIvan',
+          body:
+            'He visto un pack SNES con caja muy decente pero manual flojo. Justo el tipo de lote donde el precio parece bueno hasta que descuentas lo que te faltará arreglar.',
+          createdAt: '2026-04-20T10:34:00.000Z',
+        }),
+      ],
+    }),
+  ],
+  'como-valorar-juego-retro-original-vs-repro': [
+    makeStarterDiscussion({
+      id: 'starter-repro-checklist',
+      blogSlug: 'como-valorar-juego-retro-original-vs-repro',
+      handle: 'ana-labelscan',
+      authorName: 'AnaLabelScan',
+      title: 'Mi orden de comprobación cuando una repro está muy bien hecha',
+      body:
+        'Normalmente empiezo por materiales, luego por etiqueta y solo después pido interior. Si desde fuera ya hay dos señales raras, casi siempre el interior confirma sospechas. ¿Vosotros seguís un orden parecido o vais directos a PCB?',
+      createdAt: '2026-04-18T17:22:00.000Z',
+      votesByUser: {
+        [starterUserId('hexa-cart')]: 1,
+      },
+      comments: [
+        makeStarterComment({
+          id: 'starter-repro-checklist-c1',
+          handle: 'hexa-cart',
+          authorName: 'HexaCart',
+          body:
+            'Yo también empiezo por fuera. En fotos malas prefiero pedir macro de tornillo y lomo antes de pedir apertura. Ahí ya se cae mucha pieza dudosa.',
+          createdAt: '2026-04-18T17:45:00.000Z',
+        }),
+      ],
+    }),
+  ],
+  'guia-completar-juego-caja-manual-insert-protector': [
+    makeStarterDiscussion({
+      id: 'starter-complete-order',
+      blogSlug: 'guia-completar-juego-caja-manual-insert-protector',
+      handle: 'luna-inserts',
+      authorName: 'LunaInserts',
+      title: '¿Vosotros compráis primero caja o manual cuando queréis cerrar un completo?',
+      body:
+        'Yo suelo bloquear caja primero porque es lo que más se me cruza por estado, pero cada vez veo más gente priorizando manual para no acabar con cajas bonitas imposibles de completar a corto plazo.',
+      createdAt: '2026-04-17T21:12:00.000Z',
+      votesByUser: {
+        [starterUserId('arcade-clara')]: 1,
+        [starterUserId('vault-raul')]: 1,
+      },
+      comments: [
+        makeStarterComment({
+          id: 'starter-complete-order-c1',
+          handle: 'vault-raul',
+          authorName: 'VaultRaul',
+          body:
+            'Caja primero si el título es difícil. Manual primero solo si ya tienes una caja aceptable fichada y sabes que caerá pronto.',
+          createdAt: '2026-04-17T21:30:00.000Z',
+        }),
+      ],
+    }),
+  ],
+  'precio-retro-mercado-evitar-sobrepago': [
+    makeStarterDiscussion({
+      id: 'starter-market-range',
+      blogSlug: 'precio-retro-mercado-evitar-sobrepago',
+      handle: 'market-caro',
+      authorName: 'MarketCaro',
+      title: 'Cómo decido si un precio alto sigue siendo razonable',
+      body:
+        'Mi regla rápida: si el estado está por encima de lo habitual y la pieza no aparece cada semana, no comparo con el mínimo del mercado, comparo con el rango alto real. El problema es que mucha gente mira solo un anuncio barato y se queda ahí.',
+      createdAt: '2026-04-16T18:08:00.000Z',
+      votesByUser: {
+        [starterUserId('ana-labelscan')]: 1,
+      },
+      comments: [
+        makeStarterComment({
+          id: 'starter-market-range-c1',
+          handle: 'marta-pocket',
+          authorName: 'MartaPocket',
+          body:
+            'Tal cual. Si la pieza está limpia, completa y no tiene desgaste raro, pagar rango alto puede estar perfectamente justificado.',
+          createdAt: '2026-04-16T18:21:00.000Z',
+        }),
+      ],
+    }),
+  ],
+};
+
+function getStarterDiscussionsForSlug(slug: string): BlogDiscussion[] {
+  return (STARTER_DISCUSSIONS[slug] || []).map((discussion) => ({
+    ...discussion,
+    comments: (discussion.comments || []).map((comment) => ({
+      ...comment,
+      replies: [...(comment.replies || [])],
+    })),
+  }));
+}
+
+function mergeStarterDiscussions(blogSlug: string, discussions: BlogDiscussion[]): BlogDiscussion[] {
+  const merged = new Map<string, BlogDiscussion>();
+  for (const starter of getStarterDiscussionsForSlug(blogSlug)) {
+    merged.set(starter.id, starter);
+  }
+  for (const discussion of discussions) {
+    merged.set(discussion.id, discussion);
+  }
+  return [...merged.values()]
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
+    .slice(0, BLOG_DISCUSSION_MAX_PER_POST);
+}
+
+function defaultState(blogSlug?: string): BlogDiscussionState {
+  return {
+    discussions: blogSlug ? getStarterDiscussionsForSlug(blogSlug) : [],
     updatedAt: new Date().toISOString(),
   };
 }
@@ -180,18 +422,14 @@ function sanitizeDiscussion(raw: any, forcedSlug?: string): BlogDiscussion | nul
 }
 
 function sanitizeState(raw: any, slug: string): BlogDiscussionState {
-  const safe = defaultState();
+  const safe = defaultState(slug);
   if (!raw || typeof raw !== 'object') return safe;
 
   const discussions = Array.isArray(raw.discussions) ? raw.discussions : [];
-  safe.discussions = discussions
+  const sanitizedDiscussions = discussions
     .map((item: any) => sanitizeDiscussion(item, slug))
-    .filter((item: BlogDiscussion | null): item is BlogDiscussion => Boolean(item))
-    .sort(
-      (a: BlogDiscussion, b: BlogDiscussion) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-    .slice(0, BLOG_DISCUSSION_MAX_PER_POST);
+    .filter((item: BlogDiscussion | null): item is BlogDiscussion => Boolean(item));
+  safe.discussions = mergeStarterDiscussions(slug, sanitizedDiscussions);
   safe.updatedAt =
     typeof raw.updatedAt === 'string' && raw.updatedAt.trim()
       ? raw.updatedAt
@@ -253,16 +491,16 @@ export async function readBlogDiscussionState(blogSlug: string): Promise<BlogDis
   if (!supabaseAdmin) return defaultState();
 
   const safeSlug = String(blogSlug || '').trim().toLowerCase();
-  if (!safeSlug || !isSupportedBlogDiscussionSlug(safeSlug)) return defaultState();
+  if (!safeSlug || !isSupportedBlogDiscussionSlug(safeSlug)) return defaultState(safeSlug);
 
   const { data, error } = await supabaseAdmin.storage.from(BLOG_SOCIAL_BUCKET).download(discussionStatePath(safeSlug));
-  if (error || !data) return defaultState();
+  if (error || !data) return defaultState(safeSlug);
 
   try {
     const raw = JSON.parse(await data.text());
     return sanitizeState(raw, safeSlug);
   } catch {
-    return defaultState();
+    return defaultState(safeSlug);
   }
 }
 

@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useCartStore } from '@/store/cartStore';
 
 type SuccessViewProps = {
   orderId?: string | null;
@@ -32,7 +36,13 @@ function statusMeta(status: string | null | undefined) {
 }
 
 export default function SuccessView({ orderId, orderStatus }: SuccessViewProps) {
+  const clear = useCartStore((state) => state.clear);
   const copy = statusMeta(orderStatus);
+
+  useEffect(() => {
+    clear();
+  }, [clear]);
+
   return (
     <section className="section">
       <div className="container">

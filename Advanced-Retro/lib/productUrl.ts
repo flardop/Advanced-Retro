@@ -97,9 +97,13 @@ export function parseProductRouteParam(raw: string): {
 }
 
 function getRawSlug(product: any): string {
+  const generatedFromName = slugify(toSafeString(product?.name));
+  if (generatedFromName) return generatedFromName;
+
   const explicit = slugify(toSafeString(product?.slug));
   if (explicit) return explicit;
-  return slugify(toSafeString(product?.name));
+
+  return '';
 }
 
 function getShortIdPrefix(value: unknown): string {

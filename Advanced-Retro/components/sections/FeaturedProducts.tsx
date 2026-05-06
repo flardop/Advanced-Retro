@@ -107,36 +107,49 @@ export default function FeaturedProducts() {
         </div>
 
         <div className="content-rail grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {products.map((product: any) => (
-            <Link
-              key={product.id}
-              href={getProductHref(product)}
-              className="featured-product-card group glass flex h-full flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-glow"
-            >
-              <div className="photo-frame-glow relative h-56 border-b border-line bg-surface">
-                <SafeImage
-                  src={getProductImageUrl(product)}
-                  fallbackSrc={getProductFallbackImageUrl(product)}
-                  alt={product.name}
-                  fill
-                  className="object-contain p-3 photo-breath photo-hover-pop"
-                />
-              </div>
-              <div className="flex flex-1 flex-col p-5">
-                <h3 className="line-clamp-2 text-lg font-semibold">{product.name}</h3>
-                <p className="mt-2 line-clamp-2 text-sm text-textMuted">{product.description}</p>
-                <div className="mt-4 flex items-end justify-between gap-2">
-                  <p className="text-2xl font-black text-primary">{(product.price / 100).toFixed(2)} €</p>
-                  <span className="text-xs text-textMuted">{t('home.featured.view', 'Ver ficha')}</span>
+          {products.map((product: any) => {
+            const productMetrics = metrics[String(product.id)] || { visits: 0, likes: 0 };
+            const metricChips = [
+              productMetrics.visits > 0 ? `${productMetrics.visits} ${t('home.featured.visits', 'visitas')}` : null,
+              productMetrics.likes > 0 ? `${productMetrics.likes} ${t('home.featured.likes', 'likes')}` : null,
+            ].filter((value): value is string => Boolean(value));
+
+            return (
+              <Link
+                key={product.id}
+                href={getProductHref(product)}
+                className="featured-product-card group glass flex h-full flex-col overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-glow"
+              >
+                <div className="photo-frame-glow relative h-56 border-b border-line bg-surface">
+                  <SafeImage
+                    src={getProductImageUrl(product)}
+                    fallbackSrc={getProductFallbackImageUrl(product)}
+                    alt={product.name}
+                    fill
+                    className="object-contain p-3 photo-breath photo-hover-pop"
+                  />
                 </div>
-                <div className="mt-4 flex flex-wrap gap-1.5 text-[11px]">
-                  <span className="chip">{metrics[product.id]?.visits ?? 0} {t('home.featured.visits', 'visitas')}</span>
-                  <span className="chip">{metrics[product.id]?.likes ?? 0} {t('home.featured.likes', 'likes')}</span>
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="line-clamp-2 text-lg font-semibold">{product.name}</h3>
+                  <p className="mt-2 line-clamp-2 text-sm text-textMuted">{product.description}</p>
+                  <div className="mt-4 flex items-end justify-between gap-2">
+                    <p className="text-2xl font-black text-primary">{(product.price / 100).toFixed(2)} €</p>
+                    <span className="text-xs text-textMuted">{t('home.featured.view', 'Ver ficha')}</span>
+                  </div>
+                  {metricChips.length > 0 ? (
+                    <div className="mt-4 flex flex-wrap gap-1.5 text-[11px]">
+                      {metricChips.map((chip) => (
+                        <span key={`${product.id}-${chip}`} className="chip">
+                          {chip}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  <p className="mt-3 text-xs text-textMuted">{t('home.featured.stock', 'Stock')} {Number(product.stock || 0)}</p>
                 </div>
-                <p className="mt-3 text-xs text-textMuted">{t('home.featured.stock', 'Stock')} {Number(product.stock || 0)}</p>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

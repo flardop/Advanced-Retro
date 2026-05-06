@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabaseClient';
 
-const HEARTBEAT_INTERVAL_MS = 30_000;
+const HEARTBEAT_INTERVAL_MS = 120_000;
 const MIN_DELTA_SECONDS = 1;
 const MAX_DELTA_SECONDS = 900;
 const SESSION_STORAGE_KEY = 'advancedretro:usage-session-id';

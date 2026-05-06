@@ -1,5 +1,13 @@
 import type { Metadata } from 'next';
 import { buildPageMetadata } from '@/lib/seo';
+import {
+  HAS_COMPLETE_LEGAL_IDENTITY,
+  LEGAL_FULL_ADDRESS,
+  LEGAL_OWNER_NAME,
+  LEGAL_REGISTRY,
+  LEGAL_TAX_ID,
+  PUBLIC_SUPPORT_EMAIL,
+} from '@/lib/legal';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Términos y condiciones',
@@ -20,10 +28,29 @@ export default function TermsPage() {
 
         <div>
           <h2 className="text-xl font-semibold">1. Identificación del prestador</h2>
-          <p className="text-textMuted mt-2">
-            Titular: ADVANCED RETRO. Contacto: admin@advancedretro.es.
-            Canal de soporte: sistema de tickets y correo de atención.
-          </p>
+          <div className="space-y-2 text-textMuted mt-2">
+            <p>Titular: {LEGAL_OWNER_NAME}</p>
+            <p>NIF/CIF: {LEGAL_TAX_ID}</p>
+            <p>Domicilio social: {LEGAL_FULL_ADDRESS}</p>
+            <p>Contacto público: {PUBLIC_SUPPORT_EMAIL}</p>
+            <p>Registro mercantil: {LEGAL_REGISTRY}</p>
+            <p>
+              Resolución de litigios en línea (UE):{' '}
+              <a
+                href="https://ec.europa.eu/consumers/odr/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                https://ec.europa.eu/consumers/odr/
+              </a>
+            </p>
+            {!HAS_COMPLETE_LEGAL_IDENTITY ? (
+              <p className="text-warning">
+                Falta completar los datos fiscales públicos definitivos del titular antes de dar esta sección por cerrada.
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div>
@@ -64,7 +91,7 @@ export default function TermsPage() {
           <h2 className="text-xl font-semibold">6. Derecho de desistimiento (14 días)</h2>
           <p className="text-textMuted mt-2">
             Con carácter general, compras a distancia cuentan con 14 días naturales para desistimiento desde la recepción.
-            Para ejercerlo, abre ticket o escribe a soporte indicando número de pedido y motivo.
+            Para ejercerlo, abre ticket o escribe a {PUBLIC_SUPPORT_EMAIL} indicando número de pedido y motivo.
           </p>
           <p className="text-textMuted mt-2">
             El reembolso se tramita tras recepción y revisión del estado del artículo, usando el mismo medio de pago salvo acuerdo.

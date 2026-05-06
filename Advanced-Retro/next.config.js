@@ -23,7 +23,6 @@ function getHostnameFromUrl(input) {
 const configuredSupabaseHost = getHostnameFromUrl(configuredSupabaseUrl);
 const allowedImageHosts = [
   configuredSupabaseHost,
-  '**.supabase.co',
   'images.unsplash.com',
   'gbxtreme.com',
   'www.gbxtreme.com',
@@ -49,9 +48,9 @@ const contentSecurityPolicyReportOnly = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https:",
   "style-src 'self' 'unsafe-inline'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com",
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
-  "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://vitals.vercel-insights.com https://api.stripe.com https://checkout.stripe.com https://api.ebay.com https://api.sandbox.ebay.com https://*.supabase.co",
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com",
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
+  "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://vitals.vercel-insights.com https://api.stripe.com https://checkout.stripe.com https://r.stripe.com https://m.stripe.network https://api.ebay.com https://api.sandbox.ebay.com https://*.supabase.co",
   'upgrade-insecure-requests',
 ].join('; ');
 
