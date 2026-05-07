@@ -33,3 +33,6 @@ server/
 
 # OAuth accidental local artifacts
 .apps.googleusercontent.com
+
+# Local tooling artifacts
+.playwright-cli/
