@@ -37,3 +37,5 @@ Imagenes/Organizadas/
 Imagenes_local_backup/
 docs/reports/
 docs/demo-users-generated.md
+.playwright-cli/
+tmp/
