@@ -39,7 +39,7 @@ const SLIDES: Slide[] = [
     description: 'Experiencias gamificadas con tickets y control de premios.',
     href: '/ruleta',
     cta: 'Ir a ruleta',
-    image: '/images/hype/mystery-drop.svg',
+    image: '/images/mystery/mystery-premium.webp',
     badge: 'Experiencia',
   },
 ];

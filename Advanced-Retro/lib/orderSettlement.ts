@@ -11,6 +11,26 @@ type StockUpdate = {
   originalStock: number;
 };
 
+async function appendOrderStatusHistory(options: {
+  supabaseAdmin: SupabaseClient;
+  orderId: string;
+  fromStatus: string | null;
+  toStatus: string;
+  note: string;
+}) {
+  try {
+    await options.supabaseAdmin.from('order_status_history').insert({
+      order_id: options.orderId,
+      from_status: options.fromStatus,
+      to_status: options.toStatus,
+      note: options.note,
+      created_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.warn('Order status history skipped:', error);
+  }
+}
+
 async function rollbackStock(supabaseAdmin: SupabaseClient, updates: StockUpdate[]) {
   for (const update of [...updates].reverse()) {
     await supabaseAdmin
@@ -27,6 +47,14 @@ async function restoreOrderToPending(supabaseAdmin: SupabaseClient, orderId: str
     .update({ status: 'pending', updated_at: new Date().toISOString() })
     .eq('id', orderId)
     .eq('status', 'processing');
+
+  await appendOrderStatusHistory({
+    supabaseAdmin,
+    orderId,
+    fromStatus: 'processing',
+    toStatus: 'pending',
+    note: 'Rollback automático de pedido tras error de liquidación',
+  });
 }
 
 async function sendOrderPaidEmailBestEffort(options: {
@@ -97,6 +125,14 @@ export async function applyPaidOrderWithStockUpdate(options: {
     if (existingOrder.status === 'processing') return;
     throw new Error(`Order ${orderId} is in unexpected status "${existingOrder.status}"`);
   }
+
+  await appendOrderStatusHistory({
+    supabaseAdmin,
+    orderId,
+    fromStatus: 'pending',
+    toStatus: 'processing',
+    note: 'Pedido reclamado por webhook de Stripe para liquidación',
+  });
 
   const { data: rawOrderItems, error: orderItemsError } = await supabaseAdmin
     .from('order_items')
@@ -200,6 +236,14 @@ export async function applyPaidOrderWithStockUpdate(options: {
     await restoreOrderToPending(supabaseAdmin, orderId);
     throw new Error(markPaidError?.message || `Could not mark order ${orderId} as paid`);
   }
+
+  await appendOrderStatusHistory({
+    supabaseAdmin,
+    orderId,
+    fromStatus: 'processing',
+    toStatus: 'paid',
+    note: 'Pago confirmado y stock conciliado automáticamente',
+  });
 
   try {
     await ensureTicketForOrder({

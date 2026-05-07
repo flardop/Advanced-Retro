@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import Catalog from '@/components/sections/Catalog';
-import HypeLockboard from '@/components/sections/HypeLockboard';
 import BreadcrumbsNav from '@/components/BreadcrumbsNav';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
 import { getProductHref } from '@/lib/productUrl';
@@ -118,7 +117,6 @@ export default async function StorePage() {
       >
         <Catalog />
       </Suspense>
-      <HypeLockboard compact />
       <section className="section pt-0">
         <details className="container group glass p-6 sm:p-8">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3">

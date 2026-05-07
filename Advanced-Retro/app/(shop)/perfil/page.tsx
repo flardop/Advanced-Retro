@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import ProfileView from '@/components/sections/ProfileView';
+import ProfileHub from '@/components/profile/ProfileHub';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = buildPageMetadata({
@@ -10,5 +10,5 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default function ProfilePage() {
-  return <ProfileView />;
+  return <ProfileHub />;
 }

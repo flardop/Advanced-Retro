@@ -25,6 +25,7 @@ export async function GET() {
 
     const publicBoxes = (boxes || []).map((box: any) => ({
       ...box,
+      image: box?.image || box?.image_url || '/images/mystery/mystery-standard.webp',
       prizes: (box?.prizes || []).map((prize: any) => ({
         id: prize.id,
         label: prize.label,

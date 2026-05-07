@@ -13,6 +13,7 @@ export default function robots(): MetadataRoute.Robots {
           '/admin',
           '/admin/test-images',
           '/admin/update-images',
+          '/dev-retroville/',
           '/login',
           '/perfil',
           '/carrito',

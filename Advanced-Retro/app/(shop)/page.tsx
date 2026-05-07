@@ -5,7 +5,6 @@ import Collections from '@/components/sections/Collections';
 import Benefits from '@/components/sections/Benefits';
 import RetroStory from '@/components/sections/RetroStory';
 import FinalCTA from '@/components/sections/FinalCTA';
-import HypeLockboard from '@/components/sections/HypeLockboard';
 import HomeNarrative from '@/components/sections/HomeNarrative';
 import { redirect } from 'next/navigation';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
@@ -90,7 +89,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <FeaturedProducts />
       <Collections />
       <Benefits />
-      <HypeLockboard compact />
       <RetroStory />
       <HomeNarrative />
       <FinalCTA />

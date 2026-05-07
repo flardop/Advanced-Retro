@@ -229,7 +229,7 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
                       auction.status === 'live' ? 'auction-live-shell' : ''
                     }`}
                   >
-                    <div className="grid gap-4 md:grid-cols-[240px,1fr]">
+                    <div className="grid gap-4 lg:grid-cols-[240px,1fr]">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-[1rem] border border-line/80 bg-[radial-gradient(circle_at_top,rgba(90,170,255,0.18),rgba(8,14,25,0.92))]">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(38,229,255,0.16),transparent_38%),radial-gradient(circle_at_80%_18%,rgba(255,78,207,0.18),transparent_36%)]" />
                         <Image
@@ -314,19 +314,19 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
                           {auction.isRevealed ? <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-200">Contenido revelado</span> : null}
                         </div>
 
-                        <div className="flex flex-wrap gap-3">
-                          <Link href={`/subastas/${auction.slug}`} className="button-primary">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                          <Link href={`/subastas/${auction.slug}`} className="button-primary text-center">
                             Ver lote
                           </Link>
                           <button
                             type="button"
-                            className="button-secondary"
+                            className="button-secondary text-center"
                             onClick={() => toggleReminder(auction.slug)}
                             disabled={actionSlug === auction.slug}
                           >
                             {auction.isReminderActive ? 'Quitar recordatorio' : 'Guardar recordatorio'}
                           </button>
-                          <a href={`/api/auctions/${auction.slug}/calendar`} className="button-secondary">
+                          <a href={`/api/auctions/${auction.slug}/calendar`} className="button-secondary text-center">
                             Anadir a calendario
                           </a>
                         </div>

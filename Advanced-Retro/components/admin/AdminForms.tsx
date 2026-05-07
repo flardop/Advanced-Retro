@@ -65,16 +65,38 @@ export function AdminLoginForm({ redirectedFrom }: { redirectedFrom?: string }) 
     event.preventDefault();
     setLoading(true);
     try {
-      const { getSupabaseBrowserClient } = await import('@/lib/supabase/browser');
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase no está configurado');
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
       if (error) throw error;
-      toast.success('Sesión iniciada');
+
+      const adminSessionResponse = await fetch('/api/admin/session', {
+        method: 'GET',
+        cache: 'no-store',
+      });
+      const adminSessionPayload = await adminSessionResponse.json().catch(() => null);
+
+      if (!adminSessionResponse.ok || !adminSessionPayload?.success) {
+        await supabase.auth.signOut();
+        throw new Error(
+          adminSessionPayload?.error || 'No tienes permisos de administrador'
+        );
+      }
+
+      toast.success('Sesión admin iniciada');
       router.replace(redirectedFrom || '/admin/dashboard');
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'No se pudo iniciar sesión');
+      const message = error instanceof Error ? error.message : 'No se pudo iniciar sesión';
+      const normalized = message.toLowerCase();
+      if (normalized.includes('email not confirmed')) {
+        toast.error('El email no está confirmado. Desactiva la confirmación de email en Supabase Auth.');
+      } else {
+        toast.error(message);
+      }
     } finally {
       setLoading(false);
     }

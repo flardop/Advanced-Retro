@@ -112,6 +112,65 @@ async function updateOrderStripeSettlement(options: {
   throw updateError;
 }
 
+async function markOrderPaymentFailureByIntent(paymentIntentId: string) {
+  if (!supabaseAdmin) return;
+  const timestamp = new Date().toISOString();
+
+  const { data: order } = await supabaseAdmin
+    .from('orders')
+    .select('id,status')
+    .eq('payment_intent_id', paymentIntentId)
+    .maybeSingle();
+
+  if (!order?.id) return;
+
+  await supabaseAdmin
+    .from('orders')
+    .update({
+      payment_status: 'failed',
+      updated_at: timestamp,
+    })
+    .eq('id', order.id);
+
+  await supabaseAdmin.from('order_status_history').insert({
+    order_id: order.id,
+    from_status: typeof order.status === 'string' ? order.status : null,
+    to_status: typeof order.status === 'string' ? order.status : 'pending',
+    note: 'Stripe notificó un payment_intent.payment_failed',
+    created_at: timestamp,
+  });
+}
+
+async function markOrderRefundedByIntent(paymentIntentId: string) {
+  if (!supabaseAdmin) return;
+  const timestamp = new Date().toISOString();
+
+  const { data: order } = await supabaseAdmin
+    .from('orders')
+    .select('id,status')
+    .eq('payment_intent_id', paymentIntentId)
+    .maybeSingle();
+
+  if (!order?.id) return;
+
+  await supabaseAdmin
+    .from('orders')
+    .update({
+      status: 'refunded',
+      payment_status: 'refunded',
+      updated_at: timestamp,
+    })
+    .eq('id', order.id);
+
+  await supabaseAdmin.from('order_status_history').insert({
+    order_id: order.id,
+    from_status: typeof order.status === 'string' ? order.status : null,
+    to_status: 'refunded',
+    note: 'Stripe notificó un reembolso',
+    created_at: timestamp,
+  });
+}
+
 export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: 'Stripe webhook not configured' }, { status: 503 });
@@ -155,13 +214,25 @@ export async function POST(req: NextRequest) {
         supabaseAdmin,
         orderId,
       });
+    } else if (event.type === 'payment_intent.payment_failed') {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      if (paymentIntent.id) {
+        await markOrderPaymentFailureByIntent(paymentIntent.id);
+      }
+    } else if (event.type === 'charge.refunded') {
+      const charge = event.data.object as Stripe.Charge;
+      if (typeof charge.payment_intent === 'string' && charge.payment_intent) {
+        await markOrderRefundedByIntent(charge.payment_intent);
+      }
     }
 
     return NextResponse.json({ received: true });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || 'Webhook processing failed' },
-      { status: 500 }
-    );
+    console.error('Stripe webhook processing error:', err);
+    return NextResponse.json({
+      received: true,
+      handled: false,
+      error: err.message || 'Webhook processing failed',
+    });
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import SafeImage from '@/components/SafeImage';
 import { stripePromise } from '@/lib/stripe';
 
 type MysteryPrize = {
@@ -272,24 +273,39 @@ export default function MysteryRoulette() {
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-[1fr,300px] items-start">
-                  <div className="relative mx-auto w-[320px] h-[320px]">
-                    <div className="absolute left-1/2 -translate-x-1/2 -top-3 z-10 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[16px] border-b-primary" />
+                  <div className="order-2 lg:order-1">
+                    <div className="mb-5 overflow-hidden rounded-[1.4rem] border border-line bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.24),rgba(7,10,16,0.96))] p-4">
+                      <div className="relative mx-auto aspect-[4/3] max-w-[360px]">
+                        <SafeImage
+                          src={selectedBox.image || '/images/mystery/mystery-standard.webp'}
+                          fallbackSrc="/images/mystery/mystery-standard.webp"
+                          alt={selectedBox.name}
+                          fill
+                          sizes="(max-width: 1024px) 90vw, 360px"
+                          className="object-contain"
+                        />
+                      </div>
+                    </div>
 
-                    <div
-                      className="absolute inset-0 rounded-full border-4 border-primary/60 shadow-glow"
-                      style={{
-                        background: wheelBackground,
-                        transition: spinning ? 'transform 2.5s cubic-bezier(0.12, 0.8, 0.2, 1)' : 'transform 0.3s ease',
-                        transform: `rotate(${rotationDeg}deg)`,
-                      }}
-                    />
+                    <div className="relative mx-auto h-[320px] w-[320px]">
+                      <div className="absolute left-1/2 -translate-x-1/2 -top-3 z-10 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[16px] border-b-primary" />
 
-                    <div className="absolute inset-[34%] rounded-full bg-[#0b0c10] border border-line flex items-center justify-center text-xs text-textMuted text-center px-3">
-                      {spinning ? 'Suerte...' : 'Pulsa GIRAR'}
+                      <div
+                        className="absolute inset-0 rounded-full border-4 border-primary/60 shadow-glow"
+                        style={{
+                          background: wheelBackground,
+                          transition: spinning ? 'transform 2.5s cubic-bezier(0.12, 0.8, 0.2, 1)' : 'transform 0.3s ease',
+                          transform: `rotate(${rotationDeg}deg)`,
+                        }}
+                      />
+
+                      <div className="absolute inset-[34%] rounded-full bg-[#0b0c10] border border-line flex items-center justify-center text-xs text-textMuted text-center px-3">
+                        {spinning ? 'Suerte...' : 'Pulsa GIRAR'}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="order-1 space-y-2 lg:order-2">
                     <p className="font-semibold">Premios de esta caja</p>
                     <div className="max-h-[260px] overflow-auto space-y-2 pr-1">
                       {selectedBox.prizes.map((prize, index) => {

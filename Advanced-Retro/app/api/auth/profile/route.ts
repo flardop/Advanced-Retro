@@ -43,6 +43,34 @@ function sanitizeShippingAddress(input: unknown) {
   return payload;
 }
 
+function sanitizeUsername(input: unknown): string | null {
+  if (typeof input !== 'string') return null;
+  const value = input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '')
+    .slice(0, 40);
+  return value || null;
+}
+
+function sanitizeBirthdate(input: unknown): string | null {
+  if (typeof input !== 'string') return null;
+  const value = input.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  return value;
+}
+
+function sanitizeNotificationPreferences(input: unknown) {
+  const source = input && typeof input === 'object' && !Array.isArray(input) ? (input as Record<string, unknown>) : {};
+  return {
+    orders: source.orders !== false,
+    shipping: source.shipping !== false,
+    offers: source.offers !== false,
+    newsletter: source.newsletter !== false,
+    messages: source.messages !== false,
+  };
+}
+
 function sanitizeBadgeKeys(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
   const values = input
@@ -125,6 +153,8 @@ export async function PUT(req: Request) {
       'platinum-grid',
     ]);
     const allowedLanguages = new Set(['auto', 'es', 'en', 'fr', 'de', 'it', 'pt']);
+    const allowedCurrencies = new Set(['EUR', 'USD', 'GBP']);
+    const allowedThemePreferences = new Set(['light', 'dark', 'system']);
 
     const payload: Record<string, unknown> = {};
     if (typeof body?.name === 'string') {
@@ -151,6 +181,15 @@ export async function PUT(req: Request) {
       const nextFavorite = body.favorite_console.trim().slice(0, 120);
       payload.favorite_console = nextFavorite || null;
     }
+    if (Object.prototype.hasOwnProperty.call(body || {}, 'username')) {
+      payload.username = sanitizeUsername(body?.username);
+    }
+    if (typeof body?.phone === 'string') {
+      payload.phone = body.phone.trim().slice(0, 50) || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(body || {}, 'birthdate')) {
+      payload.birthdate = sanitizeBirthdate(body?.birthdate);
+    }
     if (typeof body?.profile_theme === 'string') {
       const nextTheme = body.profile_theme.trim();
       if (allowedThemes.has(nextTheme)) {
@@ -162,6 +201,21 @@ export async function PUT(req: Request) {
       if (allowedLanguages.has(normalized)) {
         payload.preferred_language = normalized;
       }
+    }
+    if (typeof body?.preferred_currency === 'string') {
+      const normalized = body.preferred_currency.trim().toUpperCase();
+      if (allowedCurrencies.has(normalized)) {
+        payload.preferred_currency = normalized;
+      }
+    }
+    if (typeof body?.theme_preference === 'string') {
+      const normalized = body.theme_preference.trim().toLowerCase();
+      if (allowedThemePreferences.has(normalized)) {
+        payload.theme_preference = normalized;
+      }
+    }
+    if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'notification_preferences')) {
+      payload.notification_preferences = sanitizeNotificationPreferences((body as any).notification_preferences);
     }
     if (Array.isArray(body?.badges)) payload.badges = sanitizeBadgeKeys(body.badges);
     if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'shipping_address')) {
@@ -179,7 +233,7 @@ export async function PUT(req: Request) {
       .update(payload)
       .eq('id', user.id)
       .select(
-        'id,email,role,name,avatar_url,banner_url,bio,tagline,favorite_console,profile_theme,badges,shipping_address,is_verified_seller,helper_completed_count,helper_active_count,helper_reputation,preferred_language,created_at,updated_at'
+        'id,email,role,name,username,avatar_url,banner_url,bio,tagline,favorite_console,profile_theme,phone,birthdate,badges,shipping_address,is_verified_seller,helper_completed_count,helper_active_count,helper_reputation,preferred_language,preferred_currency,theme_preference,notification_preferences,created_at,updated_at'
       )
       .single();
 
@@ -193,12 +247,30 @@ export async function PUT(req: Request) {
         if (typeof body?.bio === 'string') metadataPatch.bio = body.bio.trim().slice(0, 1200) || null;
         if (typeof body?.tagline === 'string') metadataPatch.tagline = body.tagline.trim().slice(0, 120) || null;
         if (typeof body?.favorite_console === 'string') metadataPatch.favorite_console = body.favorite_console.trim().slice(0, 120) || null;
+        if (Object.prototype.hasOwnProperty.call(body || {}, 'username')) metadataPatch.username = sanitizeUsername(body?.username);
+        if (typeof body?.phone === 'string') metadataPatch.phone = body.phone.trim().slice(0, 50) || null;
+        if (Object.prototype.hasOwnProperty.call(body || {}, 'birthdate')) metadataPatch.birthdate = sanitizeBirthdate(body?.birthdate);
         if (typeof body?.profile_theme === 'string') metadataPatch.profile_theme = body.profile_theme.trim().slice(0, 40) || null;
         if (typeof body?.preferred_language === 'string') {
           const normalized = body.preferred_language.trim().toLowerCase().slice(0, 10);
           if (allowedLanguages.has(normalized)) {
             metadataPatch.preferred_language = normalized;
           }
+        }
+        if (typeof body?.preferred_currency === 'string') {
+          const normalized = body.preferred_currency.trim().toUpperCase();
+          if (allowedCurrencies.has(normalized)) {
+            metadataPatch.preferred_currency = normalized;
+          }
+        }
+        if (typeof body?.theme_preference === 'string') {
+          const normalized = body.theme_preference.trim().toLowerCase();
+          if (allowedThemePreferences.has(normalized)) {
+            metadataPatch.theme_preference = normalized;
+          }
+        }
+        if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'notification_preferences')) {
+          metadataPatch.notification_preferences = sanitizeNotificationPreferences((body as any).notification_preferences);
         }
         if (Array.isArray(body?.badges)) metadataPatch.badges = sanitizeBadgeKeys(body.badges);
         if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'shipping_address')) {
@@ -217,6 +289,10 @@ export async function PUT(req: Request) {
             const fallbackProfile = {
               ...currentProfile,
               name: typeof metadataPatch.name === 'string' ? metadataPatch.name : currentProfile.name,
+              username:
+                typeof metadataPatch.username === 'string' || metadataPatch.username === null
+                  ? (metadataPatch.username as string | null)
+                  : currentProfile.username,
               avatar_url: typeof metadataPatch.avatar_url === 'string' || metadataPatch.avatar_url === null
                 ? (metadataPatch.avatar_url as string | null)
                 : currentProfile.avatar_url,
@@ -233,6 +309,14 @@ export async function PUT(req: Request) {
                 typeof metadataPatch.favorite_console === 'string' || metadataPatch.favorite_console === null
                   ? (metadataPatch.favorite_console as string | null)
                   : currentProfile.favorite_console,
+              phone:
+                typeof metadataPatch.phone === 'string' || metadataPatch.phone === null
+                  ? (metadataPatch.phone as string | null)
+                  : currentProfile.phone,
+              birthdate:
+                typeof metadataPatch.birthdate === 'string' || metadataPatch.birthdate === null
+                  ? (metadataPatch.birthdate as string | null)
+                  : currentProfile.birthdate,
               profile_theme:
                 typeof metadataPatch.profile_theme === 'string'
                   ? metadataPatch.profile_theme
@@ -241,6 +325,18 @@ export async function PUT(req: Request) {
                 typeof metadataPatch.preferred_language === 'string'
                   ? metadataPatch.preferred_language
                   : currentProfile.preferred_language,
+              preferred_currency:
+                typeof metadataPatch.preferred_currency === 'string'
+                  ? metadataPatch.preferred_currency
+                  : currentProfile.preferred_currency,
+              theme_preference:
+                typeof metadataPatch.theme_preference === 'string'
+                  ? metadataPatch.theme_preference
+                  : currentProfile.theme_preference,
+              notification_preferences:
+                Object.prototype.hasOwnProperty.call(metadataPatch, 'notification_preferences')
+                  ? (metadataPatch.notification_preferences as any)
+                  : currentProfile.notification_preferences,
               badges: Array.isArray(metadataPatch.badges) ? metadataPatch.badges : currentProfile.badges,
               shipping_address:
                 Object.prototype.hasOwnProperty.call(metadataPatch, 'shipping_address')

@@ -17,6 +17,7 @@ import {
 
 const siteUrl = getSiteUrl();
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
+const bingVerification = process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION;
 const contactEmail = PUBLIC_SUPPORT_EMAIL;
 const contactPhone = PUBLIC_CONTACT_PHONE;
 const socialProfiles = String(process.env.NEXT_PUBLIC_SOCIAL_PROFILES || '')
@@ -85,12 +86,23 @@ export const metadata: Metadata = {
   verification: googleVerification
     ? {
         google: googleVerification,
+        other: bingVerification
+          ? {
+              'msvalidate.01': bingVerification,
+            }
+          : undefined,
       }
-    : undefined,
+    : bingVerification
+      ? {
+          other: {
+            'msvalidate.01': bingVerification,
+          },
+        }
+      : undefined,
   openGraph: {
     title: 'AdvancedRetro.es',
     description:
-      'Tienda de retro gaming: juegos, consolas, cajas y componentes para completar tu colección.',
+      'Compra consolas retro, videojuegos clásicos y coleccionables. Game Boy, SNES, GameCube y más.',
     url: siteUrl,
     siteName: 'AdvancedRetro.es',
     type: 'website',
@@ -108,7 +120,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'AdvancedRetro.es',
     description:
-      'Tienda de retro gaming: juegos, consolas, cajas y componentes para completar tu colección.',
+      'Compra consolas retro, videojuegos clásicos y coleccionables. Game Boy, SNES, GameCube y más.',
     images: [absoluteUrl('/logo.png')],
   },
 };

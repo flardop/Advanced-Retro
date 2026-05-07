@@ -313,7 +313,13 @@ export function getProductFallbackImageUrl(product: any): string {
   }
 
   if (category.includes('misterios') || category.includes('mystery') || Boolean(product?.is_mystery_box)) {
-    return '/images/hype/mystery-drop.svg';
+    if (name.includes('vip') || String(product?.slug || '').toLowerCase().includes('vip')) {
+      return '/images/mystery/mystery-vip.webp';
+    }
+    if (name.includes('premium') || String(product?.slug || '').toLowerCase().includes('premium')) {
+      return '/images/mystery/mystery-premium.webp';
+    }
+    return '/images/mystery/mystery-standard.webp';
   }
 
   if (

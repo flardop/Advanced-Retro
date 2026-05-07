@@ -9,8 +9,11 @@ import { listRetroStorageAuctions } from '@/lib/retroStorageAuctions';
 const STATIC_ROUTES = [
   '/',
   '/tienda',
+  '/mystery-boxes',
   '/subastas',
   '/ruleta',
+  '/retroville',
+  '/creador-de-tiendas',
   '/comunidad',
   '/comunidad/vendedores',
   '/blog',

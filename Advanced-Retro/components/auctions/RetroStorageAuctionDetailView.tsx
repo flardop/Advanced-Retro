@@ -245,7 +245,7 @@ export default function RetroStorageAuctionDetailView({
     <section className="section">
       <div className="wide-content-rail space-y-6">
         <div className="glass overflow-hidden p-6 sm:p-8">
-          <div className="grid gap-6 lg:grid-cols-[440px,1fr]">
+          <div className="grid gap-6 xl:grid-cols-[440px,1fr]">
             <div className={`auction-vault-panel relative aspect-[4/3] overflow-hidden rounded-[1.4rem] border border-line/80 ${auction.status === 'live' ? 'auction-live-shell' : ''}`}>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(56,189,248,0.2),transparent_35%),radial-gradient(circle_at_84%_20%,rgba(232,121,249,0.22),transparent_36%)]" />
               <Image
@@ -281,7 +281,7 @@ export default function RetroStorageAuctionDetailView({
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-primary">{auction.category}</p>
-                  <h1 className="mt-2 title-display text-4xl">{auction.title}</h1>
+                  <h1 className="mt-2 title-display text-3xl sm:text-4xl">{auction.title}</h1>
                   <p className="mt-3 max-w-3xl text-base leading-relaxed text-textMuted">{auction.subtitle}</p>
                 </div>
                 <span className="chip border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-100">{auction.rarityLabel}</span>
@@ -307,7 +307,7 @@ export default function RetroStorageAuctionDetailView({
                 </div>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-[1.15fr,0.85fr]">
+              <div className="grid gap-3 xl:grid-cols-[1.15fr,0.85fr]">
                 <div className="rounded-[1.3rem] border border-line/80 bg-[rgba(8,14,25,0.42)] p-4">
                   <p className="text-xs uppercase tracking-[0.18em] text-primary">Panel de puja</p>
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -322,25 +322,25 @@ export default function RetroStorageAuctionDetailView({
                       type="button"
                       onClick={submitBid}
                       disabled={busyAction === 'bid' || !auction.canBid}
-                      className="button-primary whitespace-nowrap disabled:opacity-60"
+                      className="button-primary whitespace-nowrap text-center disabled:opacity-60"
                     >
                       {auction.status === 'live' ? 'Pujar ahora' : 'Puja cerrada'}
                     </button>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button type="button" className="button-secondary" onClick={toggleReminder} disabled={busyAction === 'reminder'}>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <button type="button" className="button-secondary text-center" onClick={toggleReminder} disabled={busyAction === 'reminder'}>
                       {auction.isReminderActive ? 'Quitar recordatorio' : 'Guardar recordatorio'}
                     </button>
-                    <a href={`/api/auctions/${slug}/calendar`} className="button-secondary">
+                    <a href={`/api/auctions/${slug}/calendar`} className="button-secondary text-center">
                       Anadir a calendario
                     </a>
                     {auction.modes.includes('buy') ? (
-                      <button type="button" className="button-secondary" onClick={() => requestInterest('buy')} disabled={busyAction === 'buy'}>
+                      <button type="button" className="button-secondary text-center" onClick={() => requestInterest('buy')} disabled={busyAction === 'buy'}>
                         Solicitar compra
                       </button>
                     ) : null}
                     {auction.modes.includes('rent') ? (
-                      <button type="button" className="button-secondary" onClick={() => requestInterest('rent')} disabled={busyAction === 'rent'}>
+                      <button type="button" className="button-secondary text-center" onClick={() => requestInterest('rent')} disabled={busyAction === 'rent'}>
                         Solicitar alquiler
                       </button>
                     ) : null}
@@ -377,7 +377,7 @@ export default function RetroStorageAuctionDetailView({
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
+        <div className="grid gap-6 2xl:grid-cols-[1.15fr,0.85fr]">
           <div className="space-y-6">
             <div className="glass p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-primary">Pistas del contenido</p>

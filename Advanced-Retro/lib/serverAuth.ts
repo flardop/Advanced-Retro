@@ -8,14 +8,26 @@ type AppUserProfile = {
   email: string;
   role: 'user' | 'admin';
   name: string | null;
+  username?: string | null;
   avatar_url: string | null;
   banner_url: string | null;
   bio: string | null;
   tagline: string | null;
   favorite_console: string | null;
   profile_theme: string | null;
+  phone?: string | null;
+  birthdate?: string | null;
   favorites_visibility: FavoritesVisibility;
   badges: string[];
+  notification_preferences?: {
+    orders: boolean;
+    shipping: boolean;
+    offers: boolean;
+    newsletter: boolean;
+    messages: boolean;
+  };
+  preferred_currency?: 'EUR' | 'USD' | 'GBP';
+  theme_preference?: 'light' | 'dark' | 'system';
   shipping_address: {
     full_name: string;
     line1: string;
@@ -77,6 +89,30 @@ function userBannerFromAuth(user: User): string | null {
     return user.user_metadata.banner_url;
   }
   return null;
+}
+
+function normalizeNotificationPreferences(input: unknown) {
+  const source = input && typeof input === 'object' && !Array.isArray(input) ? (input as Record<string, unknown>) : {};
+  return {
+    orders: source.orders !== false,
+    shipping: source.shipping !== false,
+    offers: source.offers !== false,
+    newsletter: source.newsletter !== false,
+    messages: source.messages !== false,
+  };
+}
+
+function normalizePreferredCurrency(input: unknown): 'EUR' | 'USD' | 'GBP' {
+  const value = String(input || '').trim().toUpperCase();
+  if (value === 'USD') return 'USD';
+  if (value === 'GBP') return 'GBP';
+  return 'EUR';
+}
+
+function normalizeThemePreference(input: unknown): 'light' | 'dark' | 'system' {
+  const value = String(input || '').trim().toLowerCase();
+  if (value === 'light' || value === 'dark') return value;
+  return 'system';
 }
 
 function normalizeShippingAddressFromUnknown(input: unknown) {
@@ -215,6 +251,12 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
     email: profile.email || safeEmail,
     role: profile.role === 'admin' ? 'admin' : 'user',
     name: typeof profile.name === 'string' ? profile.name : safeName,
+    username:
+      typeof (profile as any).username === 'string'
+        ? String((profile as any).username)
+        : typeof (metadata as any).username === 'string'
+          ? String((metadata as any).username)
+          : null,
     avatar_url: typeof profile.avatar_url === 'string' ? profile.avatar_url : safeAvatar,
     banner_url:
       typeof profile.banner_url === 'string'
@@ -246,6 +288,18 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
         : typeof metadata.profile_theme === 'string'
           ? metadata.profile_theme
           : 'neon-grid',
+    phone:
+      typeof (profile as any).phone === 'string'
+        ? String((profile as any).phone)
+        : typeof (metadata as any).phone === 'string'
+          ? String((metadata as any).phone)
+          : null,
+    birthdate:
+      typeof (profile as any).birthdate === 'string'
+        ? String((profile as any).birthdate)
+        : typeof (metadata as any).birthdate === 'string'
+          ? String((metadata as any).birthdate)
+          : null,
     favorites_visibility: normalizeFavoritesVisibility(
       typeof (profile as any).favorites_visibility === 'string'
         ? (profile as any).favorites_visibility
@@ -275,6 +329,15 @@ export async function ensureUserProfile(user: User): Promise<AppUserProfile> {
     helper_completed_count: Number((profile as any).helper_completed_count || 0),
     helper_active_count: Number((profile as any).helper_active_count || 0),
     helper_reputation: Number((profile as any).helper_reputation || 0),
+    notification_preferences: normalizeNotificationPreferences(
+      (profile as any).notification_preferences ?? (metadata as any).notification_preferences
+    ),
+    preferred_currency: normalizePreferredCurrency(
+      (profile as any).preferred_currency ?? (metadata as any).preferred_currency
+    ),
+    theme_preference: normalizeThemePreference(
+      (profile as any).theme_preference ?? (metadata as any).theme_preference
+    ),
     preferred_language:
       typeof (profile as any).preferred_language === 'string'
         ? (profile as any).preferred_language

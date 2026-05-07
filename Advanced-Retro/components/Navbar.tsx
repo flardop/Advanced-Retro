@@ -4,13 +4,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { supabaseClient } from '@/lib/supabaseClient';
 import { useLocale } from '@/components/LocaleProvider';
 import UsageSessionTracker from '@/components/UsageSessionTracker';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import LanguageSelector from '@/components/header/LanguageSelector';
+import AIAssistant from '@/components/header/AIAssistant';
 
 function NavbarContent() {
   const pathname = usePathname();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<{ email?: string } | null>(null);
   const [open, setOpen] = useState(false);
@@ -31,11 +33,12 @@ function NavbarContent() {
     onScroll();
     window.addEventListener('scroll', onScroll);
 
-    if (supabaseClient) {
-      supabaseClient.auth.getUser().then(({ data }) => {
+    const supabase = getSupabaseBrowserClient();
+    if (supabase) {
+      supabase.auth.getUser().then(({ data }) => {
         setUser(data.user);
       });
-      const { data: listener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
         setUser(session?.user || null);
       });
       return () => {
@@ -95,16 +98,19 @@ function NavbarContent() {
         <div className="container py-2">
           <div className="header-rail">
             <div className="flex h-[68px] items-center justify-between gap-3 rounded-[1.35rem] border border-line/80 bg-[rgba(8,14,25,0.76)] px-3 sm:h-[74px] sm:px-4">
-              <Link href="/" className="flex shrink-0 items-center rounded-lg px-1 py-1 hover:bg-white/5">
-                <Image
-                  src="/logo.png"
-                  alt="Advanced Retro — Juegos y nostalgia retro"
-                  width={180}
-                  height={48}
-                  className="h-9 w-auto object-contain logo-breath sm:h-10"
-                  priority
-                />
-              </Link>
+              <div className="flex shrink-0 items-center gap-2">
+                <LanguageSelector />
+                <Link href="/" className="flex shrink-0 items-center rounded-lg px-1 py-1 hover:bg-white/5">
+                  <Image
+                    src="/logo.png"
+                    alt="Advanced Retro — Juegos y nostalgia retro"
+                    width={180}
+                    height={48}
+                    className="h-9 w-auto object-contain logo-breath sm:h-10"
+                    priority
+                  />
+                </Link>
+              </div>
 
               <nav className="hidden xl:flex min-w-0 flex-1 items-center justify-center gap-1.5 text-[0.92rem]">
                 {navItems.map((item) => {
@@ -126,11 +132,18 @@ function NavbarContent() {
               </nav>
 
               <div className="flex items-center gap-2 sm:gap-3">
+                <AIAssistant />
                 <Link href="/carrito" className="chip hover:border-primary/50 hover:text-text">
-                  {t('nav.cart', 'Carrito')}
+                  {locale === 'en' ? 'Cart' : t('nav.cart', 'Carrito')}
                 </Link>
                 <Link href={user ? '/perfil' : '/login'} className="button-secondary hidden sm:inline-flex">
-                  {user ? t('nav.profile', 'Mi perfil') : t('nav.login', 'Entrar')}
+                  {user
+                    ? locale === 'en'
+                      ? 'My profile'
+                      : t('nav.profile', 'Mi perfil')
+                    : locale === 'en'
+                      ? 'Sign in'
+                      : t('nav.login', 'Entrar')}
                 </Link>
                 <button
                   className={`xl:hidden chip min-w-[94px] justify-center ${open ? 'border-primary/60 text-text' : ''}`}
@@ -187,10 +200,16 @@ function NavbarContent() {
                       onClick={() => setOpen(false)}
                       className="button-secondary w-full"
                     >
-                      {user ? t('nav.profile', 'Mi perfil') : t('nav.login_mobile', 'Iniciar sesión')}
+                      {user
+                        ? locale === 'en'
+                          ? 'My profile'
+                          : t('nav.profile', 'Mi perfil')
+                        : locale === 'en'
+                          ? 'Sign in'
+                          : t('nav.login_mobile', 'Iniciar sesión')}
                     </Link>
                     <Link href="/carrito" onClick={() => setOpen(false)} className="button-primary w-full">
-                      {t('nav.go_cart_mobile', 'Ir al carrito')}
+                      {locale === 'en' ? 'Go to cart' : t('nav.go_cart_mobile', 'Ir al carrito')}
                     </Link>
                   </div>
 
@@ -234,16 +253,19 @@ function NavbarFallback() {
     <header className="sticky top-0 z-50 border-b border-line/70 bg-[rgba(8,14,25,0.84)] backdrop-blur-lg">
       <div className="container py-2">
         <div className="header-rail flex h-[68px] items-center justify-between gap-3 rounded-[1.35rem] border border-line/80 bg-[rgba(8,14,25,0.76)] px-3 sm:h-[74px] sm:px-4">
-          <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
-            <Image
-              src="/logo.png"
-              alt="Advanced Retro — Juegos y nostalgia retro"
-              width={180}
-              height={48}
-              className="h-9 w-auto object-contain logo-breath sm:h-10"
-              priority
-            />
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="chip hidden lg:inline-flex">🇪🇸 ES</div>
+            <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
+              <Image
+                src="/logo.png"
+                alt="Advanced Retro — Juegos y nostalgia retro"
+                width={180}
+                height={48}
+                className="h-9 w-auto object-contain logo-breath sm:h-10"
+                priority
+              />
+            </Link>
+          </div>
           <div className="chip">Cargando menu...</div>
         </div>
       </div>

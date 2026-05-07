@@ -64,8 +64,8 @@ export const sampleProducts = [
     curiosities: ['La selección cambia cada mes.'],
     tips: ['Ideal para regalar.'],
     images: [
-      '/images/hype/mystery-drop.svg',
-      '/images/hype/mystery-drop.svg'
+      '/images/mystery/mystery-premium.webp',
+      '/images/mystery/mystery-premium.webp'
     ],
     trailer_url: 'https://www.youtube.com/watch?v=6M6samPEMpM',
     purchase_options: [ 'Juego completo', 'Solo cartucho', 'Caja', 'Manual (completo)', 'Parte interior del manual (separada)' ],

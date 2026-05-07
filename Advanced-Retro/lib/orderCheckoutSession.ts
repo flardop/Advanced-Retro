@@ -294,7 +294,7 @@ export async function createOrderCheckoutSession(input: {
       return {
         mode: 'direct',
         orderId: order.id,
-        redirectUrl: `${siteUrl}/success?orderId=${order.id}`,
+        redirectUrl: `${siteUrl}/pedido-confirmado?orderId=${order.id}`,
       };
     } catch (settlementError: any) {
       throw new Error(settlementError?.message || 'No se pudo liquidar el pedido con cupón');
@@ -343,12 +343,12 @@ export async function createOrderCheckoutSession(input: {
 
   if (uiMode === 'embedded') {
     sessionParams.ui_mode = 'embedded';
-    sessionParams.return_url = `${siteUrl}/pedido/confirmacion?session_id={CHECKOUT_SESSION_ID}`;
+    sessionParams.return_url = `${siteUrl}/pedido-confirmado?session_id={CHECKOUT_SESSION_ID}`;
     sessionParams.redirect_on_completion = 'always';
     sessionParams.payment_method_types = ['card', 'sepa_debit'];
   } else {
     sessionParams.payment_method_types = ['card'];
-    sessionParams.success_url = `${siteUrl}/success?orderId=${order.id}`;
+    sessionParams.success_url = `${siteUrl}/pedido-confirmado?session_id={CHECKOUT_SESSION_ID}`;
     sessionParams.cancel_url = `${siteUrl}/carrito`;
   }
 
