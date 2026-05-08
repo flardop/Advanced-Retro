@@ -20,7 +20,12 @@ const AnimatedFavicon = dynamic(() => import('@/components/AnimatedFavicon'), {
 });
 
 function isStandalonePath(pathname: string) {
-  return pathname.startsWith('/admin') || pathname.startsWith('/retroville') || pathname.startsWith('/creador-de-tiendas');
+  return (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/retroville') ||
+    pathname.startsWith('/dev-retroville') ||
+    pathname.startsWith('/creador-de-tiendas')
+  );
 }
 
 export default function StoreChromeShell({ children }: { children: React.ReactNode }) {

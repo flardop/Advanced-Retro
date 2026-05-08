@@ -95,22 +95,41 @@ export async function getFavoriteProductsForUser(
   if (!safeUserId) return { available: false, items: [], total: 0 };
   const safeLimit = Math.min(Math.max(Number(limit || 0), 1), 200);
 
-  const likesRes = await supabaseAdmin
-    .from('product_likes')
+  let rows: Array<Record<string, unknown>> = [];
+  let available = false;
+
+  const favoritesRes = await supabaseAdmin
+    .from('user_favorites')
     .select('product_id,created_at')
     .eq('user_id', safeUserId)
     .order('created_at', { ascending: false })
     .limit(safeLimit);
 
-  if (likesRes.error) {
-    if (isMissingTableError(likesRes.error)) {
-      return { available: false, items: [], total: 0 };
+  if (!favoritesRes.error) {
+    rows = Array.isArray(favoritesRes.data) ? favoritesRes.data : [];
+    available = true;
+  } else if (!isMissingTableError(favoritesRes.error)) {
+    throw new Error(favoritesRes.error.message || 'No se pudieron cargar los favoritos');
+  } else {
+    const likesRes = await supabaseAdmin
+      .from('product_likes')
+      .select('product_id,created_at')
+      .eq('user_id', safeUserId)
+      .order('created_at', { ascending: false })
+      .limit(safeLimit);
+
+    if (likesRes.error) {
+      if (isMissingTableError(likesRes.error)) {
+        return { available: false, items: [], total: 0 };
+      }
+      throw new Error(likesRes.error.message || 'No se pudieron cargar los favoritos');
     }
-    throw new Error(likesRes.error.message || 'No se pudieron cargar los favoritos');
+
+    rows = Array.isArray(likesRes.data) ? likesRes.data : [];
+    available = true;
   }
 
-  const rows = Array.isArray(likesRes.data) ? likesRes.data : [];
-  if (rows.length === 0) return { available: true, items: [], total: 0 };
+  if (rows.length === 0) return { available, items: [], total: 0 };
 
   const productIds = rows
     .map((row: any) => String(row?.product_id || '').trim())
@@ -158,7 +177,7 @@ export async function getFavoriteProductsForUser(
   }
 
   return {
-    available: true,
+    available,
     items,
     total: items.length,
   };

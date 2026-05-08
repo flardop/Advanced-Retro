@@ -4735,6 +4735,88 @@ create policy retro_storage_awards_admin_all
   using (public.is_current_admin())
   with check (public.is_current_admin());
 
+-- -----------------------------------------------------------------------------
+-- RETROVILLE WAITLIST v3 + USER FAVORITES
+-- -----------------------------------------------------------------------------
+alter table if exists public.retroville_waitlist
+  add column if not exists role_label text,
+  add column if not exists source text not null default 'public';
+
+update public.retroville_waitlist
+set
+  role_label = nullif(trim(coalesce(role_label, '')), ''),
+  source = coalesce(nullif(trim(coalesce(source, '')), ''), 'public')
+where true;
+
+create index if not exists idx_retroville_waitlist_source on public.retroville_waitlist(source, created_at desc);
+
+create table if not exists public.user_favorites (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  product_id uuid not null references public.products(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, product_id)
+);
+
+create index if not exists idx_user_favorites_created_at on public.user_favorites(created_at desc);
+create index if not exists idx_user_favorites_product_id on public.user_favorites(product_id, created_at desc);
+
+alter table if exists public.user_favorites enable row level security;
+
+drop policy if exists user_favorites_own_all on public.user_favorites;
+create policy user_favorites_own_all
+  on public.user_favorites
+  for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists user_favorites_admin_all on public.user_favorites;
+create policy user_favorites_admin_all
+  on public.user_favorites
+  for all
+  using (public.is_current_admin())
+  with check (public.is_current_admin());
+
+insert into public.user_favorites (user_id, product_id, created_at)
+select pl.user_id, pl.product_id, coalesce(pl.created_at, now())
+from public.product_likes pl
+where not exists (
+  select 1
+  from public.user_favorites uf
+  where uf.user_id = pl.user_id
+    and uf.product_id = pl.product_id
+)
+on conflict do nothing;
+
+create or replace function public.sync_user_favorites_from_product_likes()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if tg_op = 'INSERT' then
+    insert into public.user_favorites (user_id, product_id, created_at)
+    values (new.user_id, new.product_id, coalesce(new.created_at, now()))
+    on conflict (user_id, product_id) do nothing;
+    return new;
+  end if;
+
+  if tg_op = 'DELETE' then
+    delete from public.user_favorites
+    where user_id = old.user_id
+      and product_id = old.product_id;
+    return old;
+  end if;
+
+  return null;
+end;
+$$;
+
+drop trigger if exists sync_user_favorites_from_product_likes on public.product_likes;
+create trigger sync_user_favorites_from_product_likes
+  after insert or delete on public.product_likes
+  for each row execute procedure public.sync_user_favorites_from_product_likes();
+
 comment on table public.future_launches is 'Tabla legacy sin uso actual en frontend público. Se conserva por compatibilidad histórica.';
 
 -- -----------------------------------------------------------------------------
