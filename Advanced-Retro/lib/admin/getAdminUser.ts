@@ -10,6 +10,46 @@ export type AdminUserContext = {
   profile: AdminProfile | null;
 };
 
+async function getAuthenticatedUser(accessToken?: string): Promise<{
+  id: string;
+  email: string | null;
+} | null> {
+  if (accessToken) {
+    if (!supabaseService) {
+      throw new Error('Supabase service role is not configured');
+    }
+
+    const {
+      data: { user },
+      error,
+    } = await supabaseService.auth.getUser(accessToken);
+
+    if (error || !user) {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      email: user.email || null,
+    };
+  }
+
+  const supabase = getSupabaseServerClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    email: user.email || null,
+  };
+}
+
 async function resolveAdminProfile(userId: string): Promise<{
   role: 'user' | 'admin' | 'banned';
   profile: AdminProfile | null;
@@ -64,14 +104,9 @@ async function resolveAdminProfile(userId: string): Promise<{
   return { role, profile };
 }
 
-export async function getAdminUser(): Promise<AdminUserContext | null> {
-  const supabase = getSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
+export async function getAdminUser(accessToken?: string): Promise<AdminUserContext | null> {
+  const user = await getAuthenticatedUser(accessToken);
+  if (!user) {
     return null;
   }
 
@@ -83,7 +118,7 @@ export async function getAdminUser(): Promise<AdminUserContext | null> {
   return {
     user: {
       id: user.id,
-      email: user.email || null,
+      email: user.email,
     },
     profile,
   };

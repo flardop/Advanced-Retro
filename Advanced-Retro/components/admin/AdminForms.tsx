@@ -67,15 +67,23 @@ export function AdminLoginForm({ redirectedFrom }: { redirectedFrom?: string }) 
     try {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) throw new Error('Supabase no está configurado');
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (error) throw error;
 
+      const accessToken = data.session?.access_token;
+      if (!accessToken) {
+        throw new Error('La sesión no se pudo inicializar correctamente');
+      }
+
       const adminSessionResponse = await fetch('/api/admin/session', {
         method: 'GET',
         cache: 'no-store',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
       const adminSessionPayload = await adminSessionResponse.json().catch(() => null);
 

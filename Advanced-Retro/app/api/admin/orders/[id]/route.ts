@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { supabaseServer } from '@/lib/supabaseServer';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { sendOrderStatusEmail } from '@/lib/orderEmails';
+import { checkAdminSession } from '@/lib/admin/checkAdminSession';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,16 +15,7 @@ const ALLOWED_STATUSES = new Set([
 ]);
 
 const requireAdmin = async () => {
-  if (!supabaseAdmin) throw new Error('Supabase not configured');
-  const supabase = supabaseServer();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new Error('Unauthorized');
-  const { data: userRow } = await supabaseAdmin
-    .from('users')
-    .select('role')
-    .eq('id', data.user.id)
-    .single();
-  if (userRow?.role !== 'admin') throw new Error('Forbidden');
+  await checkAdminSession();
 };
 
 async function sendOrderStatusEmailBestEffort(order: any) {
