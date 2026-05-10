@@ -9,6 +9,18 @@ import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistFo
 const ACCESS_KEY = 'retroville_dev_auth';
 const REQUIRED_PASSWORD = 'test1';
 
+function readAccessFlag() {
+  if (typeof window === 'undefined') return false;
+  const localValue = window.localStorage.getItem(ACCESS_KEY);
+  if (localValue === '1') return true;
+  const sessionValue = window.sessionStorage.getItem(ACCESS_KEY);
+  if (sessionValue === '1') {
+    window.localStorage.setItem(ACCESS_KEY, '1');
+    return true;
+  }
+  return false;
+}
+
 const progressCards = [
   { label: 'Motor del mundo', state: 'En desarrollo', progress: 40, color: 'from-amber-400 to-orange-500' },
   { label: 'Sistema de personajes', state: 'En diseño', progress: 20, color: 'from-cyan-400 to-blue-500' },
@@ -24,7 +36,7 @@ export default function DevRetrovilleAccess() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    setUnlocked(window.sessionStorage.getItem(ACCESS_KEY) === '1');
+    setUnlocked(readAccessFlag());
   }, []);
 
   const shellClass = useMemo(
@@ -39,6 +51,7 @@ export default function DevRetrovilleAccess() {
     event.preventDefault();
     if (password === REQUIRED_PASSWORD) {
       window.sessionStorage.setItem(ACCESS_KEY, '1');
+      window.localStorage.setItem(ACCESS_KEY, '1');
       setUnlocked(true);
       setPassword('');
       setError(false);
