@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 type Point = { x: number; y: number };
 
@@ -57,6 +58,17 @@ function formatUpdatedAt(value: string): string {
   return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
 }
 
+async function buildAuthHeaders(): Promise<Record<string, string>> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return {};
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+  if (!accessToken) return {};
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
 export default function NotFound() {
   const [snake, setSnake] = useState<Point[]>(INITIAL_SNAKE);
   const [apple, setApple] = useState<Point>(() => randomApple(INITIAL_SNAKE));
@@ -76,7 +88,11 @@ export default function NotFound() {
 
   const loadLeaderboard = useCallback(async () => {
     try {
-      const res = await fetch('/api/game/snake/leaderboard', { cache: 'no-store' });
+      const headers = await buildAuthHeaders();
+      const res = await fetch('/api/game/snake/leaderboard', {
+        cache: 'no-store',
+        headers,
+      });
       const data = await res.json();
       if (!res.ok) return;
       setLeaderboard(Array.isArray(data?.leaderboard) ? data.leaderboard : []);
@@ -108,9 +124,13 @@ export default function NotFound() {
       saveTriggeredRef.current = true;
       setIsSavingScore(true);
       try {
+        const headers = await buildAuthHeaders();
         const res = await fetch('/api/game/snake/leaderboard', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...headers,
+          },
           body: JSON.stringify({ score: finalScore }),
         });
         const data = await res.json().catch(() => ({}));
@@ -146,6 +166,19 @@ export default function NotFound() {
 
   useEffect(() => {
     void loadLeaderboard();
+  }, [loadLeaderboard]);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      void loadLeaderboard();
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [loadLeaderboard]);
 
   useEffect(() => {
