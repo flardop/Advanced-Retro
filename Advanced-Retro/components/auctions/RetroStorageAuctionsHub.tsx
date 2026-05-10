@@ -141,8 +141,8 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
     <section className="section">
       <div className="wide-content-rail space-y-8">
         <div className="glass overflow-hidden p-6 sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
-            <div className="space-y-5">
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] xl:items-start">
+            <div className="min-w-0 space-y-5">
               <p className="chip w-fit border-cyan-400/40 bg-cyan-400/10 text-cyan-200">RETRO STORAGE AUCTIONS</p>
               <div className="space-y-3">
                 <h1 className="title-display text-4xl sm:text-5xl">Almacenes digitales con puja, trazabilidad y revelado real</h1>
@@ -187,8 +187,8 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr,320px]">
-          <div className="space-y-4">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+          <div className="min-w-0 space-y-4">
             <div className="glass p-4 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -216,7 +216,7 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
               </div>
             </div>
 
-            <div id="retro-storage-grid" className="grid gap-5 xl:grid-cols-2">
+            <div id="retro-storage-grid" className="grid gap-5">
               {loading ? (
                 <div className="glass p-6 text-textMuted">Cargando almacenes...</div>
               ) : visibleAuctions.length === 0 ? (
@@ -229,7 +229,7 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
                       auction.status === 'live' ? 'auction-live-shell' : ''
                     }`}
                   >
-                    <div className="grid gap-4 lg:grid-cols-[240px,1fr]">
+                    <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-[1rem] border border-line/80 bg-[radial-gradient(circle_at_top,rgba(90,170,255,0.18),rgba(8,14,25,0.92))]">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(38,229,255,0.16),transparent_38%),radial-gradient(circle_at_80%_18%,rgba(255,78,207,0.18),transparent_36%)]" />
                         <Image
@@ -258,19 +258,21 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
                         </div>
                       </div>
 
-                      <div className="flex flex-col gap-4">
+                      <div className="min-w-0 flex flex-col gap-4">
                         <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
+                          <div className="min-w-0 max-w-3xl">
                             <p className="text-xs uppercase tracking-[0.18em] text-primary">{auction.category}</p>
-                            <h3 className="mt-2 text-2xl font-semibold">{auction.title}</h3>
-                            <p className="mt-2 text-sm leading-relaxed text-textMuted">{auction.subtitle}</p>
+                            <h3 className="mt-2 text-2xl font-semibold text-balance sm:text-[2rem]">{auction.title}</h3>
+                            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-textMuted sm:text-[0.95rem]">
+                              {auction.subtitle}
+                            </p>
                           </div>
                           <span className="chip border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-100">
                             {auction.rarityLabel}
                           </span>
                         </div>
 
-                        <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
                           <div className="rounded-2xl border border-line/80 bg-[rgba(8,14,25,0.42)] p-3">
                             <p className="text-xs uppercase tracking-[0.16em] text-textMuted">Puja actual</p>
                             <p className="mt-2 text-xl font-semibold text-primary">{toEuro(auction.currentBidCents)}</p>
@@ -299,9 +301,9 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
                           </div>
                         </div>
 
-                        <div className="rounded-2xl border border-line/80 bg-[rgba(8,14,25,0.42)] p-3">
+                        <div className="rounded-2xl border border-line/80 bg-[rgba(8,14,25,0.42)] p-4">
                           <p className="text-xs uppercase tracking-[0.16em] text-primary">Minimo garantizado</p>
-                          <p className="mt-2 text-sm leading-relaxed text-textMuted">{auction.guaranteedMinimum}</p>
+                          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-textMuted">{auction.guaranteedMinimum}</p>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 text-xs text-textMuted">
@@ -314,19 +316,22 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
                           {auction.isRevealed ? <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-200">Contenido revelado</span> : null}
                         </div>
 
-                        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                          <Link href={`/subastas/${auction.slug}`} className="button-primary text-center">
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,1fr))]">
+                          <Link href={`/subastas/${auction.slug}`} className="button-primary w-full text-center">
                             Ver lote
                           </Link>
                           <button
                             type="button"
-                            className="button-secondary text-center"
+                            className="button-secondary w-full text-center"
                             onClick={() => toggleReminder(auction.slug)}
                             disabled={actionSlug === auction.slug}
                           >
                             {auction.isReminderActive ? 'Quitar recordatorio' : 'Guardar recordatorio'}
                           </button>
-                          <a href={`/api/auctions/${auction.slug}/calendar`} className="button-secondary text-center">
+                          <a
+                            href={`/api/auctions/${auction.slug}/calendar`}
+                            className="button-secondary w-full text-center"
+                          >
                             Anadir a calendario
                           </a>
                         </div>
@@ -338,7 +343,7 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
             </div>
           </div>
 
-          <aside className="space-y-4">
+          <aside className="space-y-4 xl:sticky xl:top-24">
             <div className="glass p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-primary">Mejores pujadores</p>
               <h3 className="mt-2 text-xl font-semibold">Ranking activo</h3>
