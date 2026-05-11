@@ -68,7 +68,7 @@ export default function Footer() {
           <div>
             <p className="text-text font-semibold">{t('footer.services', 'Servicios')}</p>
             <ul className="mt-3 space-y-2">
-              <li><Link href="/tienda?category=cajas-misteriosas" className="hover:text-text">Mystery Box</Link></li>
+              <li><Link href="/mystery-boxes" className="hover:text-text">Mystery Box</Link></li>
               <li><Link href="/ruleta" className="hover:text-text">Ruleta</Link></li>
               <li><Link href="/subastas" className="hover:text-text">Subastas</Link></li>
               <li><Link href="/servicio-compra" className="hover:text-text">Encargos 5€</Link></li>

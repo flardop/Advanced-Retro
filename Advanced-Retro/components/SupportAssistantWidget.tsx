@@ -37,6 +37,7 @@ export default function SupportAssistantWidget() {
         'Hola. Soy el asistente de Advanced Retro. Puedo ayudarte con envíos, pedidos, mystery box, ruleta, encargos y comunidad.',
       links: [
         { label: 'Tienda', href: '/tienda' },
+        { label: 'Mystery', href: '/mystery-boxes' },
         { label: 'Ruleta', href: '/ruleta' },
         { label: 'Mi perfil', href: '/perfil' },
       ],

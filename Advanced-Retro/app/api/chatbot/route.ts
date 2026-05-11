@@ -104,7 +104,7 @@ function buildRouteSuggestions(userText: string): ChatbotLink[] {
   }
   if (text.includes('mystery') || text.includes('ruleta') || text.includes('tirada')) {
     push('Ruleta', '/ruleta');
-    push('Mystery Box', '/tienda?category=cajas-misteriosas');
+    push('Mystery Box', '/mystery-boxes');
   }
   if (text.includes('encargo') || text.includes('compra asistida')) {
     push('Encargos', '/servicio-compra');

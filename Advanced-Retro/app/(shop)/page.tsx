@@ -64,7 +64,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     [
       { name: 'Tienda retro', path: '/tienda', description: 'Catálogo completo de juegos, consolas y componentes retro.' },
       { name: 'Comunidad', path: '/comunidad', description: 'Anuncios de usuarios, perfiles de vendedor y actividad retro.' },
-      { name: 'Ruleta y Mystery', path: '/ruleta', description: 'Experiencias gamificadas con cajas y premios.' },
+      { name: 'Mystery Boxes', path: '/mystery-boxes', description: 'Todas las cajas activas, tiers y acceso a compra de tiradas.' },
+      { name: 'Ruleta', path: '/ruleta', description: 'Zona de giro para gastar tickets mystery y descubrir premios.' },
       { name: 'Servicio de compra', path: '/servicio-compra', description: 'Búsqueda asistida de productos por encargo.' },
       { name: 'Contacto', path: '/contacto', description: 'Soporte, ayuda comercial y atención al cliente.' },
     ],

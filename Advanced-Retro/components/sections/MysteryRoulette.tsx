@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import SafeImage from '@/components/SafeImage';
@@ -41,6 +43,7 @@ function toEuro(cents: number): string {
 }
 
 export default function MysteryRoulette() {
+  const searchParams = useSearchParams();
   const [boxes, setBoxes] = useState<MysteryBox[]>([]);
   const [selectedBoxId, setSelectedBoxId] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -51,6 +54,7 @@ export default function MysteryRoulette() {
   const [spinResult, setSpinResult] = useState<any | null>(null);
   const [spinHistory, setSpinHistory] = useState<any[]>([]);
   const [setupMessage, setSetupMessage] = useState('');
+  const preferredBoxSlug = String(searchParams?.get('box') || '').trim().toLowerCase();
 
   const loadBoxes = async () => {
     setLoading(true);
@@ -75,7 +79,13 @@ export default function MysteryRoulette() {
       setTotalTickets(Math.max(0, Number(data?.totalTickets || 0)));
       setBoxes(nextBoxes);
       setSetupMessage('');
-      if (!selectedBoxId && nextBoxes[0]?.id) {
+      const preferredBox =
+        preferredBoxSlug.length > 0
+          ? nextBoxes.find((box: MysteryBox) => String(box.slug || '').toLowerCase() === preferredBoxSlug)
+          : null;
+      if (preferredBox?.id) {
+        setSelectedBoxId(preferredBox.id);
+      } else if (!selectedBoxId && nextBoxes[0]?.id) {
         setSelectedBoxId(nextBoxes[0].id);
       }
     } catch (error: any) {
@@ -198,12 +208,19 @@ export default function MysteryRoulette() {
     <section className="section">
       <div className="container space-y-8">
         <div className="glass p-8">
-          <p className="chip inline-flex">MYSTERY BOX</p>
-          <h1 className="title-display text-4xl mt-4">Ruleta de premios</h1>
-          <p className="text-textMuted mt-3">
-            Compra una tirada, consume un ticket y descubre tu premio con animación de ruleta.
-            Los tickets solo sirven para cajas del mismo precio.
-          </p>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="chip inline-flex">RULETA</p>
+              <h1 className="title-display mt-4 text-4xl">Gasta tus tickets y gira</h1>
+              <p className="mt-3 max-w-3xl text-textMuted">
+                Aquí usas las tiradas que ya has comprado en Mystery Boxes. Elige la caja activa, consume un ticket
+                compatible y descubre tu premio con la ruleta.
+              </p>
+            </div>
+            <Link href="/mystery-boxes" className="button-secondary">
+              Ver todas las cajas
+            </Link>
+          </div>
         </div>
 
         {setupMessage ? (

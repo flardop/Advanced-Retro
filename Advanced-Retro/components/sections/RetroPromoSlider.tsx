@@ -35,12 +35,12 @@ const SLIDES: Slide[] = [
   },
   {
     id: 'mystery',
-    title: 'Ruleta y mystery box',
-    description: 'Experiencias gamificadas con tickets y control de premios.',
-    href: '/ruleta',
-    cta: 'Ir a ruleta',
+    title: 'Mystery boxes activas',
+    description: 'Compara cajas, compra tiradas y entra en la ruleta cuando quieras girar.',
+    href: '/mystery-boxes',
+    cta: 'Ver mystery boxes',
     image: '/images/mystery/mystery-premium.webp',
-    badge: 'Experiencia',
+    badge: 'Mystery',
   },
 ];
 

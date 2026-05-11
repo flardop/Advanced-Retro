@@ -21,7 +21,7 @@ function NavbarContent() {
     { href: '/tienda', label: t('nav.shop', 'Tienda'), icon: '🛒', description: t('nav.shop_desc', 'Catálogo completo') },
     { href: '/comunidad', label: t('nav.community', 'Comunidad'), icon: '👥', description: t('nav.community_desc', 'Compra y vende entre usuarios') },
     { href: '/blog', label: t('nav.blog', 'Blog'), icon: '📰', description: t('nav.blog_desc', 'Guías y noticias retro') },
-    { href: '/tienda?category=cajas-misteriosas', label: t('nav.mystery', 'Mystery'), icon: '🎁', description: t('nav.mystery_desc', 'Drops sorpresa y cajas') },
+    { href: '/mystery-boxes', label: t('nav.mystery', 'Mystery'), icon: '🎁', description: t('nav.mystery_desc', 'Drops sorpresa y cajas') },
     { href: '/subastas', label: t('nav.auctions', 'Subastas'), icon: '⏳', description: t('nav.auctions_desc', 'Próximos eventos y pujas') },
     { href: '/ruleta', label: t('nav.roulette', 'Ruleta'), icon: '🎯', description: t('nav.roulette_desc', 'Tiradas y premios') },
     { href: '/servicio-compra', label: t('nav.concierge', 'Encargos'), icon: '🧭', description: t('nav.concierge_desc', 'Compra asistida y seguimiento') },

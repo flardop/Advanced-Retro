@@ -148,8 +148,9 @@ export default async function StorePage() {
               <p className="text-sm font-semibold text-primary mb-2">Accesos directos</p>
               <div className="flex flex-wrap gap-2">
                 <Link href="/tienda" className="chip border-primary/40 text-primary">Ver catálogo completo</Link>
+                <Link href="/mystery-boxes" className="chip">Ver mystery boxes</Link>
                 <Link href="/servicio-compra" className="chip">Solicitar encargo</Link>
-                <Link href="/ruleta" className="chip">Ruleta y mystery</Link>
+                <Link href="/ruleta" className="chip">Ir a ruleta</Link>
                 <Link href="/comunidad" className="chip">Comunidad de venta</Link>
                 <Link href="/contacto" className="chip">Contacto y soporte</Link>
               </div>

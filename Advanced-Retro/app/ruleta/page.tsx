@@ -4,9 +4,9 @@ import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Ruleta retro y mystery tickets',
+  title: 'Ruleta de mystery tickets',
   description:
-    'Gira la ruleta de AdvancedRetro.es con tickets de mystery box y descubre premios disponibles por caja activa.',
+    'Usa tus tickets de mystery box en la ruleta de AdvancedRetro.es y descubre qué premio te toca en cada caja activa.',
   path: '/ruleta',
   keywords: ['ruleta retro', 'mystery box retro', 'tickets mystery'],
 });

@@ -127,8 +127,8 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${siteUrl}/ruleta?purchase=success&orderId=${order.id}`,
-      cancel_url: `${siteUrl}/ruleta?purchase=cancelled`,
+      success_url: `${siteUrl}/ruleta?purchase=success&orderId=${order.id}&box=${encodeURIComponent(String(box.slug || ''))}`,
+      cancel_url: `${siteUrl}/ruleta?purchase=cancelled&box=${encodeURIComponent(String(box.slug || ''))}`,
       metadata: {
         // Metadata consumida por el webhook para settlement final.
         orderId: order.id,
