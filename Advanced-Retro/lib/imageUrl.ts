@@ -243,12 +243,6 @@ function parseImageCollection(raw: unknown): string[] {
 }
 
 export function getProductImageUrl(product: any): string {
-  const componentOverride = getComponentImageOverride(product);
-  if (componentOverride) return componentOverride;
-
-  const consoleOverride = getConsoleImageOverride(product);
-  if (consoleOverride) return consoleOverride;
-
   const fromArray = parseImageCollection(product?.images);
   const fromSingle = parseImageCollection(product?.image);
   const fromLegacy = parseImageCollection(product?.gallery_images);
@@ -258,13 +252,17 @@ export function getProductImageUrl(product: any): string {
     const sorted = [...valid].sort((a, b) => scoreImageCandidate(b) - scoreImageCandidate(a));
     return sorted[0];
   }
+
+  const componentOverride = getComponentImageOverride(product);
+  if (componentOverride) return componentOverride;
+
+  const consoleOverride = getConsoleImageOverride(product);
+  if (consoleOverride) return consoleOverride;
+
   return getProductFallbackImageUrl(product);
 }
 
 export function getProductImageUrls(product: any): string[] {
-  const componentOverride = getComponentImageOverride(product);
-  if (componentOverride) return [componentOverride];
-
   const raw = [
     ...parseImageCollection(product?.images),
     ...parseImageCollection(product?.image),
@@ -275,7 +273,15 @@ export function getProductImageUrls(product: any): string[] {
   const valid = deduped
     .filter(isValidImageUrl)
     .sort((a, b) => scoreImageCandidate(b) - scoreImageCandidate(a));
-  return valid.length > 0 ? valid : [getProductFallbackImageUrl(product)];
+  if (valid.length > 0) return valid;
+
+  const componentOverride = getComponentImageOverride(product);
+  if (componentOverride) return [componentOverride];
+
+  const consoleOverride = getConsoleImageOverride(product);
+  if (consoleOverride) return [consoleOverride];
+
+  return [getProductFallbackImageUrl(product)];
 }
 
 export function getProductFallbackImageUrl(product: any): string {
