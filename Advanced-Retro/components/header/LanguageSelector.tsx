@@ -5,7 +5,15 @@ import { SUPPORTED_LOCALES, type LocaleCode } from '@/lib/i18n';
 import { useLocale } from '@/components/LocaleProvider';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
-export default function LanguageSelector() {
+type LanguageSelectorProps = {
+  className?: string;
+  placement?: 'top' | 'bottom';
+};
+
+export default function LanguageSelector({
+  className = '',
+  placement = 'top',
+}: LanguageSelectorProps) {
   const { locale, setLocale } = useLocale();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -43,8 +51,13 @@ export default function LanguageSelector() {
     await persistLocale(nextLocale);
   };
 
+  const panelPosition =
+    placement === 'bottom'
+      ? 'bottom-[calc(100%+0.75rem)] left-0'
+      : 'left-0 top-[calc(100%+0.75rem)]';
+
   return (
-    <div className="relative hidden lg:block">
+    <div className={`relative ${className}`.trim()}>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -57,7 +70,9 @@ export default function LanguageSelector() {
       </button>
 
       {open ? (
-        <div className="absolute left-0 top-[calc(100%+0.75rem)] z-[80] w-[250px] rounded-[1.25rem] border border-line/80 bg-[rgba(6,13,24,0.96)] p-3 shadow-[0_24px_60px_rgba(1,7,18,0.45)] backdrop-blur-xl">
+        <div
+          className={`absolute z-[90] w-[250px] rounded-[1.25rem] border border-line/80 bg-[rgba(6,13,24,0.96)] p-3 shadow-[0_24px_60px_rgba(1,7,18,0.45)] backdrop-blur-xl ${panelPosition}`}
+        >
           <div className="mb-2 px-2">
             <p className="text-sm font-semibold text-text">Idioma</p>
             <p className="text-xs text-textMuted">

@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import TrackerBootstrap from '@/components/TrackerBootstrap';
+import FloatingActionDock from '@/components/FloatingActionDock';
 const ClientToaster = dynamic(() => import('@/components/ClientToaster'), {
   ssr: false,
 });
@@ -48,8 +49,9 @@ export default function StoreChromeShell({ children }: { children: React.ReactNo
         <TrackerBootstrap />
       </Suspense>
       <Navbar />
-      <main className="flex-1 pb-4 lg:pb-0">{children}</main>
+      <main className="flex-1 pb-24 sm:pb-28">{children}</main>
       <Footer />
+      <FloatingActionDock />
       <ClientToaster />
       <CookieConsentBanner />
       <OptionalAnalytics />

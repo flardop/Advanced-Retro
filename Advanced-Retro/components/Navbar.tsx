@@ -7,8 +7,6 @@ import { usePathname } from 'next/navigation';
 import { useLocale } from '@/components/LocaleProvider';
 import UsageSessionTracker from '@/components/UsageSessionTracker';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
-import LanguageSelector from '@/components/header/LanguageSelector';
-import AIAssistant from '@/components/header/AIAssistant';
 
 function NavbarContent() {
   const pathname = usePathname();
@@ -99,7 +97,6 @@ function NavbarContent() {
           <div className="header-rail">
             <div className="flex h-[68px] items-center justify-between gap-3 rounded-[1.35rem] border border-line/80 bg-[rgba(8,14,25,0.76)] px-3 sm:h-[74px] sm:px-4">
               <div className="flex shrink-0 items-center gap-2">
-                <LanguageSelector />
                 <Link href="/" className="flex shrink-0 items-center rounded-lg px-1 py-1 hover:bg-white/5">
                   <Image
                     src="/logo.png"
@@ -132,7 +129,6 @@ function NavbarContent() {
               </nav>
 
               <div className="flex items-center gap-2 sm:gap-3">
-                <AIAssistant />
                 <Link href="/carrito" className="chip hover:border-primary/50 hover:text-text">
                   {locale === 'en' ? 'Cart' : t('nav.cart', 'Carrito')}
                 </Link>

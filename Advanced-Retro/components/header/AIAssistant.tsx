@@ -19,7 +19,11 @@ function makeId() {
   return `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export default function AIAssistant() {
+type AIAssistantProps = {
+  triggerClassName?: string;
+};
+
+export default function AIAssistant({ triggerClassName = '' }: AIAssistantProps) {
   const { locale } = useLocale();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
@@ -129,10 +133,10 @@ export default function AIAssistant() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="chip hidden md:inline-flex hover:border-primary/50 hover:text-text"
+        className={`chip hover:border-primary/50 hover:text-text ${triggerClassName}`.trim()}
       >
         <MessageCircle className="h-4 w-4" />
-        <span>{locale === 'en' ? 'Assistant' : 'Asistente'}</span>
+        <span className="hidden sm:inline">{locale === 'en' ? 'Assistant' : 'Asistente'}</span>
       </button>
 
       {open ? (
