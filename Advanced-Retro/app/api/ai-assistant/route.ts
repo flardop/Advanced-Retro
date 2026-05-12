@@ -9,6 +9,7 @@ type AssistantMessage = {
 
 const SYSTEM_PROMPT = `Eres el asistente virtual de AdvancedRetro, una tienda online especializada en productos retro, consolas vintage, videojuegos clásicos y coleccionables.
 Ayuda a los usuarios con preguntas sobre productos, estado de pedidos, políticas de envío, devoluciones, mystery boxes y subastas.
+Aclara que Mystery Boxes y Ruleta son secciones distintas: Mystery Boxes sirve para comprar tiradas y Ruleta sirve para gastar tickets ya conseguidos.
 Sé amable, conciso y responde en el idioma del usuario.
 Si el usuario pregunta por un pedido específico, dile que contacte con soporte indicando su número de pedido.
 No inventes información específica sobre productos, disponibilidad o precios. Si te faltan datos, invítale a explorar la tienda o a contactar con soporte.`;
@@ -43,10 +44,10 @@ function fallbackReply(locale: string, prompt: string): string {
       : 'AdvancedRetro prepara envíos desde España. Para tiempos exactos, lo más seguro es revisar el checkout o contactar con soporte.';
   }
 
-  if (text.includes('mystery') || text.includes('ruleta') || text.includes('box')) {
+  if (text.includes('mystery') || text.includes('ruleta') || text.includes('roulette') || text.includes('box')) {
     return locale === 'en'
-      ? 'Mystery boxes and roulette are tied to ticket-based flows. If you want the latest live details, open the relevant section in the store or ask support.'
-      : 'Las mystery boxes y la ruleta funcionan con tickets y disponibilidad dinámica. Para el detalle más actual, abre la sección correspondiente en la tienda o escribe a soporte.';
+      ? 'Mystery Boxes and Roulette are separate flows. You buy spins in Mystery Boxes, and then you use Roulette only to spend the tickets you already earned.'
+      : 'Mystery Boxes y Ruleta son flujos separados. En Mystery Boxes compras las tiradas y en Ruleta solo gastas los tickets que ya has conseguido.';
   }
 
   if (text.includes('subasta') || text.includes('auction')) {
@@ -61,34 +62,35 @@ function fallbackReply(locale: string, prompt: string): string {
 }
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json().catch(() => null);
-    const locale = String((body as any)?.locale || 'es').trim().toLowerCase();
-    const messages = normalizeMessages((body as any)?.messages);
-    const latestUserMessage = [...messages].reverse().find((message) => message.role === 'user');
+  const body = await req.json().catch(() => null);
+  const locale = String((body as any)?.locale || 'es').trim().toLowerCase();
+  const messages = normalizeMessages((body as any)?.messages);
+  const latestUserMessage = [...messages].reverse().find((message) => message.role === 'user');
 
-    if (!latestUserMessage) {
-      return NextResponse.json(
-        {
-          message:
-            locale === 'en'
-              ? 'Tell me what you need help with and I will do my best to guide you.'
-              : 'Cuéntame qué necesitas y haré lo posible por orientarte.',
-        },
-        { status: 200 }
-      );
-    }
-
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    const model = process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
-
-    if (!apiKey) {
-      return NextResponse.json({
-        message: fallbackReply(locale, latestUserMessage.content),
+  if (!latestUserMessage) {
+    return NextResponse.json(
+      {
+        message:
+          locale === 'en'
+            ? 'Tell me what you need help with and I will do my best to guide you.'
+            : 'Cuéntame qué necesitas y haré lo posible por orientarte.',
         provider: 'fallback',
-      });
-    }
+      },
+      { status: 200 }
+    );
+  }
 
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const model = process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
+
+  if (!apiKey) {
+    return NextResponse.json({
+      message: fallbackReply(locale, latestUserMessage.content),
+      provider: 'fallback',
+    });
+  }
+
+  try {
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -124,10 +126,10 @@ export async function POST(req: Request) {
       message: reply || fallbackReply(locale, latestUserMessage.content),
       provider: 'anthropic',
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || 'No se pudo responder desde el asistente' },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({
+      message: fallbackReply(locale, latestUserMessage.content),
+      provider: 'fallback',
+    });
   }
 }

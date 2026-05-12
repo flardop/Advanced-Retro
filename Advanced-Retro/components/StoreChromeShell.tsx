@@ -16,9 +16,6 @@ const CookieConsentBanner = dynamic(() => import('@/components/CookieConsentBann
 const OptionalAnalytics = dynamic(() => import('@/components/OptionalAnalytics'), {
   ssr: false,
 });
-const AnimatedFavicon = dynamic(() => import('@/components/AnimatedFavicon'), {
-  ssr: false,
-});
 
 function isStandalonePath(pathname: string) {
   return (
@@ -36,7 +33,6 @@ export default function StoreChromeShell({ children }: { children: React.ReactNo
   if (standalone) {
     return (
       <>
-        <AnimatedFavicon />
         {children}
       </>
     );
@@ -44,7 +40,6 @@ export default function StoreChromeShell({ children }: { children: React.ReactNo
 
   return (
     <>
-      <AnimatedFavicon />
       <Suspense fallback={null}>
         <TrackerBootstrap />
       </Suspense>

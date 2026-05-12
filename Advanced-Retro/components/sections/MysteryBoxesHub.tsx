@@ -127,8 +127,7 @@ export default function MysteryBoxesHub() {
               <div className="space-y-3">
                 <h1 className="title-display text-4xl sm:text-5xl">Todas las cajas misteriosas en un solo sitio</h1>
                 <p className="max-w-3xl text-base leading-relaxed text-textMuted">
-                  Aquí eliges tu caja, comparas tiers y compras tu tirada. La ruleta queda reservada para gastar tickets
-                  y descubrir el premio cuando ya tienes acceso.
+                  Aquí eliges tu caja, comparas tiers y compras tu tirada. La ruleta queda reservada únicamente para gastar tickets cuando ya has pasado por Mystery Boxes.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -136,7 +135,7 @@ export default function MysteryBoxesHub() {
                   Ver cajas activas
                 </a>
                 <Link href="/ruleta" className="button-secondary">
-                  Ir a ruleta
+                  Ya tengo tickets
                 </Link>
               </div>
             </div>
@@ -155,7 +154,7 @@ export default function MysteryBoxesHub() {
               <div className="glass p-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-primary">Flujo recomendado</p>
                 <p className="mt-3 text-sm leading-relaxed text-textMuted">
-                  1. Elige caja. 2. Compra tirada. 3. Vuelve a la ruleta. 4. Gira y descubre tu premio.
+                  1. Elige caja. 2. Compra tirada. 3. Recibe tickets. 4. Usa la ruleta solo para revelar tu premio.
                 </p>
               </div>
             </div>
@@ -245,7 +244,7 @@ export default function MysteryBoxesHub() {
                         {checkoutBoxId === box.id ? 'Abriendo pago...' : 'Comprar tirada'}
                       </button>
                       <Link href={`/ruleta?box=${encodeURIComponent(box.slug)}`} className="button-secondary w-full text-center">
-                        Ir a ruleta
+                        Usar tickets
                       </Link>
                     </div>
                   </div>
