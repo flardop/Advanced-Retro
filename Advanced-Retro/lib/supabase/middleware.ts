@@ -13,17 +13,27 @@ export function createMiddlewareSupabaseClient(request: NextRequest, response: N
   }
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: {
+      path: '/',
+      sameSite: 'lax',
+      secure:
+        process.env.NODE_ENV === 'production' ||
+        process.env.VERCEL_ENV === 'production',
+    },
     cookies: {
-      get(name: string) {
-        return request.cookies.get(name)?.value;
+      getAll() {
+        return request.cookies.getAll().map(({ name, value }) => ({ name, value }));
       },
-      set(name: string, value: string, options) {
-        request.cookies.set(name, value);
-        response.cookies.set({ name, value, ...options });
-      },
-      remove(name: string, options) {
-        request.cookies.set(name, '');
-        response.cookies.set({ name, value: '', ...options, maxAge: 0 });
+      setAll(cookiesToSet, headers) {
+        cookiesToSet.forEach(({ name, value }) => {
+          request.cookies.set(name, value);
+        });
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set({ name, value, ...options });
+        });
+        Object.entries(headers).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
       },
     },
   });

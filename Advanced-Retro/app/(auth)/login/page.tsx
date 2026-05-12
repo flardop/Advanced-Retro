@@ -120,7 +120,8 @@ function LoginForm() {
         }
         if (data?.session) {
           toast.success('Cuenta creada. Ya estás dentro.');
-          router.push('/perfil');
+          router.replace('/perfil');
+          router.refresh();
           return;
         }
         toast.success(
@@ -138,7 +139,8 @@ function LoginForm() {
           throw error;
         }
         toast.success('Sesión iniciada');
-        router.push('/perfil');
+        router.replace('/perfil');
+        router.refresh();
       }
     } catch (error: any) {
       toast.error(error.message || 'Error de autenticación');

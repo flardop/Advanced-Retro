@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { syncAuthUserProfileRow } from '@/lib/serverAuth';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 
 const ALLOWED_OTP_TYPES = new Set<EmailOtpType>([
   'signup',
@@ -14,7 +13,7 @@ const ALLOWED_OTP_TYPES = new Set<EmailOtpType>([
   'email_change',
 ]);
 
-async function syncUserProfile(supabase: ReturnType<typeof createRouteHandlerClient>) {
+async function syncUserProfile(supabase: ReturnType<typeof getSupabaseServerClient>) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -60,7 +59,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = getSupabaseServerClient();
     if (typeof code === 'string' && code.trim()) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) throw error;

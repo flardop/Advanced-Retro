@@ -15,15 +15,26 @@ export function getSupabaseServerClient() {
   const cookieStore = cookies();
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: {
+      path: '/',
+      sameSite: 'lax',
+      secure:
+        process.env.NODE_ENV === 'production' ||
+        process.env.VERCEL_ENV === 'production',
+    },
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+      getAll() {
+        return cookieStore.getAll().map(({ name, value }) => ({ name, value }));
       },
-      set(name: string, value: string, options) {
-        cookieStore.set({ name, value, ...options });
-      },
-      remove(name: string, options) {
-        cookieStore.set({ name, value: '', ...options, maxAge: 0 });
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set({ name, value, ...options });
+          });
+        } catch {
+          // Server Components cannot always mutate cookies directly.
+          // Middleware handles the refresh path for those requests.
+        }
       },
     },
   });

@@ -17,7 +17,15 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
   }
 
   if (!browserClient) {
-    browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey);
+    browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+      cookieOptions: {
+        path: '/',
+        sameSite: 'lax',
+        secure:
+          process.env.NODE_ENV === 'production' ||
+          process.env.VERCEL_ENV === 'production',
+      },
+    });
   }
 
   return browserClient;
