@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabaseClient';
-import { sampleProducts } from '@/lib/sampleData';
+import { dedupeCatalogProducts } from '@/lib/catalogProduct';
 import SafeImage from '@/components/SafeImage';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { isManualProduct } from '@/lib/productClassification';
@@ -25,12 +25,16 @@ const FEATURED_COLUMNS = [
 ].join(',');
 
 function filterFeaturedProducts(input: any[]): any[] {
-  return input.filter((product) => !isManualProduct(product)).slice(0, 6);
+  return dedupeCatalogProducts(input).filter((product) => !isManualProduct(product)).slice(0, 6);
 }
 
-export default function FeaturedProducts() {
+type FeaturedProductsProps = {
+  initialProducts?: any[];
+};
+
+export default function FeaturedProducts({ initialProducts = [] }: FeaturedProductsProps) {
   const { t } = useLocale();
-  const [products, setProducts] = useState<any[]>(filterFeaturedProducts(sampleProducts));
+  const [products, setProducts] = useState<any[]>(filterFeaturedProducts(initialProducts));
   const [metrics, setMetrics] = useState<Record<string, { visits: number; likes: number }>>({});
 
   useEffect(() => {
@@ -60,9 +64,6 @@ export default function FeaturedProducts() {
 
     const load = async () => {
       if (!supabaseClient) {
-        const fallback = filterFeaturedProducts(sampleProducts);
-        setProducts(fallback);
-        loadMetrics(fallback.map((product) => String(product.id)));
         return;
       }
       try {
@@ -70,26 +71,42 @@ export default function FeaturedProducts() {
           .from('products')
           .select(FEATURED_COLUMNS)
           .order('created_at', { ascending: false })
-          .limit(6);
+          .limit(18);
         if (error || !data || data.length === 0) {
-          const fallback = filterFeaturedProducts(sampleProducts);
-          setProducts(fallback);
-          loadMetrics(fallback.map((product) => String(product.id)));
           return;
         }
 
         const filtered = filterFeaturedProducts(data);
         setProducts(filtered);
         loadMetrics(filtered.map((product) => String(product.id)));
-      } catch {
-        const fallback = filterFeaturedProducts(sampleProducts);
-        setProducts(fallback);
-        loadMetrics(fallback.map((product) => String(product.id)));
-      }
+      } catch {}
     };
 
     void load();
   }, []);
+
+  useEffect(() => {
+    if (products.length === 0) return;
+    void (async () => {
+      try {
+        const res = await fetch('/api/products/social/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productIds: products.map((product) => String(product.id)).filter(Boolean) }),
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) return;
+        const next: Record<string, { visits: number; likes: number }> = {};
+        for (const [id, summary] of Object.entries<any>(data?.metrics || {})) {
+          next[id] = {
+            visits: Number(summary?.visits || 0),
+            likes: Number(summary?.likes || 0),
+          };
+        }
+        setMetrics(next);
+      } catch {}
+    })();
+  }, [products]);
 
   return (
     <section className="section pt-3">

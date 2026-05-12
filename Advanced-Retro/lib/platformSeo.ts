@@ -1,3 +1,5 @@
+import { matchesProductPlatform, normalizeCatalogText } from '@/lib/catalogProduct';
+
 export type PlatformLandingSlug =
   | 'game-boy'
   | 'game-boy-color'
@@ -16,16 +18,6 @@ type PlatformLandingConfig = {
   faq: Array<{ question: string; answer: string }>;
 };
 
-function normalizeText(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 function isMysteryBoxProduct(product: any): boolean {
   const category = String(product?.category || product?.category_id || '').toLowerCase();
   if (category === 'cajas-misteriosas') return true;
@@ -36,7 +28,7 @@ function isLikelyComponentProduct(product: any): boolean {
   const componentType = String(product?.component_type || '').toLowerCase();
   if (componentType && componentType !== 'full_game' && componentType !== 'cartucho') return true;
 
-  const source = normalizeText(
+  const source = normalizeCatalogText(
     `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')}`
   );
 
@@ -192,46 +184,7 @@ export function getPlatformLandingConfig(slug: string): PlatformLandingConfig | 
 }
 
 export function platformMatchesProduct(product: any, slug: PlatformLandingSlug): boolean {
-  const name = normalizeText(String(product?.name || ''));
-  const description = normalizeText(String(product?.description || ''));
-  const category = normalizeText(String(product?.category || product?.category_id || ''));
-  const platform = normalizeText(String(product?.platform || ''));
-  const componentType = normalizeText(String(product?.component_type || ''));
-  const source = `${name} ${description} ${category} ${platform} ${componentType}`.trim();
-
-  if (slug === 'consolas') {
-    return (
-      category.includes('consolas retro') ||
-      category.includes('consola') ||
-      name.startsWith('consola ') ||
-      name.includes(' consola ') ||
-      name.includes('dmg 01') ||
-      componentType === 'consola' ||
-      componentType === 'console'
-    );
-  }
-  if (slug === 'game-boy-color') {
-    return source.includes('game boy color') || source.includes('gameboy color');
-  }
-  if (slug === 'game-boy-advance') {
-    return source.includes('game boy advance') || source.includes('gameboy advance');
-  }
-  if (slug === 'super-nintendo') {
-    return source.includes('super nintendo') || source.includes('snes');
-  }
-  if (slug === 'gamecube') {
-    return source.includes('gamecube') || source.includes('game cube');
-  }
-  if (slug === 'game-boy') {
-    const isOtherSpecific =
-      source.includes('game boy color') ||
-      source.includes('gameboy color') ||
-      source.includes('game boy advance') ||
-      source.includes('gameboy advance');
-    if (isOtherSpecific) return false;
-    return source.includes('game boy') || source.includes('gameboy');
-  }
-  return false;
+  return matchesProductPlatform(product, slug);
 }
 
 export function isSeoLandingProduct(product: any, slug: PlatformLandingSlug): boolean {
@@ -240,4 +193,3 @@ export function isSeoLandingProduct(product: any, slug: PlatformLandingSlug): bo
   if (isLikelyComponentProduct(product)) return false;
   return true;
 }
-

@@ -4,23 +4,13 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import SafeImage from '@/components/SafeImage';
+import type { PublicMysteryBox } from '@/lib/mysteryPublic';
 
-type MysteryPrize = {
-  id: string;
-  label: string;
-  prize_type: 'physical_product' | 'discount_coupon' | 'other';
-  stock: number | null;
-};
-
-type MysteryBox = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  ticket_price: number;
-  image?: string;
-  available_tickets: number;
-  prizes: MysteryPrize[];
+type MysteryBoxesHubProps = {
+  initialBoxes?: PublicMysteryBox[];
+  initialSetupMessage?: string;
+  initialIsAuthenticated?: boolean;
+  initialTotalTickets?: number;
 };
 
 function toEuro(cents: number): string {
@@ -52,17 +42,25 @@ function getBoxTone(slug: string) {
   };
 }
 
-export default function MysteryBoxesHub() {
-  const [boxes, setBoxes] = useState<MysteryBox[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [totalTickets, setTotalTickets] = useState(0);
-  const [setupMessage, setSetupMessage] = useState('');
+export default function MysteryBoxesHub({
+  initialBoxes = [],
+  initialSetupMessage = '',
+  initialIsAuthenticated = false,
+  initialTotalTickets = 0,
+}: MysteryBoxesHubProps) {
+  const hasInitialHydratedData = initialBoxes.length > 0 || Boolean(initialSetupMessage);
+  const [boxes, setBoxes] = useState<PublicMysteryBox[]>(initialBoxes);
+  const [loading, setLoading] = useState(initialBoxes.length === 0 && !initialSetupMessage);
+  const [isAuthenticated, setIsAuthenticated] = useState(initialIsAuthenticated);
+  const [totalTickets, setTotalTickets] = useState(initialTotalTickets);
+  const [setupMessage, setSetupMessage] = useState(initialSetupMessage);
   const [checkoutBoxId, setCheckoutBoxId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadBoxes = async () => {
-      setLoading(true);
+      if (!hasInitialHydratedData) {
+        setLoading(true);
+      }
       try {
         const res = await fetch('/api/mystery/boxes', { cache: 'no-store' });
         const data = await res.json().catch(() => null);
@@ -90,9 +88,9 @@ export default function MysteryBoxesHub() {
     };
 
     void loadBoxes();
-  }, []);
+  }, [hasInitialHydratedData]);
 
-  const startCheckout = async (box: MysteryBox) => {
+  const startCheckout = async (box: PublicMysteryBox) => {
     setCheckoutBoxId(box.id);
     try {
       const res = await fetch('/api/mystery/checkout', {

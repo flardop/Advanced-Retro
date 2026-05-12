@@ -6,7 +6,7 @@ export const sampleCategories = [
 
 export const sampleProducts = [
   {
-    id: 'prod-1',
+    id: 'sample-gb-dmg-001',
     name: 'Consola Game Boy DMG original',
     slug: 'consola-game-boy-dmg-original',
     price: 14999,
@@ -26,7 +26,7 @@ export const sampleProducts = [
     created_at: new Date().toISOString(),
   },
   {
-    id: 'prod-2',
+    id: 'sample-snes-pal-001',
     name: 'Super Nintendo PAL original',
     slug: 'super-nintendo-pal-original',
     price: 6900,
@@ -52,7 +52,7 @@ export const sampleProducts = [
     created_at: new Date().toISOString(),
   },
   {
-    id: 'prod-3',
+    id: 'sample-mystery-premium-001',
     name: 'Caja Mystery Premium',
     slug: 'mystery-premium',
     price: 9900,

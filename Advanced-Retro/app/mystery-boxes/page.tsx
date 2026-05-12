@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import MysteryBoxesHub from '@/components/sections/MysteryBoxesHub';
+import { getPublicMysteryBoxesForPage } from '@/lib/mysteryPublic';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,15 @@ export const metadata: Metadata = buildPageMetadata({
   keywords: ['mystery box retro', 'cajas misteriosas retro', 'advanced retro mystery'],
 });
 
-export default function MysteryBoxesPage() {
-  return <MysteryBoxesHub />;
+export default async function MysteryBoxesPage() {
+  const { boxes, setupMessage } = await getPublicMysteryBoxesForPage();
+
+  return (
+    <MysteryBoxesHub
+      initialBoxes={boxes}
+      initialSetupMessage={setupMessage}
+      initialIsAuthenticated={false}
+      initialTotalTickets={0}
+    />
+  );
 }

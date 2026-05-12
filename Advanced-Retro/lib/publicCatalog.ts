@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { dedupeCatalogProducts } from '@/lib/catalogProduct';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { sampleProducts } from '@/lib/sampleData';
 
@@ -69,6 +70,10 @@ export function sanitizeCatalogRows(rows: any[]): PublicCatalogProduct[] {
   }));
 }
 
+function sanitizeAndDedupeCatalogRows(rows: any[]): PublicCatalogProduct[] {
+  return dedupeCatalogProducts(sanitizeCatalogRows(rows));
+}
+
 async function fetchWithAnonFallback(limit: number): Promise<PublicCatalogProduct[]> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const anonKey =
@@ -86,7 +91,7 @@ async function fetchWithAnonFallback(limit: number): Promise<PublicCatalogProduc
       .order('updated_at', { ascending: false })
       .limit(limit);
     if (error || !Array.isArray(data)) return [];
-    return sanitizeCatalogRows(data);
+    return sanitizeAndDedupeCatalogRows(data);
   } catch {
     return [];
   }
@@ -107,7 +112,7 @@ export async function getPublicCatalogProducts(limit = PUBLIC_CATALOG_LIMIT): Pr
       .limit(limit);
 
     if (!error && Array.isArray(data) && data.length > 0) {
-      products = sanitizeCatalogRows(data);
+      products = sanitizeAndDedupeCatalogRows(data);
       source = 'supabase_admin';
     }
   }
@@ -121,7 +126,7 @@ export async function getPublicCatalogProducts(limit = PUBLIC_CATALOG_LIMIT): Pr
   }
 
   if (products.length === 0) {
-    products = sanitizeCatalogRows(sampleProducts);
+    products = sanitizeAndDedupeCatalogRows(sampleProducts);
     source = 'sample';
   }
 

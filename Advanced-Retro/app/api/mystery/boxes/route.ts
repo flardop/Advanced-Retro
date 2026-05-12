@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { serializePublicMysteryBoxes } from '@/lib/mysteryPublic';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { listMysteryBoxes } from '@/lib/mysteryBox';
 import { getMysterySetupErrorMessage, isMysterySetupMissing } from '@/lib/mysterySetup';
@@ -23,17 +24,7 @@ export async function GET() {
       userId: user?.id || null,
     });
 
-    const publicBoxes = (boxes || []).map((box: any) => ({
-      ...box,
-      image: box?.image || box?.image_url || '/images/mystery/mystery-standard.webp',
-      prizes: (box?.prizes || []).map((prize: any) => ({
-        id: prize.id,
-        label: prize.label,
-        prize_type: prize.prize_type,
-        stock: prize.stock ?? null,
-        metadata: prize.metadata && typeof prize.metadata === 'object' ? prize.metadata : {},
-      })),
-    }));
+    const publicBoxes = serializePublicMysteryBoxes(boxes || []);
 
     const ticketsByPrice = new Map<number, number>();
     for (const box of publicBoxes) {

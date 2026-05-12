@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import MysteryRoulette from '@/components/sections/MysteryRoulette';
+import { getPublicMysteryBoxesForPage } from '@/lib/mysteryPublic';
 import { buildPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,15 @@ export const metadata: Metadata = buildPageMetadata({
   keywords: ['ruleta retro', 'mystery box retro', 'tickets mystery'],
 });
 
-export default function RoulettePage() {
-  return <MysteryRoulette />;
+export default async function RoulettePage() {
+  const { boxes, setupMessage } = await getPublicMysteryBoxesForPage();
+
+  return (
+    <MysteryRoulette
+      initialBoxes={boxes}
+      initialSetupMessage={setupMessage}
+      initialIsAuthenticated={false}
+      initialTotalTickets={0}
+    />
+  );
 }

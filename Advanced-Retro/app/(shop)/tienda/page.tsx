@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import Link from 'next/link';
 import Catalog from '@/components/sections/Catalog';
 import BreadcrumbsNav from '@/components/BreadcrumbsNav';
@@ -48,7 +47,9 @@ export default async function StorePage() {
     },
   ]);
 
-  const { products: seoProducts, source: seoSource } = await getPublicCatalogProducts(24);
+  const { products: catalogProducts, source: catalogSource } = await getPublicCatalogProducts();
+  const seoProducts = catalogProducts.slice(0, 24);
+  const seoSource = catalogSource;
   const itemListItems =
     seoSource === 'sample'
       ? []
@@ -106,17 +107,7 @@ export default async function StorePage() {
           </div>
         </div>
       </section>
-      <Suspense
-        fallback={
-          <section className="section">
-            <div className="container">
-              <div className="glass p-6 text-textMuted min-h-[420px]">Cargando catálogo...</div>
-            </div>
-          </section>
-        }
-      >
-        <Catalog />
-      </Suspense>
+      <Catalog initialProducts={catalogSource === 'sample' ? [] : catalogProducts} initialSource={catalogSource} />
       <section className="section pt-0">
         <details className="container group glass p-6 sm:p-8">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3">

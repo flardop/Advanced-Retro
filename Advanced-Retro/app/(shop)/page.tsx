@@ -8,6 +8,8 @@ import FinalCTA from '@/components/sections/FinalCTA';
 import HomeNarrative from '@/components/sections/HomeNarrative';
 import { redirect } from 'next/navigation';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
+import { getPublicCatalogProducts } from '@/lib/publicCatalog';
+import { isManualProduct } from '@/lib/productClassification';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +42,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   if (hasAdminFlag) {
     redirect('/admin');
   }
+
+  const { products: featuredPool, source: featuredSource } = await getPublicCatalogProducts(18);
+  const initialFeaturedProducts =
+    featuredSource === 'sample'
+      ? []
+      : featuredPool.filter((product) => !isManualProduct(product)).slice(0, 6);
 
   const faqSchema = buildFaqJsonLd([
     {
@@ -87,7 +95,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeLinksSchema) }}
       />
       <Hero />
-      <FeaturedProducts />
+      <FeaturedProducts initialProducts={initialFeaturedProducts} />
       <Collections />
       <Benefits />
       <RetroStory />

@@ -4,24 +4,13 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import type { PublicMysteryBox } from '@/lib/mysteryPublic';
 
-type MysteryPrize = {
-  id: string;
-  label: string;
-  prize_type: 'physical_product' | 'discount_coupon' | 'other';
-  stock: number | null;
-  metadata: Record<string, unknown>;
-};
-
-type MysteryBox = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  ticket_price: number;
-  image?: string;
-  available_tickets: number;
-  prizes: MysteryPrize[];
+type MysteryRouletteProps = {
+  initialBoxes?: PublicMysteryBox[];
+  initialSetupMessage?: string;
+  initialIsAuthenticated?: boolean;
+  initialTotalTickets?: number;
 };
 
 const SEGMENT_STYLES = [
@@ -40,22 +29,30 @@ function toEuro(cents: number): string {
   return `${(Number(cents || 0) / 100).toFixed(2)} €`;
 }
 
-export default function MysteryRoulette() {
+export default function MysteryRoulette({
+  initialBoxes = [],
+  initialSetupMessage = '',
+  initialIsAuthenticated = false,
+  initialTotalTickets = 0,
+}: MysteryRouletteProps) {
   const searchParams = useSearchParams();
-  const [boxes, setBoxes] = useState<MysteryBox[]>([]);
+  const [boxes, setBoxes] = useState<PublicMysteryBox[]>(initialBoxes);
   const [selectedBoxId, setSelectedBoxId] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [totalTickets, setTotalTickets] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(initialIsAuthenticated);
+  const [totalTickets, setTotalTickets] = useState(initialTotalTickets);
+  const [loading, setLoading] = useState(initialBoxes.length === 0 && !initialSetupMessage);
   const [spinning, setSpinning] = useState(false);
   const [rotationDeg, setRotationDeg] = useState(0);
   const [spinResult, setSpinResult] = useState<any | null>(null);
   const [spinHistory, setSpinHistory] = useState<any[]>([]);
-  const [setupMessage, setSetupMessage] = useState('');
+  const [setupMessage, setSetupMessage] = useState(initialSetupMessage);
   const preferredBoxSlug = String(searchParams?.get('box') || '').trim().toLowerCase();
 
   const loadBoxes = async () => {
-    setLoading(true);
+    const shouldShowLoadingState = boxes.length === 0 && !setupMessage;
+    if (shouldShowLoadingState) {
+      setLoading(true);
+    }
     try {
       const res = await fetch('/api/mystery/boxes', { cache: 'no-store' });
       const data = await res.json().catch(() => null);
@@ -79,7 +76,7 @@ export default function MysteryRoulette() {
       setSetupMessage('');
       const preferredBox =
         preferredBoxSlug.length > 0
-          ? nextBoxes.find((box: MysteryBox) => String(box.slug || '').toLowerCase() === preferredBoxSlug)
+          ? nextBoxes.find((box: PublicMysteryBox) => String(box.slug || '').toLowerCase() === preferredBoxSlug) || null
           : null;
       if (preferredBox?.id) {
         setSelectedBoxId(preferredBox.id);

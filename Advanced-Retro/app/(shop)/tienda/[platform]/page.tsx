@@ -5,13 +5,13 @@ import SafeImage from '@/components/SafeImage';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
 import { getProductHref } from '@/lib/productUrl';
 import { sampleProducts } from '@/lib/sampleData';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import {
   getPlatformLandingConfig,
   isSeoLandingProduct,
   PLATFORM_LANDING_SLUGS,
   type PlatformLandingSlug,
 } from '@/lib/platformSeo';
+import { getPublicCatalogProducts } from '@/lib/publicCatalog';
 import { notFound } from 'next/navigation';
 
 type PlatformPageProps = {
@@ -19,18 +19,9 @@ type PlatformPageProps = {
 };
 
 async function loadPlatformProducts(platform: PlatformLandingSlug) {
-  if (!supabaseAdmin) {
-    return sampleProducts.filter((product) => isSeoLandingProduct(product, platform)).slice(0, 36);
-  }
-
-  const { data } = await supabaseAdmin
-    .from('products')
-    .select('id,name,slug,description,price,image,stock,category,category_id,platform,is_mystery_box,component_type,updated_at,created_at,status')
-    .gt('price', 0)
-    .order('updated_at', { ascending: false })
-    .limit(2500);
-
-  return (data || []).filter((product: any) => isSeoLandingProduct(product, platform)).slice(0, 48);
+  const { products, source } = await getPublicCatalogProducts(2500);
+  const pool = source === 'sample' ? sampleProducts : products;
+  return pool.filter((product: any) => Number(product?.price || 0) > 0 && isSeoLandingProduct(product, platform)).slice(0, 48);
 }
 
 export function generateStaticParams() {
@@ -173,4 +164,3 @@ export default async function PlatformStorePage({ params }: PlatformPageProps) {
     </>
   );
 }
-

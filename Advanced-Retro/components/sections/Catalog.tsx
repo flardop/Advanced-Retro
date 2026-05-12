@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { supabaseClient } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import SafeImage from '@/components/SafeImage';
+import { dedupeCatalogProducts, isConsoleHardwareProduct, matchesProductPlatform, normalizeCatalogText } from '@/lib/catalogProduct';
 import { getProductFallbackImageUrl, getProductImageUrl } from '@/lib/imageUrl';
 import { getProductHref } from '@/lib/productUrl';
 import {
@@ -112,57 +113,11 @@ function getProductCategoryKey(product: any): string {
   return String(product?.category_id ?? product?.category ?? product?.category?.id ?? '');
 }
 
-function normalizeText(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 function matchPlatform(product: any, filterId: string): boolean {
-  const name = normalizeText(String(product?.name || ''));
-  const description = normalizeText(String(product?.description || ''));
-  const category = normalizeText(String(product?.category || product?.category_id || ''));
-  const platform = normalizeText(String(product?.platform || ''));
-  const componentType = normalizeText(String(product?.component_type || ''));
-  const source = `${name} ${description} ${category} ${platform} ${componentType}`.trim();
-
   if (filterId === 'consolas') {
-    return (
-      category.includes('consolas retro') ||
-      category.includes('consola') ||
-      name.startsWith('consola ') ||
-      name.includes(' consola ') ||
-      name.includes('dmg 01') ||
-      componentType === 'consola' ||
-      componentType === 'console'
-    );
+    return isConsoleHardwareProduct(product);
   }
-  if (filterId === 'game-boy-color') {
-    return source.includes('game boy color') || source.includes('gameboy color');
-  }
-  if (filterId === 'game-boy-advance') {
-    return source.includes('game boy advance') || source.includes('gameboy advance');
-  }
-  if (filterId === 'super-nintendo') {
-    return source.includes('super nintendo') || source.includes('snes');
-  }
-  if (filterId === 'gamecube') {
-    return source.includes('gamecube') || source.includes('game cube');
-  }
-  if (filterId === 'game-boy') {
-    const isOtherSpecific =
-      source.includes('game boy color') ||
-      source.includes('gameboy color') ||
-      source.includes('game boy advance') ||
-      source.includes('gameboy advance');
-    if (isOtherSpecific) return false;
-    return source.includes('game boy') || source.includes('gameboy');
-  }
-  return false;
+  return matchesProductPlatform(product, filterId as any);
 }
 
 function isMysteryBoxProduct(product: any): boolean {
@@ -172,25 +127,14 @@ function isMysteryBoxProduct(product: any): boolean {
 }
 
 function isConsoleBaseProduct(product: any): boolean {
-  const name = normalizeText(String(product?.name || ''));
-  const category = normalizeText(String(product?.category || product?.category_id || ''));
-  const componentType = normalizeText(String(product?.component_type || ''));
-  return (
-    category.includes('consolas retro') ||
-    category.includes('consola') ||
-    componentType === 'consola' ||
-    componentType === 'console' ||
-    name.startsWith('consola ') ||
-    name.includes(' consola ') ||
-    name.includes('dmg 01')
-  );
+  return isConsoleHardwareProduct(product);
 }
 
 function isSpecialConsoleEditionProduct(product: any): boolean {
   if (!isConsoleBaseProduct(product)) return false;
   if (isMysteryBoxProduct(product)) return false;
 
-  const source = normalizeText(
+  const source = normalizeCatalogText(
     `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')} ${String(product?.collection_key || '')}`
   );
 
@@ -222,7 +166,7 @@ function isLikelyComponentProduct(product: any): boolean {
   const componentType = String(product?.component_type || '').toLowerCase();
   if (componentType && componentType !== 'full_game' && componentType !== 'cartucho') return true;
 
-  const source = normalizeText(
+  const source = normalizeCatalogText(
     `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')}`
   );
 
@@ -236,7 +180,7 @@ function isLikelyComponentProduct(product: any): boolean {
 }
 
 function normalizeEditionFacet(value: unknown): string {
-  const source = normalizeText(String(value || ''));
+  const source = normalizeCatalogText(String(value || ''));
   if (!source) return 'sin-etiqueta';
   if (source.includes('original')) return 'original';
   if (source.includes('repro') || source.includes('replica') || source.includes('reproduccion')) return 'repro';
@@ -244,7 +188,7 @@ function normalizeEditionFacet(value: unknown): string {
 }
 
 function normalizeStatusFacet(value: unknown): string {
-  const source = normalizeText(String(value || ''));
+  const source = normalizeCatalogText(String(value || ''));
   return source || 'sin-estado';
 }
 
@@ -257,9 +201,9 @@ function prettifyStatusLabel(value: string): string {
 function getProductTypeFacets(product: any, completeProductIds: Set<string>): string[] {
   const facets = new Set<string>();
   const id = String(product?.id || '');
-  const component = normalizeText(String(product?.component_type || ''));
-  const name = normalizeText(String(product?.name || ''));
-  const description = normalizeText(String(product?.description || ''));
+  const component = normalizeCatalogText(String(product?.component_type || ''));
+  const name = normalizeCatalogText(String(product?.name || ''));
+  const description = normalizeCatalogText(String(product?.description || ''));
   const source = `${name} ${description} ${component}`.trim();
 
   if (isMysteryBoxProduct(product)) facets.add('mystery');
@@ -384,9 +328,17 @@ function pickFeaturedColumn(source: any[], take: number, used: Set<string>): any
   return picked;
 }
 
-function CatalogContent() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [catalogStatus, setCatalogStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+type CatalogProps = {
+  initialProducts?: any[];
+  initialSource?: string;
+};
+
+function CatalogContent({ initialProducts = [], initialSource = 'server' }: CatalogProps) {
+  const hasInitialProducts = initialProducts.length > 0;
+  const [products, setProducts] = useState<any[]>(() => dedupeCatalogProducts(initialProducts));
+  const [catalogStatus, setCatalogStatus] = useState<'loading' | 'ready' | 'error'>(() =>
+    hasInitialProducts ? 'ready' : 'loading'
+  );
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogNotice, setCatalogNotice] = useState<string | null>(null);
   const [active, setActive] = useState<string>('all');
@@ -481,16 +433,21 @@ function CatalogContent() {
 
   useEffect(() => {
     const load = async () => {
-      setCatalogStatus('loading');
+      const shouldShowLoadingState = !hasInitialProducts;
+      if (shouldShowLoadingState) {
+        setCatalogStatus('loading');
+      }
       setCatalogError(null);
-      setCatalogNotice(null);
+      if (!hasInitialProducts || initialSource === 'sample') {
+        setCatalogNotice(null);
+      }
 
       try {
         const res = await fetch('/api/catalog/public', { cache: 'no-store' });
         const data = await res.json();
         if (Array.isArray(data?.products)) {
           if (res.ok && data?.source !== 'sample') {
-            setProducts(data.products);
+            setProducts(dedupeCatalogProducts(data.products));
             setCatalogStatus('ready');
             if (data.products.length === 0) {
               setCatalogNotice('No hay productos disponibles en este momento.');
@@ -509,21 +466,24 @@ function CatalogContent() {
           .order('created_at', { ascending: false })
           .limit(FALLBACK_QUERY_LIMIT);
         if (Array.isArray(prods)) {
-          setProducts(prods);
+          const deduped = dedupeCatalogProducts(prods);
+          setProducts(deduped);
           setCatalogStatus('ready');
-          if (prods.length === 0) {
+          if (deduped.length === 0) {
             setCatalogNotice('No hay productos disponibles en este momento.');
           }
           return;
         }
       }
 
-      setProducts([]);
-      setCatalogStatus('error');
-      setCatalogError('No se pudo cargar el catálogo. Inténtalo de nuevo.');
+      if (!hasInitialProducts) {
+        setProducts([]);
+        setCatalogStatus('error');
+        setCatalogError('No se pudo cargar el catálogo. Inténtalo de nuevo.');
+      }
     };
     void load();
-  }, []);
+  }, [hasInitialProducts, initialSource]);
 
   useEffect(() => {
     loadedMetricIdsRef.current.clear();
@@ -550,7 +510,7 @@ function CatalogContent() {
       if (typeof window === 'undefined') return;
       const params = new URLSearchParams(window.location.search);
       const categoryParamRaw = String(params.get('category') || '').trim();
-      const categoryParamNormalized = normalizeText(categoryParamRaw);
+      const categoryParamNormalized = normalizeCatalogText(categoryParamRaw);
 
       const normalizedCategoryParam =
         categoryParamNormalized === 'mystery' ||
@@ -634,13 +594,13 @@ function CatalogContent() {
     }
 
     if (!mysteryView) {
-      const searchTerms = normalizeText(search)
+      const searchTerms = normalizeCatalogText(search)
         .split(' ')
         .map((term) => term.trim())
         .filter((term) => term.length >= 2);
       if (searchTerms.length > 0) {
         list = list.filter((product) => {
-          const haystack = normalizeText(
+          const haystack = normalizeCatalogText(
             `${String(product?.name || '')} ${String(product?.description || '')} ${String(product?.long_description || '')}`
           );
           return searchTerms.every((term) => haystack.includes(term));
@@ -1442,10 +1402,10 @@ function CatalogFallback() {
   );
 }
 
-export default function Catalog() {
+export default function Catalog(props: CatalogProps) {
   return (
     <Suspense fallback={<CatalogFallback />}>
-      <CatalogContent />
+      <CatalogContent {...props} />
     </Suspense>
   );
 }
