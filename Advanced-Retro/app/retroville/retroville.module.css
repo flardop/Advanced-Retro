@@ -1,0 +1,110 @@
+.characterLeft {
+  animation: retroville-character-left 5.8s ease-in-out infinite;
+}
+
+.characterRight {
+  animation: retroville-character-right 6.2s ease-in-out infinite;
+}
+
+.particle {
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 18px rgba(140, 180, 255, 0.7);
+  animation-name: retroville-particle-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.glitch {
+  position: relative;
+  display: inline-block;
+  animation: retroville-glitch 8s steps(1, end) infinite;
+  text-shadow:
+    0 0 18px rgba(255, 255, 255, 0.14),
+    0 0 42px rgba(121, 200, 255, 0.16);
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.glitch::before {
+  color: rgba(56, 189, 248, 0.38);
+  transform: translate3d(-2px, 0, 0);
+}
+
+.glitch::after {
+  color: rgba(232, 121, 249, 0.38);
+  transform: translate3d(2px, 0, 0);
+}
+
+@keyframes retroville-character-left {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes retroville-character-right {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes retroville-particle-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.28;
+  }
+  50% {
+    transform: translate3d(0, -16px, 0);
+    opacity: 0.88;
+  }
+}
+
+@keyframes retroville-glitch {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    text-shadow:
+      0 0 18px rgba(255, 255, 255, 0.14),
+      0 0 42px rgba(121, 200, 255, 0.16);
+  }
+  24% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(1px, 0, 0);
+  }
+  26% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  27% {
+    transform: translate3d(0, 0, 0);
+  }
+  62% {
+    transform: translate3d(0, 0, 0);
+  }
+  63% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  64% {
+    transform: translate3d(1px, 0, 0);
+  }
+  65% {
+    transform: translate3d(0, 0, 0);
+  }
+}
