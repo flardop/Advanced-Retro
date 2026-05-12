@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe-js';
 import { stripePromise } from '@/lib/stripe';
+import { supabaseClient } from '@/lib/supabaseClient';
 
 type CartCheckoutItem = {
   id: string;
@@ -58,9 +59,17 @@ export default function EmbeddedCheckoutModal({
     setError(null);
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const session = await supabaseClient?.auth.getSession();
+      const accessToken = session?.data?.session?.access_token || '';
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+      }
+
       const response = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
       const data = await response.json().catch(() => null);
@@ -71,6 +80,9 @@ export default function EmbeddedCheckoutModal({
       }
 
       if (!response.ok || !data?.clientSecret) {
+        if (response.status === 401) {
+          throw new Error('Tu sesión ha caducado. Vuelve a iniciar sesión para continuar con el pago.');
+        }
         throw new Error(data?.error || 'No se pudo iniciar el proceso de pago.');
       }
 

@@ -1,16 +1,3 @@
-import { cookies } from 'next/headers';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 
-const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.ANON;
-
-export const supabaseServer = () =>
-  createServerComponentClient(
-    { cookies },
-    {
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseKey: supabaseAnonKey,
-    }
-  );
+export const supabaseServer = () => getSupabaseServerClient();

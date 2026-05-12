@@ -61,7 +61,7 @@ export default function CheckoutView() {
 
     const loadSavedAddress = async () => {
       try {
-        const res = await fetch('/api/auth/profile');
+        const res = await fetch('/api/auth/profile', { cache: 'no-store', credentials: 'include' });
         const data = await res.json().catch(() => null);
         if (!res.ok) return;
 
@@ -139,6 +139,7 @@ export default function CheckoutView() {
     await fetch('/api/auth/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         shipping_address: shippingAddress,
       }),
