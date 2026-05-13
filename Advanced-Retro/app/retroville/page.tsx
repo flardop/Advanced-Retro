@@ -151,41 +151,43 @@ export default async function RetrovillePage() {
 
           <div className="pointer-events-none absolute inset-y-[18%] left-[-4%] hidden w-[38%] min-w-[380px] max-w-[620px] lg:block xl:left-[-1%] xl:w-[40%]">
             <div className="absolute inset-0 rounded-full bg-cyan-400/10 blur-3xl" />
-            <div className="relative h-full w-full">
+            <div className={`relative h-full w-full ${styles.characterShellLeft}`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_58%,rgba(45,212,255,0.18),transparent_28%),linear-gradient(90deg,rgba(8,12,24,0.96)_0%,rgba(8,12,24,0.5)_24%,transparent_70%),linear-gradient(180deg,rgba(8,12,24,0.72)_0%,transparent_18%,transparent_76%,rgba(6,10,20,0.86)_100%)]" />
               <Image
                 src="/images/retroville/nox-push.png"
                 alt="NOX pushing toward the Retroville core"
                 fill
                 priority
                 sizes="(max-width: 1279px) 34vw, 32vw"
-                className={`select-none object-cover object-left-center [filter:drop-shadow(0_24px_60px_rgba(31,171,255,0.22))] ${styles.characterLeft}`}
+                className={`select-none object-cover object-left-center [filter:drop-shadow(0_24px_60px_rgba(31,171,255,0.22))] ${styles.characterLeft} ${styles.characterImageLeft}`}
               />
             </div>
           </div>
 
           <div className="pointer-events-none absolute inset-y-[20%] right-[-6%] hidden w-[42%] min-w-[430px] max-w-[700px] lg:block xl:right-[-2%] xl:w-[44%]">
             <div className="absolute inset-0 rounded-full bg-fuchsia-400/10 blur-3xl" />
-            <div className="relative h-full w-full">
+            <div className={`relative h-full w-full ${styles.characterShellRight}`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_56%,rgba(236,72,153,0.18),transparent_28%),linear-gradient(270deg,rgba(8,12,24,0.96)_0%,rgba(8,12,24,0.52)_24%,transparent_68%),linear-gradient(180deg,rgba(8,12,24,0.72)_0%,transparent_18%,transparent_76%,rgba(6,10,20,0.86)_100%)]" />
               <Image
                 src="/images/retroville/button-crew-push.png"
                 alt="Button Crew pushing toward the Retroville core"
                 fill
                 priority
                 sizes="(max-width: 1279px) 38vw, 36vw"
-                className={`select-none object-cover object-right-center [filter:drop-shadow(0_24px_60px_rgba(216,72,255,0.2))] ${styles.characterRight}`}
+                className={`select-none object-cover object-right-center [filter:drop-shadow(0_24px_60px_rgba(216,72,255,0.2))] ${styles.characterRight} ${styles.characterImageRight}`}
               />
             </div>
           </div>
 
           <div className="relative z-10 flex min-h-[68vh] flex-col justify-between lg:min-h-[calc(100svh-16rem)]">
-            <div className="mx-auto flex w-full max-w-[640px] flex-1 flex-col items-center justify-center text-center lg:max-w-[600px] lg:pb-12">
+            <div className="mx-auto flex w-full max-w-[860px] flex-1 flex-col items-center justify-center text-center lg:pb-12">
               <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-100/90 backdrop-blur-lg sm:text-xs">
                 <Sparkles className="h-4 w-4" />
                 Cinematic universe reveal
               </div>
 
               <h1
-                className={`mt-7 w-full text-[2.16rem] font-black uppercase leading-[0.95] tracking-[-0.06em] text-white sm:text-[4.2rem] sm:tracking-normal xl:text-[5.5rem] ${pixelFont.className}`}
+                className={`mt-7 w-full text-center text-[2.16rem] font-black uppercase leading-[0.95] tracking-[-0.06em] text-white sm:text-[4.2rem] sm:tracking-normal xl:text-[5.5rem] ${pixelFont.className}`}
               >
                 <span
                   data-text="RETROVILLE"
@@ -195,60 +197,64 @@ export default async function RetrovillePage() {
                 </span>
               </h1>
 
-              <p className="mt-6 max-w-[27ch] text-xl font-semibold text-slate-100 sm:text-2xl">
-                Every forgotten game ends up somewhere.
-              </p>
+              <div className="mt-6 flex w-full max-w-[540px] flex-col items-center">
+                <p className="max-w-[27ch] text-xl font-semibold text-slate-100 sm:text-2xl">
+                  Every forgotten game ends up somewhere.
+                </p>
 
-              <p className="mt-4 max-w-[34ch] text-sm leading-7 text-slate-300 sm:text-base">
-                A darkly comic retro world where abandoned hardware, broken memories
-                and forgotten controllers keep living long after players move on.
-              </p>
+                <p className="mt-4 max-w-[34ch] text-sm leading-7 text-slate-300 sm:text-base">
+                  A darkly comic retro world where abandoned hardware, broken memories
+                  and forgotten controllers keep living long after players move on.
+                </p>
 
-              <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row">
-                <Link
-                  href="#waitlist"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#8b5cf6,#22d3ee)] px-6 py-3 text-sm font-semibold text-slate-950 shadow-[0_14px_38px_rgba(52,211,255,0.24)] transition hover:-translate-y-0.5 hover:brightness-110"
-                >
-                  Enter Retroville
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="#signal"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur-xl transition hover:border-white/25 hover:bg-white/[0.08]"
-                >
-                  <Play className="h-4 w-4 fill-current" />
-                  Watch Trailer
-                </Link>
+                <div className="mt-8 flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row">
+                  <Link
+                    href="#waitlist"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#8b5cf6,#22d3ee)] px-6 py-3 text-sm font-semibold text-slate-950 shadow-[0_14px_38px_rgba(52,211,255,0.24)] transition hover:-translate-y-0.5 hover:brightness-110"
+                  >
+                    Enter Retroville
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="#signal"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-6 py-3 text-sm font-semibold text-white/90 backdrop-blur-xl transition hover:border-white/25 hover:bg-white/[0.08]"
+                  >
+                    <Play className="h-4 w-4 fill-current" />
+                    Watch Trailer
+                  </Link>
+                </div>
+
+                <div className="mt-4 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.24em] text-white/55 backdrop-blur-xl">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(103,232,249,0.9)]" />
+                  Launch sequence targeting {launchLabel}
+                </div>
+
+                <RetrovilleCountdown targetIso={launchIso} className="mt-6 w-full max-w-[430px]" />
               </div>
-
-              <div className="mt-4 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.24em] text-white/55 backdrop-blur-xl">
-                <span className="inline-flex h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(103,232,249,0.9)]" />
-                Launch sequence targeting {launchLabel}
-              </div>
-
-              <RetrovilleCountdown targetIso={launchIso} className="mt-6 w-full max-w-[430px]" />
             </div>
 
             <div className="relative mt-8 h-[250px] overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(12,18,35,0.72),rgba(7,11,22,0.84))] lg:hidden sm:h-[320px]">
               <div className="absolute inset-x-[24%] bottom-[8%] top-[20%] rounded-full bg-[radial-gradient(circle,rgba(90,89,255,0.22),transparent_64%)] blur-3xl" />
-              <div className="absolute inset-y-[18%] left-[-12%] w-[58%] sm:left-[-4%] sm:w-[46%]">
+              <div className={`absolute inset-y-[18%] left-[-12%] w-[58%] sm:left-[-4%] sm:w-[46%] ${styles.characterShellLeft}`}>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_26%_56%,rgba(45,212,255,0.18),transparent_32%),linear-gradient(90deg,rgba(8,12,24,0.96)_0%,rgba(8,12,24,0.46)_24%,transparent_72%),linear-gradient(180deg,rgba(8,12,24,0.7)_0%,transparent_18%,transparent_78%,rgba(6,10,20,0.86)_100%)]" />
                 <Image
                   src="/images/retroville/nox-push.png"
                   alt="NOX pushing into Retroville"
                   fill
                   priority
                   sizes="(max-width: 640px) 54vw, 32vw"
-                  className="object-cover object-left-center [filter:drop-shadow(0_14px_30px_rgba(31,171,255,0.18))]"
+                  className={`object-cover object-left-center [filter:drop-shadow(0_14px_30px_rgba(31,171,255,0.18))] ${styles.characterImageLeft}`}
                 />
               </div>
-              <div className="absolute inset-y-[20%] right-[-14%] w-[66%] sm:right-[-4%] sm:w-[52%]">
+              <div className={`absolute inset-y-[20%] right-[-14%] w-[66%] sm:right-[-4%] sm:w-[52%] ${styles.characterShellRight}`}>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_56%,rgba(236,72,153,0.18),transparent_32%),linear-gradient(270deg,rgba(8,12,24,0.96)_0%,rgba(8,12,24,0.46)_24%,transparent_70%),linear-gradient(180deg,rgba(8,12,24,0.7)_0%,transparent_18%,transparent_78%,rgba(6,10,20,0.86)_100%)]" />
                 <Image
                   src="/images/retroville/button-crew-push.png"
                   alt="Button Crew pushing into Retroville"
                   fill
                   priority
                   sizes="(max-width: 640px) 58vw, 36vw"
-                  className="object-cover object-right-center [filter:drop-shadow(0_14px_30px_rgba(216,72,255,0.16))]"
+                  className={`object-cover object-right-center [filter:drop-shadow(0_14px_30px_rgba(216,72,255,0.16))] ${styles.characterImageRight}`}
                 />
               </div>
             </div>

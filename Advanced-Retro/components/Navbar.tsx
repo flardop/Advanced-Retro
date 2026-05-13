@@ -16,14 +16,14 @@ function NavbarContent() {
   const [open, setOpen] = useState(false);
 
   const navItems = [
-    { href: '/tienda', label: t('nav.shop', 'Tienda'), icon: '🛒', description: t('nav.shop_desc', 'Catálogo completo') },
-    { href: '/comunidad', label: t('nav.community', 'Comunidad'), icon: '👥', description: t('nav.community_desc', 'Compra y vende entre usuarios') },
-    { href: '/blog', label: t('nav.blog', 'Blog'), icon: '📰', description: t('nav.blog_desc', 'Guías y noticias retro') },
-    { href: '/mystery-boxes', label: t('nav.mystery', 'Mystery'), icon: '🎁', description: t('nav.mystery_desc', 'Drops sorpresa y cajas') },
-    { href: '/subastas', label: t('nav.auctions', 'Subastas'), icon: '⏳', description: t('nav.auctions_desc', 'Próximos eventos y pujas') },
-    { href: '/ruleta', label: t('nav.roulette', 'Ruleta'), icon: '🎯', description: t('nav.roulette_desc', 'Tiradas y premios') },
-    { href: '/servicio-compra', label: t('nav.concierge', 'Encargos'), icon: '🧭', description: t('nav.concierge_desc', 'Compra asistida y seguimiento') },
-    { href: '/contacto', label: t('nav.contact', 'Contacto'), icon: '💬', description: t('nav.contact_desc', 'Soporte verificado') },
+    { href: '/tienda', label: t('nav.shop', 'Tienda'), description: t('nav.shop_desc', 'Catálogo completo') },
+    { href: '/comunidad', label: t('nav.community', 'Comunidad'), description: t('nav.community_desc', 'Compra y vende entre usuarios') },
+    { href: '/blog', label: t('nav.blog', 'Blog'), description: t('nav.blog_desc', 'Guías y noticias retro') },
+    { href: '/mystery-boxes', label: t('nav.mystery', 'Mystery'), description: t('nav.mystery_desc', 'Drops sorpresa y cajas') },
+    { href: '/subastas', label: t('nav.auctions', 'Subastas'), description: t('nav.auctions_desc', 'Próximos eventos y pujas') },
+    { href: '/ruleta', label: t('nav.roulette', 'Ruleta'), description: t('nav.roulette_desc', 'Tiradas y premios') },
+    { href: '/servicio-compra', label: t('nav.concierge', 'Encargos'), description: t('nav.concierge_desc', 'Compra asistida y seguimiento') },
+    { href: '/contacto', label: t('nav.contact', 'Contacto'), description: t('nav.contact_desc', 'Soporte verificado') },
   ];
 
   useEffect(() => {
@@ -48,6 +48,21 @@ function NavbarContent() {
     return () => {
       window.removeEventListener('scroll', onScroll);
     };
+  }, []);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 1280) {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   const queryMatches = (queryString: string) => {
@@ -142,12 +157,12 @@ function NavbarContent() {
                       : t('nav.login', 'Entrar')}
                 </Link>
                 <button
-                  className={`xl:hidden chip min-w-[94px] justify-center ${open ? 'border-primary/60 text-text' : ''}`}
+                  className={`xl:hidden chip min-w-[94px] justify-center ${open ? 'border-primary/60 text-text bg-white/5' : ''}`}
                   onClick={() => setOpen((value) => !value)}
                   aria-expanded={open}
                   aria-label="Abrir menú"
                 >
-                  {open ? t('nav.close', 'Cerrar') : 'Explorar'}
+                  {open ? t('nav.close', 'Cerrar') : t('nav.menu', 'Menú')}
                 </button>
               </div>
             </div>
@@ -155,12 +170,19 @@ function NavbarContent() {
         </div>
 
         {open && (
-          <div className="fixed inset-0 z-[70] bg-[rgba(2,8,16,0.72)] backdrop-blur-sm xl:hidden" onClick={() => setOpen(false)}>
-            <div className="absolute inset-y-0 right-0 w-[min(92vw,420px)] border-l border-line bg-[rgba(7,14,24,0.98)]">
-              <div className="h-full overflow-auto p-4" onClick={(event) => event.stopPropagation()}>
-                <div className="glass p-4 space-y-3 text-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs uppercase tracking-[0.18em] text-primary">{t('nav.mobile_nav', 'Navegación móvil')}</p>
+          <div className="xl:hidden">
+            <div className="container pb-2">
+              <div className="header-rail">
+                <div className="rounded-[1.35rem] border border-line/80 bg-[rgba(7,14,24,0.97)] p-3 shadow-[0_18px_42px_rgba(2,8,18,0.34)] backdrop-blur-xl sm:p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-primary">
+                        {t('nav.mobile_nav', 'Navegación móvil')}
+                      </p>
+                      <p className="mt-1 text-xs text-textMuted">
+                        {t('nav.mobile_nav_desc', 'Accesos principales de la tienda y servicios')}
+                      </p>
+                    </div>
                     <button type="button" className="chip" onClick={() => setOpen(false)}>
                       {t('nav.close', 'Cerrar')}
                     </button>
@@ -174,27 +196,24 @@ function NavbarContent() {
                           key={`mobile-${item.href}`}
                           href={item.href}
                           onClick={() => setOpen(false)}
-                          className={`rounded-xl border px-3 py-3 transition ${
+                          className={`rounded-2xl border px-4 py-3 transition ${
                             isActive
-                              ? 'border-primary/60 bg-primary/10'
-                              : 'border-line bg-[rgba(10,18,30,0.45)] hover:border-primary/30'
+                              ? 'border-primary/60 bg-primary/10 text-text'
+                              : 'border-line bg-[rgba(10,18,30,0.52)] hover:border-primary/30'
                           }`}
                         >
-                          <p className="font-semibold flex items-center gap-2">
-                            <span>{item.icon}</span>
-                            <span>{item.label}</span>
-                          </p>
-                          <p className="mt-1 text-xs text-textMuted">{item.description}</p>
+                          <p className="font-semibold text-text">{item.label}</p>
+                          <p className="mt-1 text-xs leading-relaxed text-textMuted">{item.description}</p>
                         </Link>
                       );
                     })}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <Link
                       href={user ? '/perfil' : '/login'}
                       onClick={() => setOpen(false)}
-                      className="button-secondary w-full"
+                      className="button-secondary w-full justify-center"
                     >
                       {user
                         ? locale === 'en'
@@ -204,17 +223,27 @@ function NavbarContent() {
                           ? 'Sign in'
                           : t('nav.login_mobile', 'Iniciar sesión')}
                     </Link>
-                    <Link href="/carrito" onClick={() => setOpen(false)} className="button-primary w-full">
+                    <Link href="/carrito" onClick={() => setOpen(false)} className="button-primary w-full justify-center">
                       {locale === 'en' ? 'Go to cart' : t('nav.go_cart_mobile', 'Ir al carrito')}
                     </Link>
                   </div>
 
-                  <div className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-3 text-xs text-textMuted">
-                    <p><strong className="text-primary">{t('trust.shipping_title', 'Envío 24-48h:')}</strong> {t('trust.shipping_text', 'preparación desde España')}</p>
-                    <p className="mt-1"><strong className="text-primary">{t('trust.support_title', 'Soporte:')}</strong> {t('trust.support_text', 'ticket y chat comprador ↔ tienda')}</p>
+                  <div className="mt-3 rounded-2xl border border-line bg-[rgba(10,18,30,0.58)] p-3 text-xs text-textMuted">
+                    <p>
+                      <strong className="text-primary">{t('trust.shipping_title', 'Envío 24-48h:')}</strong>{' '}
+                      {t('trust.shipping_text', 'preparación desde España')}
+                    </p>
+                    <p className="mt-1">
+                      <strong className="text-primary">{t('trust.support_title', 'Soporte:')}</strong>{' '}
+                      {t('trust.support_text', 'ticket y chat comprador ↔ tienda')}
+                    </p>
                   </div>
 
-                  {user?.email ? <p className="text-xs text-textMuted pt-1">{t('nav.session', 'Sesión')}: {user.email}</p> : null}
+                  {user?.email ? (
+                    <p className="mt-3 text-xs text-textMuted">
+                      {t('nav.session', 'Sesión')}: {user.email}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -250,7 +279,6 @@ function NavbarFallback() {
       <div className="container py-2">
         <div className="header-rail flex h-[68px] items-center justify-between gap-3 rounded-[1.35rem] border border-line/80 bg-[rgba(8,14,25,0.76)] px-3 sm:h-[74px] sm:px-4">
           <div className="flex items-center gap-2">
-            <div className="chip hidden lg:inline-flex">🇪🇸 ES</div>
             <Link href="/" className="flex items-center shrink-0 rounded-lg px-1 py-1 hover:bg-white/5">
               <Image
                 src="/logo.png"
@@ -262,7 +290,7 @@ function NavbarFallback() {
               />
             </Link>
           </div>
-          <div className="chip">Cargando menu...</div>
+          <div className="chip">Cargando menú...</div>
         </div>
       </div>
     </header>

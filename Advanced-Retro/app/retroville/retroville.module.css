@@ -1,3 +1,30 @@
+.characterShellLeft,
+.characterShellRight {
+  overflow: hidden;
+}
+
+.characterImageLeft {
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.94) 12%, #000 64%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.96) 10%, #000 74%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.94) 12%, #000 64%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.96) 10%, #000 74%, transparent 100%);
+  mask-composite: intersect;
+}
+
+.characterImageRight {
+  -webkit-mask-image:
+    linear-gradient(to left, transparent 0%, rgba(0, 0, 0, 0.94) 12%, #000 64%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.96) 10%, #000 74%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to left, transparent 0%, rgba(0, 0, 0, 0.94) 12%, #000 64%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.96) 10%, #000 74%, transparent 100%);
+  mask-composite: intersect;
+}
+
 .characterLeft {
   animation: retroville-character-left 5.8s ease-in-out infinite;
 }
@@ -106,5 +133,25 @@
   }
   65% {
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (max-width: 1023px) {
+  .characterImageLeft {
+    -webkit-mask-image:
+      linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.94) 14%, #000 70%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.96) 12%, #000 76%, transparent 100%);
+    mask-image:
+      linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.94) 14%, #000 70%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.96) 12%, #000 76%, transparent 100%);
+  }
+
+  .characterImageRight {
+    -webkit-mask-image:
+      linear-gradient(to left, transparent 0%, rgba(0, 0, 0, 0.94) 14%, #000 70%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.96) 12%, #000 76%, transparent 100%);
+    mask-image:
+      linear-gradient(to left, transparent 0%, rgba(0, 0, 0, 0.94) 14%, #000 70%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.96) 12%, #000 76%, transparent 100%);
   }
 }

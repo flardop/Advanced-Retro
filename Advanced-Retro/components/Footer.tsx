@@ -7,12 +7,47 @@ import { PUBLIC_SUPPORT_EMAIL } from '@/lib/legal';
 
 export default function Footer() {
   const { t } = useLocale();
+  const footerGroups = [
+    {
+      title: t('footer.store', 'Tienda'),
+      links: [
+        { href: '/tienda', label: t('footer.catalog', 'Catálogo completo') },
+        { href: '/tienda?category=platform:game-boy', label: 'Game Boy' },
+        { href: '/tienda?category=platform:game-boy-color', label: 'Game Boy Color' },
+        { href: '/tienda?category=platform:game-boy-advance', label: 'Game Boy Advance' },
+        { href: '/tienda?category=platform:super-nintendo', label: 'Super Nintendo' },
+        { href: '/tienda?category=platform:gamecube', label: 'GameCube' },
+        { href: '/tienda?category=platform:consolas', label: 'Consolas' },
+      ],
+    },
+    {
+      title: t('footer.services', 'Servicios'),
+      links: [
+        { href: '/mystery-boxes', label: 'Mystery Box' },
+        { href: '/ruleta', label: 'Ruleta' },
+        { href: '/subastas', label: 'Subastas' },
+        { href: '/servicio-compra', label: 'Encargos 5€' },
+        { href: '/comunidad', label: 'Comunidad' },
+        { href: '/comunidad/publicar', label: 'Publicar anuncio' },
+      ],
+    },
+    {
+      title: t('footer.legal', 'Legal'),
+      links: [
+        { href: '/terminos', label: t('footer.terms', 'Términos') },
+        { href: '/privacidad', label: t('footer.privacy', 'Privacidad') },
+        { href: '/cookies', label: t('footer.cookies', 'Cookies') },
+        { href: '/accesibilidad', label: 'Accesibilidad' },
+        { href: '/contacto', label: 'Contacto' },
+      ],
+    },
+  ];
 
   return (
     <footer className="mt-auto border-t border-line bg-[rgba(8,14,25,0.82)] backdrop-blur-sm">
-      <div className="container py-10">
-        <div className="content-rail grid gap-8 lg:grid-cols-[1.2fr,1fr,1fr,1fr] text-sm text-textMuted">
-          <div className="space-y-4">
+      <div className="container py-8 sm:py-10">
+        <div className="content-rail grid gap-6 lg:grid-cols-[1.15fr,1.35fr] lg:gap-8 text-sm text-textMuted">
+          <div className="space-y-4 text-center md:text-left">
             <Link href="/" className="inline-block rounded-lg p-1 hover:bg-white/5">
               <Image
                 src="/logo.png"
@@ -28,7 +63,7 @@ export default function Footer() {
                 'Tienda especializada en retro gaming, coleccionismo y restauración con enfoque profesional.'
               )}
             </p>
-            <div className="rounded-xl border border-line bg-[rgba(11,20,34,0.6)] p-3 text-xs leading-relaxed">
+            <div className="rounded-xl border border-line bg-[rgba(11,20,34,0.6)] p-3 text-xs leading-relaxed text-left">
               <p>
                 <span className="text-primary font-semibold">{t('footer.operation', 'Operación:')}</span>{' '}
                 {t('footer.operation_value', 'España')}
@@ -43,7 +78,7 @@ export default function Footer() {
             </div>
             <div className="rounded-xl border border-line bg-[rgba(11,20,34,0.6)] p-3 text-xs">
               <p className="text-text font-semibold">{t('footer.payment_methods', 'Pago seguro')}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 md:justify-start">
                 <Image src="/icons/payments/visa.svg" alt="Visa" width={96} height={32} className="h-8 w-auto" />
                 <Image src="/icons/payments/mastercard.svg" alt="Mastercard" width={96} height={32} className="h-8 w-auto" />
                 <Image src="/icons/payments/sepa.svg" alt="SEPA" width={96} height={32} className="h-8 w-auto" />
@@ -52,41 +87,28 @@ export default function Footer() {
             </div>
           </div>
 
-          <div>
-            <p className="text-text font-semibold">{t('footer.store', 'Tienda')}</p>
-            <ul className="mt-3 space-y-2">
-              <li><Link href="/tienda" className="hover:text-text">{t('footer.catalog', 'Catálogo completo')}</Link></li>
-              <li><Link href="/tienda?category=platform:game-boy" className="hover:text-text">Game Boy</Link></li>
-              <li><Link href="/tienda?category=platform:game-boy-color" className="hover:text-text">Game Boy Color</Link></li>
-              <li><Link href="/tienda?category=platform:game-boy-advance" className="hover:text-text">Game Boy Advance</Link></li>
-              <li><Link href="/tienda?category=platform:super-nintendo" className="hover:text-text">Super Nintendo</Link></li>
-              <li><Link href="/tienda?category=platform:gamecube" className="hover:text-text">GameCube</Link></li>
-              <li><Link href="/tienda?category=platform:consolas" className="hover:text-text">Consolas</Link></li>
-            </ul>
-          </div>
+          <div className="grid gap-3 md:hidden">
+            {footerGroups.map((group) => (
+              <details
+                key={`footer-mobile-${group.title}`}
+                className="rounded-2xl border border-line bg-[rgba(11,20,34,0.6)] p-4"
+              >
+                <summary className="cursor-pointer list-none text-sm font-semibold text-text">
+                  {group.title}
+                </summary>
+                <ul className="mt-3 space-y-2 text-sm text-textMuted">
+                  {group.links.map((link) => (
+                    <li key={`footer-mobile-link-${link.href}`}>
+                      <Link href={link.href} className="hover:text-text">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
 
-          <div>
-            <p className="text-text font-semibold">{t('footer.services', 'Servicios')}</p>
-            <ul className="mt-3 space-y-2">
-              <li><Link href="/mystery-boxes" className="hover:text-text">Mystery Box</Link></li>
-              <li><Link href="/ruleta" className="hover:text-text">Ruleta</Link></li>
-              <li><Link href="/subastas" className="hover:text-text">Subastas</Link></li>
-              <li><Link href="/servicio-compra" className="hover:text-text">Encargos 5€</Link></li>
-              <li><Link href="/comunidad" className="hover:text-text">Comunidad</Link></li>
-              <li><Link href="/comunidad/publicar" className="hover:text-text">Publicar anuncio</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <p className="text-text font-semibold">{t('footer.legal', 'Legal')}</p>
-            <ul className="mt-3 space-y-2">
-              <li><Link href="/terminos" className="hover:text-text">{t('footer.terms', 'Términos')}</Link></li>
-              <li><Link href="/privacidad" className="hover:text-text">{t('footer.privacy', 'Privacidad')}</Link></li>
-              <li><Link href="/cookies" className="hover:text-text">{t('footer.cookies', 'Cookies')}</Link></li>
-              <li><Link href="/accesibilidad" className="hover:text-text">Accesibilidad</Link></li>
-              <li><Link href="/contacto" className="hover:text-text">Contacto</Link></li>
-            </ul>
-            <div className="mt-4 rounded-xl border border-line bg-[rgba(11,20,34,0.6)] p-3 text-xs">
+            <div className="rounded-2xl border border-line bg-[rgba(11,20,34,0.6)] p-4 text-xs text-textMuted text-center">
               <p className="text-text font-semibold">{t('footer.secure', 'Compra segura')}</p>
               <p className="mt-1">
                 {t(
@@ -96,14 +118,43 @@ export default function Footer() {
               </p>
             </div>
           </div>
+
+          <div className="hidden gap-8 md:grid md:grid-cols-3">
+            {footerGroups.map((group) => (
+              <div key={`footer-desktop-${group.title}`}>
+                <p className="text-text font-semibold">{group.title}</p>
+                <ul className="mt-3 space-y-2">
+                  {group.links.map((link) => (
+                    <li key={`footer-desktop-link-${link.href}`}>
+                      <Link href={link.href} className="hover:text-text">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+
+                {group.title === t('footer.legal', 'Legal') ? (
+                  <div className="mt-4 rounded-xl border border-line bg-[rgba(11,20,34,0.6)] p-3 text-xs">
+                    <p className="text-text font-semibold">{t('footer.secure', 'Compra segura')}</p>
+                    <p className="mt-1">
+                      {t(
+                        'footer.secure_text',
+                        'Seguimiento de pedidos, soporte por ticket y estado de envío actualizado.'
+                      )}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="border-t border-line/70">
         <div className="container py-4">
-          <div className="content-rail flex flex-col items-center justify-between gap-2 text-center text-xs text-textMuted sm:flex-row sm:text-left">
+          <div className="content-rail flex flex-col items-center justify-between gap-3 text-center text-xs text-textMuted md:flex-row md:text-left">
             <p>© {new Date().getFullYear()} ADVANCED RETRO. {t('footer.rights', 'Todos los derechos reservados.')}</p>
-            <ul className="flex items-center gap-4">
+            <ul className="flex flex-wrap items-center justify-center gap-3 md:justify-end md:gap-4">
               <li><Link href="/terminos" className="hover:text-text">{t('footer.conditions', 'Condiciones')}</Link></li>
               <li><Link href="/privacidad" className="hover:text-text">{t('footer.privacy', 'Privacidad')}</Link></li>
               <li><Link href="/cookies" className="hover:text-text">{t('footer.cookies', 'Cookies')}</Link></li>
