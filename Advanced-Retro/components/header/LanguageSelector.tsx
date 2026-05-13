@@ -7,12 +7,16 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
 type LanguageSelectorProps = {
   className?: string;
+  buttonClassName?: string;
   placement?: 'top' | 'bottom';
+  showFlag?: boolean;
 };
 
 export default function LanguageSelector({
   className = '',
+  buttonClassName = '',
   placement = 'top',
+  showFlag = true,
 }: LanguageSelectorProps) {
   const { locale, setLocale } = useLocale();
   const [open, setOpen] = useState(false);
@@ -61,11 +65,11 @@ export default function LanguageSelector({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="chip min-w-[92px] justify-center gap-2 hover:border-primary/50 hover:text-text"
+        className={`chip min-w-[92px] justify-center gap-2 hover:border-primary/50 hover:text-text ${buttonClassName}`.trim()}
         aria-expanded={open}
         aria-label="Selector de idioma"
       >
-        <span className="text-base leading-none">{current.flag}</span>
+        {showFlag ? <span className="text-base leading-none">{current.flag}</span> : null}
         <span className="font-semibold uppercase tracking-[0.08em]">{current.code}</span>
       </button>
 
@@ -94,7 +98,7 @@ export default function LanguageSelector({
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <span className="text-base leading-none">{item.flag}</span>
+                    {showFlag ? <span className="text-base leading-none">{item.flag}</span> : null}
                     <span>{item.nativeLabel}</span>
                   </span>
                   <span className="text-[11px] font-semibold uppercase tracking-[0.08em]">

@@ -54,9 +54,13 @@ function buildWelcomeMessage(locale: string): ChatMessage {
 
 type AIAssistantProps = {
   triggerClassName?: string;
+  onTrigger?: () => void;
 };
 
-export default function AIAssistant({ triggerClassName = '' }: AIAssistantProps) {
+export default function AIAssistant({
+  triggerClassName = '',
+  onTrigger,
+}: AIAssistantProps) {
   const { locale } = useLocale();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
@@ -263,7 +267,10 @@ export default function AIAssistant({ triggerClassName = '' }: AIAssistantProps)
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          onTrigger?.();
+          setOpen(true);
+        }}
         className={`chip hover:border-primary/50 hover:text-text ${triggerClassName}`.trim()}
       >
         <MessageCircle className="h-4 w-4" />

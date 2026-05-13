@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { useLocale } from '@/components/LocaleProvider';
 import UsageSessionTracker from '@/components/UsageSessionTracker';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
+import LanguageSelector from '@/components/header/LanguageSelector';
+import AIAssistant from '@/components/header/AIAssistant';
 
 function NavbarContent() {
   const pathname = usePathname();
@@ -173,7 +175,7 @@ function NavbarContent() {
           <div className="xl:hidden">
             <div className="container pb-2">
               <div className="header-rail">
-                <div className="rounded-[1.35rem] border border-line/80 bg-[rgba(7,14,24,0.97)] p-3 shadow-[0_18px_42px_rgba(2,8,18,0.34)] backdrop-blur-xl sm:p-4">
+                <div className="max-h-[calc(100svh-6.25rem)] overflow-y-auto rounded-[1.35rem] border border-line/80 bg-[rgba(7,14,24,0.97)] p-3 shadow-[0_18px_42px_rgba(2,8,18,0.34)] backdrop-blur-xl sm:p-4">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.2em] text-primary">
@@ -226,6 +228,19 @@ function NavbarContent() {
                     <Link href="/carrito" onClick={() => setOpen(false)} className="button-primary w-full justify-center">
                       {locale === 'en' ? 'Go to cart' : t('nav.go_cart_mobile', 'Ir al carrito')}
                     </Link>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <LanguageSelector
+                      className="w-full"
+                      buttonClassName="w-full"
+                      placement="top"
+                      showFlag={false}
+                    />
+                    <AIAssistant
+                      triggerClassName="w-full justify-center px-4"
+                      onTrigger={() => setOpen(false)}
+                    />
                   </div>
 
                   <div className="mt-3 rounded-2xl border border-line bg-[rgba(10,18,30,0.58)] p-3 text-xs text-textMuted">
