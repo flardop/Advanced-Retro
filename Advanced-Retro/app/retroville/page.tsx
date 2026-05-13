@@ -148,11 +148,13 @@ export default async function RetrovillePage() {
           <div className="pointer-events-none absolute left-1/2 top-[17%] hidden h-[48vh] w-[1px] -translate-x-1/2 bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent blur-[2px] lg:block" />
           <div className="pointer-events-none absolute left-1/2 top-[22%] hidden h-[36vh] w-[34vw] max-w-[560px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(68,211,255,0.16),rgba(126,87,255,0.10)_42%,transparent_68%)] blur-3xl lg:block" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[34vh] bg-[linear-gradient(180deg,transparent,rgba(34,17,66,0.26)_50%,rgba(4,8,22,0.72))]" />
+          <div className="pointer-events-none absolute left-[-8%] top-[14%] hidden h-[52vh] w-[34vw] max-w-[520px] rounded-full bg-[radial-gradient(circle,rgba(45,212,255,0.18),rgba(85,85,255,0.10)_42%,transparent_72%)] blur-3xl lg:block" />
+          <div className="pointer-events-none absolute right-[-8%] top-[17%] hidden h-[54vh] w-[36vw] max-w-[560px] rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.16),rgba(45,212,255,0.08)_42%,transparent_72%)] blur-3xl lg:block" />
 
-          <div className="pointer-events-none absolute inset-y-[18%] left-[-4%] hidden w-[38%] min-w-[380px] max-w-[620px] lg:block xl:left-[-1%] xl:w-[40%]">
+          <div className="pointer-events-none absolute inset-y-[18%] left-[-6%] hidden w-[34%] min-w-[340px] max-w-[520px] lg:block xl:left-[-3%] xl:w-[35%]">
             <div className="absolute inset-0 rounded-full bg-cyan-400/10 blur-3xl" />
             <div className={`relative h-full w-full ${styles.characterShellLeft}`}>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_58%,rgba(45,212,255,0.18),transparent_28%),linear-gradient(90deg,rgba(8,12,24,0.96)_0%,rgba(8,12,24,0.5)_24%,transparent_70%),linear-gradient(180deg,rgba(8,12,24,0.72)_0%,transparent_18%,transparent_76%,rgba(6,10,20,0.86)_100%)]" />
+              <div className="absolute inset-[8%_2%_10%_-2%] rounded-full bg-[radial-gradient(circle_at_24%_56%,rgba(45,212,255,0.18),transparent_24%),radial-gradient(circle_at_62%_48%,rgba(111,82,255,0.14),transparent_34%)] blur-3xl" />
               <Image
                 src="/images/retroville/nox-push.png"
                 alt="NOX pushing toward the Retroville core"
@@ -164,10 +166,10 @@ export default async function RetrovillePage() {
             </div>
           </div>
 
-          <div className="pointer-events-none absolute inset-y-[20%] right-[-6%] hidden w-[42%] min-w-[430px] max-w-[700px] lg:block xl:right-[-2%] xl:w-[44%]">
+          <div className="pointer-events-none absolute inset-y-[20%] right-[-8%] hidden w-[38%] min-w-[390px] max-w-[600px] lg:block xl:right-[-4%] xl:w-[40%]">
             <div className="absolute inset-0 rounded-full bg-fuchsia-400/10 blur-3xl" />
             <div className={`relative h-full w-full ${styles.characterShellRight}`}>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_56%,rgba(236,72,153,0.18),transparent_28%),linear-gradient(270deg,rgba(8,12,24,0.96)_0%,rgba(8,12,24,0.52)_24%,transparent_68%),linear-gradient(180deg,rgba(8,12,24,0.72)_0%,transparent_18%,transparent_76%,rgba(6,10,20,0.86)_100%)]" />
+              <div className="absolute inset-[8%_-2%_10%_2%] rounded-full bg-[radial-gradient(circle_at_76%_56%,rgba(236,72,153,0.18),transparent_24%),radial-gradient(circle_at_36%_50%,rgba(45,212,255,0.12),transparent_34%)] blur-3xl" />
               <Image
                 src="/images/retroville/button-crew-push.png"
                 alt="Button Crew pushing toward the Retroville core"
@@ -180,24 +182,26 @@ export default async function RetrovillePage() {
           </div>
 
           <div className="relative z-10 flex min-h-[68vh] flex-col justify-between lg:min-h-[calc(100svh-16rem)]">
-            <div className="mx-auto flex w-full max-w-[860px] flex-1 flex-col items-center justify-center text-center lg:pb-12">
+            <div className="mx-auto flex w-full max-w-[780px] flex-1 flex-col items-center justify-center px-2 text-center lg:pb-12">
               <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-fuchsia-100/90 backdrop-blur-lg sm:text-xs">
                 <Sparkles className="h-4 w-4" />
                 Cinematic universe reveal
               </div>
 
-              <h1
-                className={`mt-7 w-full text-center text-[2.16rem] font-black uppercase leading-[0.95] tracking-[-0.06em] text-white sm:text-[4.2rem] sm:tracking-normal xl:text-[5.5rem] ${pixelFont.className}`}
-              >
-                <span
-                  data-text="RETROVILLE"
-                  className={styles.glitch}
+              <div className="mt-7 flex w-full justify-center">
+                <h1
+                  className={`max-w-fit text-center text-[2.05rem] font-black uppercase leading-[0.95] tracking-[-0.05em] text-white sm:text-[3.85rem] sm:tracking-normal xl:text-[5rem] ${pixelFont.className}`}
                 >
-                  RETROVILLE
-                </span>
-              </h1>
+                  <span
+                    data-text="RETROVILLE"
+                    className={styles.glitch}
+                  >
+                    RETROVILLE
+                  </span>
+                </h1>
+              </div>
 
-              <div className="mt-6 flex w-full max-w-[540px] flex-col items-center">
+              <div className="mt-6 flex w-full max-w-[520px] flex-col items-center">
                 <p className="max-w-[27ch] text-xl font-semibold text-slate-100 sm:text-2xl">
                   Every forgotten game ends up somewhere.
                 </p>
@@ -236,7 +240,7 @@ export default async function RetrovillePage() {
             <div className="relative mt-8 h-[250px] overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(12,18,35,0.72),rgba(7,11,22,0.84))] lg:hidden sm:h-[320px]">
               <div className="absolute inset-x-[24%] bottom-[8%] top-[20%] rounded-full bg-[radial-gradient(circle,rgba(90,89,255,0.22),transparent_64%)] blur-3xl" />
               <div className={`absolute inset-y-[18%] left-[-12%] w-[58%] sm:left-[-4%] sm:w-[46%] ${styles.characterShellLeft}`}>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_26%_56%,rgba(45,212,255,0.18),transparent_32%),linear-gradient(90deg,rgba(8,12,24,0.96)_0%,rgba(8,12,24,0.46)_24%,transparent_72%),linear-gradient(180deg,rgba(8,12,24,0.7)_0%,transparent_18%,transparent_78%,rgba(6,10,20,0.86)_100%)]" />
+                <div className="absolute inset-[8%_0_12%_-4%] rounded-full bg-[radial-gradient(circle_at_26%_56%,rgba(45,212,255,0.18),transparent_28%),radial-gradient(circle_at_60%_50%,rgba(111,82,255,0.14),transparent_34%)] blur-3xl" />
                 <Image
                   src="/images/retroville/nox-push.png"
                   alt="NOX pushing into Retroville"
@@ -247,7 +251,7 @@ export default async function RetrovillePage() {
                 />
               </div>
               <div className={`absolute inset-y-[20%] right-[-14%] w-[66%] sm:right-[-4%] sm:w-[52%] ${styles.characterShellRight}`}>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_56%,rgba(236,72,153,0.18),transparent_32%),linear-gradient(270deg,rgba(8,12,24,0.96)_0%,rgba(8,12,24,0.46)_24%,transparent_70%),linear-gradient(180deg,rgba(8,12,24,0.7)_0%,transparent_18%,transparent_78%,rgba(6,10,20,0.86)_100%)]" />
+                <div className="absolute inset-[8%_-4%_12%_0] rounded-full bg-[radial-gradient(circle_at_76%_56%,rgba(236,72,153,0.18),transparent_28%),radial-gradient(circle_at_38%_50%,rgba(45,212,255,0.12),transparent_34%)] blur-3xl" />
                 <Image
                   src="/images/retroville/button-crew-push.png"
                   alt="Button Crew pushing into Retroville"
