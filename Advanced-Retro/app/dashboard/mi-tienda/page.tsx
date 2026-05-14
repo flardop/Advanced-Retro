@@ -7,7 +7,7 @@ import { buildPageMetadata } from '@/lib/seo';
 
 export const metadata = buildPageMetadata({
   title: 'Mi tienda',
-  description: 'Panel privado para gestionar la tienda personal dentro del ecosistema AdvancedRetro.',
+  description: 'Panel privado para gestionar tu tienda personal dentro del ecosistema AdvancedRetro.',
   path: '/dashboard/mi-tienda',
   noIndex: true,
   keywords: ['dashboard tienda', 'mi tienda advancedretro'],
@@ -47,7 +47,7 @@ export default async function MyStoreDashboardPage() {
         <div className="mx-auto max-w-4xl rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,14,24,0.9),rgba(8,12,20,0.96))] p-8">
           <p className="text-xs uppercase tracking-[0.28em] text-primary">Acceso restringido</p>
           <h1 className="mt-4 text-4xl font-black text-white sm:text-5xl">Sube de nivel para activar tu tienda</h1>
-          <p className="mt-5 text-base leading-8 text-slate-300">Tu dashboard personal queda desbloqueado desde Coleccionista. Es la forma de mantener el ecosistema útil para quien de verdad compra, participa y vende dentro de AdvancedRetro.</p>
+          <p className="mt-5 text-base leading-8 text-slate-300">Tu dashboard personal se desbloquea desde Coleccionista. Es la forma de premiar a quien realmente compra, participa y quiere construir algo propio dentro de AdvancedRetro.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/memberships" className="inline-flex rounded-full bg-[linear-gradient(135deg,#66c0f4,#8b5cf6)] px-5 py-3 text-sm font-semibold text-slate-950">
               Ver planes
@@ -71,7 +71,7 @@ export default async function MyStoreDashboardPage() {
         <div className="mx-auto max-w-4xl rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,14,24,0.9),rgba(8,12,20,0.96))] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
           <p className="text-xs uppercase tracking-[0.28em] text-primary">Mi tienda</p>
           <h1 className="mt-4 text-4xl font-black text-white sm:text-5xl">Aún no has creado tu escaparate</h1>
-          <p className="mt-5 text-base leading-8 text-slate-300">Tu membresía ya lo permite. El siguiente paso es lanzar la primera versión de tu tienda con el wizard y luego ajustar diseño, historia y datos desde este panel.</p>
+          <p className="mt-5 text-base leading-8 text-slate-300">Tu membresía ya lo permite. El siguiente paso es abrir el wizard, definir tu tono, tu estética y tu historia, y después afinarlo todo desde este panel.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/crear-tienda" className="inline-flex rounded-full bg-[linear-gradient(135deg,#66c0f4,#8b5cf6)] px-5 py-3 text-sm font-semibold text-slate-950">
               Crear mi tienda

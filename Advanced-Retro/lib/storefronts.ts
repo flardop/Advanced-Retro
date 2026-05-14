@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import type { CSSProperties } from 'react';
 import { absoluteUrl } from '@/lib/siteConfig';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import type { MembershipTier } from '@/lib/membership';
+import { getStoreProductLimit, type MembershipTier } from '@/lib/membership';
 
 export const STOREFRONT_PREVIEW_COOKIE = 'advanced-retro-store-preview';
 
@@ -284,7 +284,7 @@ export function buildStorefrontPreviewRecord(input: {
     instagram: input.instagram || null,
     twitter: input.twitter || null,
     state: 'review',
-    productLimit: input.membershipTier === 'collector' ? 10 : null,
+    productLimit: getStoreProductLimit(input.membershipTier),
     membershipTier: input.membershipTier,
     createdAt: new Date().toISOString(),
     views: 0,

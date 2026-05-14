@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Save } from 'lucide-react';
-import type { MembershipTier } from '@/lib/membership';
+import { getStoreProductLimit, isWhiteLabelStorefront, type MembershipTier } from '@/lib/membership';
 import type { StorefrontRecord } from '@/lib/storefronts';
 
 export default function StoreDashboardManager({
@@ -29,7 +29,9 @@ export default function StoreDashboardManager({
   });
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const productLimit = membershipTier === 'vip' ? 'Ilimitados' : '10 productos';
+  const productLimitValue = getStoreProductLimit(membershipTier);
+  const productLimit = productLimitValue === null ? 'Sin límite' : `${productLimitValue} productos`;
+  const whiteLabel = isWhiteLabelStorefront(membershipTier);
 
   const stats = useMemo(
     () => [
@@ -186,7 +188,11 @@ export default function StoreDashboardManager({
             </div>
             <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4">
               <p className="text-[11px] uppercase tracking-[0.22em] text-white/40">Acción recomendada</p>
-              <p className="mt-2 leading-7">Sube tu historia, ajusta el color principal y añade tus primeras piezas para activar la sensación de tienda real.</p>
+              <p className="mt-2 leading-7">
+                {whiteLabel
+                  ? 'Refina el tono visual y la historia de tu tienda para que se sienta completamente propia antes de llenarla de producto.'
+                  : 'Sube tu historia, ajusta el color principal y añade tus primeras piezas para activar la sensación de tienda real.'}
+              </p>
             </div>
           </div>
         </aside>

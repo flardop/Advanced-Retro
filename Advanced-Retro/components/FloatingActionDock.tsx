@@ -8,8 +8,7 @@ function isHiddenPath(pathname: string) {
   return (
     pathname.startsWith('/admin') ||
     pathname.startsWith('/retroville') ||
-    pathname.startsWith('/dev-retroville') ||
-    pathname.startsWith('/creador-de-tiendas')
+    pathname.startsWith('/dev-retroville')
   );
 }
 

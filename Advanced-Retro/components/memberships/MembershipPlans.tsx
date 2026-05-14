@@ -7,51 +7,74 @@ import { MEMBERSHIP_PLANS } from '@/lib/membership';
 
 const faqs = [
   {
-    question: '¿Cómo funciona la suscripción?',
+    question: '¿Esto sustituye a la tienda actual?',
     answer:
-      'Eliges un plan, accedes a sus ventajas y puedes subir, bajar o cancelar cuando quieras desde tu panel.',
+      'No. La tienda oficial sigue siendo el núcleo comercial de AdvancedRetro. Las membresías añaden ventajas y acceso a capas nuevas del ecosistema.',
   },
   {
-    question: '¿Puedo cancelar en cualquier momento?',
+    question: '¿Puedo cancelar cuando quiera?',
     answer:
-      'Sí. La cancelación detiene la renovación futura y mantienes acceso hasta el final del periodo pagado.',
-  },
-  {
-    question: '¿Qué ocurre si cambio de plan?',
-    answer:
-      'Se recalculan tus beneficios desde el siguiente ciclo de facturación y tu acceso se actualiza automáticamente.',
+      'Sí. La cancelación detiene la renovación futura y mantienes acceso hasta el final del periodo activo.',
   },
   {
     question: '¿La tienda personal está incluida?',
     answer:
-      'Sí, desde Coleccionista puedes lanzar tu tienda dentro del ecosistema. En VIP Retro desbloqueas productos ilimitados y analytics.',
+      'Sí. Desde Coleccionista puedes lanzar una tienda propia con hasta 10 productos. VIP Retro desbloquea catálogo ilimitado y presentación más libre.',
+  },
+  {
+    question: '¿Qué diferencia real hay entre Coleccionista y VIP?',
+    answer:
+      'Coleccionista da acceso preferente y una primera tienda funcional. VIP suma más ventaja comercial, más libertad estética y una capa más premium dentro del ecosistema.',
+  },
+];
+
+const comparisonRows = [
+  {
+    label: 'Descuento en tienda oficial',
+    values: ['—', '5%', '10%'],
+  },
+  {
+    label: 'Acceso anticipado a drops',
+    values: ['—', '24h', '72h'],
+  },
+  {
+    label: 'Participaciones en ruleta',
+    values: ['1/mes', '3/mes', 'Ilimitadas'],
+  },
+  {
+    label: 'Tienda personal',
+    values: ['No', 'Hasta 10 productos', 'Ilimitada'],
+  },
+  {
+    label: 'Branding visible de AdvancedRetro',
+    values: ['Sí', 'Sí', 'No visible'],
   },
 ];
 
 export default function MembershipPlans() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
-  const savingsCopy = useMemo(
+  const helperCopy = useMemo(
     () =>
       billingPeriod === 'yearly'
-        ? 'Pago anual activo · mejor valor por acceso'
-        : 'Pago mensual activo · flexibilidad máxima',
+        ? 'Modo anual activo · mejor valor para quien quiere quedarse dentro del ecosistema'
+        : 'Modo mensual activo · flexibilidad para subir de nivel cuando lo necesites',
     [billingPeriod]
   );
 
   return (
-    <div className="space-y-12">
-      <section className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,14,24,0.9),rgba(8,12,20,0.96))] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.24)] sm:p-8 lg:p-10">
-        <div className="mx-auto max-w-[920px] text-center">
+    <div className="space-y-10">
+      <section className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,14,24,0.92),rgba(8,12,20,0.97))] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.24)] sm:p-8 lg:p-10">
+        <div className="mx-auto max-w-[940px] text-center">
           <p className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.28em] text-primary">
             <Sparkles className="h-4 w-4" />
-            Ecosistema AdvancedRetro
+            AdvancedRetro Memberships
           </p>
           <h1 className="mt-6 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
             ELIGE TU NIVEL
           </h1>
           <p className="mx-auto mt-5 max-w-[48rem] text-base leading-8 text-slate-300 sm:text-lg">
-            AdvancedRetro ya no es solo una tienda. Es catálogo oficial, comunidad, herramientas para vendedores y una capa premium para quienes quieren entrar antes, vender mejor y construir algo propio dentro del ecosistema.
+            AdvancedRetro sigue siendo una tienda oficial, pero ahora también es comunidad, acceso preferente, herramientas para vender y una capa premium para quien quiere estar más dentro.
           </p>
         </div>
 
@@ -75,15 +98,16 @@ export default function MembershipPlans() {
               </button>
             ))}
           </div>
-          <p className="text-xs uppercase tracking-[0.22em] text-white/48">{savingsCopy}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-white/50">{helperCopy}</p>
         </div>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-3">
         {MEMBERSHIP_PLANS.map((plan) => {
+          const recommended = plan.tier === 'collector';
           const price = billingPeriod === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice;
           const suffix = billingPeriod === 'yearly' ? '/año' : '/mes';
-          const recommended = plan.tier === 'collector';
+
           return (
             <article
               key={plan.tier}
@@ -93,7 +117,7 @@ export default function MembershipPlans() {
                   : 'border-white/10 bg-[linear-gradient(180deg,rgba(10,14,24,0.9),rgba(8,12,20,0.96))]'
               }`}
             >
-              <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${plan.accent} opacity-50`} />
+              <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${plan.accent} opacity-45`} />
               <div className="relative z-10 flex h-full flex-col">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -108,11 +132,13 @@ export default function MembershipPlans() {
                 </div>
 
                 <div className="mt-8 flex items-end gap-2">
-                  <span className="text-5xl font-black text-white">{price === 0 ? '0€' : `${price.toString().replace('.', ',')}€`}</span>
+                  <span className="text-5xl font-black text-white">
+                    {price === 0 ? '0€' : `${price.toString().replace('.', ',')}€`}
+                  </span>
                   <span className="pb-1 text-sm font-semibold uppercase tracking-[0.18em] text-white/48">{suffix}</span>
                 </div>
 
-                <p className="mt-5 max-w-[32rem] text-sm leading-7 text-slate-300">{plan.description}</p>
+                <p className="mt-5 text-sm leading-7 text-slate-300">{plan.description}</p>
 
                 <ul className="mt-8 space-y-3 text-sm text-slate-200">
                   {plan.benefits.map((benefit) => (
@@ -134,13 +160,48 @@ export default function MembershipPlans() {
                         : 'border border-white/12 bg-white/[0.04] text-white hover:border-white/24 hover:bg-white/[0.08]'
                     }`}
                   >
-                    Acceder y continuar
+                    Entrar y continuar
                   </Link>
                 </div>
               </div>
             </article>
           );
         })}
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,14,24,0.88),rgba(8,12,20,0.94))] p-6 sm:p-8">
+        <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.26em] text-primary">Comparativa rápida</p>
+            <h2 className="mt-3 text-3xl font-black text-white sm:text-4xl">Qué desbloquea cada nivel</h2>
+          </div>
+          <p className="max-w-[30rem] text-sm leading-7 text-slate-300">
+            El valor principal está pensado alrededor de lo que ya existe: tienda oficial, ruleta, subastas, comunidad, creador de tiendas y acceso preferente.
+          </p>
+        </div>
+
+        <div className="overflow-x-auto rounded-[1.6rem] border border-white/10 bg-white/[0.03]">
+          <div className="grid min-w-[560px] grid-cols-[minmax(170px,1.2fr)_repeat(3,minmax(120px,1fr))] text-sm">
+            <div className="border-b border-white/10 px-4 py-4 text-white/55">Beneficio</div>
+            {MEMBERSHIP_PLANS.map((plan) => (
+              <div key={`head-${plan.tier}`} className="border-b border-l border-white/10 px-4 py-4 text-center font-semibold text-white">
+                {plan.name}
+              </div>
+            ))}
+            {comparisonRows.map((row) => (
+              <div key={row.label} className="contents">
+                <div key={`label-${row.label}`} className="border-b border-white/10 px-4 py-4 text-slate-300">
+                  {row.label}
+                </div>
+                {row.values.map((value, index) => (
+                  <div key={`${row.label}-${index}`} className="border-b border-l border-white/10 px-4 py-4 text-center text-slate-200">
+                    {value}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,14,24,0.88),rgba(8,12,20,0.94))] p-6 sm:p-8">

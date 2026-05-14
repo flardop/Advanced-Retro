@@ -41,40 +41,40 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
     tier: 'explorer',
     name: 'Explorador',
-    tagline: 'Entrada libre al ecosistema',
+    tagline: 'Entrada abierta al ecosistema',
     monthlyPrice: 0,
     yearlyPrice: 0,
-    accent: 'from-slate-400/50 via-slate-200/20 to-white/10',
+    accent: 'from-slate-400/45 via-slate-100/12 to-white/5',
     description:
-      'Para descubrir AdvancedRetro, entrar en la comunidad y empezar a participar sin fricción.',
+      'Para descubrir la tienda oficial, la comunidad y el contenido editorial de AdvancedRetro sin pagar nada.',
     benefits: [
-      { label: 'Acceso a tienda pública' },
-      { label: 'Ver catálogo completo' },
+      { label: 'Acceso a la tienda oficial y al catálogo completo' },
       { label: 'Participación básica en comunidad' },
-      { label: 'Acceso al blog' },
-      { label: '1 participación/mes en ruleta' },
-      { label: 'Notificaciones de nuevos productos por email' },
+      { label: 'Acceso al blog y al universo Retroville' },
+      { label: '1 participación al mes en ruleta' },
+      { label: 'Avisos por email de nuevos productos' },
     ],
   },
   {
     tier: 'collector',
     name: 'Coleccionista',
-    tagline: 'Más acceso, más ventaja, más herramientas',
+    tagline: 'Más acceso, más ventaja, más presencia',
     monthlyPrice: 4.99,
     yearlyPrice: 49,
-    accent: 'from-sky-400/70 via-cyan-300/35 to-indigo-500/20',
+    accent: 'from-sky-400/70 via-cyan-300/30 to-indigo-500/18',
     badge: 'POPULAR',
     description:
-      'El plan recomendado para clientes recurrentes y vendedores que quieren formar parte real del ecosistema.',
+      'Pensado para quien compra con frecuencia, quiere acceso preferente y además quiere empezar a vender con una tienda propia dentro de AdvancedRetro.',
     benefits: [
-      { label: 'Todos los beneficios Explorador' },
-      { label: '5% de descuento en todos los productos', emphasized: true },
-      { label: 'Acceso anticipado a drops 24h antes' },
-      { label: 'Prioridad en lista de espera de Mystery Boxes' },
-      { label: '3 participaciones/mes en ruleta' },
-      { label: 'Acceso a Sala Coleccionista en comunidad' },
-      { label: 'Badge verificado en perfil de comunidad' },
-      { label: 'Crear tienda personal hasta 10 productos', emphasized: true },
+      { label: 'Todo lo de Explorador' },
+      { label: '5% de descuento en tienda oficial', emphasized: true },
+      { label: 'Acceso 24h antes a nuevos drops y reposiciones' },
+      { label: 'Prioridad en la lista de Mystery Boxes' },
+      { label: '3 participaciones al mes en ruleta' },
+      { label: 'Sala Coleccionista dentro de comunidad' },
+      { label: 'Badge verificado en tu perfil' },
+      { label: 'Tienda personal con hasta 10 productos', emphasized: true },
+      { label: 'Marca visible “Made with AdvancedRetro” en tu tienda' },
       { label: 'Soporte prioritario por ticket' },
     ],
   },
@@ -86,18 +86,18 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     yearlyPrice: 99,
     accent: 'from-amber-300/80 via-yellow-300/35 to-orange-500/25',
     description:
-      'Para usuarios que compran, venden y quieren jugar en la primera línea de todo lo que lance AdvancedRetro.',
+      'Para usuarios que quieren comprar antes, vender más y tener una tienda mucho más libre, con presencia propia y menos huella visible de plataforma.',
     benefits: [
-      { label: 'Todos los beneficios Coleccionista' },
-      { label: '10% de descuento en todos los productos', emphasized: true },
-      { label: 'Acceso VIP 72h antes a drops' },
-      { label: 'Mystery Box mensual con 20% de descuento' },
+      { label: 'Todo lo de Coleccionista' },
+      { label: '10% de descuento en tienda oficial', emphasized: true },
+      { label: 'Acceso VIP 72h antes a drops destacados' },
+      { label: '20% de descuento en Mystery Box mensual' },
       { label: 'Participaciones ilimitadas en ruleta' },
-      { label: 'Acceso prioritario a subastas' },
-      { label: 'Tienda personal con productos ilimitados + analytics', emphasized: true },
-      { label: 'Acceso beta prioritario a Retroville' },
-      { label: 'Badge VIP + perfil destacado' },
-      { label: 'Canal privado de comunidad VIP' },
+      { label: 'Acceso prioritario a subastas y señales previas' },
+      { label: 'Tienda personal con productos ilimitados', emphasized: true },
+      { label: 'Panel con analytics básicos de su tienda' },
+      { label: 'Presentación sin branding visible de AdvancedRetro', emphasized: true },
+      { label: 'Acceso prioritario a la beta de Retroville' },
       { label: 'Soporte directo en menos de 24h' },
     ],
   },
@@ -118,6 +118,10 @@ export function getMembershipPlan(tier: MembershipTier) {
   return MEMBERSHIP_PLANS.find((plan) => plan.tier === tier) || MEMBERSHIP_PLANS[0];
 }
 
+export function getMembershipDisplayName(tier: MembershipTier) {
+  return getMembershipPlan(tier).name;
+}
+
 export function hasRequiredTier(current: MembershipTier, required: MembershipTier) {
   return TIER_ORDER[current] >= TIER_ORDER[required];
 }
@@ -126,6 +130,16 @@ export function getMembershipDiscount(tier: MembershipTier) {
   if (tier === 'vip') return 10;
   if (tier === 'collector') return 5;
   return 0;
+}
+
+export function getStoreProductLimit(tier: MembershipTier) {
+  if (tier === 'vip') return null;
+  if (tier === 'collector') return 10;
+  return 0;
+}
+
+export function isWhiteLabelStorefront(tier: MembershipTier) {
+  return tier === 'vip';
 }
 
 function defaultMembership(userId: string | null): UserMembership {

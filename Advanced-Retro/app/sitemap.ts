@@ -16,7 +16,6 @@ const STATIC_ROUTES = [
   '/creator',
   '/memberships',
   '/tiendas',
-  '/creador-de-tiendas',
   '/comunidad',
   '/comunidad/vendedores',
   '/blog',

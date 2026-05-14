@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import StorefrontShell from '@/components/storefront/StorefrontShell';
 import StructuredData from '@/components/StructuredData';
+import { isWhiteLabelStorefront } from '@/lib/membership';
 import { findSampleStorefront, getPreviewStorefrontFromCookies, getStoredStorefrontBySlug } from '@/lib/storefronts';
 import { absoluteUrl } from '@/lib/siteConfig';
 
@@ -35,14 +36,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  const whiteLabel = !store.official && isWhiteLabelStorefront(store.membershipTier);
+  const pageTitle = whiteLabel ? store.name : `${store.name} | AdvancedRetro.es`;
+
   return {
-    title: `${store.name} | AdvancedRetro.es`,
+    title: pageTitle,
     description: store.shortDescription,
     alternates: {
       canonical: `/tiendas/${store.slug}`,
     },
     openGraph: {
-      title: `${store.name} | AdvancedRetro.es`,
+      title: pageTitle,
       description: store.shortDescription,
       url: absoluteUrl(`/tiendas/${store.slug}`),
       siteName: 'AdvancedRetro.es',
@@ -58,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${store.name} | AdvancedRetro.es`,
+      title: pageTitle,
       description: store.shortDescription,
       images: [absoluteUrl(store.products[0]?.image || '/logo.png')],
     },

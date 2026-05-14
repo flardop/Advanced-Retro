@@ -1,16 +1,16 @@
 .shell {
   background:
-    radial-gradient(circle at 20% 10%, rgba(102, 192, 244, 0.12), transparent 26%),
-    radial-gradient(circle at 82% 18%, rgba(135, 92, 255, 0.16), transparent 28%),
-    linear-gradient(180deg, #060708 0%, #0a0a0a 100%);
+    radial-gradient(circle at 18% 8%, rgba(102, 192, 244, 0.12), transparent 24%),
+    radial-gradient(circle at 82% 14%, rgba(135, 92, 255, 0.16), transparent 28%),
+    linear-gradient(180deg, #060708 0%, #0a0b10 100%);
 }
 
 .gridOverlay {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 54px 54px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.8));
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.82));
 }
 
 .cursorDot,
@@ -29,15 +29,15 @@
   height: 8px;
   border-radius: 999px;
   background: #66c0f4;
-  box-shadow: 0 0 22px rgba(102, 192, 244, 0.72);
+  box-shadow: 0 0 18px rgba(102, 192, 244, 0.72);
 }
 
 .cursorRing {
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  border: 1px solid rgba(102, 192, 244, 0.6);
-  box-shadow: 0 0 26px rgba(102, 192, 244, 0.16);
+  border: 1px solid rgba(102, 192, 244, 0.56);
+  box-shadow: 0 0 24px rgba(102, 192, 244, 0.16);
 }
 
 .cursorVisible {
@@ -47,8 +47,8 @@
 .cursorHover {
   width: 54px;
   height: 54px;
-  border-color: rgba(135, 92, 255, 0.66);
-  box-shadow: 0 0 30px rgba(135, 92, 255, 0.24);
+  border-color: rgba(135, 92, 255, 0.62);
+  box-shadow: 0 0 30px rgba(135, 92, 255, 0.22);
 }
 
 .glitchTitle {
@@ -62,23 +62,23 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.45;
+  opacity: 0.4;
 }
 
 .glitchTitle::before {
-  color: rgba(102, 192, 244, 0.72);
+  color: rgba(102, 192, 244, 0.68);
   transform: translate(2px, -1px);
 }
 
 .glitchTitle::after {
-  color: rgba(190, 86, 255, 0.68);
+  color: rgba(190, 86, 255, 0.64);
   transform: translate(-2px, 1px);
 }
 
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 600ms ease, transform 600ms ease;
+  transform: translateY(26px);
+  transition: opacity 640ms ease, transform 640ms ease;
 }
 
 .revealVisible {
@@ -95,7 +95,7 @@
   content: '';
   position: absolute;
   inset: -10% -12%;
-  background: radial-gradient(circle, rgba(102, 192, 244, 0.22), transparent 56%);
+  background: radial-gradient(circle, rgba(102, 192, 244, 0.18), transparent 56%);
   filter: blur(34px);
   z-index: -1;
 }
@@ -109,24 +109,24 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(102, 192, 244, 0.14), rgba(155, 89, 255, 0.2));
+  background: linear-gradient(135deg, rgba(102, 192, 244, 0.16), rgba(155, 89, 255, 0.2));
   mix-blend-mode: screen;
-  opacity: 0.88;
+  opacity: 0.82;
   transition: opacity 220ms ease;
 }
 
 .photoTone:hover::after {
-  opacity: 0.38;
+  opacity: 0.34;
 }
 
 .card3d {
   transform-style: preserve-3d;
-  transform: perspective(1200px) rotateX(var(--card-rx, 0deg)) rotateY(var(--card-ry, 0deg)) translateY(0);
+  transform: perspective(1200px) rotateX(var(--card-rx, 0deg)) rotateY(var(--card-ry, 0deg));
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .card3d:hover {
-  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.26);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.26);
   border-color: rgba(102, 192, 244, 0.34);
 }
 
@@ -142,22 +142,11 @@
   opacity: 1;
 }
 
-.scrollIndicator {
-  animation: creator-bob 1.8s ease-in-out infinite;
-}
-
-@keyframes creator-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(8px); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .reveal,
   .revealVisible,
-  .scrollIndicator,
   .card3d {
     transition: none;
-    animation: none;
     transform: none;
   }
 
