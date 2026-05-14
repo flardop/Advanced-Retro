@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type CountdownUnit = {
   label: string;
@@ -40,7 +40,7 @@ export default function RetrovilleCountdown({
   className?: string;
 }) {
   const [mounted, setMounted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(targetIso));
+  const [timeLeft, setTimeLeft] = useState<ReturnType<typeof getTimeLeft> | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -51,20 +51,16 @@ export default function RetrovilleCountdown({
     return () => window.clearInterval(timer);
   }, [targetIso]);
 
-  const units = useMemo<CountdownUnit[]>(() => {
-    if (!mounted) {
-      return placeholderUnits;
-    }
+  const units: CountdownUnit[] = !mounted || !timeLeft
+    ? placeholderUnits
+    : [
+        { label: 'Días', value: pad(timeLeft.days) },
+        { label: 'Horas', value: pad(timeLeft.hours) },
+        { label: 'Min', value: pad(timeLeft.minutes) },
+        { label: 'Seg', value: pad(timeLeft.seconds) },
+      ];
 
-    return [
-      { label: 'Días', value: pad(timeLeft.days) },
-      { label: 'Horas', value: pad(timeLeft.hours) },
-      { label: 'Min', value: pad(timeLeft.minutes) },
-      { label: 'Seg', value: pad(timeLeft.seconds) },
-    ];
-  }, [mounted, timeLeft.days, timeLeft.hours, timeLeft.minutes, timeLeft.seconds]);
-
-  if (mounted && timeLeft.finished) {
+  if (mounted && timeLeft?.finished) {
     return (
       <div
         className={`rounded-[1.6rem] border border-fuchsia-400/25 bg-[rgba(110,32,138,0.14)] px-5 py-4 text-center backdrop-blur-xl ${className}`}

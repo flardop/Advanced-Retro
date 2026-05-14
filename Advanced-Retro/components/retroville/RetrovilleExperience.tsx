@@ -1,11 +1,11 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Anton, Space_Mono } from 'next/font/google';
-import RetrovilleCountdown from '@/components/retroville/RetrovilleCountdown';
 import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
 import styles from './retroville-experience.module.css';
 
@@ -175,6 +175,41 @@ function imageSurfaceStyle(image: string, accent: string): CSSProperties {
     backgroundImage: `linear-gradient(180deg, rgba(3,3,3,0.24), rgba(3,3,3,0.72)), radial-gradient(circle at 50% 20%, ${accent}, transparent 42%), url(${image})`,
   } as CSSProperties;
 }
+
+function CountdownFallback({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`rounded-[1.7rem] border border-white/10 bg-[rgba(8,12,24,0.62)] p-3 shadow-[0_18px_50px_rgba(0,0,0,0.22)] backdrop-blur-2xl ${className}`}
+      aria-hidden
+    >
+      <div className="mb-3 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.26em] text-white/48 sm:text-[11px]">
+        <span className="inline-flex h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(103,232,249,0.9)]" />
+        Secuencia de lanzamiento
+      </div>
+      <div className="grid grid-cols-4 gap-2">
+        {['Días', 'Horas', 'Min', 'Seg'].map((label) => (
+          <div
+            key={label}
+            className="rounded-[1.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-2 py-3 text-center"
+          >
+            <span className="block text-xl font-black tabular-nums text-white/60 sm:text-2xl">--</span>
+            <span className="mt-1 block text-[9px] uppercase tracking-[0.22em] text-white/42 sm:text-[10px]">
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const RetrovilleCountdown = dynamic(
+  () => import('@/components/retroville/RetrovilleCountdown'),
+  {
+    ssr: false,
+    loading: () => <CountdownFallback />,
+  }
+);
 
 export default function RetrovilleExperience({
   launchIso,
