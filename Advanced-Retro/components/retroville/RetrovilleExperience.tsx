@@ -15,6 +15,52 @@ const monoFont = Space_Mono({ subsets: ['latin'], weight: ['400', '700'] });
 const titleLetters = ['R', 'E', 'T', 'R', 'O', 'V', 'I', 'L', 'L', 'E'] as const;
 const manifestoLines = ['EVERY', 'FORGOTTEN', 'GAME', 'ENDS UP', 'SOMEWHERE.'] as const;
 
+const relicGallery = [
+  {
+    title: 'Mona NOX',
+    eyebrow: 'ARCHIVO 01',
+    body: 'El cansancio como retrato oficial. La ciudad también colecciona versiones imposibles de sus propias leyendas.',
+    image: '/images/retroville/retroville-mona.png',
+    alt: 'Retrato clásico de NOX en clave pictórica',
+  },
+  {
+    title: 'The Creation of Input',
+    eyebrow: 'ARCHIVO 02',
+    body: 'Cuando Retroville se vuelve mito, incluso los botones reciben un origen casi sagrado y bastante sospechoso.',
+    image: '/images/retroville/retroville-creation.png',
+    alt: 'NOX y Button Crew recreando una escena clásica en las nubes',
+  },
+  {
+    title: 'Marble Panic',
+    eyebrow: 'ARCHIVO 03',
+    body: 'La comedia oscura del universo también sabe convertirse en estatua, tragedia y caos absoluto al mismo tiempo.',
+    image: '/images/retroville/retroville-marble.png',
+    alt: 'Escultura de mármol con NOX y Button Crew atrapados por serpientes',
+  },
+  {
+    title: 'The Last Save',
+    eyebrow: 'ARCHIVO 04',
+    body: 'Toda banda acaba reuniéndose alrededor de una mesa. En Retroville, esa cena siempre termina siendo una discusión sobre memoria y control.',
+    image: '/images/retroville/retroville-last-supper.png',
+    alt: 'Escena inspirada en la última cena con NOX y Button Crew',
+  },
+] as const;
+
+const signalCards = [
+  {
+    title: 'WORLD BUILDING',
+    body: 'Una ciudad de hardware olvidado, memorias corruptas y humor raro que se toma muy en serio su propia atmósfera.',
+  },
+  {
+    title: 'DROPS NARRATIVOS',
+    body: 'Cada señal debe sentirse como un evento. Una imagen, una frase o un personaje que empuja el universo hacia delante.',
+  },
+  {
+    title: 'RETRO SOCIAL CHAOS',
+    body: 'Comunidad, torneos, personajes y piezas visuales que construyen cultura en vez de parecer simple relleno de marketing.',
+  },
+] as const;
+
 type ImageSlide = {
   kind: 'image';
   title: string;
@@ -25,21 +71,13 @@ type ImageSlide = {
   accent: string;
 };
 
-type CountdownSlide = {
-  kind: 'countdown';
-  title: string;
-  eyebrow: string;
-  description: string;
-};
-
-type ManifestoSlide = {
-  kind: 'manifesto';
-  title: string;
-  eyebrow: string;
-  description: string;
-};
-
-type NarrativeSlide = ImageSlide | CountdownSlide | ManifestoSlide;
+type NarrativeSlide =
+  | { kind: 'countdown'; title: string; eyebrow: string; description: string }
+  | { kind: 'manifesto'; title: string; eyebrow: string; description: string }
+  | { kind: 'gallery'; title: string; eyebrow: string; description: string }
+  | { kind: 'signals'; title: string; eyebrow: string; description: string }
+  | { kind: 'waitlist'; title: string; eyebrow: string; description: string }
+  | ImageSlide;
 
 const narrativeSlides: readonly NarrativeSlide[] = [
   {
@@ -47,7 +85,7 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     title: 'VENTANA DE LANZAMIENTO',
     eyebrow: 'LAUNCH WINDOW TARGET',
     description:
-      'La primera gran señal de Retroville ya tiene fecha. Este tramo tiene que sentirse como antesala, no como una tarjeta metida en medio de la página.',
+      'La primera gran señal de Retroville ya tiene fecha. Este tramo tiene que sentirse como antesala, no como una tarjeta suelta dentro de una web larga.',
   },
   {
     kind: 'manifesto',
@@ -96,51 +134,26 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     alt: 'NOX y Button Crew celebrando en una oficina caótica dentro del universo Retroville',
     accent: 'rgba(255,60,0,0.24)',
   },
-] as const;
-
-const relicGallery = [
   {
-    title: 'Mona NOX',
-    eyebrow: 'ARCHIVO 01',
-    body: 'El cansancio como retrato oficial. La ciudad también colecciona versiones imposibles de sus propias leyendas.',
-    image: '/images/retroville/retroville-mona.png',
-    alt: 'Retrato clásico de NOX en clave pictórica',
+    kind: 'gallery',
+    title: 'LOS APÓCRIFOS DE RETROVILLE',
+    eyebrow: 'ARCHIVE VISIONS',
+    description:
+      'La parte divertida y rara del universo también vive aquí: reliquias visuales, mitología absurda y piezas que hacen que Retroville tenga memoria propia.',
   },
   {
-    title: 'The Creation of Input',
-    eyebrow: 'ARCHIVO 02',
-    body: 'Cuando Retroville se vuelve mito, incluso los botones reciben un origen casi sagrado y bastante sospechoso.',
-    image: '/images/retroville/retroville-creation.png',
-    alt: 'NOX y Button Crew recreando una escena clásica en las nubes',
+    kind: 'signals',
+    title: 'SEÑALES DE EXPANSIÓN',
+    eyebrow: 'SYSTEM SIGNALS',
+    description:
+      'World building, drops narrativos y caos social dentro de una misma frecuencia visual.',
   },
   {
-    title: 'Marble Panic',
-    eyebrow: 'ARCHIVO 03',
-    body: 'La comedia oscura del universo también sabe convertirse en estatua, tragedia y caos absoluto al mismo tiempo.',
-    image: '/images/retroville/retroville-marble.png',
-    alt: 'Escultura de mármol con NOX y Button Crew atrapados por serpientes',
-  },
-  {
-    title: 'The Last Save',
-    eyebrow: 'ARCHIVO 04',
-    body: 'Toda banda acaba reuniéndose alrededor de una mesa. En Retroville, esa cena siempre termina siendo una discusión sobre memoria y control.',
-    image: '/images/retroville/retroville-last-supper.png',
-    alt: 'Escena inspirada en la última cena con NOX y Button Crew',
-  },
-] as const;
-
-const signalCards = [
-  {
-    title: 'WORLD BUILDING',
-    body: 'Una ciudad de hardware olvidado, memorias corruptas y humor raro que se toma muy en serio su propia atmósfera.',
-  },
-  {
-    title: 'DROPS NARRATIVOS',
-    body: 'Cada señal debe sentirse como un evento. Una imagen, una frase o un personaje que empuja el universo hacia delante.',
-  },
-  {
-    title: 'RETRO SOCIAL CHAOS',
-    body: 'Comunidad, torneos, personajes y piezas visuales que construyen cultura en vez de parecer simple relleno de marketing.',
+    kind: 'waitlist',
+    title: 'ENTRA ANTES DE QUE EL RESTO DE INTERNET LO RECUERDE',
+    eyebrow: 'WAITLIST',
+    description:
+      'Primer drop. Primer reveal. Primera señal jugable. Retroville tiene que sentirse como un universo que se descubre, no como otra página de próximamente.',
   },
 ] as const;
 
@@ -167,7 +180,6 @@ export default function RetrovilleExperience({
   const [narrativeProgress, setNarrativeProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [manualSlide, setManualSlide] = useState(0);
-  const [dropVisible, setDropVisible] = useState<number[]>([]);
   const hypeGoal = 5000;
   const hypePct = waitlistCount > 0 ? clamp(waitlistCount / hypeGoal, 0, 1) : 0;
 
@@ -198,44 +210,6 @@ export default function RetrovilleExperience({
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, [isMobile]);
-
-  useEffect(() => {
-    const revealNodes = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
-    const dropNodes = Array.from(document.querySelectorAll<HTMLElement>('[data-drop-index]'));
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      revealNodes.forEach((node) => {
-        node.dataset.visible = 'true';
-      });
-      setDropVisible(signalCards.map((_, index) => index));
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-
-          if (entry.target instanceof HTMLElement && entry.target.dataset.reveal !== undefined) {
-            entry.target.dataset.visible = 'true';
-          }
-
-          const dropIndex = entry.target.getAttribute('data-drop-index');
-          if (dropIndex) {
-            setDropVisible((current) =>
-              current.includes(Number(dropIndex)) ? current : [...current, Number(dropIndex)]
-            );
-          }
-
-          observer.unobserve(entry.target);
-        });
-      },
-      { threshold: 0.18, rootMargin: '0px 0px -6% 0px' }
-    );
-
-    [...revealNodes, ...dropNodes].forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
-  }, []);
 
   const desktopSlideIndex = Math.round(narrativeProgress * (narrativeSlides.length - 1));
   const activeSlide = isMobile ? manualSlide : desktopSlideIndex;
@@ -438,7 +412,8 @@ export default function RetrovilleExperience({
 
       <section
         ref={narrativeRef}
-        className={`px-4 py-10 sm:px-8 lg:px-10 ${isMobile ? '' : 'min-h-[540vh]'}`}
+        className={`px-4 py-8 sm:px-8 lg:px-10 ${isMobile ? '' : ''}`}
+        style={isMobile ? undefined : { minHeight: `${narrativeSlides.length * 96}vh` }}
       >
         <div className="mx-auto max-w-[1540px]">
           <div className={`${isMobile ? '' : 'sticky top-0 h-[100svh]'} overflow-hidden rounded-[2.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,8,10,0.94),rgba(5,5,8,0.98))] shadow-[0_34px_120px_rgba(0,0,0,0.42)]`}>
@@ -446,7 +421,7 @@ export default function RetrovilleExperience({
               <div>
                 <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">Narrative track</p>
                 <h2 className={`${displayFont.className} mt-2 text-3xl uppercase text-white sm:text-4xl`}>
-                  Slider narrativo
+                  Slider narrativo total
                 </h2>
               </div>
               <div className="flex items-center gap-3 text-sm text-white/58">
@@ -495,13 +470,80 @@ export default function RetrovilleExperience({
                         <div className="flex min-h-[28rem] flex-col justify-center p-5">
                           <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
                           <div className="mt-5 space-y-2">
-                            {manifestoLines.map((line, index) => (
+                            {manifestoLines.map((line) => (
                               <p key={line} className={`${displayFont.className} text-[2.6rem] uppercase leading-[0.88] text-white sm:text-[3rem]`}>
                                 {line}
                               </p>
                             ))}
                           </div>
                           <p className="mt-5 text-sm leading-7 text-white/62">{slide.description}</p>
+                        </div>
+                      ) : slide.kind === 'gallery' ? (
+                        <div className="p-5">
+                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                          <h3 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
+                            {slide.title}
+                          </h3>
+                          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+                          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                            {relicGallery.map((item) => (
+                              <article key={item.title} className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/[0.04]">
+                                <div className="relative aspect-[4/3] overflow-hidden">
+                                  <Image src={item.image} alt={item.alt} fill sizes="44vw" className="object-cover object-center" />
+                                </div>
+                                <div className="p-4">
+                                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent3)]">{item.eyebrow}</p>
+                                  <p className="mt-2 text-sm font-semibold text-white">{item.title}</p>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        </div>
+                      ) : slide.kind === 'signals' ? (
+                        <div className="p-5">
+                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                          <h3 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
+                            {slide.title}
+                          </h3>
+                          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+                          <div className="mt-5 grid gap-3">
+                            {signalCards.map((card) => (
+                              <article key={card.title} className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4">
+                                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent)]">Signal</p>
+                                <p className="mt-2 text-base font-semibold text-white">{card.title}</p>
+                                <p className="mt-2 text-sm leading-6 text-white/62">{card.body}</p>
+                              </article>
+                            ))}
+                          </div>
+                        </div>
+                      ) : slide.kind === 'waitlist' ? (
+                        <div id="waitlist" className="p-5">
+                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                          <h3 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
+                            {slide.title}
+                          </h3>
+                          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+                          {waitlistCount > 0 ? (
+                            <div className="mt-5 rounded-[1.3rem] border border-white/10 bg-white/[0.04] p-4">
+                              <div className="flex items-center justify-between gap-4 text-sm text-white/62">
+                                <span>{waitlistCount.toLocaleString('es-ES')} registros</span>
+                                <span>Objetivo {hypeGoal.toLocaleString('es-ES')}</span>
+                              </div>
+                              <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
+                                <div
+                                  className="h-full rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent3),var(--rv-accent))]"
+                                  style={{ width: `${Math.round(hypePct * 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          ) : null}
+                          <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-[rgba(8,10,16,0.72)] p-4 backdrop-blur-xl">
+                            <RetrovilleWaitlistForm
+                              darkMode
+                              buttonLabel="QUIERO SER EL PRIMERO"
+                              successMessage="Perfecto. Ya formas parte de la primera señal de Retroville."
+                            />
+                          </div>
                         </div>
                       ) : (
                         <>
@@ -531,12 +573,9 @@ export default function RetrovilleExperience({
               <div className="h-[calc(100svh-74px)] overflow-hidden">
                 <div className={`${styles.universeTrack} flex h-full`} style={{ width: `${narrativeSlides.length * 100}%`, transform: `translateX(-${trackTranslate}%)` }}>
                   {narrativeSlides.map((slide) => (
-                    <article
-                      key={`${slide.kind}-${slide.title}`}
-                      className="flex h-full shrink-0 basis-full items-center px-8 py-8 xl:px-10"
-                    >
+                    <article key={`${slide.kind}-${slide.title}`} className="flex h-full shrink-0 basis-full items-center px-8 py-8 xl:px-10">
                       {slide.kind === 'countdown' ? (
-                        <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] lg:items-center">
+                        <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] lg:items-center">
                           <div className="max-w-[30rem]">
                             <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
                             <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
@@ -564,6 +603,84 @@ export default function RetrovilleExperience({
                           <p className="max-w-[24rem] text-sm uppercase tracking-[0.28em] text-white/46 xl:text-base">
                             {slide.description}
                           </p>
+                        </div>
+                      ) : slide.kind === 'gallery' ? (
+                        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,0.34fr)_minmax(0,0.66fr)] lg:items-start">
+                          <div className="max-w-[24rem]">
+                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
+                              {slide.title}
+                            </h3>
+                            <p className="mt-6 text-base leading-8 text-white/64">{slide.description}</p>
+                          </div>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            {relicGallery.map((item) => (
+                              <article key={item.title} className={`${styles.galleryCard} overflow-hidden rounded-[1.7rem] border border-white/10 bg-[rgba(12,12,16,0.74)]`}>
+                                <div className="relative aspect-[16/12] overflow-hidden">
+                                  <Image src={item.image} alt={item.alt} fill sizes="30vw" className="object-cover object-center" />
+                                </div>
+                                <div className="p-4">
+                                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent3)]">{item.eyebrow}</p>
+                                  <h4 className={`${displayFont.className} mt-2 text-2xl uppercase leading-none text-white`}>
+                                    {item.title}
+                                  </h4>
+                                  <p className="mt-3 text-sm leading-6 text-white/60">{item.body}</p>
+                                </div>
+                              </article>
+                            ))}
+                          </div>
+                        </div>
+                      ) : slide.kind === 'signals' ? (
+                        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,0.32fr)_minmax(0,0.68fr)] lg:items-start">
+                          <div className="max-w-[22rem]">
+                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
+                              {slide.title}
+                            </h3>
+                            <p className="mt-6 text-base leading-8 text-white/64">{slide.description}</p>
+                          </div>
+                          <div className="grid gap-4 lg:grid-cols-3">
+                            {signalCards.map((card) => (
+                              <article key={card.title} className="rounded-[1.7rem] border border-white/10 bg-[rgba(12,12,16,0.74)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
+                                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent)]">Signal</p>
+                                <h4 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
+                                  {card.title}
+                                </h4>
+                                <p className="mt-4 text-sm leading-7 text-white/62">{card.body}</p>
+                              </article>
+                            ))}
+                          </div>
+                        </div>
+                      ) : slide.kind === 'waitlist' ? (
+                        <div id="waitlist" className="grid w-full gap-8 lg:grid-cols-[minmax(0,0.44fr)_minmax(0,0.56fr)] lg:items-center">
+                          <div>
+                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
+                              {slide.title}
+                            </h3>
+                            <p className="mt-6 max-w-[34rem] text-base leading-8 text-white/64">{slide.description}</p>
+                            {waitlistCount > 0 ? (
+                              <div className="mt-7 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
+                                <div className="flex items-center justify-between gap-4 text-sm text-white/62">
+                                  <span>{waitlistCount.toLocaleString('es-ES')} registros</span>
+                                  <span>Objetivo {hypeGoal.toLocaleString('es-ES')}</span>
+                                </div>
+                                <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
+                                  <div
+                                    className="h-full rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent3),var(--rv-accent))]"
+                                    style={{ width: `${Math.round(hypePct * 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="rounded-[2rem] border border-white/10 bg-[rgba(8,10,16,0.72)] p-5 backdrop-blur-xl sm:p-6">
+                            <RetrovilleWaitlistForm
+                              darkMode
+                              buttonLabel="QUIERO SER EL PRIMERO"
+                              successMessage="Perfecto. Ya formas parte de la primera señal de Retroville."
+                            />
+                          </div>
                         </div>
                       ) : (
                         <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] lg:items-center">
@@ -603,103 +720,6 @@ export default function RetrovilleExperience({
                   aria-label={`Ir al slide ${index + 1}`}
                 />
               ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-16 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-[1540px]">
-          <div className="mb-8 max-w-[48rem]" data-reveal>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">Archive visions</p>
-            <h2 className={`${displayFont.className} ${styles.reveal} mt-4 text-4xl uppercase leading-none text-white sm:text-5xl lg:text-6xl`} data-reveal>
-              LOS APÓCRIFOS DE RETROVILLE
-            </h2>
-            <p className="mt-4 text-sm leading-8 text-white/62 sm:text-base">
-              Esta parte se queda: reliquias visuales, reinterpretaciones clásicas y mitología absurda alrededor de los personajes. Aquí es donde el universo se vuelve divertido de verdad.
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            {relicGallery.map((item) => (
-              <article
-                key={item.title}
-                data-reveal
-                className={`${styles.reveal} ${styles.galleryCard} group overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,13,18,0.92),rgba(7,8,12,0.98))] shadow-[0_26px_90px_rgba(0,0,0,0.26)]`}
-              >
-                <div className="relative aspect-[16/14] overflow-hidden">
-                  <Image
-                    src={item.image}
-                    alt={item.alt}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover object-center transition duration-700 group-hover:scale-[1.03]"
-                  />
-                </div>
-                <div className="p-6 sm:p-7">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent3)]">{item.eyebrow}</p>
-                  <h3 className={`${displayFont.className} mt-4 text-3xl uppercase leading-none text-white`}>
-                    {item.title}
-                  </h3>
-                  <p className="mt-5 text-sm leading-8 text-white/64 sm:text-base">{item.body}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-16 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-[1540px] grid gap-5 lg:grid-cols-3">
-          {signalCards.map((card, index) => (
-            <article
-              key={card.title}
-              data-drop-index={index}
-              className={`${styles.dropCard} ${dropVisible.includes(index) ? styles.dropCardVisible : ''} rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,12,18,0.94),rgba(6,7,10,0.98))] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.22)]`}
-              style={{ transitionDelay: `${index * 90}ms` }}
-            >
-              <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">Signal</p>
-              <h3 className={`${displayFont.className} mt-4 text-3xl uppercase leading-none text-white`}>{card.title}</h3>
-              <p className="mt-5 text-sm leading-8 text-white/62">{card.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section id="waitlist" className="px-4 py-16 sm:px-8 lg:px-10">
-        <div className={`${styles.waitlistNoise} mx-auto max-w-[1540px] overflow-hidden rounded-[2.3rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,10,14,0.95),rgba(5,6,9,0.98))] shadow-[0_30px_100px_rgba(0,0,0,0.34)]`}>
-          <div className="grid gap-8 p-8 sm:p-10 lg:grid-cols-[minmax(0,0.48fr)_minmax(0,0.52fr)] lg:items-center">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">Waitlist</p>
-              <h2 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white sm:text-5xl lg:text-6xl`}>
-                ENTRA ANTES DE QUE EL RESTO DE INTERNET LO RECUERDE
-              </h2>
-              <p className="mt-5 max-w-[34rem] text-sm leading-8 text-white/64 sm:text-base">
-                Primer drop. Primer reveal. Primera señal jugable. Retroville tiene que sentirse como un universo que se descubre, no como otra página de próximamente.
-              </p>
-
-              {waitlistCount > 0 ? (
-                <div className="mt-7 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
-                  <div className="flex items-center justify-between gap-4 text-sm text-white/62">
-                    <span>{waitlistCount.toLocaleString('es-ES')} registros</span>
-                    <span>Objetivo {hypeGoal.toLocaleString('es-ES')}</span>
-                  </div>
-                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent3),var(--rv-accent))]"
-                      style={{ width: `${Math.round(hypePct * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="rounded-[2rem] border border-white/10 bg-[rgba(8,10,16,0.72)] p-5 backdrop-blur-xl sm:p-6">
-              <RetrovilleWaitlistForm
-                darkMode
-                buttonLabel="QUIERO SER EL PRIMERO"
-                successMessage="Perfecto. Ya formas parte de la primera señal de Retroville."
-              />
             </div>
           </div>
         </div>
