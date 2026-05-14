@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Anton, Space_Mono } from 'next/font/google';
 import RetrovilleCountdown from '@/components/retroville/RetrovilleCountdown';
@@ -13,19 +13,61 @@ const displayFont = Anton({ subsets: ['latin'], weight: '400' });
 const monoFont = Space_Mono({ subsets: ['latin'], weight: ['400', '700'] });
 
 const titleLetters = ['R', 'E', 'T', 'R', 'O', 'V', 'I', 'L', 'L', 'E'] as const;
-const manifestoLines = ['EVERY', 'FORGOTTEN', 'GAME', 'ENDS UP', 'SOMEWHERE.'];
+const manifestoLines = ['EVERY', 'FORGOTTEN', 'GAME', 'ENDS UP', 'SOMEWHERE.'] as const;
 
-const universeSlides = [
+type ImageSlide = {
+  kind: 'image';
+  title: string;
+  eyebrow: string;
+  description: string;
+  image: string;
+  alt: string;
+  accent: string;
+};
+
+type CountdownSlide = {
+  kind: 'countdown';
+  title: string;
+  eyebrow: string;
+  description: string;
+};
+
+type ManifestoSlide = {
+  kind: 'manifesto';
+  title: string;
+  eyebrow: string;
+  description: string;
+};
+
+type NarrativeSlide = ImageSlide | CountdownSlide | ManifestoSlide;
+
+const narrativeSlides: readonly NarrativeSlide[] = [
   {
+    kind: 'countdown',
+    title: 'VENTANA DE LANZAMIENTO',
+    eyebrow: 'LAUNCH WINDOW TARGET',
+    description:
+      'La primera gran señal de Retroville ya tiene fecha. Este tramo tiene que sentirse como antesala, no como una tarjeta metida en medio de la página.',
+  },
+  {
+    kind: 'manifesto',
+    title: 'EVERY FORGOTTEN GAME ENDS UP SOMEWHERE.',
+    eyebrow: 'MANIFIESTO',
+    description:
+      'Una ciudad oscura. Hardware olvidado. Memorias corruptas. Humor extraño con ambición real.',
+  },
+  {
+    kind: 'image',
     title: 'RETROVILLE',
     eyebrow: 'LA CIUDAD',
     description:
       'Una ciudad de neón, humedad y ruido de arcades rotos. Cada callejón es un cartucho. Cada edificio es una consola que nunca terminó de apagarse.',
     image: '/images/retroville/retroville-street.png',
-    alt: 'Calles de Retroville con estética neon y personajes del universo',
+    alt: 'Calles de Retroville con estética neón y personajes del universo',
     accent: 'rgba(123,47,255,0.34)',
   },
   {
+    kind: 'image',
     title: 'NOX',
     eyebrow: 'EL SUPERVIVIENTE',
     description:
@@ -35,6 +77,7 @@ const universeSlides = [
     accent: 'rgba(138,215,255,0.28)',
   },
   {
+    kind: 'image',
     title: 'BUTTON CREW',
     eyebrow: 'EL RUIDO SOCIAL',
     description:
@@ -44,6 +87,7 @@ const universeSlides = [
     accent: 'rgba(242,187,116,0.24)',
   },
   {
+    kind: 'image',
     title: 'CAPITAL DEL CAOS',
     eyebrow: 'SEÑAL ECONÓMICA',
     description:
@@ -104,6 +148,10 @@ function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value));
 }
 
+function slideAccentStyle(accent: string): CSSProperties {
+  return { ['--retroville-slide-accent' as string]: accent } as CSSProperties;
+}
+
 export default function RetrovilleExperience({
   launchIso,
   launchLabel,
@@ -114,12 +162,11 @@ export default function RetrovilleExperience({
   waitlistCount: number;
 }) {
   const heroRef = useRef<HTMLElement | null>(null);
-  const universeRef = useRef<HTMLElement | null>(null);
+  const narrativeRef = useRef<HTMLElement | null>(null);
   const [heroProgress, setHeroProgress] = useState(0);
-  const [universeProgress, setUniverseProgress] = useState(0);
+  const [narrativeProgress, setNarrativeProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [manualSlide, setManualSlide] = useState(0);
-  const [manifestVisible, setManifestVisible] = useState<number[]>([]);
   const [dropVisible, setDropVisible] = useState<number[]>([]);
   const hypeGoal = 5000;
   const hypePct = waitlistCount > 0 ? clamp(waitlistCount / hypeGoal, 0, 1) : 0;
@@ -140,10 +187,10 @@ export default function RetrovilleExperience({
         setHeroProgress(clamp(-rect.top / total));
       }
 
-      if (universeRef.current && !isMobile) {
-        const rect = universeRef.current.getBoundingClientRect();
-        const total = Math.max(universeRef.current.offsetHeight - window.innerHeight, 1);
-        setUniverseProgress(clamp(-rect.top / total));
+      if (narrativeRef.current && !isMobile) {
+        const rect = narrativeRef.current.getBoundingClientRect();
+        const total = Math.max(narrativeRef.current.offsetHeight - window.innerHeight, 1);
+        setNarrativeProgress(clamp(-rect.top / total));
       }
     };
 
@@ -154,14 +201,12 @@ export default function RetrovilleExperience({
 
   useEffect(() => {
     const revealNodes = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
-    const manifestNodes = Array.from(document.querySelectorAll<HTMLElement>('[data-manifest-index]'));
     const dropNodes = Array.from(document.querySelectorAll<HTMLElement>('[data-drop-index]'));
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       revealNodes.forEach((node) => {
         node.dataset.visible = 'true';
       });
-      setManifestVisible(manifestoLines.map((_, index) => index));
       setDropVisible(signalCards.map((_, index) => index));
       return;
     }
@@ -173,13 +218,6 @@ export default function RetrovilleExperience({
 
           if (entry.target instanceof HTMLElement && entry.target.dataset.reveal !== undefined) {
             entry.target.dataset.visible = 'true';
-          }
-
-          const manifestIndex = entry.target.getAttribute('data-manifest-index');
-          if (manifestIndex) {
-            setManifestVisible((current) =>
-              current.includes(Number(manifestIndex)) ? current : [...current, Number(manifestIndex)]
-            );
           }
 
           const dropIndex = entry.target.getAttribute('data-drop-index');
@@ -195,18 +233,18 @@ export default function RetrovilleExperience({
       { threshold: 0.18, rootMargin: '0px 0px -6% 0px' }
     );
 
-    [...revealNodes, ...manifestNodes, ...dropNodes].forEach((node) => observer.observe(node));
-
+    [...revealNodes, ...dropNodes].forEach((node) => observer.observe(node));
     return () => observer.disconnect();
   }, []);
 
-  const desktopSlideIndex = Math.round(universeProgress * (universeSlides.length - 1));
+  const desktopSlideIndex = Math.round(narrativeProgress * (narrativeSlides.length - 1));
   const activeSlide = isMobile ? manualSlide : desktopSlideIndex;
-  const trackTranslate = isMobile ? 0 : universeProgress * (universeSlides.length - 1) * 100;
+  const trackTranslate = isMobile ? 0 : narrativeProgress * (narrativeSlides.length - 1) * 100;
+  const manifestoActive = isMobile || activeSlide >= 1;
 
   return (
     <main className={`${monoFont.className} overflow-x-hidden bg-[var(--rv-bg)] text-[var(--rv-text)]`}>
-      <section ref={heroRef} className="relative min-h-[168svh] overflow-hidden px-4 pb-8 pt-5 sm:px-8 lg:px-10">
+      <section ref={heroRef} className="relative min-h-[160svh] overflow-hidden px-4 pb-8 pt-5 sm:px-8 lg:px-10">
         <div className={`absolute inset-0 ${styles.heroNoise}`} />
         <div className={styles.scanlines} />
         <div className="absolute left-[-10%] top-[8%] h-[46rem] w-[46rem] rounded-full bg-[radial-gradient(circle,rgba(123,47,255,0.18),transparent_70%)] blur-3xl" />
@@ -218,7 +256,10 @@ export default function RetrovilleExperience({
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_32%,rgba(123,47,255,0.22),transparent_22%),radial-gradient(circle_at_50%_84%,rgba(138,215,255,0.14),transparent_22%)]" />
             <div
               className="absolute inset-[18%_36%_18%_36%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.16),transparent_66%)] blur-[90px]"
-              style={{ transform: `scale(${1 + heroProgress * 1.6})`, opacity: clamp(0.5 + heroProgress * 0.45, 0.5, 1) }}
+              style={{
+                transform: `scale(${1 + heroProgress * 1.8})`,
+                opacity: clamp(0.5 + heroProgress * 0.45, 0.5, 1),
+              }}
             />
 
             <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
@@ -234,42 +275,50 @@ export default function RetrovilleExperience({
             </div>
 
             <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-5 pb-10 pt-2 sm:px-8 lg:px-10">
-              <div className="absolute left-[-2%] top-[20%] hidden h-[60%] w-[28%] lg:block">
+              <div className="absolute left-[-1%] top-[18%] hidden h-[62%] w-[30%] lg:block">
                 <div
-                  className={`${styles.characterFloatAlt} relative h-full w-full`}
-                  style={{ transform: `translate3d(${heroProgress * 16}px, ${-heroProgress * 40}px, 0)` }}
+                  className={`${styles.characterFloatAlt} ${styles.heroCharacterShell} relative h-full w-full`}
+                  style={{ transform: `translate3d(${heroProgress * 16}px, ${-heroProgress * 42}px, 0)` }}
                 >
+                  <Image
+                    src="/images/retroville/nox-push.png"
+                    alt="NOX empujando hacia el centro del universo Retroville"
+                    fill
+                    sizes="28vw"
+                    className={`${styles.heroCharacterBackdrop} object-contain object-left-center`}
+                  />
+                  <div className={styles.heroCharacterAuraLeft} />
                   <Image
                     src="/images/retroville/nox-push.png"
                     alt="NOX empujando hacia el centro del universo Retroville"
                     fill
                     priority
                     sizes="28vw"
-                    className="object-contain object-left-center"
-                    style={{
-                      maskImage:
-                        'linear-gradient(90deg, black 68%, transparent 100%), linear-gradient(180deg, transparent 0%, black 18%, black 84%, transparent 100%)',
-                    }}
+                    className={`${styles.heroCharacterArt} ${styles.heroCharacterArtLeft} object-contain object-left-center`}
                   />
                 </div>
               </div>
 
-              <div className="absolute right-[-4%] top-[24%] hidden h-[56%] w-[31%] lg:block">
+              <div className="absolute right-[-3%] top-[22%] hidden h-[58%] w-[33%] lg:block">
                 <div
-                  className={`${styles.characterFloat} relative h-full w-full`}
-                  style={{ transform: `translate3d(${-heroProgress * 16}px, ${-heroProgress * 34}px, 0)` }}
+                  className={`${styles.characterFloat} ${styles.heroCharacterShell} relative h-full w-full`}
+                  style={{ transform: `translate3d(${-heroProgress * 16}px, ${-heroProgress * 36}px, 0)` }}
                 >
+                  <Image
+                    src="/images/retroville/button-crew-push.png"
+                    alt="Button Crew empujando hacia el centro del universo Retroville"
+                    fill
+                    sizes="31vw"
+                    className={`${styles.heroCharacterBackdrop} object-contain object-right-center`}
+                  />
+                  <div className={styles.heroCharacterAuraRight} />
                   <Image
                     src="/images/retroville/button-crew-push.png"
                     alt="Button Crew empujando hacia el centro del universo Retroville"
                     fill
                     priority
                     sizes="31vw"
-                    className="object-contain object-right-center"
-                    style={{
-                      maskImage:
-                        'linear-gradient(90deg, transparent 0%, black 18%, black 86%, transparent 100%), linear-gradient(180deg, transparent 0%, black 18%, black 84%, transparent 100%)',
-                    }}
+                    className={`${styles.heroCharacterArt} ${styles.heroCharacterArtRight} object-contain object-right-center`}
                   />
                 </div>
               </div>
@@ -282,17 +331,15 @@ export default function RetrovilleExperience({
                   Cinematic universe reveal
                 </p>
 
-                <h1
-                  className={`${displayFont.className} mt-6 text-[3.6rem] uppercase leading-[0.84] text-white sm:text-[5.4rem] lg:text-[8rem] xl:text-[9.1rem]`}
-                >
+                <h1 className={`${displayFont.className} mt-6 text-[3.6rem] uppercase leading-[0.84] text-white sm:text-[5.4rem] lg:text-[8rem] xl:text-[9.1rem]`}>
                   <span className={styles.titleWord}>
                     {titleLetters.map((letter, index) => {
                       const isZoom = letter === 'O' && index === 4;
                       const spread = index < 4 ? -1 : 1;
                       const opacity = isZoom ? 1 : 1 - heroProgress * 1.12;
-                      const translateX = isZoom ? 0 : heroProgress * spread * 40;
+                      const translateX = isZoom ? 0 : heroProgress * spread * 42;
                       const translateY = heroProgress * -18;
-                      const scale = isZoom ? 1 + heroProgress * 22 : 1;
+                      const scale = isZoom ? 1 + heroProgress * 24 : 1;
                       return (
                         <span
                           key={`${letter}-${index}`}
@@ -345,7 +392,7 @@ export default function RetrovilleExperience({
                 </div>
               </div>
 
-              <div className="relative mt-8 h-[240px] w-full max-w-[900px] overflow-hidden rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,14,24,0.82),rgba(7,9,15,0.96))] lg:hidden">
+              <div className="relative mt-8 h-[250px] w-full max-w-[920px] overflow-hidden rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,14,24,0.82),rgba(7,9,15,0.96))] lg:hidden">
                 <div className="absolute inset-x-[20%] top-[14%] h-[56%] rounded-full bg-[radial-gradient(circle,rgba(123,47,255,0.28),transparent_68%)] blur-3xl" />
                 <div className="absolute left-[-10%] top-[10%] h-[82%] w-[45%]">
                   <Image
@@ -389,55 +436,15 @@ export default function RetrovilleExperience({
         </div>
       </section>
 
-      <section className="relative px-4 py-14 sm:px-8 lg:px-10">
-        <div className="absolute inset-0 opacity-20 [background:radial-gradient(circle_at_50%_0%,rgba(123,47,255,0.22),transparent_22%)]" />
-        <div className="mx-auto max-w-[1180px] rounded-[2rem] border border-white/10 bg-[rgba(13,13,13,0.84)] p-6 shadow-[0_28px_80px_rgba(0,0,0,0.26)] backdrop-blur-2xl sm:p-8">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,0.44fr)_minmax(0,0.56fr)] lg:items-center">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">
-                Launch window target
-              </p>
-              <h2 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white sm:text-5xl`}>
-                {launchLabel}
-              </h2>
-              <p className="mt-4 text-sm leading-8 text-white/58">
-                La entrada por la O no es solo una animación. Es la primera grieta real por la que
-                el universo empieza a respirar.
-              </p>
-            </div>
-            <div className={`${styles.countGlow} rounded-[1.8rem] border border-white/10 bg-[rgba(10,10,10,0.72)] p-3 sm:p-4`}>
-              <RetrovilleCountdown targetIso={launchIso} className="border-0 bg-transparent p-0 shadow-none" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-18 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl rounded-[2rem] border border-white/8 bg-[linear-gradient(180deg,rgba(9,9,11,0.92),rgba(6,6,8,0.98))] px-6 py-10 shadow-[0_28px_90px_rgba(0,0,0,0.3)] sm:px-10 sm:py-14">
-          <div className="space-y-3">
-            {manifestoLines.map((line, index) => (
-              <p
-                key={line}
-                data-manifest-index={index}
-                className={`${displayFont.className} ${styles.manifestLine} ${manifestVisible.includes(index) ? styles.manifestLineVisible : ''} text-[3.2rem] uppercase leading-[0.86] text-white sm:text-[4.4rem] lg:text-[6rem] xl:text-[6.8rem]`}
-                style={{ transitionDelay: `${index * 70}ms` }}
-              >
-                {line}
-              </p>
-            ))}
-          </div>
-          <p className="mt-6 max-w-[38rem] text-sm uppercase tracking-[0.28em] text-white/46 sm:text-base">
-            Una ciudad oscura. Hardware olvidado. Memorias corruptas. Humor raro con ambición real.
-          </p>
-        </div>
-      </section>
-
-      <section ref={universeRef} className={`px-4 py-18 sm:px-8 lg:px-10 ${isMobile ? '' : 'min-h-[320vh]'}`}>
+      <section
+        ref={narrativeRef}
+        className={`px-4 py-10 sm:px-8 lg:px-10 ${isMobile ? '' : 'min-h-[540vh]'}`}
+      >
         <div className="mx-auto max-w-[1540px]">
-          <div className={`${isMobile ? '' : 'sticky top-8 h-[84vh]'} overflow-hidden rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,10,10,0.92),rgba(6,6,8,0.98))] shadow-[0_28px_90px_rgba(0,0,0,0.3)]`}>
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
+          <div className={`${isMobile ? '' : 'sticky top-0 h-[100svh]'} overflow-hidden rounded-[2.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,8,10,0.94),rgba(5,5,8,0.98))] shadow-[0_34px_120px_rgba(0,0,0,0.42)]`}>
+            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6 lg:px-8">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">El universo</p>
+                <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">Narrative track</p>
                 <h2 className={`${displayFont.className} mt-2 text-3xl uppercase text-white sm:text-4xl`}>
                   Slider narrativo
                 </h2>
@@ -452,11 +459,11 @@ export default function RetrovilleExperience({
                   <ChevronLeft className="h-4 w-4" />
                 </button>
                 <span>
-                  {String(activeSlide + 1).padStart(2, '0')} / {String(universeSlides.length).padStart(2, '0')}
+                  {String(activeSlide + 1).padStart(2, '0')} / {String(narrativeSlides.length).padStart(2, '0')}
                 </span>
                 <button
                   type="button"
-                  onClick={() => setManualSlide((current) => Math.min(universeSlides.length - 1, current + 1))}
+                  onClick={() => setManualSlide((current) => Math.min(narrativeSlides.length - 1, current + 1))}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition hover:border-white/20 hover:bg-white/[0.08] lg:hidden"
                   aria-label="Slide siguiente"
                 >
@@ -468,53 +475,118 @@ export default function RetrovilleExperience({
             {isMobile ? (
               <div className="overflow-x-auto px-4 pb-6 pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex gap-4 snap-x snap-mandatory">
-                  {universeSlides.map((slide) => (
+                  {narrativeSlides.map((slide) => (
                     <article
-                      key={slide.title}
+                      key={`${slide.kind}-${slide.title}`}
                       className="min-w-[88%] snap-center overflow-hidden rounded-[1.8rem] border border-white/10 bg-[rgba(11,11,13,0.76)]"
                     >
-                      <div className="relative aspect-[4/3] overflow-hidden border-b border-white/10 bg-[rgba(12,12,16,0.9)]">
-                        <div
-                          className="absolute inset-0"
-                          style={{ background: `radial-gradient(circle at 50% 18%, ${slide.accent}, transparent 42%)` }}
-                        />
-                        <Image src={slide.image} alt={slide.alt} fill sizes="88vw" className="object-cover" />
-                      </div>
-                      <div className="p-5">
-                        <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                        <h3 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
-                          {slide.title}
-                        </h3>
-                        <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
-                      </div>
+                      {slide.kind === 'countdown' ? (
+                        <div className="p-5">
+                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                          <h3 className={`${displayFont.className} mt-4 text-3xl uppercase leading-none text-white`}>
+                            {launchLabel}
+                          </h3>
+                          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+                          <div className={`${styles.countGlow} mt-6 rounded-[1.6rem] border border-white/10 bg-[rgba(10,10,10,0.72)] p-3`}>
+                            <RetrovilleCountdown targetIso={launchIso} className="border-0 bg-transparent p-0 shadow-none" />
+                          </div>
+                        </div>
+                      ) : slide.kind === 'manifesto' ? (
+                        <div className="flex min-h-[28rem] flex-col justify-center p-5">
+                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                          <div className="mt-5 space-y-2">
+                            {manifestoLines.map((line, index) => (
+                              <p key={line} className={`${displayFont.className} text-[2.6rem] uppercase leading-[0.88] text-white sm:text-[3rem]`}>
+                                {line}
+                              </p>
+                            ))}
+                          </div>
+                          <p className="mt-5 text-sm leading-7 text-white/62">{slide.description}</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className={`${styles.slideVisual} relative aspect-[4/3] overflow-hidden border-b border-white/10`} style={slideAccentStyle(slide.accent)}>
+                            <div className={styles.slideBackdrop}>
+                              <Image src={slide.image} alt="" fill sizes="88vw" className={styles.slideBackdropImage} aria-hidden />
+                            </div>
+                            <div className={styles.slideVisualTint} />
+                            <div className={styles.slideForeground}>
+                              <Image src={slide.image} alt={slide.alt} fill sizes="88vw" className={styles.slideImage} />
+                            </div>
+                          </div>
+                          <div className="p-5">
+                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                            <h3 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
+                              {slide.title}
+                            </h3>
+                            <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+                          </div>
+                        </>
+                      )}
                     </article>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="h-[calc(84vh-74px)] overflow-hidden">
-                <div className={`${styles.universeTrack} flex h-full w-[400%]`} style={{ transform: `translateX(-${trackTranslate}%)` }}>
-                  {universeSlides.map((slide) => (
+              <div className="h-[calc(100svh-74px)] overflow-hidden">
+                <div className={`${styles.universeTrack} flex h-full`} style={{ width: `${narrativeSlides.length * 100}%`, transform: `translateX(-${trackTranslate}%)` }}>
+                  {narrativeSlides.map((slide) => (
                     <article
-                      key={slide.title}
-                      className="grid h-full w-full shrink-0 grid-cols-[minmax(0,0.5fr)_minmax(0,0.5fr)] items-center gap-8 px-8 py-8 xl:px-10"
+                      key={`${slide.kind}-${slide.title}`}
+                      className="flex h-full shrink-0 basis-full items-center px-8 py-8 xl:px-10"
                     >
-                      <div className="relative h-full overflow-hidden rounded-[1.9rem] border border-white/10 bg-[rgba(12,12,16,0.92)]">
-                        <div
-                          className="absolute inset-0"
-                          style={{ background: `radial-gradient(circle at 50% 18%, ${slide.accent}, transparent 44%)` }}
-                        />
-                        <Image src={slide.image} alt={slide.alt} fill sizes="42vw" className="object-cover" />
-                      </div>
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                        <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
-                          {slide.title}
-                        </h3>
-                        <p className="mt-6 max-w-[34rem] text-base leading-8 text-white/66 xl:text-lg">
-                          {slide.description}
-                        </p>
-                      </div>
+                      {slide.kind === 'countdown' ? (
+                        <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)] lg:items-center">
+                          <div className="max-w-[30rem]">
+                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
+                              {launchLabel}
+                            </h3>
+                            <p className="mt-6 text-base leading-8 text-white/64">{slide.description}</p>
+                          </div>
+                          <div className={`${styles.countGlow} rounded-[1.9rem] border border-white/10 bg-[rgba(10,10,10,0.72)] p-5`}>
+                            <RetrovilleCountdown targetIso={launchIso} className="border-0 bg-transparent p-0 shadow-none" />
+                          </div>
+                        </div>
+                      ) : slide.kind === 'manifesto' ? (
+                        <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,0.68fr)_minmax(0,0.32fr)] lg:items-end">
+                          <div className="space-y-3">
+                            {manifestoLines.map((line, index) => (
+                              <p
+                                key={line}
+                                className={`${displayFont.className} ${styles.manifestLine} ${manifestoActive ? styles.manifestLineVisible : ''} text-[4.8rem] uppercase leading-[0.86] text-white xl:text-[6.6rem]`}
+                                style={{ transitionDelay: `${index * 70}ms` }}
+                              >
+                                {line}
+                              </p>
+                            ))}
+                          </div>
+                          <p className="max-w-[24rem] text-sm uppercase tracking-[0.28em] text-white/46 xl:text-base">
+                            {slide.description}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] lg:items-center">
+                          <div className={`${styles.slideVisual} relative h-full min-h-[68vh] overflow-hidden rounded-[2rem] border border-white/10`} style={slideAccentStyle(slide.accent)}>
+                            <div className={styles.slideBackdrop}>
+                              <Image src={slide.image} alt="" fill sizes="42vw" className={styles.slideBackdropImage} aria-hidden />
+                            </div>
+                            <div className={styles.slideVisualTint} />
+                            <div className={styles.slideForeground}>
+                              <Image src={slide.image} alt={slide.alt} fill sizes="42vw" className={styles.slideImage} />
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
+                              {slide.title}
+                            </h3>
+                            <p className="mt-6 max-w-[34rem] text-base leading-8 text-white/66 xl:text-lg">
+                              {slide.description}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
@@ -522,9 +594,9 @@ export default function RetrovilleExperience({
             )}
 
             <div className="flex items-center justify-center gap-2 border-t border-white/10 px-5 py-4">
-              {universeSlides.map((slide, index) => (
+              {narrativeSlides.map((slide, index) => (
                 <button
-                  key={slide.title}
+                  key={`${slide.kind}-${slide.title}`}
                   type="button"
                   onClick={() => setManualSlide(index)}
                   className={`h-2.5 rounded-full transition ${activeSlide === index ? 'w-10 bg-[var(--rv-accent)]' : 'w-2.5 bg-white/24'}`}
@@ -540,15 +612,11 @@ export default function RetrovilleExperience({
         <div className="mx-auto max-w-[1540px]">
           <div className="mb-8 max-w-[48rem]" data-reveal>
             <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">Archive visions</p>
-            <h2
-              className={`${displayFont.className} ${styles.reveal} mt-4 text-4xl uppercase leading-none text-white sm:text-5xl lg:text-6xl`}
-              data-reveal
-            >
+            <h2 className={`${displayFont.className} ${styles.reveal} mt-4 text-4xl uppercase leading-none text-white sm:text-5xl lg:text-6xl`} data-reveal>
               LOS APÓCRIFOS DE RETROVILLE
             </h2>
             <p className="mt-4 text-sm leading-8 text-white/62 sm:text-base">
-              Esta parte se queda: reliquias visuales, reinterpretaciones clásicas y mitología absurda
-              alrededor de los personajes. Aquí es donde el universo se vuelve divertido de verdad.
+              Esta parte se queda: reliquias visuales, reinterpretaciones clásicas y mitología absurda alrededor de los personajes. Aquí es donde el universo se vuelve divertido de verdad.
             </p>
           </div>
 
@@ -607,8 +675,7 @@ export default function RetrovilleExperience({
                 ENTRA ANTES DE QUE EL RESTO DE INTERNET LO RECUERDE
               </h2>
               <p className="mt-5 max-w-[34rem] text-sm leading-8 text-white/64 sm:text-base">
-                Primer drop. Primer reveal. Primera señal jugable. Retroville tiene que sentirse como
-                un universo que se descubre, no como otra página de próximamente.
+                Primer drop. Primer reveal. Primera señal jugable. Retroville tiene que sentirse como un universo que se descubre, no como otra página de próximamente.
               </p>
 
               {waitlistCount > 0 ? (
