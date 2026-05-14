@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Bebas_Neue } from 'next/font/google';
 import { useLocale } from '@/components/LocaleProvider';
 
@@ -56,26 +56,7 @@ const statTargets = [
 
 export default function Hero() {
   const { locale } = useLocale();
-  const [counts, setCounts] = useState([0, 0, 0]);
-
-  useEffect(() => {
-    const duration = 1200;
-    const start = performance.now();
-    let frame = 0;
-
-    const tick = (now: number) => {
-      const progress = Math.min(1, (now - start) / duration);
-      setCounts(
-        statTargets.map((stat) => Math.round(stat.value * (1 - Math.pow(1 - progress, 3))))
-      );
-      if (progress < 1) {
-        frame = window.requestAnimationFrame(tick);
-      }
-    };
-
-    frame = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+  const [counts] = useState(statTargets.map((stat) => stat.value));
 
   const copy = useMemo(
     () =>

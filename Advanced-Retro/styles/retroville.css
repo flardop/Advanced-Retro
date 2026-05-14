@@ -1,0 +1,10 @@
+:root {
+  --rv-bg: #030303;
+  --rv-surface: #0d0d0d;
+  --rv-text: #f0f0f0;
+  --rv-accent: #00ff88;
+  --rv-accent2: #7b2fff;
+  --rv-accent3: #ff3c00;
+  --rv-muted: #444444;
+  --rv-scanline: rgba(0, 0, 0, 0.15);
+}

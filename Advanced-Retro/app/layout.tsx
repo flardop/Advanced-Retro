@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import '../styles/globals.css';
-import Script from 'next/script';
+import '../styles/retroville.css';
 import { JetBrains_Mono, Manrope, Sora } from 'next/font/google';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
+import StructuredData from '@/components/StructuredData';
 import StoreChromeShell from '@/components/StoreChromeShell';
 import { absoluteUrl, getSiteUrl } from '@/lib/siteConfig';
 import { SEO_BASE_KEYWORDS, SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE } from '@/lib/seo';
@@ -104,9 +105,9 @@ export const metadata: Metadata = {
         }
       : undefined,
   openGraph: {
-    title: 'AdvancedRetro.es',
+    title: 'AdvancedRetro.es | Tienda Retro Online',
     description:
-      'Compra consolas retro, videojuegos clásicos y coleccionables. Game Boy, SNES, GameCube y más.',
+      'Compra consolas retro, videojuegos clásicos y coleccionables. Game Boy, SNES, Mega Drive, PlayStation y más.',
     url: siteUrl,
     siteName: 'AdvancedRetro.es',
     type: 'website',
@@ -122,9 +123,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AdvancedRetro.es',
+    title: 'AdvancedRetro.es | Tienda Retro Online',
     description:
-      'Compra consolas retro, videojuegos clásicos y coleccionables. Game Boy, SNES, GameCube y más.',
+      'Compra consolas retro, videojuegos clásicos y coleccionables. Game Boy, SNES, Mega Drive, PlayStation y más.',
     images: [absoluteUrl('/logo.png')],
   },
 };
@@ -210,12 +211,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-body min-h-screen flex flex-col overflow-x-hidden">
         <GlobalErrorBoundary>
           <LocaleProvider>
-            <Script
+            <StructuredData
               id="schema-org"
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{
-                __html: JSON.stringify([organizationSchema, websiteSchema, onlineStoreSchema, localBusinessSchema]),
-              }}
+              data={[organizationSchema, websiteSchema, onlineStoreSchema, localBusinessSchema]}
             />
             <StoreChromeShell>{children}</StoreChromeShell>
           </LocaleProvider>

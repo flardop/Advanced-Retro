@@ -4,9 +4,9 @@ import { absoluteUrl } from '@/lib/siteConfig';
 // Central SEO copy. Edita estos textos para ajustar posicionamiento sin tocar lógica.
 export const SEO_BRAND_NAME = 'AdvancedRetro.es';
 export const SEO_DEFAULT_IMAGE = '/logo.png';
-export const SEO_DEFAULT_TITLE = 'AdvancedRetro | Tienda de Videojuegos y Consolas Retro';
+export const SEO_DEFAULT_TITLE = 'AdvancedRetro.es | Tienda Retro Online';
 export const SEO_DEFAULT_DESCRIPTION =
-  'Compra consolas retro, videojuegos clásicos y coleccionables. Game Boy, SNES, GameCube y más, con envío a toda España.';
+  'Compra consolas retro, videojuegos clásicos y coleccionables. Game Boy, SNES, Mega Drive, PlayStation y más. Envío a toda España y Europa.';
 
 export const SEO_BASE_KEYWORDS = [
   'tienda retro',
@@ -18,6 +18,8 @@ export const SEO_BASE_KEYWORDS = [
   'game boy advance',
   'super nintendo',
   'gamecube',
+  'mega drive',
+  'playstation retro',
   'mystery box gaming',
   'coleccionables gaming',
   'advanced retro',

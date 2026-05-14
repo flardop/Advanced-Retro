@@ -1,0 +1,144 @@
+.heroNoise {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(123, 47, 255, 0.18), transparent 26%),
+    radial-gradient(circle at 80% 26%, rgba(0, 255, 136, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 22%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.12));
+}
+
+.heroNoise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.1;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 68px 68px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.86));
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.09) 1px, transparent 1px, transparent 4px);
+  background-size: 100% 4px;
+  mix-blend-mode: soft-light;
+}
+
+.titleWord {
+  display: inline-flex;
+  gap: 0.02em;
+  filter: drop-shadow(0 0 22px rgba(123, 47, 255, 0.18));
+}
+
+.titleLetter {
+  display: inline-block;
+  transition: transform 160ms linear, opacity 160ms linear, filter 160ms linear;
+}
+
+.titleLetterZoom {
+  transform-origin: center center;
+  position: relative;
+  z-index: 2;
+}
+
+.titleLetterZoom::before,
+.titleLetterZoom::after {
+  content: attr(data-letter);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.46;
+}
+
+.titleLetterZoom::before {
+  transform: translate(2px, -1px);
+  color: rgba(0, 255, 136, 0.55);
+}
+
+.titleLetterZoom::after {
+  transform: translate(-2px, 1px);
+  color: rgba(123, 47, 255, 0.58);
+}
+
+.characterFloat {
+  animation: retroville-float 4.8s ease-in-out infinite;
+}
+
+.characterFloatAlt {
+  animation: retroville-float-alt 5.4s ease-in-out infinite;
+}
+
+@keyframes retroville-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes retroville-float-alt {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.countGlow {
+  animation: retroville-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes retroville-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(0,255,136,0), 0 0 24px rgba(123,47,255,0.08); }
+  50% { box-shadow: 0 0 16px rgba(0,255,136,0.08), 0 0 32px rgba(123,47,255,0.12); }
+}
+
+.manifestLine {
+  opacity: 0;
+  transform: translateX(64px);
+  transition: transform 800ms cubic-bezier(.2,.9,.2,1), opacity 800ms cubic-bezier(.2,.9,.2,1);
+}
+
+.manifestLineVisible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.universeTrack {
+  transition: transform 220ms ease-out;
+  will-change: transform;
+}
+
+.dropCard {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 520ms ease, transform 520ms ease;
+}
+
+.dropCardVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.waitlistNoise {
+  background-image:
+    radial-gradient(circle at top, rgba(123, 47, 255, 0.2), transparent 24%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .characterFloat,
+  .characterFloatAlt,
+  .countGlow,
+  .manifestLine,
+  .dropCard,
+  .universeTrack,
+  .titleLetter,
+  .titleLetterZoom {
+    animation: none;
+    transition: none;
+  }
+
+  .manifestLine,
+  .dropCard {
+    opacity: 1;
+    transform: none;
+  }
+}

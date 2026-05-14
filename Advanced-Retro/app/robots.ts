@@ -11,8 +11,11 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: [
           '/admin',
+          '/dashboard/',
           '/admin/test-images',
           '/admin/update-images',
+          '/crear-tienda',
+          '/memberships/manage',
           '/dev-retroville',
           '/dev-retroville/',
           '/login',
