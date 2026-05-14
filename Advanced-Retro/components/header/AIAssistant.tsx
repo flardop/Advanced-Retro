@@ -17,12 +17,18 @@ import {
 import { useLocale } from '@/components/LocaleProvider';
 
 type ChatRole = 'user' | 'assistant';
-type AssistantProvider = 'anthropic' | 'fallback' | '';
+type AssistantProvider = 'anthropic' | 'openai' | 'fallback' | '';
+
+type AssistantLink = {
+  label: string;
+  href: string;
+};
 
 type ChatMessage = {
   id: string;
   role: ChatRole;
   content: string;
+  links?: AssistantLink[];
 };
 
 type QuickAction = {
@@ -190,6 +196,7 @@ export default function AIAssistant({
 
   const statusLabel = useMemo(() => {
     if (loading) return locale === 'en' ? 'Thinking…' : 'Pensando…';
+    if (provider === 'openai') return locale === 'en' ? 'AI online' : 'IA online';
     if (provider === 'anthropic') return locale === 'en' ? 'AI online' : 'IA online';
     if (provider === 'fallback') return locale === 'en' ? 'Local guidance' : 'Guía local';
     return locale === 'en' ? 'Ready' : 'Listo';
@@ -229,8 +236,23 @@ export default function AIAssistant({
       });
 
       const payload = await response.json().catch(() => null);
-      const answer = String(payload?.message || '').trim();
-      const nextProvider = payload?.provider === 'anthropic' ? 'anthropic' : 'fallback';
+      const answer = String(payload?.message || payload?.error || '').trim();
+      const nextProvider =
+        payload?.provider === 'anthropic'
+          ? 'anthropic'
+          : payload?.provider === 'openai'
+            ? 'openai'
+            : 'fallback';
+      const links = Array.isArray(payload?.links)
+        ? payload.links
+            .filter((item: any) => item && typeof item === 'object')
+            .map((item: any) => ({
+              label: String(item?.label || '').trim(),
+              href: String(item?.href || '').trim(),
+            }))
+            .filter((item: AssistantLink) => item.label && item.href.startsWith('/'))
+            .slice(0, 6)
+        : [];
       setProvider(nextProvider);
 
       setMessages((current) => [
@@ -243,6 +265,7 @@ export default function AIAssistant({
             (locale === 'en'
               ? 'I could not give a precise answer just now. Try again in a moment.'
               : 'No he podido darte una respuesta precisa ahora mismo. Inténtalo de nuevo en un momento.'),
+          links: links.length ? links : undefined,
         },
       ]);
     } catch {
@@ -409,6 +432,22 @@ export default function AIAssistant({
                           : 'Tú'}
                     </p>
                     <p>{message.content}</p>
+                    {message.role === 'assistant' &&
+                    Array.isArray(message.links) &&
+                    message.links.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {message.links.map((link) => (
+                          <Link
+                            key={`${message.id}-${link.href}`}
+                            href={link.href}
+                            className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] text-primary transition hover:border-primary/45 hover:bg-primary/15"
+                          >
+                            <span>{link.label}</span>
+                            <ArrowUpRight className="h-3 w-3" />
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
 
