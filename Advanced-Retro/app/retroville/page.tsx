@@ -87,7 +87,7 @@ export default async function RetrovillePage() {
     url: absoluteUrl('/retroville'),
     description:
       'Retroville es un universo narrativo donde el hardware olvidado sigue vivo. Una ciudad oscura de neón, personajes corruptos y torneos retro.',
-    image: absoluteUrl('/images/retroville/nox-push.png'),
+    image: absoluteUrl('/images/retroville/retroville-street.png'),
     about: [
       { '@type': 'Thing', name: 'World building retro' },
       { '@type': 'Thing', name: 'Universo narrativo gaming' },

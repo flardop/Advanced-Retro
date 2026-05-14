@@ -1,10 +1,10 @@
 :root {
-  --rv-bg: #030303;
-  --rv-surface: #0d0d0d;
-  --rv-text: #f0f0f0;
-  --rv-accent: #66c0f4;
-  --rv-accent2: #7b2fff;
-  --rv-accent3: #ff5a7a;
-  --rv-muted: #586170;
+  --rv-bg: #05070d;
+  --rv-surface: #0d1017;
+  --rv-text: #f6f2ea;
+  --rv-accent: #8ad7ff;
+  --rv-accent2: #9b6bff;
+  --rv-accent3: #f2bb74;
+  --rv-muted: #7c8291;
   --rv-scanline: rgba(0, 0, 0, 0.15);
 }

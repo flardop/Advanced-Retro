@@ -44,10 +44,10 @@ export default function RetrovilleCountdown({
 
   const units = useMemo<CountdownUnit[]>(() => {
     return [
-      { label: 'Days', value: pad(timeLeft.days) },
-      { label: 'Hours', value: pad(timeLeft.hours) },
-      { label: 'Minutes', value: pad(timeLeft.minutes) },
-      { label: 'Seconds', value: pad(timeLeft.seconds) },
+      { label: 'Días', value: pad(timeLeft.days) },
+      { label: 'Horas', value: pad(timeLeft.hours) },
+      { label: 'Min', value: pad(timeLeft.minutes) },
+      { label: 'Seg', value: pad(timeLeft.seconds) },
     ];
   }, [timeLeft.days, timeLeft.hours, timeLeft.minutes, timeLeft.seconds]);
 
@@ -57,10 +57,10 @@ export default function RetrovilleCountdown({
         className={`rounded-[1.6rem] border border-fuchsia-400/25 bg-[rgba(110,32,138,0.14)] px-5 py-4 text-center backdrop-blur-xl ${className}`}
       >
         <p className="text-[11px] uppercase tracking-[0.28em] text-fuchsia-200/75">
-          Launch state
+          Estado de lanzamiento
         </p>
         <p className="mt-2 text-base font-semibold text-white">
-          Retroville is awake.
+          Retroville ya está despierto.
         </p>
       </div>
     );
@@ -72,7 +72,7 @@ export default function RetrovilleCountdown({
     >
       <div className="mb-3 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.26em] text-white/48 sm:text-[11px]">
         <span className="inline-flex h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(103,232,249,0.9)]" />
-        Launch Sequence
+        Secuencia de lanzamiento
       </div>
       <div className="grid grid-cols-4 gap-2">
         {units.map((unit) => (
