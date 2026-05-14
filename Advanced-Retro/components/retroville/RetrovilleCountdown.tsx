@@ -25,6 +25,13 @@ function pad(value: number) {
   return String(Math.max(0, value)).padStart(2, '0');
 }
 
+const placeholderUnits: CountdownUnit[] = [
+  { label: 'Días', value: '--' },
+  { label: 'Horas', value: '--' },
+  { label: 'Min', value: '--' },
+  { label: 'Seg', value: '--' },
+];
+
 export default function RetrovilleCountdown({
   targetIso,
   className = '',
@@ -32,9 +39,11 @@ export default function RetrovilleCountdown({
   targetIso: string;
   className?: string;
 }) {
+  const [mounted, setMounted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(targetIso));
 
   useEffect(() => {
+    setMounted(true);
     setTimeLeft(getTimeLeft(targetIso));
     const timer = window.setInterval(() => {
       setTimeLeft(getTimeLeft(targetIso));
@@ -43,15 +52,19 @@ export default function RetrovilleCountdown({
   }, [targetIso]);
 
   const units = useMemo<CountdownUnit[]>(() => {
+    if (!mounted) {
+      return placeholderUnits;
+    }
+
     return [
       { label: 'Días', value: pad(timeLeft.days) },
       { label: 'Horas', value: pad(timeLeft.hours) },
       { label: 'Min', value: pad(timeLeft.minutes) },
       { label: 'Seg', value: pad(timeLeft.seconds) },
     ];
-  }, [timeLeft.days, timeLeft.hours, timeLeft.minutes, timeLeft.seconds]);
+  }, [mounted, timeLeft.days, timeLeft.hours, timeLeft.minutes, timeLeft.seconds]);
 
-  if (timeLeft.finished) {
+  if (mounted && timeLeft.finished) {
     return (
       <div
         className={`rounded-[1.6rem] border border-fuchsia-400/25 bg-[rgba(110,32,138,0.14)] px-5 py-4 text-center backdrop-blur-xl ${className}`}
@@ -80,7 +93,7 @@ export default function RetrovilleCountdown({
             key={unit.label}
             className="rounded-[1.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-2 py-3 text-center"
           >
-            <span className="block text-xl font-black tabular-nums text-white [text-shadow:0_0_18px_rgba(255,255,255,0.18)] sm:text-2xl">
+            <span className="block text-xl font-black tabular-nums text-white [text-shadow:0_0_18px_rgba(255,255,255,0.18)] sm:text-2xl" suppressHydrationWarning>
               {unit.value}
             </span>
             <span className="mt-1 block text-[9px] uppercase tracking-[0.22em] text-white/42 sm:text-[10px]">

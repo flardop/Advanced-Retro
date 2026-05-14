@@ -19,7 +19,7 @@ const relicGallery = [
   {
     title: 'Mona NOX',
     eyebrow: 'ARCHIVO 01',
-    body: 'El cansancio como retrato oficial. La ciudad también colecciona versiones imposibles de sus propias leyendas.',
+    body: 'El cansancio como retrato oficial. La ciudad colecciona versiones imposibles de sus propias leyendas.',
     image: '/images/retroville/retroville-mona.png',
     alt: 'Retrato clásico de NOX en clave pictórica',
   },
@@ -40,7 +40,7 @@ const relicGallery = [
   {
     title: 'The Last Save',
     eyebrow: 'ARCHIVO 04',
-    body: 'Toda banda acaba reuniéndose alrededor de una mesa. En Retroville, esa cena siempre termina siendo una discusión sobre memoria y control.',
+    body: 'Toda banda acaba reuniéndose alrededor de una mesa. Aquí esa cena siempre termina en discusión sobre memoria y control.',
     image: '/images/retroville/retroville-last-supper.png',
     alt: 'Escena inspirada en la última cena con NOX y Button Crew',
   },
@@ -69,6 +69,7 @@ type ImageSlide = {
   image: string;
   alt: string;
   accent: string;
+  align?: 'left' | 'right';
 };
 
 type NarrativeSlide =
@@ -85,7 +86,7 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     title: 'VENTANA DE LANZAMIENTO',
     eyebrow: 'LAUNCH WINDOW TARGET',
     description:
-      'La primera gran señal de Retroville ya tiene fecha. Este tramo tiene que sentirse como antesala, no como una tarjeta suelta dentro de una web larga.',
+      'La primera gran señal de Retroville ya tiene fecha. Este tramo tiene que sentirse como una antesala viva, no como una tarjeta aislada.',
   },
   {
     kind: 'manifesto',
@@ -102,7 +103,8 @@ const narrativeSlides: readonly NarrativeSlide[] = [
       'Una ciudad de neón, humedad y ruido de arcades rotos. Cada callejón es un cartucho. Cada edificio es una consola que nunca terminó de apagarse.',
     image: '/images/retroville/retroville-street.png',
     alt: 'Calles de Retroville con estética neón y personajes del universo',
-    accent: 'rgba(123,47,255,0.34)',
+    accent: 'rgba(123,47,255,0.36)',
+    align: 'left',
   },
   {
     kind: 'image',
@@ -112,7 +114,8 @@ const narrativeSlides: readonly NarrativeSlide[] = [
       'Sarcasmo, batería baja y una dignidad bastante discutible. NOX no dirige la ciudad por épica. Lo hace porque nadie más soporta el turno de noche.',
     image: '/images/retroville/retroville-wave.png',
     alt: 'NOX dentro del universo Retroville',
-    accent: 'rgba(138,215,255,0.28)',
+    accent: 'rgba(138,215,255,0.30)',
+    align: 'right',
   },
   {
     kind: 'image',
@@ -122,17 +125,19 @@ const narrativeSlides: readonly NarrativeSlide[] = [
       'A, B, Y y X son la conversación permanente de Retroville: impulsivos, cínicos, analíticos y caóticos. Siempre llegan juntos. Siempre complican algo.',
     image: '/images/retroville/retroville-button-crew-studio.png',
     alt: 'Button Crew posando como grupo dentro de Retroville',
-    accent: 'rgba(242,187,116,0.24)',
+    accent: 'rgba(242,187,116,0.28)',
+    align: 'left',
   },
   {
     kind: 'image',
     title: 'CAPITAL DEL CAOS',
     eyebrow: 'SEÑAL ECONÓMICA',
     description:
-      'Retroville también sabe ser exagerada, absurda y peligrosa. Si alguna vez la ciudad empieza a imprimir dinero emocional, esta será la sala de juntas.',
+      'Si la ciudad empieza a imprimir dinero emocional, esta es la sala de juntas. Ambición absurda, euforia y demasiadas consolas en la misma mesa.',
     image: '/images/retroville/retroville-chaos-office.png',
     alt: 'NOX y Button Crew celebrando en una oficina caótica dentro del universo Retroville',
     accent: 'rgba(255,60,0,0.24)',
+    align: 'right',
   },
   {
     kind: 'gallery',
@@ -145,8 +150,7 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     kind: 'signals',
     title: 'SEÑALES DE EXPANSIÓN',
     eyebrow: 'SYSTEM SIGNALS',
-    description:
-      'World building, drops narrativos y caos social dentro de una misma frecuencia visual.',
+    description: 'World building, drops narrativos y caos social dentro de una misma frecuencia visual.',
   },
   {
     kind: 'waitlist',
@@ -165,6 +169,13 @@ function slideAccentStyle(accent: string): CSSProperties {
   return { ['--retroville-slide-accent' as string]: accent } as CSSProperties;
 }
 
+function imageSurfaceStyle(image: string, accent: string): CSSProperties {
+  return {
+    ['--retroville-slide-accent' as string]: accent,
+    backgroundImage: `linear-gradient(180deg, rgba(3,3,3,0.24), rgba(3,3,3,0.72)), radial-gradient(circle at 50% 20%, ${accent}, transparent 42%), url(${image})`,
+  } as CSSProperties;
+}
+
 export default function RetrovilleExperience({
   launchIso,
   launchLabel,
@@ -180,8 +191,11 @@ export default function RetrovilleExperience({
   const [narrativeProgress, setNarrativeProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [manualSlide, setManualSlide] = useState(0);
+  const [narrativeMode, setNarrativeMode] = useState<"before" | "fixed" | "after">("before");
+
   const hypeGoal = 5000;
   const hypePct = waitlistCount > 0 ? clamp(waitlistCount / hypeGoal, 0, 1) : 0;
+  const desktopStep = 100 / narrativeSlides.length;
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 1023px)');
@@ -203,6 +217,16 @@ export default function RetrovilleExperience({
         const rect = narrativeRef.current.getBoundingClientRect();
         const total = Math.max(narrativeRef.current.offsetHeight - window.innerHeight, 1);
         setNarrativeProgress(clamp(-rect.top / total));
+
+        if (rect.top > 0) {
+          setNarrativeMode("before");
+        } else if (rect.bottom <= window.innerHeight) {
+          setNarrativeMode("after");
+        } else {
+          setNarrativeMode("fixed");
+        }
+      } else if (isMobile) {
+        setNarrativeMode("before");
       }
     };
 
@@ -213,524 +237,598 @@ export default function RetrovilleExperience({
 
   const desktopSlideIndex = Math.round(narrativeProgress * (narrativeSlides.length - 1));
   const activeSlide = isMobile ? manualSlide : desktopSlideIndex;
-  const trackTranslate = isMobile ? 0 : narrativeProgress * (narrativeSlides.length - 1) * 100;
+  const trackTranslate = isMobile ? 0 : narrativeProgress * (narrativeSlides.length - 1) * desktopStep;
   const manifestoActive = isMobile || activeSlide >= 1;
+
+  const renderMobileSlide = (slide: NarrativeSlide) => {
+    if (slide.kind === 'countdown') {
+      return (
+        <div className="p-5 sm:p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+          <h3 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white`}>{slide.title}</h3>
+          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+          <div className={`${styles.countGlow} mt-6 rounded-[1.7rem] border border-white/10 bg-black/28 p-3`}>
+            <RetrovilleCountdown targetIso={launchIso} className="border-0 bg-transparent p-0 shadow-none" />
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'manifesto') {
+      return (
+        <div className="p-5 sm:p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+          <div className="mt-5 space-y-2">
+            {manifestoLines.map((line) => (
+              <p key={line} className={`${displayFont.className} text-[2.8rem] uppercase leading-[0.88] text-white sm:text-[3.2rem]`}>
+                {line}
+              </p>
+            ))}
+          </div>
+          <p className="mt-5 text-sm leading-7 text-white/62">{slide.description}</p>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'gallery') {
+      return (
+        <div className="p-5 sm:p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+          <h3 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white`}>{slide.title}</h3>
+          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {relicGallery.map((item) => (
+              <article key={item.title} className={`${styles.galleryCard} overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/[0.04]`}>
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Image src={item.image} alt={item.alt} fill sizes="44vw" className="object-cover object-center" />
+                </div>
+                <div className="p-4">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent3)]">{item.eyebrow}</p>
+                  <p className="mt-2 text-base font-semibold text-white">{item.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-white/60">{item.body}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'signals') {
+      return (
+        <div className="p-5 sm:p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+          <h3 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white`}>{slide.title}</h3>
+          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+          <div className="mt-6 grid gap-4">
+            {signalCards.map((card) => (
+              <article key={card.title} className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent)]">Signal</p>
+                <p className="mt-2 text-base font-semibold text-white">{card.title}</p>
+                <p className="mt-2 text-sm leading-6 text-white/62">{card.body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'waitlist') {
+      return (
+        <div id="waitlist" className="p-5 sm:p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+          <h3 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white`}>{slide.title}</h3>
+          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+          {waitlistCount > 0 ? (
+            <div className="mt-5 rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex items-center justify-between gap-4 text-sm text-white/62">
+                <span>{waitlistCount.toLocaleString('es-ES')} registros</span>
+                <span>Objetivo {hypeGoal.toLocaleString('es-ES')}</span>
+              </div>
+              <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent3),var(--rv-accent))]"
+                  style={{ width: `${Math.round(hypePct * 100)}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
+          <div className="mt-5 rounded-[1.6rem] border border-white/10 bg-[rgba(8,10,16,0.72)] p-4 backdrop-blur-xl">
+            <RetrovilleWaitlistForm
+              darkMode
+              buttonLabel="QUIERO SER EL PRIMERO"
+              successMessage="Perfecto. Ya formas parte de la primera señal de Retroville."
+            />
+          </div>
+          <div className="mt-6 border-t border-white/10 pt-5 text-sm text-white/50">
+            <p>© AdvancedRetro · Retroville está en desarrollo.</p>
+            <Link href="/" className="mt-3 inline-flex text-white transition hover:text-[var(--rv-accent)]">
+              ← Volver a AdvancedRetro
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className={`${styles.slideVisual} relative aspect-[4/3] overflow-hidden border-b border-white/10`} style={slideAccentStyle(slide.accent)}>
+          <div className={styles.slideBackdrop}>
+            <Image src={slide.image} alt="" fill sizes="88vw" className={styles.slideBackdropImage} aria-hidden />
+          </div>
+          <div className={styles.slideVisualTint} />
+          <div className={styles.slideForeground}>
+            <Image src={slide.image} alt={slide.alt} fill sizes="88vw" className={styles.slideImage} />
+          </div>
+        </div>
+        <div className="p-5 sm:p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+          <h3 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white`}>{slide.title}</h3>
+          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
+        </div>
+      </>
+    );
+  };
+
+  const renderDesktopSlide = (slide: NarrativeSlide) => {
+    if (slide.kind === 'countdown') {
+      return (
+        <div className="relative flex h-full items-center">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(123,47,255,0.22),transparent_32%),radial-gradient(circle_at_50%_78%,rgba(255,60,0,0.14),transparent_26%)]" />
+          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] items-center gap-10 px-10 py-14 xl:px-14">
+            <div className="max-w-[30rem]">
+              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+              <h3 className={`${displayFont.className} mt-4 text-[5.2rem] uppercase leading-[0.88] text-white`}>
+                {slide.title}
+              </h3>
+              <p className="mt-6 text-base leading-8 text-white/64">{slide.description}</p>
+            </div>
+            <div className={`${styles.countGlow} rounded-[2rem] border border-white/10 bg-[rgba(6,8,12,0.72)] p-5 shadow-[0_32px_120px_rgba(0,0,0,0.28)] backdrop-blur-2xl`}>
+              <div className="mb-5 flex items-center justify-between text-[10px] uppercase tracking-[0.28em] text-white/42">
+                <span>Countdown activo</span>
+                <span>{launchLabel}</span>
+              </div>
+              <RetrovilleCountdown targetIso={launchIso} className="border-0 bg-transparent p-0 shadow-none" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'manifesto') {
+      return (
+        <div className="relative flex h-full items-center overflow-hidden">
+          <div className="absolute inset-y-0 left-[18%] w-px bg-white/10" />
+          <div className="absolute inset-y-0 right-[18%] w-px bg-white/10" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_42%,rgba(123,47,255,0.16),transparent_30%),radial-gradient(circle_at_58%_70%,rgba(0,255,136,0.08),transparent_24%)]" />
+          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.7fr)_minmax(0,0.3fr)] items-end gap-8 px-10 py-14 xl:px-14">
+            <div className="pb-10">
+              {manifestoLines.map((line, index) => (
+                <p
+                  key={line}
+                  className={`${displayFont.className} ${styles.manifestLine} ${manifestoActive ? styles.manifestLineVisible : ''} text-[6.4rem] uppercase leading-[0.84] text-white xl:text-[8rem]`}
+                  style={{ transitionDelay: `${index * 90}ms` }}
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+            <div className="pb-12">
+              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+              <p className="mt-6 max-w-[22rem] text-sm uppercase tracking-[0.28em] leading-7 text-white/48">
+                {slide.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'gallery') {
+      return (
+        <div className="relative flex h-full items-center">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_26%,rgba(123,47,255,0.16),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%)]" />
+          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.3fr)_minmax(0,0.7fr)] items-center gap-8 px-10 py-12 xl:px-14">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+              <h3 className={`${displayFont.className} mt-4 text-[4.8rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
+              <p className="mt-6 max-w-[24rem] text-base leading-8 text-white/64">{slide.description}</p>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-2">
+              {relicGallery.map((item) => (
+                <article key={item.title} className={`${styles.galleryCard} overflow-hidden rounded-[1.8rem] border border-white/10 bg-[rgba(10,10,14,0.74)]`}>
+                  <div className="relative aspect-[16/11] overflow-hidden">
+                    <Image src={item.image} alt={item.alt} fill sizes="28vw" className="object-cover object-center" />
+                  </div>
+                  <div className="p-4">
+                    <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent3)]">{item.eyebrow}</p>
+                    <h4 className={`${displayFont.className} mt-2 text-[2rem] uppercase leading-none text-white`}>{item.title}</h4>
+                    <p className="mt-3 text-sm leading-6 text-white/60">{item.body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'signals') {
+      return (
+        <div className="relative flex h-full items-center">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_26%_18%,rgba(0,255,136,0.10),transparent_24%),radial-gradient(circle_at_74%_16%,rgba(123,47,255,0.18),transparent_26%)]" />
+          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.28fr)_minmax(0,0.72fr)] items-center gap-8 px-10 py-14 xl:px-14">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+              <h3 className={`${displayFont.className} mt-4 text-[4.8rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
+              <p className="mt-6 max-w-[22rem] text-base leading-8 text-white/64">{slide.description}</p>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-3">
+              {signalCards.map((card) => (
+                <article key={card.title} className="rounded-[1.8rem] border border-white/10 bg-[rgba(10,10,14,0.72)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent)]">Signal</p>
+                  <h4 className={`${displayFont.className} mt-3 text-[2.1rem] uppercase leading-none text-white`}>{card.title}</h4>
+                  <p className="mt-4 text-sm leading-7 text-white/62">{card.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'waitlist') {
+      return (
+        <div id="waitlist" className="relative flex h-full items-center overflow-hidden">
+          <div className={`${styles.waitlistNoise} absolute inset-0`} />
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(123,47,255,0.14),transparent_36%),linear-gradient(225deg,rgba(0,255,136,0.10),transparent_30%)]" />
+          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.46fr)_minmax(0,0.54fr)] items-center gap-10 px-10 py-14 xl:px-14">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+              <h3 className={`${displayFont.className} mt-4 text-[4.8rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
+              <p className="mt-6 max-w-[34rem] text-base leading-8 text-white/64">{slide.description}</p>
+              {waitlistCount > 0 ? (
+                <div className="mt-7 max-w-[34rem] rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-4">
+                  <div className="flex items-center justify-between gap-4 text-sm text-white/62">
+                    <span>{waitlistCount.toLocaleString('es-ES')} registros</span>
+                    <span>Objetivo {hypeGoal.toLocaleString('es-ES')}</span>
+                  </div>
+                  <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent3),var(--rv-accent))]"
+                      style={{ width: `${Math.round(hypePct * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ) : null}
+              <div className="mt-10 text-sm text-white/48">
+                <p>© AdvancedRetro · Retroville está en desarrollo.</p>
+                <Link href="/" className="mt-3 inline-flex text-white transition hover:text-[var(--rv-accent)]">
+                  ← Volver a AdvancedRetro
+                </Link>
+              </div>
+            </div>
+            <div className="rounded-[2rem] border border-white/10 bg-[rgba(8,10,16,0.72)] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+              <RetrovilleWaitlistForm
+                darkMode
+                buttonLabel="QUIERO SER EL PRIMERO"
+                successMessage="Perfecto. Ya formas parte de la primera señal de Retroville."
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const alignLeft = slide.align !== 'right';
+
+    return (
+      <div className="relative h-full overflow-hidden" style={imageSurfaceStyle(slide.image, slide.accent)}>
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.12),transparent_22%,transparent_78%,rgba(0,0,0,0.44))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,3,3,0.76),rgba(3,3,3,0.18)_36%,rgba(3,3,3,0.18)_64%,rgba(3,3,3,0.78))]" />
+        <div className="absolute inset-y-0 left-0 w-[28%] bg-[radial-gradient(circle_at_left,rgba(0,0,0,0.28),transparent_68%)]" />
+        <div className="absolute inset-y-0 right-0 w-[28%] bg-[radial-gradient(circle_at_right,rgba(0,0,0,0.28),transparent_68%)]" />
+
+        <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-2 items-center gap-8 px-10 py-12 xl:px-14">
+          <div className={`${alignLeft ? 'order-1' : 'order-2'} flex h-full items-end`}>
+            <div className={`${styles.slideVisual} relative h-[76vh] w-full overflow-hidden rounded-[2.1rem] border border-white/10 bg-black/22`} style={slideAccentStyle(slide.accent)}>
+              <div className={styles.slideBackdrop}>
+                <Image src={slide.image} alt="" fill sizes="44vw" className={styles.slideBackdropImage} aria-hidden />
+              </div>
+              <div className={styles.slideVisualTint} />
+              <div className={styles.slideForeground}>
+                <Image src={slide.image} alt={slide.alt} fill sizes="44vw" className={styles.slideImage} />
+              </div>
+            </div>
+          </div>
+          <div className={`${alignLeft ? 'order-2' : 'order-1'} flex flex-col justify-center ${alignLeft ? 'pl-4' : 'pr-4'}`}>
+            <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+            <h3 className={`${displayFont.className} mt-4 text-[5.2rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
+            <p className="mt-6 max-w-[34rem] text-lg leading-9 text-white/66">{slide.description}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <main className={`${monoFont.className} overflow-x-hidden bg-[var(--rv-bg)] text-[var(--rv-text)]`}>
-      <section ref={heroRef} className="relative min-h-[160svh] overflow-hidden px-4 pb-8 pt-5 sm:px-8 lg:px-10">
+      <section ref={heroRef} className="relative min-h-[175svh] overflow-hidden bg-[var(--rv-bg)]">
         <div className={`absolute inset-0 ${styles.heroNoise}`} />
         <div className={styles.scanlines} />
-        <div className="absolute left-[-10%] top-[8%] h-[46rem] w-[46rem] rounded-full bg-[radial-gradient(circle,rgba(123,47,255,0.18),transparent_70%)] blur-3xl" />
-        <div className="absolute right-[-10%] top-[10%] h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(circle,rgba(0,255,136,0.12),transparent_70%)] blur-3xl" />
-        <div className="absolute inset-x-0 bottom-0 h-[40rem] bg-[radial-gradient(circle_at_50%_100%,rgba(255,60,0,0.14),transparent_44%)]" />
+        <div className="absolute left-[-10%] top-[8%] h-[46rem] w-[46rem] rounded-full bg-[radial-gradient(circle,rgba(123,47,255,0.22),transparent_70%)] blur-3xl" />
+        <div className="absolute right-[-10%] top-[10%] h-[42rem] w-[42rem] rounded-full bg-[radial-gradient(circle,rgba(0,255,136,0.14),transparent_70%)] blur-3xl" />
+        <div className="absolute inset-x-0 bottom-0 h-[38rem] bg-[radial-gradient(circle_at_50%_100%,rgba(255,60,0,0.18),transparent_46%)]" />
 
-        <div className="sticky top-0 mx-auto flex min-h-[100svh] max-w-[1540px] items-stretch py-4 sm:py-6">
-          <div className="relative flex min-h-[92svh] w-full flex-col overflow-hidden rounded-[2.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,8,12,0.86),rgba(5,5,8,0.97))] shadow-[0_38px_140px_rgba(0,0,0,0.46)] backdrop-blur-2xl">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_32%,rgba(123,47,255,0.22),transparent_22%),radial-gradient(circle_at_50%_84%,rgba(138,215,255,0.14),transparent_22%)]" />
-            <div
-              className="absolute inset-[18%_36%_18%_36%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.16),transparent_66%)] blur-[90px]"
-              style={{
-                transform: `scale(${1 + heroProgress * 1.8})`,
-                opacity: clamp(0.5 + heroProgress * 0.45, 0.5, 1),
-              }}
-            />
+        <div className="sticky top-0 h-[100svh] overflow-hidden">
+          <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
+            <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">Universo original de AdvancedRetro</p>
+            <Link
+              href="/"
+              className="rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.24em] text-white/68 transition hover:border-white/20 hover:bg-white/[0.04] hover:text-white"
+            >
+              Volver a AdvancedRetro
+            </Link>
+          </div>
 
-            <div className="relative z-10 flex items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">
-                Universo original de AdvancedRetro
-              </p>
-              <Link
-                href="/"
-                className="rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.24em] text-white/68 transition hover:border-white/20 hover:bg-white/[0.04] hover:text-white"
+          <div className="absolute inset-0">
+            <div className="absolute left-[-1%] top-[18%] hidden h-[62%] w-[30%] lg:block">
+              <div
+                className={`${styles.characterFloatAlt} ${styles.heroCharacterShell} relative h-full w-full`}
+                style={{ transform: `translate3d(${heroProgress * 18}px, ${-heroProgress * 42}px, 0)` }}
               >
-                Volver a AdvancedRetro
+                <Image
+                  src="/images/retroville/nox-push.png"
+                  alt="NOX empujando hacia el centro del universo Retroville"
+                  fill
+                  sizes="28vw"
+                  className={`${styles.heroCharacterBackdrop} object-contain object-left-center`}
+                />
+                <div className={styles.heroCharacterAuraLeft} />
+                <Image
+                  src="/images/retroville/nox-push.png"
+                  alt="NOX empujando hacia el centro del universo Retroville"
+                  fill
+                  priority
+                  sizes="28vw"
+                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtLeft} object-contain object-left-center`}
+                />
+              </div>
+            </div>
+
+            <div className="absolute right-[-3%] top-[22%] hidden h-[58%] w-[33%] lg:block">
+              <div
+                className={`${styles.characterFloat} ${styles.heroCharacterShell} relative h-full w-full`}
+                style={{ transform: `translate3d(${-heroProgress * 18}px, ${-heroProgress * 36}px, 0)` }}
+              >
+                <Image
+                  src="/images/retroville/button-crew-push.png"
+                  alt="Button Crew empujando hacia el centro del universo Retroville"
+                  fill
+                  sizes="31vw"
+                  className={`${styles.heroCharacterBackdrop} object-contain object-right-center`}
+                />
+                <div className={styles.heroCharacterAuraRight} />
+                <Image
+                  src="/images/retroville/button-crew-push.png"
+                  alt="Button Crew empujando hacia el centro del universo Retroville"
+                  fill
+                  priority
+                  sizes="31vw"
+                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtRight} object-contain object-right-center`}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="absolute inset-[18%_34%_18%_34%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.15),transparent_68%)] blur-[100px]"
+            style={{
+              transform: `scale(${1 + heroProgress * 2})`,
+              opacity: clamp(0.54 + heroProgress * 0.42, 0.54, 1),
+            }}
+          />
+
+          <div className="relative z-10 flex h-full flex-col items-center justify-center px-5 text-center sm:px-8 lg:px-10">
+            <p
+              className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-white/74"
+              style={{ opacity: clamp(1 - heroProgress * 1.1, 0, 1) }}
+            >
+              Cinematic universe reveal
+            </p>
+
+            <h1 className={`${displayFont.className} mt-6 text-[3.8rem] uppercase leading-[0.84] text-white sm:text-[5.8rem] lg:text-[8.2rem] xl:text-[9.4rem]`}>
+              <span className={styles.titleWord}>
+                {titleLetters.map((letter, index) => {
+                  const isZoom = letter === 'O' && index === 4;
+                  const spread = index < 4 ? -1 : 1;
+                  const opacity = isZoom ? 1 : 1 - heroProgress * 1.12;
+                  const translateX = isZoom ? 0 : heroProgress * spread * 44;
+                  const translateY = heroProgress * -16;
+                  const scale = isZoom ? 1 + heroProgress * 24 : 1;
+
+                  return (
+                    <span
+                      key={`${letter}-${index}`}
+                      data-letter={letter}
+                      className={`${styles.titleLetter} ${isZoom ? styles.titleLetterZoom : ''}`}
+                      style={{
+                        opacity: clamp(opacity, 0, 1),
+                        transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`,
+                        filter: isZoom ? `blur(${heroProgress > 0.78 ? (heroProgress - 0.78) * 12 : 0}px)` : undefined,
+                      }}
+                    >
+                      {letter}
+                    </span>
+                  );
+                })}
+              </span>
+            </h1>
+
+            <p
+              className="mx-auto mt-5 max-w-[18ch] text-2xl font-semibold leading-tight text-white sm:text-[2rem] lg:text-[2.35rem]"
+              style={{
+                opacity: clamp(1 - heroProgress * 1.35, 0, 1),
+                transform: `translateY(${heroProgress * -12}px)`,
+              }}
+            >
+              Every forgotten game ends up somewhere.
+            </p>
+
+            <p className="mx-auto mt-5 max-w-[40rem] text-sm leading-8 text-white/62 sm:text-base" style={{ opacity: clamp(1 - heroProgress * 1.42, 0, 1) }}>
+              Una ciudad oscura de hardware olvidado, memorias corruptas y personajes que siguen empujando el sistema incluso cuando todo lo demás ya se apagó.
+            </p>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-3" style={{ opacity: clamp(1 - heroProgress * 1.2, 0, 1) }}>
+              <Link
+                href="#waitlist"
+                className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent))] px-6 py-3 text-sm font-semibold text-black shadow-[0_18px_48px_rgba(138,215,255,0.16)] transition hover:brightness-110"
+              >
+                Enter Retroville
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
-            <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-5 pb-10 pt-2 sm:px-8 lg:px-10">
-              <div className="absolute left-[-1%] top-[18%] hidden h-[62%] w-[30%] lg:block">
-                <div
-                  className={`${styles.characterFloatAlt} ${styles.heroCharacterShell} relative h-full w-full`}
-                  style={{ transform: `translate3d(${heroProgress * 16}px, ${-heroProgress * 42}px, 0)` }}
-                >
-                  <Image
-                    src="/images/retroville/nox-push.png"
-                    alt="NOX empujando hacia el centro del universo Retroville"
-                    fill
-                    sizes="28vw"
-                    className={`${styles.heroCharacterBackdrop} object-contain object-left-center`}
-                  />
-                  <div className={styles.heroCharacterAuraLeft} />
-                  <Image
-                    src="/images/retroville/nox-push.png"
-                    alt="NOX empujando hacia el centro del universo Retroville"
-                    fill
-                    priority
-                    sizes="28vw"
-                    className={`${styles.heroCharacterArt} ${styles.heroCharacterArtLeft} object-contain object-left-center`}
-                  />
-                </div>
-              </div>
-
-              <div className="absolute right-[-3%] top-[22%] hidden h-[58%] w-[33%] lg:block">
-                <div
-                  className={`${styles.characterFloat} ${styles.heroCharacterShell} relative h-full w-full`}
-                  style={{ transform: `translate3d(${-heroProgress * 16}px, ${-heroProgress * 36}px, 0)` }}
-                >
-                  <Image
-                    src="/images/retroville/button-crew-push.png"
-                    alt="Button Crew empujando hacia el centro del universo Retroville"
-                    fill
-                    sizes="31vw"
-                    className={`${styles.heroCharacterBackdrop} object-contain object-right-center`}
-                  />
-                  <div className={styles.heroCharacterAuraRight} />
-                  <Image
-                    src="/images/retroville/button-crew-push.png"
-                    alt="Button Crew empujando hacia el centro del universo Retroville"
-                    fill
-                    priority
-                    sizes="31vw"
-                    className={`${styles.heroCharacterArt} ${styles.heroCharacterArtRight} object-contain object-right-center`}
-                  />
-                </div>
-              </div>
-
-              <div className="relative z-10 mx-auto max-w-[980px] text-center">
-                <p
-                  className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-white/74"
-                  style={{ opacity: clamp(1 - heroProgress * 1.1, 0, 1) }}
-                >
-                  Cinematic universe reveal
-                </p>
-
-                <h1 className={`${displayFont.className} mt-6 text-[3.6rem] uppercase leading-[0.84] text-white sm:text-[5.4rem] lg:text-[8rem] xl:text-[9.1rem]`}>
-                  <span className={styles.titleWord}>
-                    {titleLetters.map((letter, index) => {
-                      const isZoom = letter === 'O' && index === 4;
-                      const spread = index < 4 ? -1 : 1;
-                      const opacity = isZoom ? 1 : 1 - heroProgress * 1.12;
-                      const translateX = isZoom ? 0 : heroProgress * spread * 42;
-                      const translateY = heroProgress * -18;
-                      const scale = isZoom ? 1 + heroProgress * 24 : 1;
-                      return (
-                        <span
-                          key={`${letter}-${index}`}
-                          data-letter={letter}
-                          className={`${styles.titleLetter} ${isZoom ? styles.titleLetterZoom : ''}`}
-                          style={{
-                            opacity: clamp(opacity, 0, 1),
-                            transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`,
-                            filter: isZoom
-                              ? `blur(${heroProgress > 0.76 ? (heroProgress - 0.76) * 12 : 0}px)`
-                              : undefined,
-                          }}
-                        >
-                          {letter}
-                        </span>
-                      );
-                    })}
-                  </span>
-                </h1>
-
-                <p
-                  className="mx-auto mt-5 max-w-[18ch] text-2xl font-semibold leading-tight text-white sm:text-[2rem] lg:text-[2.25rem]"
+            <div className="relative mt-8 h-[260px] w-full max-w-[920px] overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,14,24,0.82),rgba(7,9,15,0.96))] lg:hidden">
+              <div className="absolute inset-x-[20%] top-[14%] h-[56%] rounded-full bg-[radial-gradient(circle,rgba(123,47,255,0.28),transparent_68%)] blur-3xl" />
+              <div className="absolute left-[-10%] top-[10%] h-[82%] w-[45%]">
+                <Image
+                  src="/images/retroville/nox-push.png"
+                  alt="NOX empujando"
+                  fill
+                  priority
+                  sizes="42vw"
+                  className="object-contain object-left-center"
                   style={{
-                    opacity: clamp(1 - heroProgress * 1.35, 0, 1),
-                    transform: `translateY(${heroProgress * -12}px)`,
+                    maskImage: 'linear-gradient(90deg, black 70%, transparent 100%), linear-gradient(180deg, transparent 0%, black 18%, black 82%, transparent 100%)',
                   }}
-                >
-                  Every forgotten game ends up somewhere.
-                </p>
-
-                <p
-                  className="mx-auto mt-5 max-w-[38rem] text-sm leading-8 text-white/62 sm:text-base"
-                  style={{ opacity: clamp(1 - heroProgress * 1.42, 0, 1) }}
-                >
-                  Una ciudad oscura de hardware olvidado, memorias corruptas y personajes que siguen
-                  empujando el sistema incluso cuando todo lo demás ya se apagó.
-                </p>
-
-                <div
-                  className="mt-8 flex flex-wrap justify-center gap-3"
-                  style={{ opacity: clamp(1 - heroProgress * 1.2, 0, 1) }}
-                >
-                  <Link
-                    href="#waitlist"
-                    className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent))] px-6 py-3 text-sm font-semibold text-black shadow-[0_18px_48px_rgba(138,215,255,0.16)] transition hover:brightness-110"
-                  >
-                    Enter Retroville
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </div>
+                />
               </div>
-
-              <div className="relative mt-8 h-[250px] w-full max-w-[920px] overflow-hidden rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,14,24,0.82),rgba(7,9,15,0.96))] lg:hidden">
-                <div className="absolute inset-x-[20%] top-[14%] h-[56%] rounded-full bg-[radial-gradient(circle,rgba(123,47,255,0.28),transparent_68%)] blur-3xl" />
-                <div className="absolute left-[-10%] top-[10%] h-[82%] w-[45%]">
-                  <Image
-                    src="/images/retroville/nox-push.png"
-                    alt="NOX empujando"
-                    fill
-                    priority
-                    sizes="42vw"
-                    className="object-contain object-left-center"
-                    style={{
-                      maskImage:
-                        'linear-gradient(90deg, black 70%, transparent 100%), linear-gradient(180deg, transparent 0%, black 18%, black 82%, transparent 100%)',
-                    }}
-                  />
-                </div>
-                <div className="absolute right-[-14%] top-[16%] h-[76%] w-[54%]">
-                  <Image
-                    src="/images/retroville/button-crew-push.png"
-                    alt="Button Crew empujando"
-                    fill
-                    priority
-                    sizes="48vw"
-                    className="object-contain object-right-center"
-                    style={{
-                      maskImage:
-                        'linear-gradient(90deg, transparent 0%, black 20%, black 84%, transparent 100%), linear-gradient(180deg, transparent 0%, black 20%, black 82%, transparent 100%)',
-                    }}
-                  />
-                </div>
+              <div className="absolute right-[-14%] top-[16%] h-[76%] w-[54%]">
+                <Image
+                  src="/images/retroville/button-crew-push.png"
+                  alt="Button Crew empujando"
+                  fill
+                  priority
+                  sizes="48vw"
+                  className="object-contain object-right-center"
+                  style={{
+                    maskImage: 'linear-gradient(90deg, transparent 0%, black 20%, black 84%, transparent 100%), linear-gradient(180deg, transparent 0%, black 20%, black 82%, transparent 100%)',
+                  }}
+                />
               </div>
             </div>
+          </div>
 
-            <div
-              className="relative z-10 flex items-center justify-between gap-4 border-t border-white/10 px-5 py-4 text-[11px] uppercase tracking-[0.28em] text-white/48 sm:px-8 lg:px-10"
-              style={{ opacity: clamp(1 - heroProgress * 1.3, 0, 1) }}
-            >
-              <span>Desliza hacia la O</span>
-              <span>Launch window target · {launchLabel}</span>
-            </div>
+          <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between border-t border-white/10 px-5 py-4 text-[11px] uppercase tracking-[0.28em] text-white/48 sm:px-8 lg:px-10" style={{ opacity: clamp(1 - heroProgress * 1.3, 0, 1) }}>
+            <span>Desliza hacia la O</span>
+            <span>Launch window target · {launchLabel}</span>
           </div>
         </div>
       </section>
 
-      <section
-        ref={narrativeRef}
-        className={`px-4 py-8 sm:px-8 lg:px-10 ${isMobile ? '' : ''}`}
-        style={isMobile ? undefined : { minHeight: `${narrativeSlides.length * 96}vh` }}
-      >
-        <div className="mx-auto max-w-[1540px]">
-          <div className={`${isMobile ? '' : 'sticky top-0 h-[100svh]'} overflow-hidden rounded-[2.35rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,8,10,0.94),rgba(5,5,8,0.98))] shadow-[0_34px_120px_rgba(0,0,0,0.42)]`}>
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6 lg:px-8">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">Narrative track</p>
-                <h2 className={`${displayFont.className} mt-2 text-3xl uppercase text-white sm:text-4xl`}>
-                  Slider narrativo total
-                </h2>
+      <section ref={narrativeRef} className="relative bg-[var(--rv-bg)]" style={isMobile ? undefined : { minHeight: `${narrativeSlides.length * 100}svh` }}>
+        {isMobile ? (
+          <div className="px-4 pb-8 pt-4 sm:px-8">
+            <div className="mx-auto max-w-[1540px] overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,8,10,0.96),rgba(5,5,8,0.98))] shadow-[0_34px_120px_rgba(0,0,0,0.42)]">
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">Narrative track</p>
+                  <p className="mt-2 text-sm text-white/58">{String(activeSlide + 1).padStart(2, '0')} / {String(narrativeSlides.length).padStart(2, '0')}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setManualSlide((current) => Math.max(0, current - 1))}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition hover:border-white/20 hover:bg-white/[0.08]"
+                    aria-label="Slide anterior"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setManualSlide((current) => Math.min(narrativeSlides.length - 1, current + 1))}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition hover:border-white/20 hover:bg-white/[0.08]"
+                    aria-label="Slide siguiente"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-sm text-white/58">
-                <button
-                  type="button"
-                  onClick={() => setManualSlide((current) => Math.max(0, current - 1))}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition hover:border-white/20 hover:bg-white/[0.08] lg:hidden"
-                  aria-label="Slide anterior"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span>
-                  {String(activeSlide + 1).padStart(2, '0')} / {String(narrativeSlides.length).padStart(2, '0')}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setManualSlide((current) => Math.min(narrativeSlides.length - 1, current + 1))}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition hover:border-white/20 hover:bg-white/[0.08] lg:hidden"
-                  aria-label="Slide siguiente"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
 
-            {isMobile ? (
               <div className="overflow-x-auto px-4 pb-6 pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex gap-4 snap-x snap-mandatory">
+                <div
+                  className="flex gap-4 snap-x snap-mandatory transition-transform duration-300"
+                  style={{ transform: `translateX(calc(-${manualSlide} * (88% + 1rem)))` }}
+                >
                   {narrativeSlides.map((slide) => (
                     <article
                       key={`${slide.kind}-${slide.title}`}
                       className="min-w-[88%] snap-center overflow-hidden rounded-[1.8rem] border border-white/10 bg-[rgba(11,11,13,0.76)]"
                     >
-                      {slide.kind === 'countdown' ? (
-                        <div className="p-5">
-                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                          <h3 className={`${displayFont.className} mt-4 text-3xl uppercase leading-none text-white`}>
-                            {launchLabel}
-                          </h3>
-                          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
-                          <div className={`${styles.countGlow} mt-6 rounded-[1.6rem] border border-white/10 bg-[rgba(10,10,10,0.72)] p-3`}>
-                            <RetrovilleCountdown targetIso={launchIso} className="border-0 bg-transparent p-0 shadow-none" />
-                          </div>
-                        </div>
-                      ) : slide.kind === 'manifesto' ? (
-                        <div className="flex min-h-[28rem] flex-col justify-center p-5">
-                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                          <div className="mt-5 space-y-2">
-                            {manifestoLines.map((line) => (
-                              <p key={line} className={`${displayFont.className} text-[2.6rem] uppercase leading-[0.88] text-white sm:text-[3rem]`}>
-                                {line}
-                              </p>
-                            ))}
-                          </div>
-                          <p className="mt-5 text-sm leading-7 text-white/62">{slide.description}</p>
-                        </div>
-                      ) : slide.kind === 'gallery' ? (
-                        <div className="p-5">
-                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                          <h3 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
-                            {slide.title}
-                          </h3>
-                          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
-                          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                            {relicGallery.map((item) => (
-                              <article key={item.title} className="overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/[0.04]">
-                                <div className="relative aspect-[4/3] overflow-hidden">
-                                  <Image src={item.image} alt={item.alt} fill sizes="44vw" className="object-cover object-center" />
-                                </div>
-                                <div className="p-4">
-                                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent3)]">{item.eyebrow}</p>
-                                  <p className="mt-2 text-sm font-semibold text-white">{item.title}</p>
-                                </div>
-                              </article>
-                            ))}
-                          </div>
-                        </div>
-                      ) : slide.kind === 'signals' ? (
-                        <div className="p-5">
-                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                          <h3 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
-                            {slide.title}
-                          </h3>
-                          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
-                          <div className="mt-5 grid gap-3">
-                            {signalCards.map((card) => (
-                              <article key={card.title} className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4">
-                                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent)]">Signal</p>
-                                <p className="mt-2 text-base font-semibold text-white">{card.title}</p>
-                                <p className="mt-2 text-sm leading-6 text-white/62">{card.body}</p>
-                              </article>
-                            ))}
-                          </div>
-                        </div>
-                      ) : slide.kind === 'waitlist' ? (
-                        <div id="waitlist" className="p-5">
-                          <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                          <h3 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
-                            {slide.title}
-                          </h3>
-                          <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
-                          {waitlistCount > 0 ? (
-                            <div className="mt-5 rounded-[1.3rem] border border-white/10 bg-white/[0.04] p-4">
-                              <div className="flex items-center justify-between gap-4 text-sm text-white/62">
-                                <span>{waitlistCount.toLocaleString('es-ES')} registros</span>
-                                <span>Objetivo {hypeGoal.toLocaleString('es-ES')}</span>
-                              </div>
-                              <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
-                                <div
-                                  className="h-full rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent3),var(--rv-accent))]"
-                                  style={{ width: `${Math.round(hypePct * 100)}%` }}
-                                />
-                              </div>
-                            </div>
-                          ) : null}
-                          <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-[rgba(8,10,16,0.72)] p-4 backdrop-blur-xl">
-                            <RetrovilleWaitlistForm
-                              darkMode
-                              buttonLabel="QUIERO SER EL PRIMERO"
-                              successMessage="Perfecto. Ya formas parte de la primera señal de Retroville."
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className={`${styles.slideVisual} relative aspect-[4/3] overflow-hidden border-b border-white/10`} style={slideAccentStyle(slide.accent)}>
-                            <div className={styles.slideBackdrop}>
-                              <Image src={slide.image} alt="" fill sizes="88vw" className={styles.slideBackdropImage} aria-hidden />
-                            </div>
-                            <div className={styles.slideVisualTint} />
-                            <div className={styles.slideForeground}>
-                              <Image src={slide.image} alt={slide.alt} fill sizes="88vw" className={styles.slideImage} />
-                            </div>
-                          </div>
-                          <div className="p-5">
-                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                            <h3 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
-                              {slide.title}
-                            </h3>
-                            <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
-                          </div>
-                        </>
-                      )}
+                      {renderMobileSlide(slide)}
                     </article>
                   ))}
                 </div>
               </div>
-            ) : (
-              <div className="h-[calc(100svh-74px)] overflow-hidden">
-                <div className={`${styles.universeTrack} flex h-full`} style={{ width: `${narrativeSlides.length * 100}%`, transform: `translateX(-${trackTranslate}%)` }}>
-                  {narrativeSlides.map((slide) => (
-                    <article key={`${slide.kind}-${slide.title}`} className="flex h-full shrink-0 basis-full items-center px-8 py-8 xl:px-10">
-                      {slide.kind === 'countdown' ? (
-                        <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] lg:items-center">
-                          <div className="max-w-[30rem]">
-                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
-                              {launchLabel}
-                            </h3>
-                            <p className="mt-6 text-base leading-8 text-white/64">{slide.description}</p>
-                          </div>
-                          <div className={`${styles.countGlow} rounded-[1.9rem] border border-white/10 bg-[rgba(10,10,10,0.72)] p-5`}>
-                            <RetrovilleCountdown targetIso={launchIso} className="border-0 bg-transparent p-0 shadow-none" />
-                          </div>
-                        </div>
-                      ) : slide.kind === 'manifesto' ? (
-                        <div className="grid w-full gap-10 lg:grid-cols-[minmax(0,0.68fr)_minmax(0,0.32fr)] lg:items-end">
-                          <div className="space-y-3">
-                            {manifestoLines.map((line, index) => (
-                              <p
-                                key={line}
-                                className={`${displayFont.className} ${styles.manifestLine} ${manifestoActive ? styles.manifestLineVisible : ''} text-[4.8rem] uppercase leading-[0.86] text-white xl:text-[6.6rem]`}
-                                style={{ transitionDelay: `${index * 70}ms` }}
-                              >
-                                {line}
-                              </p>
-                            ))}
-                          </div>
-                          <p className="max-w-[24rem] text-sm uppercase tracking-[0.28em] text-white/46 xl:text-base">
-                            {slide.description}
-                          </p>
-                        </div>
-                      ) : slide.kind === 'gallery' ? (
-                        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,0.34fr)_minmax(0,0.66fr)] lg:items-start">
-                          <div className="max-w-[24rem]">
-                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
-                              {slide.title}
-                            </h3>
-                            <p className="mt-6 text-base leading-8 text-white/64">{slide.description}</p>
-                          </div>
-                          <div className="grid gap-4 md:grid-cols-2">
-                            {relicGallery.map((item) => (
-                              <article key={item.title} className={`${styles.galleryCard} overflow-hidden rounded-[1.7rem] border border-white/10 bg-[rgba(12,12,16,0.74)]`}>
-                                <div className="relative aspect-[16/12] overflow-hidden">
-                                  <Image src={item.image} alt={item.alt} fill sizes="30vw" className="object-cover object-center" />
-                                </div>
-                                <div className="p-4">
-                                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent3)]">{item.eyebrow}</p>
-                                  <h4 className={`${displayFont.className} mt-2 text-2xl uppercase leading-none text-white`}>
-                                    {item.title}
-                                  </h4>
-                                  <p className="mt-3 text-sm leading-6 text-white/60">{item.body}</p>
-                                </div>
-                              </article>
-                            ))}
-                          </div>
-                        </div>
-                      ) : slide.kind === 'signals' ? (
-                        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,0.32fr)_minmax(0,0.68fr)] lg:items-start">
-                          <div className="max-w-[22rem]">
-                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
-                              {slide.title}
-                            </h3>
-                            <p className="mt-6 text-base leading-8 text-white/64">{slide.description}</p>
-                          </div>
-                          <div className="grid gap-4 lg:grid-cols-3">
-                            {signalCards.map((card) => (
-                              <article key={card.title} className="rounded-[1.7rem] border border-white/10 bg-[rgba(12,12,16,0.74)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
-                                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent)]">Signal</p>
-                                <h4 className={`${displayFont.className} mt-3 text-3xl uppercase leading-none text-white`}>
-                                  {card.title}
-                                </h4>
-                                <p className="mt-4 text-sm leading-7 text-white/62">{card.body}</p>
-                              </article>
-                            ))}
-                          </div>
-                        </div>
-                      ) : slide.kind === 'waitlist' ? (
-                        <div id="waitlist" className="grid w-full gap-8 lg:grid-cols-[minmax(0,0.44fr)_minmax(0,0.56fr)] lg:items-center">
-                          <div>
-                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
-                              {slide.title}
-                            </h3>
-                            <p className="mt-6 max-w-[34rem] text-base leading-8 text-white/64">{slide.description}</p>
-                            {waitlistCount > 0 ? (
-                              <div className="mt-7 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
-                                <div className="flex items-center justify-between gap-4 text-sm text-white/62">
-                                  <span>{waitlistCount.toLocaleString('es-ES')} registros</span>
-                                  <span>Objetivo {hypeGoal.toLocaleString('es-ES')}</span>
-                                </div>
-                                <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
-                                  <div
-                                    className="h-full rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent3),var(--rv-accent))]"
-                                    style={{ width: `${Math.round(hypePct * 100)}%` }}
-                                  />
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                          <div className="rounded-[2rem] border border-white/10 bg-[rgba(8,10,16,0.72)] p-5 backdrop-blur-xl sm:p-6">
-                            <RetrovilleWaitlistForm
-                              darkMode
-                              buttonLabel="QUIERO SER EL PRIMERO"
-                              successMessage="Perfecto. Ya formas parte de la primera señal de Retroville."
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] lg:items-center">
-                          <div className={`${styles.slideVisual} relative h-full min-h-[68vh] overflow-hidden rounded-[2rem] border border-white/10`} style={slideAccentStyle(slide.accent)}>
-                            <div className={styles.slideBackdrop}>
-                              <Image src={slide.image} alt="" fill sizes="42vw" className={styles.slideBackdropImage} aria-hidden />
-                            </div>
-                            <div className={styles.slideVisualTint} />
-                            <div className={styles.slideForeground}>
-                              <Image src={slide.image} alt={slide.alt} fill sizes="42vw" className={styles.slideImage} />
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-                            <h3 className={`${displayFont.className} mt-4 text-5xl uppercase leading-none text-white xl:text-6xl`}>
-                              {slide.title}
-                            </h3>
-                            <p className="mt-6 max-w-[34rem] text-base leading-8 text-white/66 xl:text-lg">
-                              {slide.description}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </article>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            <div className="flex items-center justify-center gap-2 border-t border-white/10 px-5 py-4">
-              {narrativeSlides.map((slide, index) => (
-                <button
-                  key={`${slide.kind}-${slide.title}`}
-                  type="button"
-                  onClick={() => setManualSlide(index)}
-                  className={`h-2.5 rounded-full transition ${activeSlide === index ? 'w-10 bg-[var(--rv-accent)]' : 'w-2.5 bg-white/24'}`}
-                  aria-label={`Ir al slide ${index + 1}`}
-                />
-              ))}
+              <div className="flex items-center justify-center gap-2 border-t border-white/10 px-5 py-4">
+                {narrativeSlides.map((slide, index) => (
+                  <button
+                    key={`${slide.kind}-${slide.title}`}
+                    type="button"
+                    onClick={() => setManualSlide(index)}
+                    className={`h-2.5 rounded-full transition ${activeSlide === index ? 'w-10 bg-[var(--rv-accent)]' : 'w-2.5 bg-white/24'}`}
+                    aria-label={`Ir al slide ${index + 1}`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        ) : (
+          <div className="relative h-full">
+            <div
+              className={`${
+                narrativeMode === 'fixed'
+                  ? 'fixed inset-0 z-20'
+                  : narrativeMode === 'after'
+                    ? 'absolute inset-x-0 bottom-0 h-[100svh]'
+                    : 'absolute inset-x-0 top-0 h-[100svh]'
+              } overflow-hidden bg-[var(--rv-bg)]`}
+            >
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%),radial-gradient(circle_at_20%_18%,rgba(123,47,255,0.08),transparent_22%),radial-gradient(circle_at_80%_18%,rgba(0,255,136,0.06),transparent_20%)]" />
+              <div className="absolute left-8 right-8 top-6 z-20 flex items-center justify-between xl:left-10 xl:right-10">
+                <div className="rounded-full border border-white/10 bg-black/28 px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-white/56 backdrop-blur-xl">
+                  Slide {String(activeSlide + 1).padStart(2, '0')} / {String(narrativeSlides.length).padStart(2, '0')}
+                </div>
+                <div className="h-1.5 w-[240px] overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-[linear-gradient(90deg,var(--rv-accent2),var(--rv-accent),var(--rv-accent3))]"
+                    style={{ width: `${((activeSlide + 1) / narrativeSlides.length) * 100}%` }}
+                  />
+                </div>
+              </div>
 
-      <footer className="border-t border-white/10 px-5 py-8 text-center text-sm text-white/52">
-        <p>© AdvancedRetro · Retroville está en desarrollo.</p>
-        <Link href="/" className="mt-3 inline-flex text-white transition hover:text-[var(--rv-accent)]">
-          ← Volver a AdvancedRetro
-        </Link>
-      </footer>
+              <div className="absolute inset-0 overflow-hidden">
+                <div
+                  className={`${styles.universeTrack} flex h-full`}
+                  style={{ width: `${narrativeSlides.length * 100}%`, transform: `translate3d(-${trackTranslate}%,0,0)` }}
+                >
+                  {narrativeSlides.map((slide) => (
+                    <article
+                      key={`${slide.kind}-${slide.title}`}
+                      className="relative h-full shrink-0"
+                      style={{ width: `${100 / narrativeSlides.length}%` }}
+                    >
+                      {renderDesktopSlide(slide)}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
     </main>
   );
 }
