@@ -28,11 +28,6 @@ function NavbarContent() {
   const [user, setUser] = useState<{ email?: string } | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopMenu, setDesktopMenu] = useState<string | null>(null);
-  const [mobileSections, setMobileSections] = useState<Record<string, boolean>>({
-    tienda: true,
-    universo: false,
-    creadores: false,
-  });
 
   const navGroups = useMemo<NavGroup[]>(() => [
     {
@@ -70,6 +65,21 @@ function NavbarContent() {
     { href: '/creator', label: 'Creador' },
   ], [t]);
 
+  const mobileLinks = useMemo<NavLeaf[]>(
+    () => [
+      { href: '/tienda', label: 'Tienda' },
+      { href: '/mystery-boxes', label: 'Mystery Boxes' },
+      { href: '/subastas', label: 'Subastas' },
+      { href: '/ruleta', label: 'Ruleta' },
+      { href: '/comunidad', label: 'Comunidad' },
+      { href: '/blog', label: 'Blog' },
+      { href: '/retroville', label: 'Retroville' },
+      { href: '/creator', label: 'Creador' },
+      { href: '/contacto', label: 'Contacto' },
+    ],
+    []
+  );
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     onScroll();
@@ -105,6 +115,15 @@ function NavbarContent() {
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mobileOpen]);
+
   const isItemActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const groupIsActive = (group: NavGroup) => group.items.some((item) => isItemActive(item.href));
 
@@ -112,7 +131,7 @@ function NavbarContent() {
     <>
       <UsageSessionTracker />
       <header
-        className={`sticky top-0 z-50 border-b transition-all ${
+        className={`z-header sticky top-0 border-b transition-all ${
           scrolled
             ? 'border-line/80 bg-[rgba(6,12,22,0.9)] shadow-[0_12px_30px_rgba(3,10,24,0.22)] backdrop-blur-xl'
             : 'border-line/50 bg-[rgba(6,12,22,0.76)] backdrop-blur-lg'
@@ -175,7 +194,7 @@ function NavbarContent() {
                     })}
 
                     {desktopMenu ? (
-                      <div className="absolute left-1/2 top-[calc(100%+12px)] z-50 w-[320px] -translate-x-1/2 rounded-[1.45rem] border border-line/80 bg-[rgba(7,14,24,0.98)] p-3 shadow-[0_24px_70px_rgba(2,8,18,0.42)] backdrop-blur-2xl">
+                      <div className="z-dropdown absolute left-1/2 top-[calc(100%+12px)] w-[320px] -translate-x-1/2 rounded-[1.45rem] border border-line/80 bg-[rgba(7,14,24,0.98)] p-3 shadow-[0_24px_70px_rgba(2,8,18,0.42)] backdrop-blur-2xl">
                         <div className="space-y-1.5">
                           {navGroups.find((group) => group.key === desktopMenu)?.items.map((item) => (
                             <Link
@@ -225,94 +244,70 @@ function NavbarContent() {
         </div>
 
         {mobileOpen ? (
-          <div className="xl:hidden fixed inset-x-0 top-[84px] bottom-0 z-[60] border-t border-line/60 bg-[rgba(4,10,18,0.96)] backdrop-blur-2xl">
-            <div className="h-full overflow-y-auto">
-              <div className="container py-4">
-                <div className="header-rail">
-                  <div className="rounded-[1.45rem] border border-line/80 bg-[rgba(7,14,24,0.97)] p-4 shadow-[0_18px_42px_rgba(2,8,18,0.34)]">
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <Link
-                        href={user ? '/perfil' : '/login'}
-                        onClick={() => setMobileOpen(false)}
-                        className="button-secondary w-full justify-center"
-                      >
-                        {user ? t('nav.profile', 'Mi perfil') : t('nav.login_mobile', 'Iniciar sesión')}
-                      </Link>
-                      <Link href="/carrito" onClick={() => setMobileOpen(false)} className="button-primary w-full justify-center">
-                        {locale === 'en' ? 'Go to cart' : t('nav.go_cart_mobile', 'Ir al carrito')}
-                      </Link>
-                    </div>
+          <div className="z-mobile-menu fixed inset-0 xl:hidden" role="dialog" aria-modal="true" aria-label="Menú de navegación">
+            <div
+              className="absolute inset-0 bg-[rgba(0,0,0,0.72)] backdrop-blur-md"
+              onClick={() => setMobileOpen(false)}
+              aria-hidden="true"
+            />
+            <nav className="relative z-[1] flex h-[100dvh] w-full animate-[menuSlideIn_250ms_ease_forwards] flex-col overflow-y-auto bg-[#0a0a0f]">
+              <div className="flex items-center justify-between border-b border-white/8 px-6 py-5">
+                <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center">
+                  <Image
+                    src="/logo.png"
+                    alt="AdvancedRetro"
+                    width={160}
+                    height={44}
+                    className="h-9 w-auto object-contain"
+                  />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white/8 text-lg text-white transition hover:bg-white/15"
+                  aria-label="Cerrar menú"
+                >
+                  ✕
+                </button>
+              </div>
 
-                    <div className="mt-4 space-y-2">
-                      {directLinks.map((item) => (
-                        <Link
-                          key={`mobile-direct-${item.href}`}
-                          href={item.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                            isItemActive(item.href)
-                              ? 'border-primary/60 bg-primary/10 text-text'
-                              : 'border-line bg-[rgba(10,18,30,0.52)] text-text hover:border-primary/30'
-                          }`}
-                        >
-                          <span>{item.label}</span>
-                          <ChevronRight className="h-4 w-4 text-textMuted" />
-                        </Link>
-                      ))}
-                    </div>
+              <ul className="flex flex-1 flex-col gap-1 px-6 py-6">
+                {mobileLinks.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={`flex min-h-[52px] items-center rounded-xl px-4 py-3 text-[1.25rem] font-medium tracking-[-0.02em] transition ${
+                        isItemActive(item.href)
+                          ? 'bg-white/8 text-white'
+                          : 'text-white/84 hover:bg-white/6 hover:text-white'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
 
-                    <div className="mt-4 space-y-2">
-                      {navGroups.map((group) => {
-                        const open = mobileSections[group.key];
-                        return (
-                          <div key={`mobile-group-${group.key}`} className="overflow-hidden rounded-[1.25rem] border border-line bg-[rgba(10,18,30,0.52)]">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setMobileSections((current) => ({
-                                  ...current,
-                                  [group.key]: !current[group.key],
-                                }))
-                              }
-                              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                            >
-                              <span className="font-semibold text-text">{group.label}</span>
-                              <ChevronDown className={`h-4 w-4 text-textMuted transition ${open ? 'rotate-180' : ''}`} />
-                            </button>
-                            {open ? (
-                              <div className="border-t border-line/70 px-3 py-3">
-                                <div className="space-y-2">
-                                  {group.items.map((item) => (
-                                    <Link
-                                      key={`mobile-item-${item.href}`}
-                                      href={item.href}
-                                      onClick={() => setMobileOpen(false)}
-                                      className={`block rounded-2xl border px-4 py-3 transition ${
-                                        isItemActive(item.href)
-                                          ? 'border-primary/60 bg-primary/10 text-text'
-                                          : 'border-line bg-[rgba(10,18,30,0.52)] hover:border-primary/30'
-                                      }`}
-                                    >
-                                      <div className="flex items-center justify-between gap-3">
-                                        <p className="font-semibold text-text">{item.label}</p>
-                                        <ChevronRight className="h-4 w-4 text-textMuted" />
-                                      </div>
-                                      {item.description ? (
-                                        <p className="mt-1 text-xs leading-relaxed text-textMuted">{item.description}</p>
-                                      ) : null}
-                                    </Link>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+              <div className="border-t border-white/8 px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-4">
+                <div className="flex flex-col gap-3">
+                  <Link
+                    href="/carrito"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex min-h-[48px] items-center justify-center rounded-xl border border-white/12 bg-white/8 px-4 py-3 text-base font-semibold text-white transition hover:opacity-80"
+                  >
+                    {locale === 'en' ? 'Cart' : 'Carrito'}
+                  </Link>
+                  <Link
+                    href={user ? '/perfil' : '/login'}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex min-h-[48px] items-center justify-center rounded-xl bg-primary px-4 py-3 text-base font-semibold text-[#08263d] transition hover:opacity-90"
+                  >
+                    {user ? t('nav.profile', 'Mi perfil') : t('nav.login', 'Entrar')}
+                  </Link>
                 </div>
               </div>
-            </div>
+            </nav>
           </div>
         ) : null}
       </header>

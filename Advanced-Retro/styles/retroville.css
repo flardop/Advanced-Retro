@@ -1,10 +1,34 @@
 :root {
-  --rv-bg: #05070d;
-  --rv-surface: #0d1017;
-  --rv-text: #f6f2ea;
-  --rv-accent: #8ad7ff;
-  --rv-accent2: #9b6bff;
-  --rv-accent3: #f2bb74;
-  --rv-muted: #7c8291;
-  --rv-scanline: rgba(0, 0, 0, 0.15);
+  --rv-bg-deep: #04040a;
+  --rv-bg-surface: #0c0c16;
+  --rv-bg-card: #10101e;
+  --rv-bg-section-alt: #080810;
+  --rv-green: #00ff88;
+  --rv-purple: #9b5cff;
+  --rv-red: #ff3c20;
+  --rv-gold: #ffc940;
+  --rv-cyan: #00d4ff;
+  --rv-text: #f0f0f8;
+  --rv-text-muted: #6b6b8a;
+  --rv-text-dim: rgba(240, 240, 248, 0.5);
+  --rv-glow-green: 0 0 20px rgba(0, 255, 136, 0.3);
+  --rv-glow-purple: 0 0 20px rgba(155, 92, 255, 0.3);
+  --rv-scanline: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+}
+
+@keyframes number-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.85;
+  }
 }

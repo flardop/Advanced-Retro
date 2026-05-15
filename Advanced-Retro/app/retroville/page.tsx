@@ -9,14 +9,14 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Retroville — El Universo Original de AdvancedRetro',
   description:
-    'Retroville es un universo narrativo donde el hardware olvidado sigue vivo. Una ciudad oscura de neón, personajes corruptos y torneos retro. Llega el 10 de noviembre de 2026.',
-  keywords: 'retroville, universo retro, world building gaming, personajes retro, AdvancedRetro',
+    'Retroville: una ciudad donde el hardware olvidado sigue vivo. NOX, Button Crew y un universo oscuro y cómico construido desde los restos de lo que fue jugado y olvidado. Noviembre 2026.',
+  keywords: 'retroville, universo retro, world building gaming, personajes retro, NOX, Button Crew, AdvancedRetro',
   alternates: {
     canonical: 'https://advancedretro.es/retroville',
   },
   openGraph: {
     title: 'Retroville — El Universo Original de AdvancedRetro',
-    description: 'Una ciudad donde el hardware olvidado nunca se apagó del todo. Llega noviembre 2026.',
+    description: 'Una ciudad construida de hardware abandonado. Noviembre 2026.',
     url: 'https://advancedretro.es/retroville',
     siteName: 'AdvancedRetro.es',
     images: [

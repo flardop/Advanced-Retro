@@ -28,8 +28,8 @@ function pad(value: number) {
 const placeholderUnits: CountdownUnit[] = [
   { label: 'Días', value: '--' },
   { label: 'Horas', value: '--' },
-  { label: 'Min', value: '--' },
-  { label: 'Seg', value: '--' },
+  { label: 'Minutos', value: '--' },
+  { label: 'Segundos', value: '--' },
 ];
 
 export default function RetrovilleCountdown({
@@ -56,43 +56,34 @@ export default function RetrovilleCountdown({
     : [
         { label: 'Días', value: pad(timeLeft.days) },
         { label: 'Horas', value: pad(timeLeft.hours) },
-        { label: 'Min', value: pad(timeLeft.minutes) },
-        { label: 'Seg', value: pad(timeLeft.seconds) },
+        { label: 'Minutos', value: pad(timeLeft.minutes) },
+        { label: 'Segundos', value: pad(timeLeft.seconds) },
       ];
 
   if (mounted && timeLeft?.finished) {
     return (
       <div
-        className={`rounded-[1.6rem] border border-fuchsia-400/25 bg-[rgba(110,32,138,0.14)] px-5 py-4 text-center backdrop-blur-xl ${className}`}
+        className={`rounded-[2rem] border border-[rgba(0,255,136,0.18)] bg-[rgba(0,255,136,0.06)] px-6 py-8 text-center shadow-[0_0_30px_rgba(0,255,136,0.08)] ${className}`}
       >
-        <p className="text-[11px] uppercase tracking-[0.28em] text-fuchsia-200/75">
-          Estado de lanzamiento
-        </p>
-        <p className="mt-2 text-base font-semibold text-white">
-          Retroville ya está despierto.
-        </p>
+        <p className="text-[11px] uppercase tracking-[0.25em] text-[var(--rv-green)]">Estado de lanzamiento</p>
+        <p className="mt-3 text-2xl font-semibold text-[var(--rv-text)]">Retroville ya está despierto.</p>
       </div>
     );
   }
 
   return (
-    <div
-      className={`rounded-[1.7rem] border border-white/10 bg-[rgba(8,12,24,0.62)] p-3 shadow-[0_18px_50px_rgba(0,0,0,0.22)] backdrop-blur-2xl ${className}`}
-    >
-      <div className="mb-3 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.26em] text-white/48 sm:text-[11px]">
-        <span className="inline-flex h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(103,232,249,0.9)]" />
-        Secuencia de lanzamiento
-      </div>
-      <div className="grid grid-cols-4 gap-2">
+    <div className={className}>
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
         {units.map((unit) => (
-          <div
-            key={unit.label}
-            className="rounded-[1.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-2 py-3 text-center"
-          >
-            <span className="block text-xl font-black tabular-nums text-white [text-shadow:0_0_18px_rgba(255,255,255,0.18)] sm:text-2xl" suppressHydrationWarning>
+          <div key={unit.label} className="flex min-w-[96px] flex-col items-center gap-2 sm:min-w-[132px]">
+            <span
+              className="text-[clamp(3rem,8vw,6rem)] font-black leading-none text-[var(--rv-text)] [font-family:var(--font-mono)]"
+              style={{ animation: 'number-pulse 2s ease-in-out infinite' }}
+              suppressHydrationWarning
+            >
               {unit.value}
             </span>
-            <span className="mt-1 block text-[9px] uppercase tracking-[0.22em] text-white/42 sm:text-[10px]">
+            <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--rv-text-muted)]">
               {unit.label}
             </span>
           </div>

@@ -1,6 +1,7 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '../styles/globals.css';
 import '../styles/retroville.css';
+import '../styles/z-index.css';
 import { JetBrains_Mono, Manrope, Sora } from 'next/font/google';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
@@ -128,6 +129,12 @@ export const metadata: Metadata = {
       'Compra consolas retro, videojuegos clásicos y coleccionables. Game Boy, SNES, Mega Drive, PlayStation y más.',
     images: [absoluteUrl('/logo.png')],
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

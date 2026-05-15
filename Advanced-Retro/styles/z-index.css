@@ -1,0 +1,32 @@
+:root {
+  --z-header: 100;
+  --z-dropdown: 200;
+  --z-modal: 1000;
+  --z-toast: 5000;
+  --z-assistant: 9999;
+  --z-mobile-menu: 10000;
+}
+
+.z-header {
+  z-index: var(--z-header);
+}
+
+.z-dropdown {
+  z-index: var(--z-dropdown);
+}
+
+.z-modal {
+  z-index: var(--z-modal);
+}
+
+.z-toast {
+  z-index: var(--z-toast);
+}
+
+.z-assistant {
+  z-index: var(--z-assistant);
+}
+
+.z-mobile-menu {
+  z-index: var(--z-mobile-menu);
+}

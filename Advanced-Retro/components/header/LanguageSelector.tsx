@@ -75,7 +75,7 @@ export default function LanguageSelector({
 
       {open ? (
         <div
-          className={`absolute z-[90] w-[250px] rounded-[1.25rem] border border-line/80 bg-[rgba(6,13,24,0.96)] p-3 shadow-[0_24px_60px_rgba(1,7,18,0.45)] backdrop-blur-xl ${panelPosition}`}
+          className={`z-dropdown absolute w-[250px] rounded-[1.25rem] border border-line/80 bg-[rgba(6,13,24,0.96)] p-3 shadow-[0_24px_60px_rgba(1,7,18,0.45)] backdrop-blur-xl ${panelPosition}`}
         >
           <div className="mb-2 px-2">
             <p className="text-sm font-semibold text-text">Idioma</p>

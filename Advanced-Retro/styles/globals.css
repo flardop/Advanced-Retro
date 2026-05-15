@@ -658,6 +658,15 @@ body::before {
   background: var(--theme-chip-bg);
 }
 
+@media (max-width: 768px) {
+  .button-primary,
+  .button-secondary,
+  .chip,
+  button {
+    min-height: 44px;
+  }
+}
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -687,6 +696,17 @@ body::before {
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes menuSlideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 

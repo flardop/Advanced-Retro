@@ -89,7 +89,7 @@ export default function RetrovilleWaitlistForm({
         disabled={loading}
         className={`inline-flex w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60 ${
           darkMode
-            ? 'bg-white text-slate-950 hover:brightness-110'
+            ? 'bg-[var(--rv-green)] text-black hover:brightness-110'
             : 'bg-[linear-gradient(135deg,#7c3aed,#2563eb)] text-white hover:brightness-110'
         }`}
       >
