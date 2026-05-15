@@ -81,6 +81,44 @@
   isolation: isolate;
 }
 
+.heroSceneWashLeft,
+.heroSceneWashRight {
+  position: absolute;
+  inset-block: 0;
+  width: 44%;
+  opacity: 0.42;
+  pointer-events: none;
+  filter: blur(22px) saturate(1.08);
+}
+
+.heroSceneWashLeft {
+  left: -6%;
+}
+
+.heroSceneWashRight {
+  right: -6%;
+}
+
+.heroSceneWashImageLeft,
+.heroSceneWashImageRight {
+  object-fit: cover;
+  transform: scale(1.12);
+}
+
+.heroSceneWashImageLeft {
+  object-position: left center;
+  mask-image:
+    linear-gradient(90deg, black 0%, black 46%, transparent 92%),
+    linear-gradient(180deg, transparent 0%, black 16%, black 84%, transparent 100%);
+}
+
+.heroSceneWashImageRight {
+  object-position: right center;
+  mask-image:
+    linear-gradient(90deg, transparent 8%, black 54%, black 100%),
+    linear-gradient(180deg, transparent 0%, black 16%, black 84%, transparent 100%);
+}
+
 .heroCharacterBackdrop {
   filter: blur(40px) saturate(1.1);
   opacity: 0.42;
@@ -183,6 +221,28 @@
   will-change: transform;
 }
 
+.viewportBlend {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(3, 3, 3, 0.12), transparent 12%, transparent 88%, rgba(3, 3, 3, 0.28)),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03), transparent 42%);
+}
+
+.sceneNoise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.14;
+  background-image:
+    radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.06), transparent 18%),
+    radial-gradient(circle at 76% 22%, rgba(255, 255, 255, 0.04), transparent 20%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: auto, auto, 84px 84px, 84px 84px;
+  pointer-events: none;
+}
+
 .slideVisual {
   --retroville-slide-accent: rgba(123, 47, 255, 0.24);
   position: relative;
@@ -217,6 +277,41 @@
   position: absolute;
   inset: 0;
   z-index: 2;
+}
+
+.sceneFigureShell {
+  position: relative;
+  height: 82vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sceneFigureShellLeft {
+  mask-image:
+    radial-gradient(circle at 72% 52%, black 48%, transparent 94%),
+    linear-gradient(90deg, black 0%, black 70%, transparent 98%),
+    linear-gradient(180deg, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+.sceneFigureShellRight {
+  mask-image:
+    radial-gradient(circle at 28% 52%, black 50%, transparent 96%),
+    linear-gradient(90deg, transparent 2%, black 28%, black 100%),
+    linear-gradient(180deg, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+.sceneFigureMaskLeft {
+  mask-image:
+    radial-gradient(circle at 72% 52%, black 52%, transparent 96%),
+    linear-gradient(90deg, black 0%, black 74%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+
+.sceneFigureMaskRight {
+  mask-image:
+    radial-gradient(circle at 28% 52%, black 54%, transparent 98%),
+    linear-gradient(90deg, transparent 0%, black 26%, black 100%),
+    linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%);
 }
 
 .slideImage {

@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Anton, Space_Mono } from 'next/font/google';
 import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
 import styles from './retroville-experience.module.css';
@@ -226,7 +226,6 @@ export default function RetrovilleExperience({
   const [narrativeProgress, setNarrativeProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [manualSlide, setManualSlide] = useState(0);
-  const [narrativeMode, setNarrativeMode] = useState<"before" | "fixed" | "after">("before");
 
   const hypeGoal = 5000;
   const hypePct = waitlistCount > 0 ? clamp(waitlistCount / hypeGoal, 0, 1) : 0;
@@ -252,16 +251,6 @@ export default function RetrovilleExperience({
         const rect = narrativeRef.current.getBoundingClientRect();
         const total = Math.max(narrativeRef.current.offsetHeight - window.innerHeight, 1);
         setNarrativeProgress(clamp(-rect.top / total));
-
-        if (rect.top > 0) {
-          setNarrativeMode("before");
-        } else if (rect.bottom <= window.innerHeight) {
-          setNarrativeMode("after");
-        } else {
-          setNarrativeMode("fixed");
-        }
-      } else if (isMobile) {
-        setNarrativeMode("before");
       }
     };
 
@@ -274,6 +263,7 @@ export default function RetrovilleExperience({
   const activeSlide = isMobile ? manualSlide : desktopSlideIndex;
   const trackTranslate = isMobile ? 0 : narrativeProgress * (narrativeSlides.length - 1) * desktopStep;
   const manifestoActive = isMobile || activeSlide >= 1;
+  const portalReveal = clamp((heroProgress - 0.55) / 0.35);
 
   const renderMobileSlide = (slide: NarrativeSlide) => {
     if (slide.kind === 'countdown') {
@@ -559,27 +549,31 @@ export default function RetrovilleExperience({
 
     return (
       <div className="relative h-full overflow-hidden" style={imageSurfaceStyle(slide.image, slide.accent)}>
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.12),transparent_22%,transparent_78%,rgba(0,0,0,0.44))]" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,3,3,0.76),rgba(3,3,3,0.18)_36%,rgba(3,3,3,0.18)_64%,rgba(3,3,3,0.78))]" />
-        <div className="absolute inset-y-0 left-0 w-[28%] bg-[radial-gradient(circle_at_left,rgba(0,0,0,0.28),transparent_68%)]" />
-        <div className="absolute inset-y-0 right-0 w-[28%] bg-[radial-gradient(circle_at_right,rgba(0,0,0,0.28),transparent_68%)]" />
+        <div className={styles.sceneNoise} />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.12),transparent_18%,transparent_80%,rgba(0,0,0,0.48))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,3,3,0.84),rgba(3,3,3,0.24)_30%,rgba(3,3,3,0.24)_70%,rgba(3,3,3,0.84))]" />
+        <div className="absolute inset-y-0 left-[-6%] w-[36%] bg-[radial-gradient(circle_at_left,rgba(138,215,255,0.22),transparent_68%)] blur-3xl" />
+        <div className="absolute inset-y-0 right-[-6%] w-[36%] bg-[radial-gradient(circle_at_right,rgba(123,47,255,0.24),transparent_72%)] blur-3xl" />
 
-        <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-2 items-center gap-8 px-10 py-12 xl:px-14">
-          <div className={`${alignLeft ? 'order-1' : 'order-2'} flex h-full items-end`}>
-            <div className={`${styles.slideVisual} relative h-[76vh] w-full overflow-hidden rounded-[2.1rem] border border-white/10 bg-black/22`} style={slideAccentStyle(slide.accent)}>
+        <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.58fr)_minmax(0,0.42fr)] items-center gap-10 px-10 py-12 xl:px-14">
+          <div className={`${alignLeft ? 'order-1' : 'order-2'} relative flex h-full items-end`}>
+            <div className="absolute inset-0 rounded-[2.4rem] bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05),transparent_62%)]" />
+            <div className={`${styles.sceneFigureShell} ${alignLeft ? styles.sceneFigureShellLeft : styles.sceneFigureShellRight}`}>
               <div className={styles.slideBackdrop}>
-                <Image src={slide.image} alt="" fill sizes="44vw" className={styles.slideBackdropImage} aria-hidden />
+                <Image src={slide.image} alt="" fill sizes="48vw" className={styles.slideBackdropImage} aria-hidden />
               </div>
               <div className={styles.slideVisualTint} />
-              <div className={styles.slideForeground}>
-                <Image src={slide.image} alt={slide.alt} fill sizes="44vw" className={styles.slideImage} />
+              <div className={`${styles.slideForeground} ${alignLeft ? styles.sceneFigureMaskLeft : styles.sceneFigureMaskRight}`}>
+                <Image src={slide.image} alt={slide.alt} fill sizes="48vw" className={styles.slideImage} />
               </div>
             </div>
           </div>
-          <div className={`${alignLeft ? 'order-2' : 'order-1'} flex flex-col justify-center ${alignLeft ? 'pl-4' : 'pr-4'}`}>
+          <div className={`${alignLeft ? 'order-2' : 'order-1'} flex flex-col justify-center ${alignLeft ? 'pl-2' : 'pr-2'}`}>
             <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-            <h3 className={`${displayFont.className} mt-4 text-[5.2rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
-            <p className="mt-6 max-w-[34rem] text-lg leading-9 text-white/66">{slide.description}</p>
+            <div className="mt-5 max-w-[36rem] rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,14,24,0.54),rgba(7,9,14,0.72))] p-8 shadow-[0_28px_100px_rgba(0,0,0,0.22)] backdrop-blur-2xl">
+              <h3 className={`${displayFont.className} text-[5.2rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
+              <p className="mt-6 text-lg leading-9 text-white/66">{slide.description}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -588,7 +582,7 @@ export default function RetrovilleExperience({
 
   return (
     <main className={`${monoFont.className} overflow-x-hidden bg-[var(--rv-bg)] text-[var(--rv-text)]`}>
-      <section ref={heroRef} className="relative min-h-[175svh] overflow-hidden bg-[var(--rv-bg)]">
+      <section ref={heroRef} className="relative min-h-[220svh] overflow-hidden bg-[var(--rv-bg)]">
         <div className={`absolute inset-0 ${styles.heroNoise}`} />
         <div className={styles.scanlines} />
         <div className="absolute left-[-10%] top-[8%] h-[46rem] w-[46rem] rounded-full bg-[radial-gradient(circle,rgba(123,47,255,0.22),transparent_70%)] blur-3xl" />
@@ -607,6 +601,26 @@ export default function RetrovilleExperience({
           </div>
 
           <div className="absolute inset-0">
+            <div className={styles.heroSceneWashLeft}>
+              <Image
+                src="/images/retroville/nox-push.png"
+                alt=""
+                fill
+                sizes="48vw"
+                className={styles.heroSceneWashImageLeft}
+                aria-hidden
+              />
+            </div>
+            <div className={styles.heroSceneWashRight}>
+              <Image
+                src="/images/retroville/button-crew-push.png"
+                alt=""
+                fill
+                sizes="52vw"
+                className={styles.heroSceneWashImageRight}
+                aria-hidden
+              />
+            </div>
             <div className="absolute left-[-1%] top-[18%] hidden h-[62%] w-[30%] lg:block">
               <div
                 className={`${styles.characterFloatAlt} ${styles.heroCharacterShell} relative h-full w-full`}
@@ -657,12 +671,42 @@ export default function RetrovilleExperience({
           </div>
 
           <div
+            className="pointer-events-none absolute inset-0 z-[5] bg-[radial-gradient(circle_at_50%_50%,rgba(123,47,255,0.20),transparent_30%),linear-gradient(180deg,rgba(3,3,3,0.06),rgba(3,3,3,0.42))]"
+            style={{
+              opacity: portalReveal,
+            }}
+          />
+
+          <div
             className="absolute inset-[18%_34%_18%_34%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.15),transparent_68%)] blur-[100px]"
             style={{
-              transform: `scale(${1 + heroProgress * 2})`,
+              transform: `scale(${1 + heroProgress * 2.5})`,
               opacity: clamp(0.54 + heroProgress * 0.42, 0.54, 1),
             }}
           />
+
+          <div
+            className="pointer-events-none absolute inset-x-[8%] bottom-[14%] z-[6] hidden h-[24%] rounded-[2.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(7,9,14,0.34),rgba(7,9,14,0.78))] px-6 py-6 backdrop-blur-[26px] lg:block"
+            style={{
+              opacity: portalReveal,
+              transform: `translateY(${(1 - portalReveal) * 40}px) scale(${0.92 + portalReveal * 0.08})`,
+            }}
+          >
+            <div className="grid h-full grid-cols-3 gap-4">
+              <div className="rounded-[2rem] bg-[linear-gradient(135deg,rgba(123,47,255,0.16),rgba(0,255,136,0.06))] p-5">
+                <p className="text-[10px] uppercase tracking-[0.28em] text-white/52">Ventana</p>
+                <p className={`${displayFont.className} mt-4 text-[2.4rem] uppercase leading-none text-white`}>Lanzamiento</p>
+              </div>
+              <div className="rounded-[2rem] bg-[linear-gradient(135deg,rgba(138,215,255,0.14),rgba(123,47,255,0.08))] p-5">
+                <p className="text-[10px] uppercase tracking-[0.28em] text-white/52">Ciudad</p>
+                <p className={`${displayFont.className} mt-4 text-[2.4rem] uppercase leading-none text-white`}>Neón húmedo</p>
+              </div>
+              <div className="rounded-[2rem] bg-[linear-gradient(135deg,rgba(255,60,0,0.14),rgba(123,47,255,0.08))] p-5">
+                <p className="text-[10px] uppercase tracking-[0.28em] text-white/52">Caos</p>
+                <p className={`${displayFont.className} mt-4 text-[2.4rem] uppercase leading-none text-white`}>Señales vivas</p>
+              </div>
+            </div>
+          </div>
 
           <div className="relative z-10 flex h-full flex-col items-center justify-center px-5 text-center sm:px-8 lg:px-10">
             <p
@@ -690,7 +734,7 @@ export default function RetrovilleExperience({
                       style={{
                         opacity: clamp(opacity, 0, 1),
                         transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`,
-                        filter: isZoom ? `blur(${heroProgress > 0.78 ? (heroProgress - 0.78) * 12 : 0}px)` : undefined,
+                        filter: isZoom ? `blur(${heroProgress > 0.62 ? (heroProgress - 0.62) * 26 : 0}px)` : undefined,
                       }}
                     >
                       {letter}
@@ -724,8 +768,8 @@ export default function RetrovilleExperience({
               </Link>
             </div>
 
-            <div className="relative mt-8 h-[260px] w-full max-w-[920px] overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(11,14,24,0.82),rgba(7,9,15,0.96))] lg:hidden">
-              <div className="absolute inset-x-[20%] top-[14%] h-[56%] rounded-full bg-[radial-gradient(circle,rgba(123,47,255,0.28),transparent_68%)] blur-3xl" />
+            <div className="relative mt-8 h-[280px] w-full max-w-[920px] overflow-hidden lg:hidden">
+              <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_22%_50%,rgba(138,215,255,0.28),transparent_38%),radial-gradient(circle_at_78%_44%,rgba(123,47,255,0.32),transparent_42%),linear-gradient(180deg,rgba(11,14,24,0.12),rgba(7,9,15,0.58))]" />
               <div className="absolute left-[-10%] top-[10%] h-[82%] w-[45%]">
                 <Image
                   src="/images/retroville/nox-push.png"
@@ -735,7 +779,7 @@ export default function RetrovilleExperience({
                   sizes="42vw"
                   className="object-contain object-left-center"
                   style={{
-                    maskImage: 'linear-gradient(90deg, black 70%, transparent 100%), linear-gradient(180deg, transparent 0%, black 18%, black 82%, transparent 100%)',
+                    maskImage: 'radial-gradient(circle at 72% 50%, black 56%, transparent 96%), linear-gradient(90deg, black 70%, transparent 100%), linear-gradient(180deg, transparent 0%, black 18%, black 82%, transparent 100%)',
                   }}
                 />
               </div>
@@ -748,7 +792,7 @@ export default function RetrovilleExperience({
                   sizes="48vw"
                   className="object-contain object-right-center"
                   style={{
-                    maskImage: 'linear-gradient(90deg, transparent 0%, black 20%, black 84%, transparent 100%), linear-gradient(180deg, transparent 0%, black 20%, black 82%, transparent 100%)',
+                    maskImage: 'radial-gradient(circle at 28% 50%, black 60%, transparent 98%), linear-gradient(90deg, transparent 0%, black 20%, black 84%, transparent 100%), linear-gradient(180deg, transparent 0%, black 20%, black 82%, transparent 100%)',
                   }}
                 />
               </div>
@@ -762,35 +806,14 @@ export default function RetrovilleExperience({
         </div>
       </section>
 
-      <section ref={narrativeRef} className="relative bg-[var(--rv-bg)]" style={isMobile ? undefined : { minHeight: `${narrativeSlides.length * 100}svh` }}>
+      <section
+        ref={narrativeRef}
+        className="relative -mt-[100svh] bg-[var(--rv-bg)]"
+        style={isMobile ? undefined : { minHeight: `${(narrativeSlides.length + 0.45) * 100}svh` }}
+      >
         {isMobile ? (
           <div className="px-4 pb-8 pt-4 sm:px-8">
             <div className="mx-auto max-w-[1540px] overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,8,10,0.96),rgba(5,5,8,0.98))] shadow-[0_34px_120px_rgba(0,0,0,0.42)]">
-              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">Narrative track</p>
-                  <p className="mt-2 text-sm text-white/58">{String(activeSlide + 1).padStart(2, '0')} / {String(narrativeSlides.length).padStart(2, '0')}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setManualSlide((current) => Math.max(0, current - 1))}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition hover:border-white/20 hover:bg-white/[0.08]"
-                    aria-label="Slide anterior"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setManualSlide((current) => Math.min(narrativeSlides.length - 1, current + 1))}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] transition hover:border-white/20 hover:bg-white/[0.08]"
-                    aria-label="Slide siguiente"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
               <div className="overflow-x-auto px-4 pb-6 pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div
                   className="flex gap-4 snap-x snap-mandatory transition-transform duration-300"
@@ -814,53 +837,41 @@ export default function RetrovilleExperience({
                     type="button"
                     onClick={() => setManualSlide(index)}
                     className={`h-2.5 rounded-full transition ${activeSlide === index ? 'w-10 bg-[var(--rv-accent)]' : 'w-2.5 bg-white/24'}`}
-                    aria-label={`Ir al slide ${index + 1}`}
+                    aria-label={`Ir al panel ${index + 1}`}
                   />
                 ))}
               </div>
             </div>
           </div>
         ) : (
-          <div className="relative h-full">
-            <div
-              className={`${
-                narrativeMode === 'fixed'
-                  ? 'fixed inset-0 z-20'
-                  : narrativeMode === 'after'
-                    ? 'absolute inset-x-0 bottom-0 h-[100svh]'
-                    : 'absolute inset-x-0 top-0 h-[100svh]'
-              } overflow-hidden bg-[var(--rv-bg)]`}
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%),radial-gradient(circle_at_20%_18%,rgba(123,47,255,0.08),transparent_22%),radial-gradient(circle_at_80%_18%,rgba(0,255,136,0.06),transparent_20%)]" />
-              <div className="absolute left-8 right-8 top-6 z-20 flex items-center justify-between xl:left-10 xl:right-10">
-                <div className="rounded-full border border-white/10 bg-black/28 px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-white/56 backdrop-blur-xl">
-                  Slide {String(activeSlide + 1).padStart(2, '0')} / {String(narrativeSlides.length).padStart(2, '0')}
-                </div>
-                <div className="h-1.5 w-[240px] overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-[linear-gradient(90deg,var(--rv-accent2),var(--rv-accent),var(--rv-accent3))]"
-                    style={{ width: `${((activeSlide + 1) / narrativeSlides.length) * 100}%` }}
-                  />
-                </div>
-              </div>
+          <div className="sticky top-0 h-[100svh] overflow-hidden bg-[var(--rv-bg)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(123,47,255,0.20),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%),radial-gradient(circle_at_20%_18%,rgba(123,47,255,0.08),transparent_22%),radial-gradient(circle_at_80%_18%,rgba(0,255,136,0.06),transparent_20%)]" />
+            <div className={styles.viewportBlend} />
+            <div className="absolute left-1/2 top-6 z-20 h-1.5 w-[260px] -translate-x-1/2 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-[linear-gradient(90deg,var(--rv-accent2),var(--rv-accent),var(--rv-accent3))]"
+                style={{ width: `${((activeSlide + 1) / narrativeSlides.length) * 100}%` }}
+              />
+            </div>
 
-              <div className="absolute inset-0 overflow-hidden">
-                <div
-                  className={`${styles.universeTrack} flex h-full`}
-                  style={{ width: `${narrativeSlides.length * 100}%`, transform: `translate3d(-${trackTranslate}%,0,0)` }}
-                >
-                  {narrativeSlides.map((slide) => (
-                    <article
-                      key={`${slide.kind}-${slide.title}`}
-                      className="relative h-full shrink-0"
-                      style={{ width: `${100 / narrativeSlides.length}%` }}
-                    >
-                      {renderDesktopSlide(slide)}
-                    </article>
-                  ))}
-                </div>
+            <div className="absolute inset-0 overflow-hidden">
+              <div
+                className={`${styles.universeTrack} flex h-full`}
+                style={{ width: `${narrativeSlides.length * 100}%`, transform: `translate3d(-${trackTranslate}%,0,0)` }}
+              >
+                {narrativeSlides.map((slide) => (
+                  <article
+                    key={`${slide.kind}-${slide.title}`}
+                    className="relative h-full shrink-0"
+                    style={{ width: `${100 / narrativeSlides.length}%` }}
+                  >
+                    {renderDesktopSlide(slide)}
+                  </article>
+                ))}
               </div>
             </div>
+
+            <div className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-[22vw] max-w-[360px] -translate-x-1/2 bg-[radial-gradient(circle_at_center,rgba(5,5,8,0.04),rgba(5,5,8,0.34)_50%,transparent_76%)] blur-[42px]" />
           </div>
         )}
       </section>
