@@ -752,21 +752,21 @@ export default function RetrovilleDesktopExperience({
                   />
                 </div>
                 <Image
-                  src="/images/retroville/nox-cutout.png"
+                  src="/images/retroville/nox-push.png"
                   alt=""
                   fill
                   sizes="30vw"
-                  className={`${styles.heroCharacterBackdrop} object-contain object-left-bottom`}
+                  className={`${styles.heroCharacterBackdrop} object-cover object-left-center`}
                   aria-hidden
                 />
                 <div className={styles.heroCharacterAuraLeft} />
                 <Image
-                  src="/images/retroville/nox-cutout.png"
+                  src="/images/retroville/nox-push.png"
                   alt="NOX empujando hacia el centro del universo Retroville"
                   fill
                   priority
                   sizes="30vw"
-                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtLeft} object-contain object-left-bottom`}
+                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtLeft} object-cover object-left-center`}
                 />
                 <div className={styles.heroCharacterFadeLeft} />
               </div>
@@ -788,21 +788,21 @@ export default function RetrovilleDesktopExperience({
                   />
                 </div>
                 <Image
-                  src="/images/retroville/button-crew-cutout.png"
+                  src="/images/retroville/button-crew-push.png"
                   alt=""
                   fill
                   sizes="32vw"
-                  className={`${styles.heroCharacterBackdrop} object-contain object-right-bottom`}
+                  className={`${styles.heroCharacterBackdrop} object-cover object-right-center`}
                   aria-hidden
                 />
                 <div className={styles.heroCharacterAuraRight} />
                 <Image
-                  src="/images/retroville/button-crew-cutout.png"
+                  src="/images/retroville/button-crew-push.png"
                   alt="Button Crew empujando hacia el centro del universo Retroville"
                   fill
                   priority
                   sizes="32vw"
-                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtRight} object-contain object-right-bottom`}
+                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtRight} object-cover object-right-center`}
                 />
                 <div className={styles.heroCharacterFadeRight} />
               </div>
