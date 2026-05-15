@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Anton, Space_Mono } from 'next/font/google';
 import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
+import { lunaProfile } from '@/lib/retroville-luna';
 import styles from './retroville-experience.module.css';
 
 const displayFont = Anton({ subsets: ['latin'], weight: '400' });
@@ -58,6 +59,10 @@ const signalCards = [
   {
     title: 'RETRO SOCIAL CHAOS',
     body: 'Comunidad, torneos, personajes y piezas visuales que construyen cultura en vez de parecer simple relleno de marketing.',
+  },
+  {
+    title: 'LUNA SIGNAL',
+    body: 'Presencia magnética, glamour tóxico y sabotaje emocional. Luna convierte cualquier escena en conversación.',
   },
 ] as const;
 
@@ -127,6 +132,17 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     alt: 'Button Crew posando como grupo dentro de Retroville',
     accent: 'rgba(242,187,116,0.28)',
     align: 'left',
+  },
+  {
+    kind: 'image',
+    title: lunaProfile.name,
+    eyebrow: 'VARIABLE DE CAOS',
+    description:
+      'Luna entra en Retroville como una interferencia elegante: magnética, caprichosa y peligrosamente divertida. Manipula la atención, coquetea con el desastre y mantiene a NOX orbitando demasiado cerca. “No soy tóxica. Tú solo estás demasiado apegado.”',
+    image: '/images/retroville/luna-nox-lounge.png',
+    alt: 'Luna junto a NOX en un lounge arcade dentro de Retroville',
+    accent: 'rgba(217,133,171,0.34)',
+    align: 'right',
   },
   {
     kind: 'image',
@@ -488,7 +504,7 @@ export default function RetrovilleExperience({
               <h3 className={`${displayFont.className} mt-4 text-[4.8rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
               <p className="mt-6 max-w-[22rem] text-base leading-8 text-white/64">{slide.description}</p>
             </div>
-            <div className="grid gap-4 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {signalCards.map((card) => (
                 <article key={card.title} className="rounded-[1.8rem] border border-white/10 bg-[rgba(10,10,14,0.72)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl">
                   <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-accent)]">Signal</p>

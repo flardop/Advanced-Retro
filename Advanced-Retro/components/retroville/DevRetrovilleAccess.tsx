@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { LockKeyhole, Rocket, ShieldAlert, Sparkles } from 'lucide-react';
 import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
+import LunaDevGuide from '@/components/retroville/LunaDevGuide';
 
 const ACCESS_KEY = 'retroville_dev_auth';
 const REQUIRED_PASSWORD = 'test1';
@@ -138,6 +139,7 @@ export default function DevRetrovilleAccess() {
                 '🏆 Torneos retro con premios y narrativa de progresión.',
                 '🛒 Marketplace integrado dentro del propio mundo.',
                 '👾 Personajes originales y avatar personalizable.',
+                '💗 Luna añade glamour tóxico, tensión social y caos emocional al núcleo narrativo.',
                 '📺 Retroville TV para streams, clips y unboxings.',
               ].map((item) => (
                 <div key={item} className="rounded-[1.3rem] border border-white/10 bg-[rgba(255,255,255,0.04)] p-4 text-sm text-slate-200">
@@ -150,20 +152,29 @@ export default function DevRetrovilleAccess() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="rounded-[1.8rem] border border-white/10 bg-[rgba(29,10,20,0.82)] p-4">
               <div className="relative aspect-[4/5] overflow-hidden rounded-[1.4rem] border border-white/10">
-                <Image src="/images/retroville/nox-styleguide.png" alt="PIXEL-X concept art" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 28vw" />
+                <Image src="/images/retroville/nox-styleguide.png" alt="NOX concept art" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 28vw" />
               </div>
               <div className="mt-4">
-                <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/72">PIXEL-X</p>
-                <p className="mt-2 text-sm text-slate-300">ATK 61 · DEF 48 · SPD 34</p>
+                <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/72">NOX</p>
+                <p className="mt-2 text-sm text-slate-300">Caretaker of the night shift · sarcasm-driven lead</p>
               </div>
             </div>
             <div className="rounded-[1.8rem] border border-white/10 bg-[rgba(21,12,30,0.82)] p-4">
               <div className="relative aspect-[4/5] overflow-hidden rounded-[1.4rem] border border-white/10">
-                <Image src="/images/retroville/button-crew-styleguide.png" alt="BYTE-NOVA collective concept art" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 28vw" />
+                <Image src="/images/retroville/button-crew-styleguide.png" alt="Button Crew collective concept art" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 28vw" />
               </div>
               <div className="mt-4">
-                <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/72">BYTE-NOVA Collective</p>
-                <p className="mt-2 text-sm text-slate-300">ATK 72 · DEF 39 · SPD 70</p>
+                <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/72">BUTTON CREW</p>
+                <p className="mt-2 text-sm text-slate-300">Four-button social chaos · collective noise engine</p>
+              </div>
+            </div>
+            <div className="rounded-[1.8rem] border border-pink-300/20 bg-[rgba(63,20,40,0.82)] p-4 sm:col-span-2">
+              <div className="relative aspect-[16/9] overflow-hidden rounded-[1.4rem] border border-white/10">
+                <Image src="/images/retroville/luna-nox-lounge.png" alt="Luna junto a NOX dentro de Retroville" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 56vw" />
+              </div>
+              <div className="mt-4">
+                <p className="text-xs uppercase tracking-[0.22em] text-pink-200/72">LUNA</p>
+                <p className="mt-2 text-sm text-slate-300">Complicated controller energy · flirty chaos · emotional hazard</p>
               </div>
             </div>
           </div>
@@ -181,6 +192,8 @@ export default function DevRetrovilleAccess() {
             </article>
           ))}
         </section>
+
+        <LunaDevGuide />
 
         <section className="rounded-[2rem] border border-white/10 bg-[rgba(8,10,18,0.8)] p-6 backdrop-blur-xl">
           <div className="grid gap-8 lg:grid-cols-[1fr,420px] lg:items-center">
