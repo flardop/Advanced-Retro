@@ -161,6 +161,26 @@
     linear-gradient(180deg, transparent 0%, black 18%, black 84%, transparent 100%);
 }
 
+.heroCharacterFadeLeft,
+.heroCharacterFadeRight {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.heroCharacterFadeLeft {
+  background:
+    linear-gradient(90deg, rgba(3, 3, 3, 0.1), transparent 18%, transparent 66%, rgba(7, 9, 14, 0.92) 100%),
+    linear-gradient(180deg, rgba(3, 3, 3, 0.92), transparent 18%, transparent 84%, rgba(3, 3, 3, 0.98));
+}
+
+.heroCharacterFadeRight {
+  background:
+    linear-gradient(90deg, rgba(7, 9, 14, 0.92) 0%, transparent 28%, transparent 82%, rgba(3, 3, 3, 0.12) 100%),
+    linear-gradient(180deg, rgba(3, 3, 3, 0.92), transparent 18%, transparent 84%, rgba(3, 3, 3, 0.98));
+}
+
 .characterFloat {
   animation: retroville-float 4.8s ease-in-out infinite;
 }
@@ -230,6 +250,30 @@
     radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03), transparent 42%);
 }
 
+.portalVeil {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.14), transparent 16%),
+    radial-gradient(circle at 50% 50%, rgba(123, 47, 255, 0.24), transparent 28%),
+    radial-gradient(circle at 50% 50%, rgba(3, 3, 3, 0.8), transparent 62%);
+  filter: blur(34px);
+}
+
+.portalTrackBlend {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), transparent 14%),
+    radial-gradient(circle at 50% 50%, rgba(123, 47, 255, 0.18), transparent 28%),
+    linear-gradient(180deg, rgba(3, 3, 3, 0.42), transparent 22%, transparent 82%, rgba(3, 3, 3, 0.48));
+  filter: blur(28px);
+}
+
 .sceneNoise {
   position: absolute;
   inset: 0;
@@ -277,6 +321,33 @@
   position: absolute;
   inset: 0;
   z-index: 2;
+}
+
+.sceneEdgeBlend {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.sceneEdgeBlendLeft {
+  background:
+    linear-gradient(90deg, rgba(3, 3, 3, 0.28), transparent 12%, transparent 72%, rgba(8, 8, 12, 0.92) 100%),
+    radial-gradient(circle at 86% 50%, rgba(8, 8, 12, 0.96), transparent 22%);
+}
+
+.sceneEdgeBlendRight {
+  background:
+    linear-gradient(90deg, rgba(8, 8, 12, 0.92) 0%, transparent 26%, transparent 88%, rgba(3, 3, 3, 0.28) 100%),
+    radial-gradient(circle at 14% 50%, rgba(8, 8, 12, 0.96), transparent 22%);
+}
+
+.sceneVerticalBlend {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(3, 3, 3, 0.94), transparent 16%, transparent 84%, rgba(3, 3, 3, 0.98));
 }
 
 .sceneFigureShell {

@@ -221,9 +221,7 @@ export default function RetrovilleExperience({
   waitlistCount: number;
 }) {
   const heroRef = useRef<HTMLElement | null>(null);
-  const narrativeRef = useRef<HTMLElement | null>(null);
   const [heroProgress, setHeroProgress] = useState(0);
-  const [narrativeProgress, setNarrativeProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [manualSlide, setManualSlide] = useState(0);
 
@@ -246,12 +244,6 @@ export default function RetrovilleExperience({
         const total = Math.max(heroRef.current.offsetHeight - window.innerHeight, 1);
         setHeroProgress(clamp(-rect.top / total));
       }
-
-      if (narrativeRef.current && !isMobile) {
-        const rect = narrativeRef.current.getBoundingClientRect();
-        const total = Math.max(narrativeRef.current.offsetHeight - window.innerHeight, 1);
-        setNarrativeProgress(clamp(-rect.top / total));
-      }
     };
 
     onScroll();
@@ -259,11 +251,19 @@ export default function RetrovilleExperience({
     return () => window.removeEventListener('scroll', onScroll);
   }, [isMobile]);
 
-  const desktopSlideIndex = Math.round(narrativeProgress * (narrativeSlides.length - 1));
+  const desktopHeroProgress = clamp(heroProgress / 0.18);
+  const desktopPortalReveal = clamp((heroProgress - 0.08) / 0.16);
+  const desktopTrackReveal = clamp((heroProgress - 0.12) / 0.1);
+  const desktopRailProgress = clamp((heroProgress - 0.18) / 0.62);
+  const desktopSlideIndex = Math.round(desktopRailProgress * (narrativeSlides.length - 1));
   const activeSlide = isMobile ? manualSlide : desktopSlideIndex;
-  const trackTranslate = isMobile ? 0 : narrativeProgress * (narrativeSlides.length - 1) * desktopStep;
+  const trackTranslate = isMobile ? 0 : desktopRailProgress * (narrativeSlides.length - 1) * desktopStep;
   const manifestoActive = isMobile || activeSlide >= 1;
-  const portalReveal = clamp((heroProgress - 0.55) / 0.35);
+  const heroStage = isMobile ? heroProgress : desktopHeroProgress;
+  const portalReveal = isMobile ? clamp((heroProgress - 0.55) / 0.35) : desktopPortalReveal;
+  const trackReveal = isMobile ? portalReveal : desktopTrackReveal;
+  const heroCopyFade = isMobile ? clamp(1 - heroStage * 1.25, 0, 1) : clamp(1 - clamp((heroProgress - 0.08) / 0.14), 0, 1);
+  const heroMetaFade = isMobile ? clamp(1 - heroStage * 1.3, 0, 1) : clamp(1 - clamp((heroProgress - 0.06) / 0.14), 0, 1);
 
   const renderMobileSlide = (slide: NarrativeSlide) => {
     if (slide.kind === 'countdown') {
@@ -566,6 +566,8 @@ export default function RetrovilleExperience({
               <div className={`${styles.slideForeground} ${alignLeft ? styles.sceneFigureMaskLeft : styles.sceneFigureMaskRight}`}>
                 <Image src={slide.image} alt={slide.alt} fill sizes="48vw" className={styles.slideImage} />
               </div>
+              <div className={`${styles.sceneEdgeBlend} ${alignLeft ? styles.sceneEdgeBlendLeft : styles.sceneEdgeBlendRight}`} />
+              <div className={styles.sceneVerticalBlend} />
             </div>
           </div>
           <div className={`${alignLeft ? 'order-2' : 'order-1'} flex flex-col justify-center ${alignLeft ? 'pl-2' : 'pr-2'}`}>
@@ -582,7 +584,11 @@ export default function RetrovilleExperience({
 
   return (
     <main className={`${monoFont.className} overflow-x-hidden bg-[var(--rv-bg)] text-[var(--rv-text)]`}>
-      <section ref={heroRef} className="relative min-h-[220svh] overflow-hidden bg-[var(--rv-bg)]">
+      <section
+        ref={heroRef}
+        className="relative overflow-hidden bg-[var(--rv-bg)]"
+        style={isMobile ? { minHeight: '175svh' } : { minHeight: `${(narrativeSlides.length + 3.4) * 100}svh` }}
+      >
         <div className={`absolute inset-0 ${styles.heroNoise}`} />
         <div className={styles.scanlines} />
         <div className="absolute left-[-10%] top-[8%] h-[46rem] w-[46rem] rounded-full bg-[radial-gradient(circle,rgba(123,47,255,0.22),transparent_70%)] blur-3xl" />
@@ -624,7 +630,7 @@ export default function RetrovilleExperience({
             <div className="absolute left-[-1%] top-[18%] hidden h-[62%] w-[30%] lg:block">
               <div
                 className={`${styles.characterFloatAlt} ${styles.heroCharacterShell} relative h-full w-full`}
-                style={{ transform: `translate3d(${heroProgress * 18}px, ${-heroProgress * 42}px, 0)` }}
+                style={{ transform: `translate3d(${heroStage * 18}px, ${-heroStage * 42}px, 0)` }}
               >
                 <Image
                   src="/images/retroville/nox-push.png"
@@ -642,13 +648,14 @@ export default function RetrovilleExperience({
                   sizes="28vw"
                   className={`${styles.heroCharacterArt} ${styles.heroCharacterArtLeft} object-contain object-left-center`}
                 />
+                <div className={styles.heroCharacterFadeLeft} />
               </div>
             </div>
 
             <div className="absolute right-[-3%] top-[22%] hidden h-[58%] w-[33%] lg:block">
               <div
                 className={`${styles.characterFloat} ${styles.heroCharacterShell} relative h-full w-full`}
-                style={{ transform: `translate3d(${-heroProgress * 18}px, ${-heroProgress * 36}px, 0)` }}
+                style={{ transform: `translate3d(${-heroStage * 18}px, ${-heroStage * 36}px, 0)` }}
               >
                 <Image
                   src="/images/retroville/button-crew-push.png"
@@ -666,24 +673,35 @@ export default function RetrovilleExperience({
                   sizes="31vw"
                   className={`${styles.heroCharacterArt} ${styles.heroCharacterArtRight} object-contain object-right-center`}
                 />
+                <div className={styles.heroCharacterFadeRight} />
               </div>
             </div>
           </div>
 
           <div
-            className="pointer-events-none absolute inset-0 z-[5] bg-[radial-gradient(circle_at_50%_50%,rgba(123,47,255,0.20),transparent_30%),linear-gradient(180deg,rgba(3,3,3,0.06),rgba(3,3,3,0.42))]"
+            className="pointer-events-none absolute inset-0 z-[5] bg-[radial-gradient(circle_at_50%_50%,rgba(123,47,255,0.24),transparent_30%),linear-gradient(180deg,rgba(3,3,3,0.06),rgba(3,3,3,0.42))]"
             style={{
-              opacity: portalReveal,
+              opacity: clamp(0.18 + portalReveal * 0.82, 0.18, 1),
             }}
           />
 
           <div
             className="absolute inset-[18%_34%_18%_34%] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.15),transparent_68%)] blur-[100px]"
             style={{
-              transform: `scale(${1 + heroProgress * 2.5})`,
-              opacity: clamp(0.54 + heroProgress * 0.42, 0.54, 1),
+              transform: `scale(${1 + heroStage * 2.5})`,
+              opacity: clamp(0.54 + heroStage * 0.42, 0.54, 1),
             }}
           />
+
+          {!isMobile ? (
+            <div
+              className={styles.portalVeil}
+              style={{
+                opacity: clamp(1 - portalReveal * 1.08, 0, 1),
+                transform: `scale(${1 + portalReveal * 0.28})`,
+              }}
+            />
+          ) : null}
 
           <div
             className="pointer-events-none absolute inset-x-[8%] bottom-[14%] z-[6] hidden h-[24%] rounded-[2.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(7,9,14,0.34),rgba(7,9,14,0.78))] px-6 py-6 backdrop-blur-[26px] lg:block"
@@ -711,7 +729,7 @@ export default function RetrovilleExperience({
           <div className="relative z-10 flex h-full flex-col items-center justify-center px-5 text-center sm:px-8 lg:px-10">
             <p
               className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.32em] text-white/74"
-              style={{ opacity: clamp(1 - heroProgress * 1.1, 0, 1) }}
+              style={{ opacity: heroMetaFade }}
             >
               Cinematic universe reveal
             </p>
@@ -721,10 +739,10 @@ export default function RetrovilleExperience({
                 {titleLetters.map((letter, index) => {
                   const isZoom = letter === 'O' && index === 4;
                   const spread = index < 4 ? -1 : 1;
-                  const opacity = isZoom ? 1 : 1 - heroProgress * 1.12;
-                  const translateX = isZoom ? 0 : heroProgress * spread * 44;
-                  const translateY = heroProgress * -16;
-                  const scale = isZoom ? 1 + heroProgress * 24 : 1;
+                  const opacity = isZoom ? 1 : heroCopyFade;
+                  const translateX = isZoom ? 0 : heroStage * spread * 44;
+                  const translateY = heroStage * -16;
+                  const scale = isZoom ? 1 + heroStage * 24 : 1;
 
                   return (
                     <span
@@ -734,7 +752,7 @@ export default function RetrovilleExperience({
                       style={{
                         opacity: clamp(opacity, 0, 1),
                         transform: `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`,
-                        filter: isZoom ? `blur(${heroProgress > 0.62 ? (heroProgress - 0.62) * 26 : 0}px)` : undefined,
+                        filter: isZoom ? `blur(${heroStage > 0.62 ? (heroStage - 0.62) * 26 : 0}px)` : undefined,
                       }}
                     >
                       {letter}
@@ -747,18 +765,18 @@ export default function RetrovilleExperience({
             <p
               className="mx-auto mt-5 max-w-[18ch] text-2xl font-semibold leading-tight text-white sm:text-[2rem] lg:text-[2.35rem]"
               style={{
-                opacity: clamp(1 - heroProgress * 1.35, 0, 1),
-                transform: `translateY(${heroProgress * -12}px)`,
+                opacity: heroCopyFade,
+                transform: `translateY(${heroStage * -12}px)`,
               }}
             >
               Every forgotten game ends up somewhere.
             </p>
 
-            <p className="mx-auto mt-5 max-w-[40rem] text-sm leading-8 text-white/62 sm:text-base" style={{ opacity: clamp(1 - heroProgress * 1.42, 0, 1) }}>
+            <p className="mx-auto mt-5 max-w-[40rem] text-sm leading-8 text-white/62 sm:text-base" style={{ opacity: heroCopyFade }}>
               Una ciudad oscura de hardware olvidado, memorias corruptas y personajes que siguen empujando el sistema incluso cuando todo lo demás ya se apagó.
             </p>
 
-            <div className="mt-8 flex flex-wrap justify-center gap-3" style={{ opacity: clamp(1 - heroProgress * 1.2, 0, 1) }}>
+            <div className="mt-8 flex flex-wrap justify-center gap-3" style={{ opacity: heroCopyFade }}>
               <Link
                 href="#waitlist"
                 className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--rv-accent2),var(--rv-accent))] px-6 py-3 text-sm font-semibold text-black shadow-[0_18px_48px_rgba(138,215,255,0.16)] transition hover:brightness-110"
@@ -799,19 +817,58 @@ export default function RetrovilleExperience({
             </div>
           </div>
 
-          <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between border-t border-white/10 px-5 py-4 text-[11px] uppercase tracking-[0.28em] text-white/48 sm:px-8 lg:px-10" style={{ opacity: clamp(1 - heroProgress * 1.3, 0, 1) }}>
+          <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between border-t border-white/10 px-5 py-4 text-[11px] uppercase tracking-[0.28em] text-white/48 sm:px-8 lg:px-10" style={{ opacity: heroMetaFade }}>
             <span>Desliza hacia la O</span>
             <span>Launch window target · {launchLabel}</span>
           </div>
+
+          {!isMobile ? (
+            <div
+              className="absolute inset-0 z-[8] overflow-hidden"
+              style={{
+                opacity: trackReveal,
+              }}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(123,47,255,0.20),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%),radial-gradient(circle_at_20%_18%,rgba(123,47,255,0.08),transparent_22%),radial-gradient(circle_at_80%_18%,rgba(0,255,136,0.06),transparent_20%)]" />
+              <div className={styles.viewportBlend} />
+              <div
+                className={styles.portalTrackBlend}
+                style={{
+                  opacity: clamp(1 - portalReveal, 0, 1),
+                }}
+              />
+              <div className="absolute left-1/2 top-6 z-20 h-1.5 w-[260px] -translate-x-1/2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-[linear-gradient(90deg,var(--rv-accent2),var(--rv-accent),var(--rv-accent3))]"
+                  style={{ width: `${((activeSlide + 1) / narrativeSlides.length) * 100}%` }}
+                />
+              </div>
+
+              <div className="absolute inset-0 overflow-hidden">
+                <div
+                  className={`${styles.universeTrack} flex h-full`}
+                  style={{ width: `${narrativeSlides.length * 100}%`, transform: `translate3d(-${trackTranslate}%,0,0)` }}
+                >
+                  {narrativeSlides.map((slide) => (
+                    <article
+                      key={`${slide.kind}-${slide.title}`}
+                      className="relative h-full shrink-0"
+                      style={{ width: `${100 / narrativeSlides.length}%` }}
+                    >
+                      {renderDesktopSlide(slide)}
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-[22vw] max-w-[360px] -translate-x-1/2 bg-[radial-gradient(circle_at_center,rgba(5,5,8,0.04),rgba(5,5,8,0.34)_50%,transparent_76%)] blur-[42px]" />
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <section
-        ref={narrativeRef}
-        className="relative -mt-[100svh] bg-[var(--rv-bg)]"
-        style={isMobile ? undefined : { minHeight: `${(narrativeSlides.length + 0.45) * 100}svh` }}
-      >
-        {isMobile ? (
+      {isMobile ? (
+        <section className="relative bg-[var(--rv-bg)]">
           <div className="px-4 pb-8 pt-4 sm:px-8">
             <div className="mx-auto max-w-[1540px] overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,8,10,0.96),rgba(5,5,8,0.98))] shadow-[0_34px_120px_rgba(0,0,0,0.42)]">
               <div className="overflow-x-auto px-4 pb-6 pt-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -843,38 +900,8 @@ export default function RetrovilleExperience({
               </div>
             </div>
           </div>
-        ) : (
-          <div className="sticky top-0 h-[100svh] overflow-hidden bg-[var(--rv-bg)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(123,47,255,0.20),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%),radial-gradient(circle_at_20%_18%,rgba(123,47,255,0.08),transparent_22%),radial-gradient(circle_at_80%_18%,rgba(0,255,136,0.06),transparent_20%)]" />
-            <div className={styles.viewportBlend} />
-            <div className="absolute left-1/2 top-6 z-20 h-1.5 w-[260px] -translate-x-1/2 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-[linear-gradient(90deg,var(--rv-accent2),var(--rv-accent),var(--rv-accent3))]"
-                style={{ width: `${((activeSlide + 1) / narrativeSlides.length) * 100}%` }}
-              />
-            </div>
-
-            <div className="absolute inset-0 overflow-hidden">
-              <div
-                className={`${styles.universeTrack} flex h-full`}
-                style={{ width: `${narrativeSlides.length * 100}%`, transform: `translate3d(-${trackTranslate}%,0,0)` }}
-              >
-                {narrativeSlides.map((slide) => (
-                  <article
-                    key={`${slide.kind}-${slide.title}`}
-                    className="relative h-full shrink-0"
-                    style={{ width: `${100 / narrativeSlides.length}%` }}
-                  >
-                    {renderDesktopSlide(slide)}
-                  </article>
-                ))}
-              </div>
-            </div>
-
-            <div className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-[22vw] max-w-[360px] -translate-x-1/2 bg-[radial-gradient(circle_at_center,rgba(5,5,8,0.04),rgba(5,5,8,0.34)_50%,transparent_76%)] blur-[42px]" />
-          </div>
-        )}
-      </section>
+        </section>
+      ) : null}
     </main>
   );
 }
