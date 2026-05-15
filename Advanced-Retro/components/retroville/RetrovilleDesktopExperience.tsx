@@ -72,9 +72,14 @@ type ImageSlide = {
   eyebrow: string;
   description: string;
   image: string;
+  backgroundImage?: string | null;
+  figureImage?: string;
   alt: string;
   accent: string;
   align?: 'left' | 'right';
+  backgroundPosition?: string;
+  figurePosition?: string;
+  useCutoutFigure?: boolean;
 };
 
 type NarrativeSlide =
@@ -107,9 +112,11 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     description:
       'Una ciudad de neón, humedad y ruido de arcades rotos. Cada callejón es un cartucho. Cada edificio es una consola que nunca terminó de apagarse.',
     image: '/images/retroville/retroville-street.png',
+    backgroundImage: '/images/retroville/retroville-street.png',
     alt: 'Calles de Retroville con estética neón y personajes del universo',
     accent: 'rgba(123,47,255,0.36)',
     align: 'left',
+    backgroundPosition: 'center center',
   },
   {
     kind: 'image',
@@ -117,10 +124,14 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     eyebrow: 'EL SUPERVIVIENTE',
     description:
       'Sarcasmo, batería baja y una dignidad bastante discutible. NOX no dirige la ciudad por épica. Lo hace porque nadie más soporta el turno de noche.',
-    image: '/images/retroville/retroville-wave.png',
+    image: '/images/retroville/nox-cutout.png',
+    figureImage: '/images/retroville/nox-cutout.png',
+    backgroundImage: null,
     alt: 'NOX dentro del universo Retroville',
-    accent: 'rgba(138,215,255,0.30)',
+    accent: 'rgba(74, 158, 255, 0.22)',
     align: 'right',
+    figurePosition: 'center bottom',
+    useCutoutFigure: true,
   },
   {
     kind: 'image',
@@ -128,10 +139,14 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     eyebrow: 'EL RUIDO SOCIAL',
     description:
       'A, B, Y y X son la conversación permanente de Retroville: impulsivos, cínicos, analíticos y caóticos. Siempre llegan juntos. Siempre complican algo.',
-    image: '/images/retroville/retroville-button-crew-studio.png',
+    image: '/images/retroville/button-crew-cutout.png',
+    figureImage: '/images/retroville/button-crew-cutout.png',
+    backgroundImage: null,
     alt: 'Button Crew posando como grupo dentro de Retroville',
-    accent: 'rgba(242,187,116,0.28)',
+    accent: 'rgba(255, 192, 83, 0.18)',
     align: 'left',
+    figurePosition: 'center bottom',
+    useCutoutFigure: true,
   },
   {
     kind: 'image',
@@ -139,10 +154,15 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     eyebrow: 'VARIABLE DE CAOS',
     description:
       'Luna entra en Retroville como una interferencia elegante: magnética, caprichosa y peligrosamente divertida. Manipula la atención, coquetea con el desastre y mantiene a NOX orbitando demasiado cerca. “No soy tóxica. Tú solo estás demasiado apegado.”',
-    image: '/images/retroville/luna-nox-lounge.png',
+    image: '/images/retroville/luna-cutout.png',
+    figureImage: '/images/retroville/luna-cutout.png',
+    backgroundImage: '/images/retroville/luna-nox-lounge.png',
     alt: 'Luna junto a NOX en un lounge arcade dentro de Retroville',
-    accent: 'rgba(217,133,171,0.34)',
+    accent: 'rgba(191, 92, 149, 0.20)',
     align: 'right',
+    backgroundPosition: 'center center',
+    figurePosition: 'center bottom',
+    useCutoutFigure: true,
   },
   {
     kind: 'image',
@@ -185,10 +205,17 @@ function slideAccentStyle(accent: string): CSSProperties {
   return { ['--retroville-slide-accent' as string]: accent } as CSSProperties;
 }
 
-function imageSurfaceStyle(image: string, accent: string): CSSProperties {
+function imageSurfaceStyle(backgroundImage: string | null | undefined, accent: string): CSSProperties {
+  const baseLayers = [
+    'linear-gradient(180deg, rgba(2,3,8,0.54), rgba(2,3,8,0.92))',
+    `radial-gradient(circle at 50% 18%, ${accent}, transparent 42%)`,
+    'radial-gradient(circle at 14% 78%, rgba(0, 212, 255, 0.10), transparent 26%)',
+    'radial-gradient(circle at 86% 22%, rgba(155, 92, 255, 0.14), transparent 30%)',
+  ];
+
   return {
     ['--retroville-slide-accent' as string]: accent,
-    backgroundImage: `linear-gradient(180deg, rgba(3,3,3,0.24), rgba(3,3,3,0.72)), radial-gradient(circle at 50% 20%, ${accent}, transparent 42%), url(${image})`,
+    backgroundImage: backgroundImage ? `${baseLayers.join(', ')}, url(${backgroundImage})` : baseLayers.join(', '),
   } as CSSProperties;
 }
 
@@ -535,7 +562,7 @@ export default function RetrovilleDesktopExperience({
     if (slide.kind === 'gallery') {
       return (
         <div className="relative flex h-full items-center">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_26%,rgba(123,47,255,0.16),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(123,47,255,0.12),transparent_20%),radial-gradient(circle_at_12%_50%,rgba(0,212,255,0.08),transparent_22%),radial-gradient(circle_at_88%_54%,rgba(255,201,64,0.08),transparent_22%),linear-gradient(180deg,rgba(4,5,12,0.98),rgba(6,7,16,0.98))]" />
           <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.3fr)_minmax(0,0.7fr)] items-center gap-8 px-10 py-12 xl:px-14">
             <div>
               <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
@@ -629,25 +656,44 @@ export default function RetrovilleDesktopExperience({
     }
 
     const alignLeft = slide.align !== 'right';
+    const backgroundImage = slide.backgroundImage === undefined ? slide.image : slide.backgroundImage;
+    const figureImage = slide.figureImage || slide.image;
 
     return (
-      <div className="relative h-full overflow-hidden" style={imageSurfaceStyle(slide.image, slide.accent)}>
+      <div className="relative h-full overflow-hidden" style={imageSurfaceStyle(backgroundImage, slide.accent)}>
         <div className={styles.sceneNoise} />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.12),transparent_18%,transparent_80%,rgba(0,0,0,0.48))]" />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,3,3,0.84),rgba(3,3,3,0.24)_30%,rgba(3,3,3,0.24)_70%,rgba(3,3,3,0.84))]" />
-        <div className="absolute inset-y-0 left-[-6%] w-[36%] bg-[radial-gradient(circle_at_left,rgba(138,215,255,0.22),transparent_68%)] blur-3xl" />
-        <div className="absolute inset-y-0 right-[-6%] w-[36%] bg-[radial-gradient(circle_at_right,rgba(123,47,255,0.24),transparent_72%)] blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.16),transparent_18%,transparent_80%,rgba(0,0,0,0.58))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,3,3,0.92),rgba(3,3,3,0.42)_24%,rgba(3,3,3,0.42)_76%,rgba(3,3,3,0.92))]" />
+        <div className="absolute inset-y-0 left-[-10%] w-[40%] bg-[radial-gradient(circle_at_left,rgba(0,212,255,0.16),transparent_72%)] blur-[80px]" />
+        <div className="absolute inset-y-0 right-[-10%] w-[40%] bg-[radial-gradient(circle_at_right,rgba(155,92,255,0.18),transparent_76%)] blur-[86px]" />
 
         <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.58fr)_minmax(0,0.42fr)] items-center gap-10 px-10 py-12 xl:px-14">
           <div className={`${alignLeft ? 'order-1' : 'order-2'} relative flex h-full items-end`}>
             <div className="absolute inset-0 rounded-[2.4rem] bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05),transparent_62%)]" />
             <div className={`${styles.sceneFigureShell} ${alignLeft ? styles.sceneFigureShellLeft : styles.sceneFigureShellRight}`}>
-              <div className={styles.slideBackdrop}>
-                <Image src={slide.image} alt="" fill sizes="48vw" className={styles.slideBackdropImage} aria-hidden />
-              </div>
-              <div className={styles.slideVisualTint} />
+              {backgroundImage ? (
+                <div className={styles.slideBackdrop}>
+                  <Image
+                    src={backgroundImage}
+                    alt=""
+                    fill
+                    sizes="48vw"
+                    className={styles.slideBackdropImage}
+                    style={{ objectPosition: slide.backgroundPosition || 'center center' }}
+                    aria-hidden
+                  />
+                </div>
+              ) : null}
+              <div className={`${styles.slideVisualTint} ${slide.useCutoutFigure ? styles.slideVisualTintCutout : ''}`} />
               <div className={`${styles.slideForeground} ${alignLeft ? styles.sceneFigureMaskLeft : styles.sceneFigureMaskRight}`}>
-                <Image src={slide.image} alt={slide.alt} fill sizes="48vw" className={styles.slideImage} />
+                <Image
+                  src={figureImage}
+                  alt={slide.alt}
+                  fill
+                  sizes="48vw"
+                  className={slide.useCutoutFigure ? styles.slideImageCutout : styles.slideImage}
+                  style={{ objectPosition: slide.figurePosition || slide.backgroundPosition || 'center center' }}
+                />
               </div>
               <div className={`${styles.sceneEdgeBlend} ${alignLeft ? styles.sceneEdgeBlendLeft : styles.sceneEdgeBlendRight}`} />
               <div className={styles.sceneVerticalBlend} />
@@ -695,21 +741,32 @@ export default function RetrovilleDesktopExperience({
                 className={`${styles.characterFloatAlt} ${styles.heroCharacterShell} ${styles.heroCharacterShellLeft} relative h-full w-full`}
                 style={{ transform: `translate3d(${heroStage * 14}px, ${-heroStage * 34}px, 0)` }}
               >
+                <div className={styles.heroSceneWashLeft}>
+                  <Image
+                    src="/images/retroville/nox-push.png"
+                    alt=""
+                    fill
+                    sizes="30vw"
+                    className={styles.heroSceneWashImageLeft}
+                    aria-hidden
+                  />
+                </div>
                 <Image
-                  src="/images/retroville/nox-push.png"
-                  alt="NOX empujando hacia el centro del universo Retroville"
+                  src="/images/retroville/nox-cutout.png"
+                  alt=""
                   fill
                   sizes="30vw"
-                  className={`${styles.heroCharacterBackdrop} object-cover object-left-center`}
+                  className={`${styles.heroCharacterBackdrop} object-contain object-left-bottom`}
+                  aria-hidden
                 />
                 <div className={styles.heroCharacterAuraLeft} />
                 <Image
-                  src="/images/retroville/nox-push.png"
+                  src="/images/retroville/nox-cutout.png"
                   alt="NOX empujando hacia el centro del universo Retroville"
                   fill
                   priority
                   sizes="30vw"
-                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtLeft} object-cover object-left-center`}
+                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtLeft} object-contain object-left-bottom`}
                 />
                 <div className={styles.heroCharacterFadeLeft} />
               </div>
@@ -720,21 +777,32 @@ export default function RetrovilleDesktopExperience({
                 className={`${styles.characterFloat} ${styles.heroCharacterShell} ${styles.heroCharacterShellRight} relative h-full w-full`}
                 style={{ transform: `translate3d(${-heroStage * 14}px, ${-heroStage * 30}px, 0)` }}
               >
+                <div className={styles.heroSceneWashRight}>
+                  <Image
+                    src="/images/retroville/button-crew-push.png"
+                    alt=""
+                    fill
+                    sizes="32vw"
+                    className={styles.heroSceneWashImageRight}
+                    aria-hidden
+                  />
+                </div>
                 <Image
-                  src="/images/retroville/button-crew-push.png"
-                  alt="Button Crew empujando hacia el centro del universo Retroville"
+                  src="/images/retroville/button-crew-cutout.png"
+                  alt=""
                   fill
                   sizes="32vw"
-                  className={`${styles.heroCharacterBackdrop} object-cover object-right-center`}
+                  className={`${styles.heroCharacterBackdrop} object-contain object-right-bottom`}
+                  aria-hidden
                 />
                 <div className={styles.heroCharacterAuraRight} />
                 <Image
-                  src="/images/retroville/button-crew-push.png"
+                  src="/images/retroville/button-crew-cutout.png"
                   alt="Button Crew empujando hacia el centro del universo Retroville"
                   fill
                   priority
                   sizes="32vw"
-                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtRight} object-cover object-right-center`}
+                  className={`${styles.heroCharacterArt} ${styles.heroCharacterArtRight} object-contain object-right-bottom`}
                 />
                 <div className={styles.heroCharacterFadeRight} />
               </div>
@@ -838,7 +906,7 @@ export default function RetrovilleDesktopExperience({
               transform: `translateY(${desktopRailLift}px) scale(${0.98 + trackReveal * 0.02})`,
             }}
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(11,14,24,0.28),transparent_24%),radial-gradient(circle_at_50%_0%,rgba(123,47,255,0.22),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%),radial-gradient(circle_at_20%_18%,rgba(123,47,255,0.08),transparent_22%),radial-gradient(circle_at_80%_18%,rgba(0,255,136,0.06),transparent_20%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,10,0.98),rgba(4,5,12,0.98)),radial-gradient(circle_at_50%_50%,rgba(11,14,24,0.18),transparent_22%),radial-gradient(circle_at_50%_0%,rgba(123,47,255,0.14),transparent_24%),radial-gradient(circle_at_20%_18%,rgba(123,47,255,0.06),transparent_20%),radial-gradient(circle_at_80%_18%,rgba(0,255,136,0.04),transparent_18%)]" />
             <div className={styles.viewportBlend} />
             <div className={styles.portalTrackBlend} style={{ opacity: clamp(1 - portalReveal, 0, 1) }} />
 

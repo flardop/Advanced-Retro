@@ -98,45 +98,45 @@
 .heroSceneWashLeft,
 .heroSceneWashRight {
   position: absolute;
-  inset-block: 0;
-  width: 58%;
-  opacity: 0.58;
+  inset-block: -10%;
+  width: 66%;
+  opacity: 0.5;
   pointer-events: none;
-  filter: blur(34px) saturate(1.14);
+  filter: blur(46px) saturate(1.08);
 }
 
 .heroSceneWashLeft {
-  left: -6%;
+  left: -14%;
 }
 
 .heroSceneWashRight {
-  right: -6%;
+  right: -14%;
 }
 
 .heroSceneWashImageLeft,
 .heroSceneWashImageRight {
   object-fit: cover;
-  transform: scale(1.12);
+  transform: scale(1.18);
 }
 
 .heroSceneWashImageLeft {
   object-position: left center;
   mask-image:
-    linear-gradient(90deg, black 0%, black 58%, transparent 96%),
-    linear-gradient(180deg, transparent 0%, black 10%, black 90%, transparent 100%);
+    linear-gradient(90deg, black 0%, black 46%, transparent 94%),
+    linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%);
 }
 
 .heroSceneWashImageRight {
   object-position: right center;
   mask-image:
-    linear-gradient(90deg, transparent 4%, black 42%, black 100%),
-    linear-gradient(180deg, transparent 0%, black 10%, black 90%, transparent 100%);
+    linear-gradient(90deg, transparent 6%, black 54%, black 100%),
+    linear-gradient(180deg, transparent 0%, black 12%, black 88%, transparent 100%);
 }
 
 .heroCharacterBackdrop {
-  filter: blur(52px) saturate(1.18);
-  opacity: 0.54;
-  transform: scale(1.16);
+  filter: blur(62px) saturate(1.1);
+  opacity: 0.28;
+  transform: scale(1.12);
 }
 
 .heroCharacterAuraLeft,
@@ -185,14 +185,16 @@
 
 .heroCharacterFadeLeft {
   background:
-    linear-gradient(90deg, rgba(3, 3, 3, 0.02), transparent 18%, transparent 60%, rgba(7, 9, 14, 0.96) 100%),
-    linear-gradient(180deg, rgba(3, 3, 3, 0.96), transparent 12%, transparent 88%, rgba(3, 3, 3, 0.99));
+    linear-gradient(90deg, rgba(3, 3, 3, 0.18), rgba(8, 12, 20, 0.02) 18%, transparent 54%, rgba(7, 9, 14, 0.98) 100%),
+    radial-gradient(circle at 8% 48%, rgba(0, 212, 255, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(3, 3, 3, 0.98), transparent 12%, transparent 88%, rgba(3, 3, 3, 0.995));
 }
 
 .heroCharacterFadeRight {
   background:
-    linear-gradient(90deg, rgba(7, 9, 14, 0.96) 0%, transparent 34%, transparent 82%, rgba(3, 3, 3, 0.04) 100%),
-    linear-gradient(180deg, rgba(3, 3, 3, 0.96), transparent 12%, transparent 88%, rgba(3, 3, 3, 0.99));
+    linear-gradient(90deg, rgba(7, 9, 14, 0.98) 0%, transparent 32%, transparent 80%, rgba(3, 3, 3, 0.16) 100%),
+    radial-gradient(circle at 92% 48%, rgba(255, 192, 83, 0.14), transparent 32%),
+    linear-gradient(180deg, rgba(3, 3, 3, 0.98), transparent 12%, transparent 88%, rgba(3, 3, 3, 0.995));
 }
 
 .characterFloat {
@@ -260,8 +262,8 @@
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(3, 3, 3, 0.12), transparent 12%, transparent 88%, rgba(3, 3, 3, 0.28)),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03), transparent 42%);
+    linear-gradient(180deg, rgba(3, 3, 3, 0.24), transparent 12%, transparent 88%, rgba(3, 3, 3, 0.46)),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.012), transparent 38%);
 }
 
 .portalVeil {
@@ -282,10 +284,10 @@
   z-index: 6;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.08), transparent 14%),
-    radial-gradient(circle at 50% 50%, rgba(123, 47, 255, 0.18), transparent 28%),
-    linear-gradient(180deg, rgba(3, 3, 3, 0.42), transparent 22%, transparent 82%, rgba(3, 3, 3, 0.48));
-  filter: blur(28px);
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04), transparent 12%),
+    radial-gradient(circle at 50% 50%, rgba(123, 47, 255, 0.14), transparent 24%),
+    linear-gradient(180deg, rgba(3, 3, 3, 0.76), rgba(3, 3, 3, 0.28) 18%, rgba(3, 3, 3, 0.28) 82%, rgba(3, 3, 3, 0.76));
+  filter: blur(34px);
 }
 
 .sceneNoise {
@@ -305,8 +307,8 @@
   --retroville-slide-accent: rgba(123, 47, 255, 0.24);
   position: relative;
   background:
-    radial-gradient(circle at 50% 16%, var(--retroville-slide-accent), transparent 42%),
-    linear-gradient(180deg, rgba(10, 11, 16, 0.92), rgba(5, 5, 8, 0.98));
+    radial-gradient(circle at 50% 16%, var(--retroville-slide-accent), transparent 40%),
+    linear-gradient(180deg, rgba(8, 9, 14, 0.98), rgba(4, 4, 7, 0.995));
 }
 
 .slideBackdrop {
@@ -317,9 +319,9 @@
 
 .slideBackdropImage {
   object-fit: cover;
-  filter: blur(56px) saturate(1.16);
-  opacity: 0.64;
-  transform: scale(1.18);
+  filter: blur(68px) saturate(1.12);
+  opacity: 0.38;
+  transform: scale(1.24);
 }
 
 .slideVisualTint {
@@ -327,8 +329,16 @@
   inset: 0;
   z-index: 1;
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.12), transparent 16%, transparent 84%, rgba(0, 0, 0, 0.34)),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.18), transparent 8%, transparent 92%, rgba(0, 0, 0, 0.18));
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 16%, transparent 84%, rgba(0, 0, 0, 0.44)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 8%, transparent 92%, rgba(0, 0, 0, 0.28));
+}
+
+.slideVisualTintCutout {
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.04), transparent 24%),
+    radial-gradient(circle at 50% 78%, var(--retroville-slide-accent), transparent 32%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 16%, transparent 84%, rgba(0, 0, 0, 0.42)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.34), transparent 10%, transparent 90%, rgba(0, 0, 0, 0.34));
 }
 
 .slideForeground {
@@ -406,6 +416,19 @@
   mask-image:
     linear-gradient(180deg, transparent 0%, black 10%, black 90%, transparent 100%),
     linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+.slideImageCutout {
+  object-fit: contain;
+  opacity: 0.98;
+  transform: translateY(1.5%);
+  filter:
+    drop-shadow(0 28px 48px rgba(0, 0, 0, 0.42))
+    drop-shadow(0 0 36px rgba(255, 255, 255, 0.05))
+    drop-shadow(0 0 64px var(--retroville-slide-accent));
+  mask-image:
+    linear-gradient(180deg, transparent 0%, black 6%, black 94%, transparent 100%),
+    radial-gradient(circle at 50% 52%, black 64%, transparent 100%);
 }
 
 .dropCard {
