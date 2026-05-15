@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import RetrovilleExperience from '@/components/retroville/RetrovilleExperience';
 import StructuredData from '@/components/StructuredData';
 import { supabaseService } from '@/lib/supabase/service';
@@ -79,6 +80,8 @@ async function getRetrovilleState() {
 
 export default async function RetrovillePage() {
   const { launchIso, launchLabel, waitlistCount } = await getRetrovilleState();
+  const userAgent = (await headers()).get('user-agent') || '';
+  const initialMobileExperience = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 
   const retrovilleSchema = {
     '@context': 'https://schema.org',
@@ -98,7 +101,12 @@ export default async function RetrovillePage() {
   return (
     <>
       <StructuredData id="retroville-schema" data={retrovilleSchema} />
-      <RetrovilleExperience launchIso={launchIso} launchLabel={launchLabel} waitlistCount={waitlistCount} />
+      <RetrovilleExperience
+        launchIso={launchIso}
+        launchLabel={launchLabel}
+        waitlistCount={waitlistCount}
+        initialMobileExperience={initialMobileExperience}
+      />
     </>
   );
 }
