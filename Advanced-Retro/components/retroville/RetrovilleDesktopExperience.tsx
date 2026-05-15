@@ -80,6 +80,7 @@ type ImageSlide = {
   backgroundPosition?: string;
   figurePosition?: string;
   useCutoutFigure?: boolean;
+  moodChips?: readonly string[];
 };
 
 type NarrativeSlide =
@@ -132,6 +133,7 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     align: 'right',
     figurePosition: 'center bottom',
     useCutoutFigure: true,
+    moodChips: ['Sarcasmo', 'Turno de noche', 'Batería baja'],
   },
   {
     kind: 'image',
@@ -147,6 +149,7 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     align: 'left',
     figurePosition: 'center bottom',
     useCutoutFigure: true,
+    moodChips: ['A / B / Y / X', 'Caos social', 'Ruido constante'],
   },
   {
     kind: 'image',
@@ -163,6 +166,7 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     backgroundPosition: 'center center',
     figurePosition: 'center bottom',
     useCutoutFigure: true,
+    moodChips: ['Magnetismo', 'Glamour tóxico', 'Interferencia'],
   },
   {
     kind: 'image',
@@ -658,6 +662,63 @@ export default function RetrovilleDesktopExperience({
     const alignLeft = slide.align !== 'right';
     const backgroundImage = slide.backgroundImage === undefined ? slide.image : slide.backgroundImage;
     const figureImage = slide.figureImage || slide.image;
+
+    if (slide.useCutoutFigure) {
+      return (
+        <div className="relative h-full overflow-hidden" style={imageSurfaceStyle(backgroundImage, slide.accent)}>
+          <div className={styles.sceneNoise} />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,3,8,0.88),rgba(3,4,10,0.78)_24%,rgba(4,5,12,0.78)_74%,rgba(2,3,8,0.94))]" />
+          <div className="absolute inset-y-0 left-[-10%] w-[40%] bg-[radial-gradient(circle_at_left,rgba(0,212,255,0.10),transparent_72%)] blur-[80px]" />
+          <div className="absolute inset-y-0 right-[-10%] w-[40%] bg-[radial-gradient(circle_at_right,rgba(155,92,255,0.14),transparent_76%)] blur-[86px]" />
+
+          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] items-center gap-10 px-10 py-12 xl:px-14">
+            <div className={`${alignLeft ? 'order-1' : 'order-2'} flex h-full items-center justify-center`}>
+              <div className={`${styles.characterShowcase} ${alignLeft ? styles.characterShowcaseLeft : styles.characterShowcaseRight}`}>
+                <div className={styles.characterShowcaseGlow} style={slideAccentStyle(slide.accent)} />
+                {backgroundImage ? (
+                  <div className={styles.characterShowcaseBackdrop}>
+                    <Image
+                      src={backgroundImage}
+                      alt=""
+                      fill
+                      sizes="42vw"
+                      className={styles.characterShowcaseBackdropImage}
+                      style={{ objectPosition: slide.backgroundPosition || 'center center' }}
+                      aria-hidden
+                    />
+                  </div>
+                ) : null}
+                <div className={styles.characterShowcaseFog} />
+                <Image
+                  src={figureImage}
+                  alt={slide.alt}
+                  fill
+                  sizes="40vw"
+                  className={styles.characterShowcaseFigure}
+                  style={{ objectPosition: slide.figurePosition || 'center bottom' }}
+                />
+                <div className={`${styles.characterShowcaseEdge} ${alignLeft ? styles.characterShowcaseEdgeLeft : styles.characterShowcaseEdgeRight}`} />
+              </div>
+            </div>
+            <div className={`${alignLeft ? 'order-2' : 'order-1'} flex flex-col justify-center ${alignLeft ? 'pl-2' : 'pr-2'}`}>
+              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+              <div className={`${styles.characterCopyPanel} mt-5 max-w-[38rem]`}>
+                <h3 className={`${displayFont.className} ${styles.characterCopyTitle}`}>{slide.title}</h3>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  {slide.moodChips?.map((chip) => (
+                    <span key={chip} className={styles.characterChip} style={slideAccentStyle(slide.accent)}>
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+                <div className={styles.characterCopyRule} style={slideAccentStyle(slide.accent)} />
+                <p className={styles.characterCopyText}>{slide.description}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="relative h-full overflow-hidden" style={imageSurfaceStyle(backgroundImage, slide.accent)}>
