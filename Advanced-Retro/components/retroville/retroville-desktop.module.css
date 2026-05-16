@@ -83,40 +83,43 @@
 
 .heroCharacterShellLeft {
   mask-image:
-    radial-gradient(circle at 70% 52%, black 36%, transparent 92%),
-    linear-gradient(90deg, black 0%, black 52%, transparent 96%),
-    linear-gradient(180deg, transparent 0%, black 10%, black 90%, transparent 100%);
+    radial-gradient(circle at 68% 52%, black 34%, black 56%, transparent 94%),
+    linear-gradient(90deg, black 0%, black 56%, transparent 96%),
+    linear-gradient(180deg, transparent 0%, black 8%, black 92%, transparent 100%);
 }
 
 .heroCharacterShellRight {
   mask-image:
-    radial-gradient(circle at 30% 52%, black 36%, transparent 92%),
-    linear-gradient(90deg, transparent 4%, black 48%, black 100%),
-    linear-gradient(180deg, transparent 0%, black 10%, black 90%, transparent 100%);
+    radial-gradient(circle at 32% 52%, black 34%, black 56%, transparent 94%),
+    linear-gradient(90deg, transparent 4%, black 44%, black 100%),
+    linear-gradient(180deg, transparent 0%, black 8%, black 92%, transparent 100%);
 }
 
 .heroSceneWashLeft,
 .heroSceneWashRight {
   position: absolute;
   inset-block: -10%;
-  width: 66%;
-  opacity: 0.5;
+  width: 74%;
+  opacity: 0.72;
   pointer-events: none;
-  filter: blur(46px) saturate(1.08);
+  filter: blur(62px) saturate(1.14);
+  mix-blend-mode: screen;
+  animation: retroville-scene-breathe 10s ease-in-out infinite;
 }
 
 .heroSceneWashLeft {
-  left: -14%;
+  left: -18%;
 }
 
 .heroSceneWashRight {
-  right: -14%;
+  right: -18%;
 }
 
 .heroSceneWashImageLeft,
 .heroSceneWashImageRight {
   object-fit: cover;
-  transform: scale(1.18);
+  transform: scale(1.34);
+  opacity: 0.92;
 }
 
 .heroSceneWashImageLeft {
@@ -134,27 +137,61 @@
 }
 
 .heroCharacterBackdrop {
-  filter: blur(62px) saturate(1.1);
-  opacity: 0.28;
-  transform: scale(1.12);
+  filter: blur(92px) saturate(1.18);
+  opacity: 0.42;
+  transform: scale(1.26);
+  mix-blend-mode: screen;
 }
 
 .heroCharacterAuraLeft,
 .heroCharacterAuraRight {
   position: absolute;
-  inset: 6% 8% 10% 8%;
+  inset: 3% 4% 8% 4%;
   border-radius: 999px;
-  filter: blur(70px);
+  filter: blur(82px);
   z-index: 1;
 }
 
 .heroCharacterAuraLeft {
-  background: radial-gradient(circle at 60% 50%, rgba(138, 215, 255, 0.24), transparent 58%);
+  background:
+    radial-gradient(circle at 58% 52%, rgba(138, 215, 255, 0.34), transparent 52%),
+    radial-gradient(circle at 36% 76%, rgba(0, 212, 255, 0.2), transparent 42%);
 }
 
 .heroCharacterAuraRight {
-  background: radial-gradient(circle at 36% 50%, rgba(242, 187, 116, 0.16), transparent 44%),
-    radial-gradient(circle at 46% 42%, rgba(123, 47, 255, 0.22), transparent 60%);
+  background:
+    radial-gradient(circle at 38% 48%, rgba(242, 187, 116, 0.26), transparent 42%),
+    radial-gradient(circle at 46% 42%, rgba(123, 47, 255, 0.28), transparent 58%),
+    radial-gradient(circle at 76% 72%, rgba(255, 58, 136, 0.16), transparent 34%);
+}
+
+.heroSceneMistGlobal {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.05), transparent 12%),
+    radial-gradient(circle at 22% 50%, rgba(0, 212, 255, 0.1), transparent 18%),
+    radial-gradient(circle at 78% 50%, rgba(255, 58, 136, 0.08), transparent 20%),
+    linear-gradient(180deg, rgba(3, 3, 3, 0.22), transparent 14%, transparent 84%, rgba(3, 3, 3, 0.52));
+  mix-blend-mode: screen;
+  opacity: 0.72;
+}
+
+.heroFloorBlend {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -4%;
+  height: 26%;
+  pointer-events: none;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 28% 50%, rgba(0, 212, 255, 0.16), transparent 36%),
+    radial-gradient(circle at 72% 50%, rgba(255, 58, 136, 0.14), transparent 36%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04), transparent 42%);
+  filter: blur(58px);
+  opacity: 0.82;
 }
 
 .heroCharacterArt {
@@ -185,16 +222,18 @@
 
 .heroCharacterFadeLeft {
   background:
-    linear-gradient(90deg, rgba(3, 3, 3, 0.28), rgba(8, 12, 20, 0.08) 16%, transparent 46%, rgba(7, 9, 14, 0.995) 100%),
-    radial-gradient(circle at 8% 48%, rgba(0, 212, 255, 0.14), transparent 30%),
-    linear-gradient(180deg, rgba(3, 3, 3, 0.98), transparent 12%, transparent 88%, rgba(3, 3, 3, 0.995));
+    linear-gradient(90deg, rgba(4, 6, 12, 0.12), rgba(4, 6, 12, 0.02) 18%, transparent 48%, rgba(5, 8, 16, 0.82) 84%, rgba(5, 8, 16, 0.98) 100%),
+    radial-gradient(circle at 6% 50%, rgba(0, 212, 255, 0.18), transparent 26%),
+    radial-gradient(circle at 46% 74%, rgba(138, 215, 255, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(3, 3, 3, 0.92), transparent 14%, transparent 86%, rgba(3, 3, 3, 0.98));
 }
 
 .heroCharacterFadeRight {
   background:
-    linear-gradient(90deg, rgba(7, 9, 14, 0.995) 0%, transparent 38%, transparent 84%, rgba(3, 3, 3, 0.24) 100%),
-    radial-gradient(circle at 92% 48%, rgba(255, 192, 83, 0.12), transparent 30%),
-    linear-gradient(180deg, rgba(3, 3, 3, 0.98), transparent 12%, transparent 88%, rgba(3, 3, 3, 0.995));
+    linear-gradient(90deg, rgba(5, 8, 16, 0.98) 0%, rgba(5, 8, 16, 0.78) 16%, transparent 46%, rgba(4, 6, 12, 0.04) 82%, rgba(4, 6, 12, 0.12) 100%),
+    radial-gradient(circle at 94% 50%, rgba(255, 192, 83, 0.16), transparent 26%),
+    radial-gradient(circle at 54% 72%, rgba(255, 58, 136, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(3, 3, 3, 0.92), transparent 14%, transparent 86%, rgba(3, 3, 3, 0.98));
 }
 
 .characterFloat {
@@ -223,6 +262,42 @@
   50% {
     transform: translateY(-8px);
   }
+}
+
+@keyframes retroville-scene-breathe {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(0, -8px, 0) scale(1.04);
+  }
+}
+
+.heroSceneMistLeft,
+.heroSceneMistRight {
+  position: absolute;
+  inset: 8% 0 10%;
+  z-index: 1;
+  pointer-events: none;
+  filter: blur(48px);
+  opacity: 0.78;
+  mix-blend-mode: screen;
+}
+
+.heroSceneMistLeft {
+  background:
+    radial-gradient(circle at 20% 46%, rgba(0, 212, 255, 0.18), transparent 22%),
+    radial-gradient(circle at 42% 64%, rgba(138, 215, 255, 0.16), transparent 28%),
+    linear-gradient(90deg, rgba(5, 8, 16, 0.08), transparent 24%, transparent 78%, rgba(5, 8, 16, 0.42));
+}
+
+.heroSceneMistRight {
+  background:
+    radial-gradient(circle at 80% 46%, rgba(255, 58, 136, 0.16), transparent 22%),
+    radial-gradient(circle at 56% 66%, rgba(255, 192, 83, 0.16), transparent 26%),
+    linear-gradient(90deg, rgba(5, 8, 16, 0.42), transparent 22%, transparent 76%, rgba(5, 8, 16, 0.08));
 }
 
 .countGlow {

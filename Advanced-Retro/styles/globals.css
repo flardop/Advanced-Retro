@@ -469,6 +469,10 @@ body::before {
   max-width: var(--theme-content-max);
 }
 
+.section-heading > * {
+  min-width: 0;
+}
+
 .section-copy {
   max-width: min(100%, 42rem);
 }
@@ -664,6 +668,10 @@ body::before {
   .chip,
   button {
     min-height: 44px;
+  }
+
+  .section-copy {
+    max-width: 100%;
   }
 }
 

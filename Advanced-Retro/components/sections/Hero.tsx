@@ -113,34 +113,38 @@ export default function Hero() {
         <div className="content-rail">
           <div className="hero-shell overflow-hidden rounded-[1.7rem] border border-white/10 bg-[rgba(5,8,16,0.72)] shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl">
             <div className="grid gap-0 xl:min-h-[calc(100vh-9rem)] xl:grid-cols-[1.04fr,0.96fr]">
-              <div className="hero-copy relative p-6 sm:p-8 lg:p-10 xl:flex xl:flex-col xl:justify-center xl:p-14">
-                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary shadow-[0_0_24px_rgba(75,228,214,0.15)]">
+              <div className="hero-copy relative min-w-0 p-5 sm:p-8 lg:p-10 xl:flex xl:flex-col xl:justify-center xl:p-14">
+                <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary shadow-[0_0_24px_rgba(75,228,214,0.15)] sm:text-xs sm:tracking-[0.18em]">
                   <span className="text-sm">🎮</span>
-                  <span>{copy.badge}</span>
+                  <span className="min-w-0">{copy.badge}</span>
                 </div>
 
                 <h1
-                  className={`${heroDisplay.className} mt-6 text-[4.2rem] uppercase leading-[0.9] text-white sm:text-[5.6rem] lg:text-[7.2rem]`}
+                  className={`${heroDisplay.className} mt-5 text-[3.4rem] uppercase leading-[0.92] text-white sm:mt-6 sm:text-[5.2rem] lg:text-[7.2rem]`}
                 >
                   {copy.title}
                 </h1>
 
-                <p className="mt-4 max-w-[38rem] text-base leading-relaxed text-slate-300 sm:text-lg">
+                <p className="mt-4 max-w-full text-base leading-relaxed text-slate-300 sm:max-w-[38rem] sm:text-lg">
                   {copy.subtitle}
                 </p>
 
-                <div className="mt-7 flex flex-wrap gap-3">
-                  <Link href="/tienda" className="button-primary text-center">
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <Link href="/tienda" className="button-primary w-full min-w-0 text-center sm:w-auto">
                     {copy.primaryCta}
                   </Link>
-                  <Link href="/mystery-boxes" className="button-secondary text-center">
+                  <Link href="/mystery-boxes" className="button-secondary w-full min-w-0 text-center sm:w-auto">
                     {copy.secondaryCta}
                   </Link>
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-2 text-xs">
+                <div className="mt-6 grid grid-cols-2 gap-2 text-xs sm:flex sm:flex-wrap">
                   {quickLinks.map((item) => (
-                    <Link key={item.href} href={item.href} className="chip shrink-0 hover:border-primary/50 hover:text-text">
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="chip min-w-0 justify-center px-2 text-center leading-tight hover:border-primary/50 hover:text-text sm:justify-start sm:px-3"
+                    >
                       {item.label}
                     </Link>
                   ))}
@@ -164,10 +168,10 @@ export default function Hero() {
                 </div>
               </div>
 
-              <div className="hero-media relative border-t border-white/10 bg-[radial-gradient(circle_at_50%_24%,rgba(105,74,255,0.24),transparent_30%),linear-gradient(160deg,#0d1323,#090d17)] p-4 sm:p-6 xl:border-l xl:border-t-0 xl:p-8">
+              <div className="hero-media relative min-w-0 border-t border-white/10 bg-[radial-gradient(circle_at_50%_24%,rgba(105,74,255,0.24),transparent_30%),linear-gradient(160deg,#0d1323,#090d17)] p-4 sm:p-6 xl:border-l xl:border-t-0 xl:p-8">
                 <div className="rounded-[1.55rem] border border-white/10 bg-[rgba(8,14,26,0.68)] p-4 sm:p-5 xl:flex xl:h-full xl:flex-col">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <div>
+                  <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                       <p className="text-xs uppercase tracking-[0.18em] text-primary">{copy.capsule}</p>
                       <h2 className="mt-1 text-xl font-semibold text-white">{copy.shelfTitle}</h2>
                     </div>
@@ -176,7 +180,7 @@ export default function Hero() {
                     </span>
                   </div>
 
-                  <p className="max-w-[28rem] text-sm leading-relaxed text-textMuted">
+                  <p className="max-w-full text-sm leading-relaxed text-textMuted sm:max-w-[28rem]">
                     {copy.shelfBody}
                   </p>
 
@@ -185,7 +189,7 @@ export default function Hero() {
                       <Link
                         key={box.tier}
                         href={box.href}
-                        className={`group relative min-w-[240px] flex-1 rounded-[1.5rem] border border-white/10 bg-[rgba(10,16,28,0.88)] p-3 shadow-[0_24px_60px_rgba(2,6,18,0.3)] transition duration-500 hover:-translate-y-2 hover:border-primary/50 hover:shadow-[0_24px_80px_rgba(109,71,255,0.35)] lg:absolute lg:w-[58%] ${box.className}`}
+                        className={`group relative min-w-[78vw] flex-1 rounded-[1.5rem] border border-white/10 bg-[rgba(10,16,28,0.88)] p-3 shadow-[0_24px_60px_rgba(2,6,18,0.3)] transition duration-500 hover:-translate-y-2 hover:border-primary/50 hover:shadow-[0_24px_80px_rgba(109,71,255,0.35)] sm:min-w-[240px] lg:absolute lg:w-[58%] ${box.className}`}
                         style={{ animationDelay: `${index * 0.35}s` }}
                       >
                         <div className={`absolute inset-0 rounded-[1.4rem] bg-gradient-to-br ${box.accent} opacity-0 blur-2xl transition duration-500 group-hover:opacity-70`} />

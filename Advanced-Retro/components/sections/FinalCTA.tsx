@@ -18,9 +18,9 @@ export default function FinalCTA() {
             </p>
           </div>
           <div className="flex flex-col gap-2.5 sm:flex-row">
-            <Link href="/tienda" className="button-primary">{t('home.cta.shop', 'Ir a tienda')}</Link>
-            <Link href="/comunidad" className="button-secondary">{t('home.cta.community', 'Entrar en comunidad')}</Link>
-            <Link href="/servicio-compra" className="button-secondary">{t('home.cta.request', 'Abrir encargo')}</Link>
+            <Link href="/tienda" className="button-primary w-full text-center sm:w-auto">{t('home.cta.shop', 'Ir a tienda')}</Link>
+            <Link href="/comunidad" className="button-secondary w-full text-center sm:w-auto">{t('home.cta.community', 'Entrar en comunidad')}</Link>
+            <Link href="/servicio-compra" className="button-secondary w-full text-center sm:w-auto">{t('home.cta.request', 'Abrir encargo')}</Link>
           </div>
         </div>
       </div>

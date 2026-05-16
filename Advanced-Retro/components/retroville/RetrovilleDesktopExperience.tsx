@@ -1060,6 +1060,8 @@ export default function RetrovilleDesktopExperience({
           <div className="absolute inset-y-0 left-[-16%] w-[56%] bg-[radial-gradient(circle_at_20%_50%,rgba(138,215,255,0.24),transparent_58%)] blur-[120px]" />
           <div className="absolute inset-y-0 right-[-16%] w-[58%] bg-[radial-gradient(circle_at_80%_50%,rgba(255,58,136,0.22),transparent_60%)] blur-[130px]" />
           <div className="absolute inset-x-0 bottom-[-16%] h-[44rem] bg-[radial-gradient(circle_at_50%_100%,rgba(255,60,0,0.18),transparent_42%)] blur-[24px]" />
+          <div className={styles.heroFloorBlend} />
+          <div className={styles.heroSceneMistGlobal} />
 
           <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
             <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">Universo original de AdvancedRetro</p>
@@ -1077,7 +1079,7 @@ export default function RetrovilleDesktopExperience({
 
             <div className="absolute left-[-4%] top-[12%] hidden h-[72%] w-[38%] lg:block">
               <div
-                className={`${styles.characterFloatAlt} ${styles.heroCharacterShell} ${styles.heroCharacterShellLeft} relative h-full w-full`}
+                className={`${styles.heroCharacterShell} ${styles.heroCharacterShellLeft} relative h-full w-full`}
                 style={{ transform: `translate3d(${heroStage * 14}px, ${-heroStage * 34}px, 0)` }}
               >
                 <div className={styles.heroSceneWashLeft}>
@@ -1099,6 +1101,7 @@ export default function RetrovilleDesktopExperience({
                   aria-hidden
                 />
                 <div className={styles.heroCharacterAuraLeft} />
+                <div className={styles.heroSceneMistLeft} />
                 <Image
                   src="/images/retroville/nox-push.png"
                   alt="NOX empujando hacia el centro del universo Retroville"
@@ -1113,7 +1116,7 @@ export default function RetrovilleDesktopExperience({
 
             <div className="absolute right-[-6%] top-[16%] hidden h-[66%] w-[40%] lg:block">
               <div
-                className={`${styles.characterFloat} ${styles.heroCharacterShell} ${styles.heroCharacterShellRight} relative h-full w-full`}
+                className={`${styles.heroCharacterShell} ${styles.heroCharacterShellRight} relative h-full w-full`}
                 style={{ transform: `translate3d(${-heroStage * 14}px, ${-heroStage * 30}px, 0)` }}
               >
                 <div className={styles.heroSceneWashRight}>
@@ -1135,6 +1138,7 @@ export default function RetrovilleDesktopExperience({
                   aria-hidden
                 />
                 <div className={styles.heroCharacterAuraRight} />
+                <div className={styles.heroSceneMistRight} />
                 <Image
                   src="/images/retroville/button-crew-push.png"
                   alt="Button Crew empujando hacia el centro del universo Retroville"
