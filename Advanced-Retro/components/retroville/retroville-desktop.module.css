@@ -303,6 +303,218 @@
   pointer-events: none;
 }
 
+.districtMarqueeTrack {
+  display: flex;
+  width: max-content;
+  animation: retroville-marquee-left 28s linear infinite;
+}
+
+.districtMarqueeTrackAlt {
+  animation-duration: 38s;
+  animation-direction: reverse;
+}
+
+.districtTag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  margin: 0 0.45rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+@keyframes retroville-marquee-left {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.characterStage {
+  position: relative;
+  width: min(44vw, 42rem);
+  height: min(82vh, 48rem);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.characterStageLeft {
+  transform: translateX(-1%);
+}
+
+.characterStageRight {
+  transform: translateX(1%);
+}
+
+.characterAtmosphere {
+  position: absolute;
+  inset: 6% 12% 12%;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.08), transparent 18%),
+    radial-gradient(circle at 50% 55%, var(--retroville-slide-accent), transparent 52%);
+  filter: blur(38px) saturate(1.08);
+  animation: retroville-drift 8.2s ease-in-out infinite;
+}
+
+.characterAtmosphereLeft {
+  transform-origin: 36% 50%;
+}
+
+.characterAtmosphereRight {
+  transform-origin: 64% 50%;
+}
+
+.characterAtmosphereImage {
+  object-fit: cover;
+  opacity: 0.18;
+  filter: blur(52px) saturate(1.06);
+  transform: scale(1.18);
+}
+
+.characterAtmosphereVeil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(3, 4, 9, 0.02), rgba(3, 4, 9, 0.18) 16%, rgba(3, 4, 9, 0.58) 82%, rgba(3, 4, 9, 0.86)),
+    linear-gradient(90deg, rgba(3, 4, 9, 0.54), transparent 22%, transparent 78%, rgba(3, 4, 9, 0.54));
+}
+
+.characterAtmosphereOrb {
+  position: absolute;
+  z-index: 0;
+  border-radius: 999px;
+  filter: blur(48px);
+  opacity: 0.85;
+}
+
+.characterAtmosphereOrbPrimary {
+  inset: 14% auto auto 10%;
+  width: 34%;
+  height: 24%;
+  background: radial-gradient(circle, var(--retroville-slide-accent), transparent 68%);
+  animation: retroville-drift 9.4s ease-in-out infinite;
+}
+
+.characterAtmosphereOrbSecondary {
+  inset: auto 8% 18% auto;
+  width: 28%;
+  height: 22%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08), transparent 72%);
+  animation: retroville-drift-alt 10.8s ease-in-out infinite;
+}
+
+.characterAtmosphereBeam {
+  position: absolute;
+  top: -4%;
+  bottom: 10%;
+  width: 30%;
+  z-index: 0;
+  opacity: 0.5;
+  filter: blur(36px);
+  background: linear-gradient(180deg, transparent 0%, var(--retroville-slide-accent) 26%, transparent 84%);
+  animation: retroville-sweep 7.2s ease-in-out infinite;
+}
+
+.characterAtmosphereBeamLeft {
+  left: 8%;
+}
+
+.characterAtmosphereBeamRight {
+  right: 8%;
+}
+
+.characterGroundGlow {
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  bottom: 9%;
+  height: 12%;
+  z-index: 1;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--retroville-slide-accent) 90%, rgba(255, 255, 255, 0.08)), transparent 66%);
+  filter: blur(28px);
+}
+
+.characterFigureWrap {
+  position: absolute;
+  inset: 2% 6% 0;
+  z-index: 2;
+}
+
+.characterFigureWrapMobile {
+  position: absolute;
+  inset: 6% 8% 0;
+  z-index: 2;
+}
+
+.characterFigureLarge {
+  object-fit: contain;
+  filter:
+    drop-shadow(0 28px 48px rgba(0, 0, 0, 0.42))
+    drop-shadow(0 0 36px rgba(255, 255, 255, 0.05))
+    drop-shadow(0 0 64px var(--retroville-slide-accent));
+}
+
+.characterFigureLargeLeft {
+  mask-image:
+    linear-gradient(180deg, transparent 0%, black 8%, black 94%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, black 8%, black 84%, transparent 100%);
+}
+
+.characterFigureLargeRight {
+  mask-image:
+    linear-gradient(180deg, transparent 0%, black 8%, black 94%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, black 16%, black 92%, transparent 100%);
+}
+
+@keyframes retroville-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(0, -10px, 0) scale(1.03);
+  }
+}
+
+@keyframes retroville-drift-alt {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(8px, -12px, 0) scale(1.04);
+  }
+}
+
+@keyframes retroville-sweep {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scaleY(1);
+    opacity: 0.34;
+  }
+
+  50% {
+    transform: translate3d(10px, -8px, 0) scaleY(1.06);
+    opacity: 0.62;
+  }
+}
+
 .characterShowcase {
   position: relative;
   width: min(36vw, 35rem);
@@ -412,6 +624,7 @@
   line-height: 0.9;
   text-transform: uppercase;
   color: #fff;
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.06);
 }
 
 .characterChip {
@@ -441,7 +654,7 @@
   margin-top: 1.4rem;
   font-size: 1.05rem;
   line-height: 2rem;
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(255, 255, 255, 0.72);
   max-width: 34rem;
 }
 

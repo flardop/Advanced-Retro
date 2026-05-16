@@ -18,6 +18,7 @@ export function getSupabaseServerClient() {
     cookieOptions: {
       path: '/',
       sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 365,
       secure:
         process.env.NODE_ENV === 'production' ||
         process.env.VERCEL_ENV === 'production',

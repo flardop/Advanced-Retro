@@ -39,6 +39,37 @@ function isAdminRoute(pathname: string) {
   return pathname === '/admin' || pathname.startsWith('/admin/');
 }
 
+function copyResponseState(source: NextResponse, target: NextResponse) {
+  source.cookies.getAll().forEach((cookie) => {
+    target.cookies.set(cookie);
+  });
+
+  source.headers.forEach((value, key) => {
+    if (key.toLowerCase() === 'content-length') return;
+    if (key.toLowerCase() === 'location') return;
+    target.headers.set(key, value);
+  });
+
+  return target;
+}
+
+function redirectWithState(url: URL, status: 307 | 308, response: NextResponse) {
+  return copyResponseState(response, NextResponse.redirect(url, status));
+}
+
+async function refreshAuthSession(request: NextRequest) {
+  const response = NextResponse.next();
+
+  try {
+    const supabase = createMiddlewareSupabaseClient(request, response);
+    await supabase.auth.getUser();
+  } catch {
+    // best effort; don't block navigation if auth refresh fails
+  }
+
+  return response;
+}
+
 async function resolveUserRole(request: NextRequest, response: NextResponse, userId: string) {
   try {
     const supabase = createMiddlewareSupabaseClient(request, response);
@@ -53,14 +84,13 @@ async function resolveUserRole(request: NextRequest, response: NextResponse, use
   }
 }
 
-async function handleAdminAccess(request: NextRequest) {
+async function handleAdminAccess(request: NextRequest, response: NextResponse) {
   const pathname = request.nextUrl.pathname;
   if (!isAdminRoute(pathname)) {
     return null;
   }
 
   const isLoginRoute = pathname === '/admin/login';
-  const response = NextResponse.next();
   const supabase = createMiddlewareSupabaseClient(request, response);
   const {
     data: { user },
@@ -70,7 +100,7 @@ async function handleAdminAccess(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/admin/login';
     url.searchParams.set('redirectedFrom', pathname);
-    return NextResponse.redirect(url);
+    return redirectWithState(url, 307, response);
   }
 
   if (!user) {
@@ -82,7 +112,7 @@ async function handleAdminAccess(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/admin/dashboard';
     url.search = '';
-    return NextResponse.redirect(url);
+    return redirectWithState(url, 307, response);
   }
 
   if (role !== 'admin') {
@@ -90,7 +120,7 @@ async function handleAdminAccess(request: NextRequest) {
     url.pathname = '/';
     url.search = '';
     url.searchParams.set('error', 'admin-only');
-    return NextResponse.redirect(url);
+    return redirectWithState(url, 307, response);
   }
 
   return response;
@@ -124,15 +154,18 @@ function handleCanonicalHost(request: NextRequest, baseResponse?: NextResponse) 
   const url = request.nextUrl.clone();
   url.protocol = 'https:';
   url.host = canonicalHost;
-  return NextResponse.redirect(url, 308);
+  return redirectWithState(url, 308, baseResponse || NextResponse.next());
 }
 
 export async function middleware(request: NextRequest) {
-  const adminResponse = await handleAdminAccess(request);
-  if (adminResponse && adminResponse.status !== 200) {
+  const sessionResponse = await refreshAuthSession(request);
+  const adminResponse = await handleAdminAccess(request, sessionResponse);
+
+  if (adminResponse && adminResponse.headers.has('location')) {
     return adminResponse;
   }
-  return handleCanonicalHost(request, adminResponse || undefined);
+
+  return handleCanonicalHost(request, adminResponse || sessionResponse);
 }
 
 export const config = {

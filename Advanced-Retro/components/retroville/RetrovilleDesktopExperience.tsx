@@ -15,6 +15,30 @@ const monoFont = Space_Mono({ subsets: ['latin'], weight: ['400', '700'] });
 
 const titleLetters = ['R', 'E', 'T', 'R', 'O', 'V', 'I', 'L', 'L', 'E'] as const;
 const manifestoLines = ['EVERY', 'FORGOTTEN', 'GAME', 'ENDS UP', 'SOMEWHERE.'] as const;
+const marqueeItems = [
+  'NOX',
+  'BUTTON CREW',
+  'LUNA',
+  'PIXEL GRAVEYARD',
+  'RAM DISTRICT',
+  'CORRUPTED SAVE',
+  'THE NEON BONEYARD',
+  'CARTRIDGE QUARTER',
+  'DEAD BATTERY',
+  'GLITCH MARKET',
+  'CONSOLE CORE',
+  'LOST SAVE DISTRICT',
+  'HARDWARE CEMETERY',
+  'BIT ROT ALLEY',
+  'THE LAST SAVE',
+  'STATIC FIELDS',
+  'OVERHEAT ZONE',
+  'BUTTON SMASH SQUARE',
+  'RETROVILLE',
+  'LOAD SCREEN LIMBO',
+  '8-BIT BOULEVARD',
+  'MEMORY LEAK LANE',
+] as const;
 
 const relicGallery = [
   {
@@ -66,6 +90,39 @@ const signalCards = [
   },
 ] as const;
 
+const worldbuildingItems = [
+  {
+    title: 'RETROVILLE CITY',
+    eyebrow: 'SECTOR 01',
+    text: 'Un horizonte construido con cartuchos apilados, blisteres rotos y cajas de coleccionista que nadie reclamó. Aquí los vehículos tienen forma de cassette y los rascacielos están hechos de consolas apiladas.',
+    reference: 'Concept art fundacional del universo',
+    image: '/images/retroville/retroville-street.png',
+    placeholder: null,
+    align: 'left' as const,
+    accent: 'rgba(123,47,255,0.28)',
+  },
+  {
+    title: 'THE PIXEL GRAVEYARD',
+    eyebrow: 'SECTOR 02',
+    text: 'Un barrio en el límite de la ciudad donde van a parar los juegos que nadie completó. Lápidas de cartuchos. Procesiones de personajes sin final. El silencio aquí suena a pantalla de Game Over que nadie apagó.',
+    reference: 'Concept art en desarrollo',
+    image: null,
+    placeholder: 'CONCEPT ART — THE PIXEL GRAVEYARD',
+    align: 'right' as const,
+    accent: 'rgba(0,212,255,0.18)',
+  },
+  {
+    title: 'THE NEON BONEYARD',
+    eyebrow: 'SECTOR 03',
+    text: 'Donde el hardware va a morir lentamente. Consolas medio encendidas, cables que ya no conectan a nada y letreros de neón que parpadean mensajes de juegos que ya no existen. El lugar más honesto de Retroville.',
+    reference: 'Concept art en desarrollo',
+    image: null,
+    placeholder: 'CONCEPT ART — THE NEON BONEYARD',
+    align: 'left' as const,
+    accent: 'rgba(255,201,64,0.16)',
+  },
+] as const;
+
 type ImageSlide = {
   kind: 'image';
   title: string;
@@ -85,10 +142,22 @@ type ImageSlide = {
 
 type NarrativeSlide =
   | { kind: 'countdown'; title: string; eyebrow: string; description: string }
+  | { kind: 'districts'; title: string; eyebrow: string; description: string }
   | { kind: 'manifesto'; title: string; eyebrow: string; description: string }
   | { kind: 'gallery'; title: string; eyebrow: string; description: string }
   | { kind: 'signals'; title: string; eyebrow: string; description: string }
   | { kind: 'waitlist'; title: string; eyebrow: string; description: string }
+  | {
+      kind: 'world';
+      title: string;
+      eyebrow: string;
+      description: string;
+      reference: string;
+      image: string | null;
+      placeholder: string | null;
+      accent: string;
+      align?: 'left' | 'right';
+    }
   | ImageSlide;
 
 const narrativeSlides: readonly NarrativeSlide[] = [
@@ -107,17 +176,44 @@ const narrativeSlides: readonly NarrativeSlide[] = [
       'Una ciudad oscura. Hardware olvidado. Memorias corruptas. Humor extraño con ambición real.',
   },
   {
-    kind: 'image',
-    title: 'RETROVILLE',
-    eyebrow: 'LA CIUDAD',
+    kind: 'districts',
+    title: 'MAPA DEL UNIVERSO',
+    eyebrow: 'DISTRICTS & SIGNALS',
     description:
-      'Una ciudad de neón, humedad y ruido de arcades rotos. Cada callejón es un cartucho. Cada edificio es una consola que nunca terminó de apagarse.',
-    image: '/images/retroville/retroville-street.png',
-    backgroundImage: '/images/retroville/retroville-street.png',
-    alt: 'Calles de Retroville con estética neón y personajes del universo',
-    accent: 'rgba(123,47,255,0.36)',
-    align: 'left',
-    backgroundPosition: 'center center',
+      'Antes de que la ciudad se explique sola, hay nombres que ya suenan como lugares reales: barrios, anomalías, calles, mercados y ruinas donde Retroville se va inventando a sí misma.',
+  },
+  {
+    kind: 'world',
+    title: worldbuildingItems[0].title,
+    eyebrow: worldbuildingItems[0].eyebrow,
+    description: worldbuildingItems[0].text,
+    reference: worldbuildingItems[0].reference,
+    image: worldbuildingItems[0].image,
+    placeholder: worldbuildingItems[0].placeholder,
+    accent: worldbuildingItems[0].accent,
+    align: worldbuildingItems[0].align,
+  },
+  {
+    kind: 'world',
+    title: worldbuildingItems[1].title,
+    eyebrow: worldbuildingItems[1].eyebrow,
+    description: worldbuildingItems[1].text,
+    reference: worldbuildingItems[1].reference,
+    image: worldbuildingItems[1].image,
+    placeholder: worldbuildingItems[1].placeholder,
+    accent: worldbuildingItems[1].accent,
+    align: worldbuildingItems[1].align,
+  },
+  {
+    kind: 'world',
+    title: worldbuildingItems[2].title,
+    eyebrow: worldbuildingItems[2].eyebrow,
+    description: worldbuildingItems[2].text,
+    reference: worldbuildingItems[2].reference,
+    image: worldbuildingItems[2].image,
+    placeholder: worldbuildingItems[2].placeholder,
+    accent: worldbuildingItems[2].accent,
+    align: worldbuildingItems[2].align,
   },
   {
     kind: 'image',
@@ -125,8 +221,8 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     eyebrow: 'EL SUPERVIVIENTE',
     description:
       'Sarcasmo, batería baja y una dignidad bastante discutible. NOX no dirige la ciudad por épica. Lo hace porque nadie más soporta el turno de noche.',
-    image: '/images/retroville/nox-cutout.png',
-    figureImage: '/images/retroville/nox-cutout.png',
+    image: '/images/retroville/nox-character-large.png',
+    figureImage: '/images/retroville/nox-character-large.png',
     backgroundImage: null,
     alt: 'NOX dentro del universo Retroville',
     accent: 'rgba(74, 158, 255, 0.22)',
@@ -141,8 +237,8 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     eyebrow: 'EL RUIDO SOCIAL',
     description:
       'A, B, Y y X son la conversación permanente de Retroville: impulsivos, cínicos, analíticos y caóticos. Siempre llegan juntos. Siempre complican algo.',
-    image: '/images/retroville/button-crew-cutout.png',
-    figureImage: '/images/retroville/button-crew-cutout.png',
+    image: '/images/retroville/button-crew-character-large.png',
+    figureImage: '/images/retroville/button-crew-character-large.png',
     backgroundImage: null,
     alt: 'Button Crew posando como grupo dentro de Retroville',
     accent: 'rgba(255, 192, 83, 0.18)',
@@ -157,8 +253,8 @@ const narrativeSlides: readonly NarrativeSlide[] = [
     eyebrow: 'VARIABLE DE CAOS',
     description:
       'Luna entra en Retroville como una interferencia elegante: magnética, caprichosa y peligrosamente divertida. Manipula la atención, coquetea con el desastre y mantiene a NOX orbitando demasiado cerca. “No soy tóxica. Tú solo estás demasiado apegado.”',
-    image: '/images/retroville/luna-cutout.png',
-    figureImage: '/images/retroville/luna-cutout.png',
+    image: '/images/retroville/luna-character-large.png',
+    figureImage: '/images/retroville/luna-character-large.png',
     backgroundImage: '/images/retroville/luna-nox-lounge.png',
     alt: 'Luna junto a NOX en un lounge arcade dentro de Retroville',
     accent: 'rgba(191, 92, 149, 0.20)',
@@ -275,6 +371,7 @@ export default function RetrovilleDesktopExperience({
 
   const hypeGoal = 5000;
   const hypePct = waitlistCount > 0 ? clamp(waitlistCount / hypeGoal, 0, 1) : 0;
+  const repeatedMarqueeItems = [...marqueeItems, ...marqueeItems];
   const desktopStep = 100 / narrativeSlides.length;
 
   useEffect(() => {
@@ -393,6 +490,34 @@ export default function RetrovilleDesktopExperience({
       );
     }
 
+    if (slide.kind === 'districts') {
+      return (
+        <div className="p-5 sm:p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+          <h3 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white`}>{slide.title}</h3>
+          <p className="mt-4 max-w-[34rem] text-sm leading-7 text-white/64">{slide.description}</p>
+          <div className="mt-6 space-y-3 overflow-hidden rounded-[1.6rem] border border-white/10 bg-[rgba(10,12,18,0.84)] p-4">
+            {[0, 1].map((row) => (
+              <div key={row} className="flex flex-wrap gap-2">
+                {marqueeItems.slice(row * 11, row * 11 + 11).map((item, index) => (
+                  <span
+                    key={`${row}-${item}`}
+                    className="inline-flex min-h-10 items-center rounded-full border px-4 text-[11px] uppercase tracking-[0.24em]"
+                    style={{
+                      borderColor: index % 2 === 0 ? 'rgba(0,255,136,0.28)' : 'rgba(123,47,255,0.32)',
+                      color: index % 2 === 0 ? 'var(--rv-accent)' : 'var(--rv-accent2)',
+                    }}
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     if (slide.kind === 'manifesto') {
       return (
         <div className="p-5 sm:p-6">
@@ -405,6 +530,34 @@ export default function RetrovilleDesktopExperience({
             ))}
           </div>
           <p className="mt-5 text-sm leading-7 text-white/62">{slide.description}</p>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'world') {
+      const alignLeft = slide.align !== 'right';
+
+      return (
+        <div className="p-5 sm:p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+          <h3 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white`}>{slide.title}</h3>
+          <p className="mt-4 max-w-[34rem] text-sm leading-7 text-white/64">{slide.description}</p>
+          <p className="mt-3 text-[11px] uppercase tracking-[0.22em] text-white/40">{slide.reference}</p>
+          <div className={`mt-6 overflow-hidden rounded-[1.8rem] border border-white/10 bg-[rgba(9,11,18,0.86)] ${alignLeft ? '' : ''}`}>
+            {slide.image ? (
+              <div className="relative aspect-[4/3]">
+                <Image src={slide.image} alt={slide.title} fill sizes="90vw" className="object-cover object-center" />
+              </div>
+            ) : (
+              <div className="flex aspect-[4/3] flex-col items-center justify-center gap-3 p-8 text-center">
+                <span className="text-4xl">🎮</span>
+                <span className="text-sm uppercase tracking-[0.28em] text-white/60">Concept Art</span>
+                <span className="text-[11px] uppercase tracking-[0.22em] text-[var(--rv-accent)]">
+                  {slide.placeholder || 'En desarrollo'}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       );
     }
@@ -489,20 +642,58 @@ export default function RetrovilleDesktopExperience({
       );
     }
 
+    const slideSurface = slideAccentStyle(slide.accent);
+
     return (
       <>
-        <div className={`${styles.slideVisual} relative aspect-[4/3] overflow-hidden border-b border-white/10`} style={slideAccentStyle(slide.accent)}>
+        <div
+          className={`${styles.slideVisual} relative aspect-[4/3] overflow-hidden border-b border-white/10`}
+          style={slideSurface}
+        >
           <div className={styles.slideBackdrop}>
-            <Image src={slide.image} alt="" fill sizes="88vw" className={styles.slideBackdropImage} aria-hidden />
+            <div
+              className={`${styles.characterAtmosphere} ${slide.align === 'right' ? styles.characterAtmosphereRight : styles.characterAtmosphereLeft}`}
+              style={slideSurface}
+            />
+            {slide.backgroundImage ? (
+              <Image
+                src={slide.backgroundImage}
+                alt=""
+                fill
+                sizes="88vw"
+                className={styles.characterAtmosphereImage}
+                style={{ objectPosition: slide.backgroundPosition || 'center center' }}
+                aria-hidden
+              />
+            ) : null}
           </div>
-          <div className={styles.slideVisualTint} />
+          <div className={styles.characterAtmosphereVeil} />
+          <div className={styles.characterGroundGlow} style={slideSurface} />
           <div className={styles.slideForeground}>
-            <Image src={slide.image} alt={slide.alt} fill sizes="88vw" className={styles.slideImage} />
+            <div className={styles.characterFigureWrapMobile}>
+              <Image
+                src={slide.figureImage || slide.image}
+                alt={slide.alt}
+                fill
+                sizes="88vw"
+                className={styles.characterFigureLarge}
+                style={{ objectPosition: slide.figurePosition || 'center bottom' }}
+              />
+            </div>
           </div>
         </div>
         <div className="p-5 sm:p-6">
           <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
           <h3 className={`${displayFont.className} mt-4 text-4xl uppercase leading-none text-white`}>{slide.title}</h3>
+          {slide.moodChips?.length ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {slide.moodChips.map((chip) => (
+                <span key={chip} className={styles.characterChip} style={slideSurface}>
+                  {chip}
+                </span>
+              ))}
+            </div>
+          ) : null}
           <p className="mt-4 text-sm leading-7 text-white/64">{slide.description}</p>
         </div>
       </>
@@ -534,6 +725,41 @@ export default function RetrovilleDesktopExperience({
       );
     }
 
+    if (slide.kind === 'districts') {
+      return (
+        <div className="relative flex h-full items-center overflow-hidden">
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,14,0.98),rgba(6,8,18,0.96)),radial-gradient(circle_at_16%_26%,rgba(0,212,255,0.14),transparent_20%),radial-gradient(circle_at_86%_72%,rgba(123,47,255,0.18),transparent_22%)]" />
+          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.34fr)_minmax(0,0.66fr)] items-center gap-8 px-10 py-14 xl:px-14">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+              <h3 className={`${displayFont.className} mt-4 text-[4.8rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
+              <p className="mt-6 max-w-[30rem] text-base leading-8 text-white/64">{slide.description}</p>
+            </div>
+            <div className="space-y-5">
+              {[0, 1].map((row) => (
+                <div key={row} className="overflow-hidden rounded-[1.8rem] border border-white/10 bg-[rgba(9,12,20,0.76)] px-4 py-5 backdrop-blur-xl">
+                  <div className={`${styles.districtMarqueeTrack} ${row === 1 ? styles.districtMarqueeTrackAlt : ''}`}>
+                    {[...repeatedMarqueeItems, ...repeatedMarqueeItems].map((item, index) => (
+                      <span
+                        key={`${row}-${item}-${index}`}
+                        className={styles.districtTag}
+                        style={{
+                          borderColor: index % 2 === 0 ? 'rgba(0,255,136,0.28)' : 'rgba(123,47,255,0.32)',
+                          color: index % 2 === 0 ? 'var(--rv-accent)' : 'var(--rv-accent2)',
+                        }}
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (slide.kind === 'manifesto') {
       return (
         <div className="relative flex h-full items-center overflow-hidden">
@@ -557,6 +783,40 @@ export default function RetrovilleDesktopExperience({
               <p className="mt-6 max-w-[22rem] text-sm uppercase tracking-[0.28em] leading-7 text-white/48">
                 {slide.description}
               </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'world') {
+      const alignLeft = slide.align !== 'right';
+
+      return (
+        <div className="relative flex h-full items-center overflow-hidden">
+          <div className="absolute inset-0" style={{ background: `linear-gradient(180deg,rgba(4,5,12,0.98),rgba(6,7,16,0.96)), radial-gradient(circle at 20% 20%, ${slide.accent}, transparent 22%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.04), transparent 18%)` }} />
+          <div className={`relative mx-auto grid h-full w-full max-w-[1540px] ${alignLeft ? 'grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)]' : 'grid-cols-[minmax(0,0.58fr)_minmax(0,0.42fr)]'} items-center gap-10 px-10 py-14 xl:px-14`}>
+            <div className={`${alignLeft ? 'order-1' : 'order-2'} flex flex-col justify-center`}>
+              <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
+              <h3 className={`${displayFont.className} mt-4 text-[5rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
+              <p className="mt-6 max-w-[33rem] text-base leading-8 text-white/64">{slide.description}</p>
+              <p className="mt-5 text-[11px] uppercase tracking-[0.22em] text-white/40">{slide.reference}</p>
+            </div>
+            <div className={`${alignLeft ? 'order-2' : 'order-1'} flex items-center ${alignLeft ? 'justify-end' : 'justify-start'}`}>
+              <div className="relative h-[72vh] w-full max-w-[52rem] overflow-hidden rounded-[2.2rem] border border-white/10 bg-[rgba(10,12,18,0.76)] shadow-[0_30px_120px_rgba(0,0,0,0.34)]">
+                {slide.image ? (
+                  <Image src={slide.image} alt={slide.title} fill sizes="44vw" className="object-cover object-center" />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05),transparent_44%)] px-8 text-center">
+                    <span className="text-5xl">🎮</span>
+                    <span className="text-base uppercase tracking-[0.3em] text-white/60">Concept Art</span>
+                    <span className="text-[12px] uppercase tracking-[0.24em] text-[var(--rv-accent)]">
+                      {slide.placeholder || 'En desarrollo'}
+                    </span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,3,3,0.14),transparent_18%,transparent_82%,rgba(3,3,3,0.62))]" />
+              </div>
             </div>
           </div>
         </div>
@@ -667,42 +927,45 @@ export default function RetrovilleDesktopExperience({
       return (
         <div className="relative h-full overflow-hidden" style={imageSurfaceStyle(backgroundImage, slide.accent)}>
           <div className={styles.sceneNoise} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,3,8,0.88),rgba(3,4,10,0.78)_24%,rgba(4,5,12,0.78)_74%,rgba(2,3,8,0.94))]" />
-          <div className="absolute inset-y-0 left-[-10%] w-[40%] bg-[radial-gradient(circle_at_left,rgba(0,212,255,0.10),transparent_72%)] blur-[80px]" />
-          <div className="absolute inset-y-0 right-[-10%] w-[40%] bg-[radial-gradient(circle_at_right,rgba(155,92,255,0.14),transparent_76%)] blur-[86px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,3,8,0.92),rgba(3,4,10,0.76)_24%,rgba(4,5,12,0.76)_74%,rgba(2,3,8,0.96))]" />
+          <div className="absolute inset-y-0 left-[-10%] w-[40%] bg-[radial-gradient(circle_at_left,rgba(0,212,255,0.12),transparent_72%)] blur-[80px]" />
+          <div className="absolute inset-y-0 right-[-10%] w-[40%] bg-[radial-gradient(circle_at_right,rgba(155,92,255,0.18),transparent_76%)] blur-[86px]" />
 
           <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] items-center gap-10 px-10 py-12 xl:px-14">
             <div className={`${alignLeft ? 'order-1' : 'order-2'} flex h-full items-center justify-center`}>
-              <div className={`${styles.characterShowcase} ${alignLeft ? styles.characterShowcaseLeft : styles.characterShowcaseRight}`}>
-                <div className={styles.characterShowcaseGlow} style={slideAccentStyle(slide.accent)} />
+              <div className={`${styles.characterStage} ${alignLeft ? styles.characterStageLeft : styles.characterStageRight}`}>
+                <div className={styles.characterAtmosphere} style={slideAccentStyle(slide.accent)} />
+                <div className={`${styles.characterAtmosphereOrb} ${styles.characterAtmosphereOrbPrimary}`} style={slideAccentStyle(slide.accent)} />
+                <div className={`${styles.characterAtmosphereOrb} ${styles.characterAtmosphereOrbSecondary}`} style={slideAccentStyle(slide.accent)} />
+                <div className={`${styles.characterAtmosphereBeam} ${alignLeft ? styles.characterAtmosphereBeamLeft : styles.characterAtmosphereBeamRight}`} style={slideAccentStyle(slide.accent)} />
                 {backgroundImage ? (
-                  <div className={styles.characterShowcaseBackdrop}>
-                    <Image
-                      src={backgroundImage}
-                      alt=""
-                      fill
-                      sizes="42vw"
-                      className={styles.characterShowcaseBackdropImage}
-                      style={{ objectPosition: slide.backgroundPosition || 'center center' }}
-                      aria-hidden
-                    />
-                  </div>
+                  <Image
+                    src={backgroundImage}
+                    alt=""
+                    fill
+                    sizes="42vw"
+                    className={styles.characterAtmosphereImage}
+                    style={{ objectPosition: slide.backgroundPosition || 'center center' }}
+                    aria-hidden
+                  />
                 ) : null}
-                <div className={styles.characterShowcaseFog} />
-                <Image
-                  src={figureImage}
-                  alt={slide.alt}
-                  fill
-                  sizes="40vw"
-                  className={styles.characterShowcaseFigure}
-                  style={{ objectPosition: slide.figurePosition || 'center bottom' }}
-                />
-                <div className={`${styles.characterShowcaseEdge} ${alignLeft ? styles.characterShowcaseEdgeLeft : styles.characterShowcaseEdgeRight}`} />
+                <div className={styles.characterAtmosphereVeil} />
+                <div className={styles.characterGroundGlow} style={slideAccentStyle(slide.accent)} />
+                <div className={styles.characterFigureWrap}>
+                  <Image
+                    src={figureImage}
+                    alt={slide.alt}
+                    fill
+                    sizes="40vw"
+                    className={`${styles.characterFigureLarge} ${alignLeft ? styles.characterFigureLargeLeft : styles.characterFigureLargeRight}`}
+                    style={{ objectPosition: slide.figurePosition || 'center bottom' }}
+                  />
+                </div>
               </div>
             </div>
             <div className={`${alignLeft ? 'order-2' : 'order-1'} flex flex-col justify-center ${alignLeft ? 'pl-2' : 'pr-2'}`}>
               <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
-              <div className={`${styles.characterCopyPanel} mt-5 max-w-[38rem]`}>
+              <div className="mt-5 max-w-[38rem]">
                 <h3 className={`${displayFont.className} ${styles.characterCopyTitle}`}>{slide.title}</h3>
                 <div className="mt-5 flex flex-wrap gap-3">
                   {slide.moodChips?.map((chip) => (
@@ -713,6 +976,10 @@ export default function RetrovilleDesktopExperience({
                 </div>
                 <div className={styles.characterCopyRule} style={slideAccentStyle(slide.accent)} />
                 <p className={styles.characterCopyText}>{slide.description}</p>
+                <div
+                  className="mt-6 h-px w-full max-w-[26rem]"
+                  style={{ background: `linear-gradient(90deg, ${slide.accent}, transparent)` }}
+                />
               </div>
             </div>
           </div>
@@ -776,11 +1043,22 @@ export default function RetrovilleDesktopExperience({
     <main className={`${monoFont.className} overflow-x-hidden bg-[var(--rv-bg)] text-[var(--rv-text)]`}>
       {isCinematicDesktop ? (
         <section ref={heroRef} className="relative h-[100svh] overflow-hidden bg-[var(--rv-bg)]">
+          <div className="absolute inset-0">
+            <Image
+              src="/images/retroville/retroville-hero-portal-bg.png"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-center"
+              aria-hidden
+            />
+          </div>
           <div className={`absolute inset-0 ${styles.heroNoise}`} />
           <div className={styles.scanlines} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,2,4,0.56),rgba(2,2,4,0.72))]" />
-          <div className="absolute inset-y-0 left-[-16%] w-[56%] bg-[radial-gradient(circle_at_20%_50%,rgba(138,215,255,0.18),transparent_58%)] blur-[120px]" />
-          <div className="absolute inset-y-0 right-[-16%] w-[58%] bg-[radial-gradient(circle_at_80%_50%,rgba(123,47,255,0.24),transparent_60%)] blur-[130px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,2,4,0.62),rgba(2,2,4,0.84))]" />
+          <div className="absolute inset-y-0 left-[-16%] w-[56%] bg-[radial-gradient(circle_at_20%_50%,rgba(138,215,255,0.24),transparent_58%)] blur-[120px]" />
+          <div className="absolute inset-y-0 right-[-16%] w-[58%] bg-[radial-gradient(circle_at_80%_50%,rgba(255,58,136,0.22),transparent_60%)] blur-[130px]" />
           <div className="absolute inset-x-0 bottom-[-16%] h-[44rem] bg-[radial-gradient(circle_at_50%_100%,rgba(255,60,0,0.18),transparent_42%)] blur-[24px]" />
 
           <div className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-5 py-5 sm:px-8 lg:px-10">

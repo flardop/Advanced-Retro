@@ -18,9 +18,17 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
 
   if (!browserClient) {
     browserClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+        storageKey: 'advancedretro-auth',
+      },
       cookieOptions: {
         path: '/',
         sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 365,
         secure:
           process.env.NODE_ENV === 'production' ||
           process.env.VERCEL_ENV === 'production',
