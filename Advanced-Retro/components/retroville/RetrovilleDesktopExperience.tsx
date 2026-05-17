@@ -460,11 +460,12 @@ export default function RetrovilleDesktopExperience({
 
   const heroProgress = isCinematicDesktop ? desktopProgress : 0;
   const desktopHeroProgress = clamp(heroProgress / 0.26);
-  const desktopPortalReveal = clamp((heroProgress - 0.12) / 0.18);
-  const desktopTrackReveal = clamp((heroProgress - 0.18) / 0.1);
-  const desktopRailProgress = clamp((heroProgress - 0.26) / 0.74);
+  const desktopPortalReveal = clamp((heroProgress - 0.1) / 0.2);
+  const trackVisible = isCinematicDesktop && hasDesktopInteracted && heroProgress >= 0.22;
+  const desktopTrackReveal = trackVisible ? clamp((heroProgress - 0.22) / 0.12) : 0;
+  const desktopRailProgress = trackVisible ? clamp((heroProgress - 0.34) / 0.66) : 0;
   const desktopSlideIndex = Math.round(desktopRailProgress * (narrativeSlides.length - 1));
-  const activeSlide = desktopSlideIndex;
+  const activeSlide = trackVisible ? desktopSlideIndex : 0;
   const trackTranslate = isCinematicDesktop ? activeSlide * desktopStep : 0;
   const manifestoActive = !isCinematicDesktop || activeSlide >= 1;
   const heroStage = isCinematicDesktop ? desktopHeroProgress : 0;
@@ -476,12 +477,16 @@ export default function RetrovilleDesktopExperience({
   const desktopPortalBlur = heroStage > 0.58 ? (heroStage - 0.58) * 34 : 0;
   const desktopPortalScale = 1 + heroStage * 26;
   const desktopPortalFogOpacity = clamp((heroProgress - 0.14) / 0.16, 0, 1);
-  const desktopRailLift = (1 - trackReveal) * 32;
+  const desktopPortalFadeOut = 1 - clamp((heroProgress - 0.24) / 0.12, 0, 1);
+  const desktopPortalBaseWash = clamp(0.12 + portalReveal * 0.48, 0.12, 0.6) * desktopPortalFadeOut;
+  const desktopPortalCoreGlow = clamp(0.18 + heroStage * 0.3, 0.18, 0.48) * desktopPortalFadeOut;
+  const desktopPortalFog = desktopPortalFogOpacity * desktopPortalFadeOut;
+  const desktopRailLift = trackVisible ? (1 - trackReveal) * 32 : 40;
 
   const jumpIntoNarrative = () => {
     if (!isCinematicDesktop) return;
     setHasDesktopInteracted(true);
-    setDesktopProgress((previous) => Math.max(previous, 0.26));
+    setDesktopProgress((previous) => Math.max(previous, 0.36));
   };
 
   const renderMobileSlide = (slide: NarrativeSlide) => {
@@ -1162,21 +1167,21 @@ export default function RetrovilleDesktopExperience({
 
           <div
             className="pointer-events-none absolute inset-0 z-[6] bg-[radial-gradient(circle_at_50%_50%,rgba(123,47,255,0.18),transparent_26%),linear-gradient(180deg,rgba(3,3,3,0.08),rgba(3,3,3,0.46))]"
-            style={{ opacity: clamp(0.16 + portalReveal * 0.84, 0.16, 1) }}
+            style={{ opacity: desktopPortalBaseWash }}
           />
 
           <div
             className="pointer-events-none absolute inset-[16%_34%_16%_34%] z-[7] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.16),transparent_68%)] blur-[110px]"
             style={{
               transform: `scale(${1 + heroStage * 2.8})`,
-              opacity: clamp(0.48 + heroStage * 0.52, 0.48, 1),
+              opacity: desktopPortalCoreGlow,
             }}
           />
 
           <div
             className="pointer-events-none absolute inset-0 z-[9] bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.16),transparent_12%),radial-gradient(circle_at_50%_50%,rgba(123,47,255,0.3),transparent_24%),radial-gradient(circle_at_50%_50%,rgba(7,9,14,0.84),transparent_42%)]"
             style={{
-              opacity: desktopPortalFogOpacity,
+              opacity: desktopPortalFog,
               filter: `blur(${18 + portalReveal * 28}px)`,
             }}
           />
@@ -1250,13 +1255,15 @@ export default function RetrovilleDesktopExperience({
             <span>Launch window target · {launchLabel}</span>
           </div>
 
-          <div
-            className={`absolute inset-0 z-[12] overflow-hidden ${trackReveal > 0.98 ? 'pointer-events-auto' : 'pointer-events-none'}`}
-            style={{
-              opacity: trackReveal,
-              transform: `translateY(${desktopRailLift}px) scale(${0.98 + trackReveal * 0.02})`,
-            }}
-          >
+          {trackVisible ? (
+            <div
+              className={`absolute inset-0 overflow-hidden ${trackReveal > 0.98 ? 'pointer-events-auto' : 'pointer-events-none'}`}
+              style={{
+                zIndex: trackReveal > 0.96 ? 12 : 8,
+                opacity: trackReveal,
+                transform: `translateY(${desktopRailLift}px) scale(${0.98 + trackReveal * 0.02})`,
+              }}
+            >
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,10,0.98),rgba(4,5,12,0.98)),radial-gradient(circle_at_50%_50%,rgba(11,14,24,0.18),transparent_22%),radial-gradient(circle_at_50%_0%,rgba(123,47,255,0.14),transparent_24%),radial-gradient(circle_at_20%_18%,rgba(123,47,255,0.06),transparent_20%),radial-gradient(circle_at_80%_18%,rgba(0,255,136,0.04),transparent_18%)]" />
             <div className={styles.viewportBlend} />
             <div className={styles.portalTrackBlend} style={{ opacity: clamp(1 - portalReveal, 0, 1) }} />
@@ -1289,7 +1296,8 @@ export default function RetrovilleDesktopExperience({
             </div>
 
             <div className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-[22vw] max-w-[360px] -translate-x-1/2 bg-[radial-gradient(circle_at_center,rgba(5,5,8,0.02),rgba(5,5,8,0.26)_48%,transparent_74%)] blur-[50px]" />
-          </div>
+            </div>
+          ) : null}
         </section>
       ) : (
         <section ref={heroRef} className="relative overflow-hidden bg-[var(--rv-bg)]">
