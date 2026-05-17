@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useLocale } from '@/components/LocaleProvider';
@@ -28,6 +28,7 @@ function NavbarContent() {
   const [user, setUser] = useState<{ email?: string } | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopMenu, setDesktopMenu] = useState<string | null>(null);
+  const desktopMenuCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const navGroups = useMemo<NavGroup[]>(() => [
     {
@@ -107,6 +108,14 @@ function NavbarContent() {
   }, [pathname]);
 
   useEffect(() => {
+    return () => {
+      if (desktopMenuCloseTimer.current) {
+        clearTimeout(desktopMenuCloseTimer.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!mobileOpen || typeof document === 'undefined') return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -126,6 +135,26 @@ function NavbarContent() {
 
   const isItemActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const groupIsActive = (group: NavGroup) => group.items.some((item) => isItemActive(item.href));
+
+  const clearDesktopMenuCloseTimer = () => {
+    if (desktopMenuCloseTimer.current) {
+      clearTimeout(desktopMenuCloseTimer.current);
+      desktopMenuCloseTimer.current = null;
+    }
+  };
+
+  const openDesktopMenu = (key: string) => {
+    clearDesktopMenuCloseTimer();
+    setDesktopMenu(key);
+  };
+
+  const scheduleDesktopMenuClose = () => {
+    clearDesktopMenuCloseTimer();
+    desktopMenuCloseTimer.current = setTimeout(() => {
+      setDesktopMenu(null);
+      desktopMenuCloseTimer.current = null;
+    }, 180);
+  };
 
   return (
     <>
@@ -153,16 +182,20 @@ function NavbarContent() {
                 </Link>
 
                 <nav className="hidden xl:flex xl:flex-1 xl:items-center xl:justify-center">
-                  <div className="relative flex items-center gap-1.5" onMouseLeave={() => setDesktopMenu(null)}>
+                  <div
+                    className="relative flex items-center gap-1.5"
+                    onMouseEnter={clearDesktopMenuCloseTimer}
+                    onMouseLeave={scheduleDesktopMenuClose}
+                  >
                     {navGroups.map((group) => {
                       const active = groupIsActive(group);
                       const expanded = desktopMenu === group.key;
                       return (
-                        <div key={group.key} className="relative">
+                        <div key={group.key} className="relative pb-4">
                           <button
                             type="button"
-                            onMouseEnter={() => setDesktopMenu(group.key)}
-                            onFocus={() => setDesktopMenu(group.key)}
+                            onMouseEnter={() => openDesktopMenu(group.key)}
+                            onFocus={() => openDesktopMenu(group.key)}
                             className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-[0.92rem] transition ${
                               active || expanded
                                 ? 'border border-primary/40 bg-primary/10 text-primary'
@@ -194,27 +227,34 @@ function NavbarContent() {
                     })}
 
                     {desktopMenu ? (
-                      <div className="z-dropdown absolute left-1/2 top-[calc(100%+12px)] w-[320px] -translate-x-1/2 rounded-[1.45rem] border border-line/80 bg-[rgba(7,14,24,0.98)] p-3 shadow-[0_24px_70px_rgba(2,8,18,0.42)] backdrop-blur-2xl">
-                        <div className="space-y-1.5">
-                          {navGroups.find((group) => group.key === desktopMenu)?.items.map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              className={`block rounded-[1.05rem] border px-4 py-3 transition ${
-                                isItemActive(item.href)
-                                  ? 'border-primary/50 bg-primary/10'
-                                  : 'border-line bg-[rgba(10,18,30,0.52)] hover:border-primary/30'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="font-semibold text-text">{item.label}</p>
-                                <ChevronRight className="h-4 w-4 text-textMuted" />
-                              </div>
-                              {item.description ? (
-                                <p className="mt-1 text-xs leading-relaxed text-textMuted">{item.description}</p>
-                              ) : null}
-                            </Link>
-                          ))}
+                      <div
+                        className="z-dropdown absolute left-1/2 top-full w-[344px] -translate-x-1/2 pt-3"
+                        onMouseEnter={clearDesktopMenuCloseTimer}
+                        onMouseLeave={scheduleDesktopMenuClose}
+                      >
+                        <div className="rounded-[1.45rem] border border-line/80 bg-[rgba(7,14,24,0.98)] p-3 shadow-[0_24px_70px_rgba(2,8,18,0.42)] backdrop-blur-2xl">
+                          <div className="space-y-1.5">
+                            {navGroups.find((group) => group.key === desktopMenu)?.items.map((item) => (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                onFocus={clearDesktopMenuCloseTimer}
+                                className={`block rounded-[1.05rem] border px-4 py-3 transition ${
+                                  isItemActive(item.href)
+                                    ? 'border-primary/50 bg-primary/10'
+                                    : 'border-line bg-[rgba(10,18,30,0.52)] hover:border-primary/30'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="font-semibold text-text">{item.label}</p>
+                                  <ChevronRight className="h-4 w-4 text-textMuted" />
+                                </div>
+                                {item.description ? (
+                                  <p className="mt-1 text-xs leading-relaxed text-textMuted">{item.description}</p>
+                                ) : null}
+                              </Link>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     ) : null}
