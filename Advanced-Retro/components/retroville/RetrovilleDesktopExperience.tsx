@@ -376,6 +376,8 @@ export default function RetrovilleDesktopExperience({
   const [isMobile, setIsMobile] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [hasDesktopInteracted, setHasDesktopInteracted] = useState(false);
+  const [desktopViewport, setDesktopViewport] = useState({ width: 0, height: 0 });
+  const [isViewportSettling, setIsViewportSettling] = useState(false);
 
   const hypeGoal = 5000;
   const hypePct = waitlistCount > 0 ? clamp(waitlistCount / hypeGoal, 0, 1) : 0;
@@ -399,6 +401,49 @@ export default function RetrovilleDesktopExperience({
   }, []);
 
   const isCinematicDesktop = !isMobile && !prefersReducedMotion;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let frame = 0;
+    let settleTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const syncViewport = () => {
+      setDesktopViewport({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    const onResize = () => {
+      if (!isCinematicDesktop) {
+        syncViewport();
+        return;
+      }
+
+      setIsViewportSettling(true);
+      cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        syncViewport();
+      });
+
+      if (settleTimeout) clearTimeout(settleTimeout);
+      settleTimeout = setTimeout(() => {
+        setIsViewportSettling(false);
+      }, 220);
+    };
+
+    syncViewport();
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+
+    return () => {
+      if (settleTimeout) clearTimeout(settleTimeout);
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, [isCinematicDesktop]);
 
   useEffect(() => {
     if (!isCinematicDesktop) {
@@ -438,10 +483,12 @@ export default function RetrovilleDesktopExperience({
       }
       if (event.key === 'Home') {
         event.preventDefault();
+        setHasDesktopInteracted(false);
         setDesktopProgress(0);
       }
       if (event.key === 'End') {
         event.preventDefault();
+        setHasDesktopInteracted(true);
         setDesktopProgress(1);
       }
     };
@@ -459,9 +506,21 @@ export default function RetrovilleDesktopExperience({
   }, [isCinematicDesktop]);
 
   const heroProgress = isCinematicDesktop ? desktopProgress : 0;
+  const hasNarrativeProgress = hasDesktopInteracted || desktopProgress > 0.001;
+  const desktopViewportWidth = desktopViewport.width || 1440;
+  const desktopViewportHeight = desktopViewport.height || 900;
+  const desktopAspectRatio = desktopViewportWidth / Math.max(desktopViewportHeight, 1);
+  const isUltrawideDesktop = isCinematicDesktop && desktopAspectRatio >= 1.95;
+  const isShortDesktop = isCinematicDesktop && desktopViewportHeight <= 900;
+  const desktopSceneStyle: CSSProperties = {
+    maxWidth: isUltrawideDesktop ? '1720px' : '1540px',
+  };
+  const desktopWorldImageStyle: CSSProperties = {
+    height: isShortDesktop ? '64vh' : isUltrawideDesktop ? '68vh' : '72vh',
+  };
   const desktopHeroProgress = clamp(heroProgress / 0.26);
   const desktopPortalReveal = clamp((heroProgress - 0.1) / 0.2);
-  const trackVisible = isCinematicDesktop && hasDesktopInteracted && heroProgress >= 0.22;
+  const trackVisible = isCinematicDesktop && hasNarrativeProgress && heroProgress >= 0.22;
   const desktopTrackReveal = trackVisible ? clamp((heroProgress - 0.22) / 0.12) : 0;
   const desktopRailProgress = trackVisible ? clamp((heroProgress - 0.34) / 0.66) : 0;
   const desktopSlideIndex = Math.round(desktopRailProgress * (narrativeSlides.length - 1));
@@ -718,7 +777,10 @@ export default function RetrovilleDesktopExperience({
       return (
         <div className="relative flex h-full items-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(123,47,255,0.22),transparent_32%),radial-gradient(circle_at_50%_78%,rgba(255,60,0,0.14),transparent_26%)]" />
-          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] items-center gap-10 px-10 py-14 xl:px-14">
+          <div
+            className="relative mx-auto grid h-full w-full grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] items-center gap-10 px-10 py-14 xl:px-14"
+            style={desktopSceneStyle}
+          >
             <div className="max-w-[30rem]">
               <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
               <h3 className={`${displayFont.className} mt-4 text-[5.2rem] uppercase leading-[0.88] text-white`}>
@@ -742,7 +804,10 @@ export default function RetrovilleDesktopExperience({
       return (
         <div className="relative flex h-full items-center overflow-hidden">
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,14,0.98),rgba(6,8,18,0.96)),radial-gradient(circle_at_16%_26%,rgba(0,212,255,0.14),transparent_20%),radial-gradient(circle_at_86%_72%,rgba(123,47,255,0.18),transparent_22%)]" />
-          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.34fr)_minmax(0,0.66fr)] items-center gap-8 px-10 py-14 xl:px-14">
+          <div
+            className="relative mx-auto grid h-full w-full grid-cols-[minmax(0,0.34fr)_minmax(0,0.66fr)] items-center gap-8 px-10 py-14 xl:px-14"
+            style={desktopSceneStyle}
+          >
             <div>
               <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
               <h3 className={`${displayFont.className} mt-4 text-[4.8rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
@@ -779,7 +844,10 @@ export default function RetrovilleDesktopExperience({
           <div className="absolute inset-y-0 left-[18%] w-px bg-white/10" />
           <div className="absolute inset-y-0 right-[18%] w-px bg-white/10" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_48%_42%,rgba(123,47,255,0.16),transparent_30%),radial-gradient(circle_at_58%_70%,rgba(0,255,136,0.08),transparent_24%)]" />
-          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.7fr)_minmax(0,0.3fr)] items-end gap-8 px-10 py-14 xl:px-14">
+          <div
+            className="relative mx-auto grid h-full w-full grid-cols-[minmax(0,0.7fr)_minmax(0,0.3fr)] items-end gap-8 px-10 py-14 xl:px-14"
+            style={desktopSceneStyle}
+          >
             <div className="pb-10">
               {manifestoLines.map((line, index) => (
                 <p
@@ -808,7 +876,10 @@ export default function RetrovilleDesktopExperience({
       return (
         <div className="relative flex h-full items-center overflow-hidden">
           <div className="absolute inset-0" style={{ background: `linear-gradient(180deg,rgba(4,5,12,0.98),rgba(6,7,16,0.96)), radial-gradient(circle at 20% 20%, ${slide.accent}, transparent 22%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.04), transparent 18%)` }} />
-          <div className={`relative mx-auto grid h-full w-full max-w-[1540px] ${alignLeft ? 'grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)]' : 'grid-cols-[minmax(0,0.58fr)_minmax(0,0.42fr)]'} items-center gap-10 px-10 py-14 xl:px-14`}>
+          <div
+            className={`relative mx-auto grid h-full w-full ${alignLeft ? 'grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)]' : 'grid-cols-[minmax(0,0.58fr)_minmax(0,0.42fr)]'} items-center gap-10 px-10 py-14 xl:px-14`}
+            style={desktopSceneStyle}
+          >
             <div className={`${alignLeft ? 'order-1' : 'order-2'} flex flex-col justify-center`}>
               <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
               <h3 className={`${displayFont.className} mt-4 text-[5rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
@@ -816,7 +887,10 @@ export default function RetrovilleDesktopExperience({
               <p className="mt-5 text-[11px] uppercase tracking-[0.22em] text-white/40">{slide.reference}</p>
             </div>
             <div className={`${alignLeft ? 'order-2' : 'order-1'} flex items-center ${alignLeft ? 'justify-end' : 'justify-start'}`}>
-              <div className="relative h-[72vh] w-full max-w-[52rem] overflow-hidden rounded-[2.2rem] border border-white/10 bg-[rgba(10,12,18,0.76)] shadow-[0_30px_120px_rgba(0,0,0,0.34)]">
+              <div
+                className="relative w-full max-w-[52rem] overflow-hidden rounded-[2.2rem] border border-white/10 bg-[rgba(10,12,18,0.76)] shadow-[0_30px_120px_rgba(0,0,0,0.34)]"
+                style={desktopWorldImageStyle}
+              >
                 {slide.image ? (
                   <Image src={slide.image} alt={slide.title} fill sizes="44vw" className="object-cover object-center" />
                 ) : (
@@ -840,7 +914,10 @@ export default function RetrovilleDesktopExperience({
       return (
         <div className="relative flex h-full items-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(123,47,255,0.12),transparent_20%),radial-gradient(circle_at_12%_50%,rgba(0,212,255,0.08),transparent_22%),radial-gradient(circle_at_88%_54%,rgba(255,201,64,0.08),transparent_22%),linear-gradient(180deg,rgba(4,5,12,0.98),rgba(6,7,16,0.98))]" />
-          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.3fr)_minmax(0,0.7fr)] items-center gap-8 px-10 py-12 xl:px-14">
+          <div
+            className="relative mx-auto grid h-full w-full grid-cols-[minmax(0,0.3fr)_minmax(0,0.7fr)] items-center gap-8 px-10 py-12 xl:px-14"
+            style={desktopSceneStyle}
+          >
             <div>
               <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
               <h3 className={`${displayFont.className} mt-4 text-[4.8rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
@@ -869,7 +946,10 @@ export default function RetrovilleDesktopExperience({
       return (
         <div className="relative flex h-full items-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_26%_18%,rgba(0,255,136,0.10),transparent_24%),radial-gradient(circle_at_74%_16%,rgba(123,47,255,0.18),transparent_26%)]" />
-          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.28fr)_minmax(0,0.72fr)] items-center gap-8 px-10 py-14 xl:px-14">
+          <div
+            className="relative mx-auto grid h-full w-full grid-cols-[minmax(0,0.28fr)_minmax(0,0.72fr)] items-center gap-8 px-10 py-14 xl:px-14"
+            style={desktopSceneStyle}
+          >
             <div>
               <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
               <h3 className={`${displayFont.className} mt-4 text-[4.8rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
@@ -894,7 +974,10 @@ export default function RetrovilleDesktopExperience({
         <div id="waitlist" className="relative flex h-full items-center overflow-hidden">
           <div className={`${styles.waitlistNoise} absolute inset-0`} />
           <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(123,47,255,0.14),transparent_36%),linear-gradient(225deg,rgba(0,255,136,0.10),transparent_30%)]" />
-          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.46fr)_minmax(0,0.54fr)] items-center gap-10 px-10 py-14 xl:px-14">
+          <div
+            className="relative mx-auto grid h-full w-full grid-cols-[minmax(0,0.46fr)_minmax(0,0.54fr)] items-center gap-10 px-10 py-14 xl:px-14"
+            style={desktopSceneStyle}
+          >
             <div>
               <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--rv-accent)]">{slide.eyebrow}</p>
               <h3 className={`${displayFont.className} mt-4 text-[4.8rem] uppercase leading-[0.88] text-white`}>{slide.title}</h3>
@@ -944,7 +1027,10 @@ export default function RetrovilleDesktopExperience({
           <div className="absolute inset-y-0 left-[-10%] w-[40%] bg-[radial-gradient(circle_at_left,rgba(0,212,255,0.12),transparent_72%)] blur-[80px]" />
           <div className="absolute inset-y-0 right-[-10%] w-[40%] bg-[radial-gradient(circle_at_right,rgba(155,92,255,0.18),transparent_76%)] blur-[86px]" />
 
-          <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] items-center gap-10 px-10 py-12 xl:px-14">
+          <div
+            className="relative mx-auto grid h-full w-full grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] items-center gap-10 px-10 py-12 xl:px-14"
+            style={desktopSceneStyle}
+          >
             <div className={`${alignLeft ? 'order-1' : 'order-2'} flex h-full items-center justify-center`}>
               <div className={`${styles.characterStage} ${alignLeft ? styles.characterStageLeft : styles.characterStageRight}`}>
                 <div className={styles.characterAtmosphere} style={slideAccentStyle(slide.accent)} />
@@ -1008,7 +1094,10 @@ export default function RetrovilleDesktopExperience({
         <div className="absolute inset-y-0 left-[-10%] w-[40%] bg-[radial-gradient(circle_at_left,rgba(0,212,255,0.16),transparent_72%)] blur-[80px]" />
         <div className="absolute inset-y-0 right-[-10%] w-[40%] bg-[radial-gradient(circle_at_right,rgba(155,92,255,0.18),transparent_76%)] blur-[86px]" />
 
-        <div className="relative mx-auto grid h-full w-full max-w-[1540px] grid-cols-[minmax(0,0.58fr)_minmax(0,0.42fr)] items-center gap-10 px-10 py-12 xl:px-14">
+        <div
+          className="relative mx-auto grid h-full w-full grid-cols-[minmax(0,0.58fr)_minmax(0,0.42fr)] items-center gap-10 px-10 py-12 xl:px-14"
+          style={desktopSceneStyle}
+        >
           <div className={`${alignLeft ? 'order-1' : 'order-2'} relative flex h-full items-end`}>
             <div className="absolute inset-0 rounded-[2.4rem] bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05),transparent_62%)]" />
             <div className={`${styles.sceneFigureShell} ${alignLeft ? styles.sceneFigureShellLeft : styles.sceneFigureShellRight}`}>
@@ -1277,7 +1366,7 @@ export default function RetrovilleDesktopExperience({
 
             <div className="absolute inset-0 overflow-hidden">
               <div
-                className={`${styles.universeTrack} flex h-full`}
+                className={`${styles.universeTrack} ${isViewportSettling ? styles.universeTrackSettling : ''} flex h-full`}
                 style={{
                   width: `${narrativeSlides.length * 100}%`,
                   transform: `translate3d(-${trackTranslate}%,0,0)`,
@@ -1313,7 +1402,10 @@ export default function RetrovilleDesktopExperience({
           </div>
 
           <div className="relative px-4 pb-10 pt-24 sm:px-8">
-            <div className="mx-auto max-w-[1540px] overflow-hidden rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,10,18,0.92),rgba(5,5,8,0.98))] shadow-[0_34px_120px_rgba(0,0,0,0.42)]">
+            <div
+              className="mx-auto overflow-hidden rounded-[2.2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,10,18,0.92),rgba(5,5,8,0.98))] shadow-[0_34px_120px_rgba(0,0,0,0.42)]"
+              style={desktopSceneStyle}
+            >
               <div className="relative overflow-hidden px-5 pb-8 pt-8 text-center sm:px-8">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_46%,rgba(138,215,255,0.24),transparent_26%),radial-gradient(circle_at_80%_38%,rgba(123,47,255,0.3),transparent_28%),linear-gradient(180deg,rgba(11,14,24,0.28),rgba(7,9,15,0.72))]" />
                 <div className="relative mx-auto h-[280px] max-w-[920px] overflow-hidden">
@@ -1366,7 +1458,7 @@ export default function RetrovilleDesktopExperience({
               </div>
 
               <div className="border-t border-white/10 px-4 pb-8 pt-6 sm:px-8">
-                <div className="mx-auto flex max-w-[1540px] flex-col gap-5">
+                <div className="mx-auto flex flex-col gap-5" style={desktopSceneStyle}>
                   {narrativeSlides
                     .filter((slide) => slide.kind !== 'countdown')
                     .map((slide) => (

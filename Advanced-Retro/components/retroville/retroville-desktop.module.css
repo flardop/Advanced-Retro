@@ -332,6 +332,10 @@
   will-change: transform;
 }
 
+.universeTrackSettling {
+  transition: none;
+}
+
 .viewportBlend {
   position: absolute;
   inset: 0;
