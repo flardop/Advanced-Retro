@@ -1108,18 +1108,18 @@ function CatalogContent({ initialProducts = [], initialSource = 'server' }: Cata
       <div className="container">
         <div className="wide-content-rail">
         <div className="catalog-trust-strip glass p-4 sm:p-5 mb-6">
-          <div className="mobile-scroll-row no-scrollbar md:grid md:grid-cols-3 md:overflow-visible md:pb-0">
-            <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
               <p className="text-primary text-sm font-semibold">Envíos desde España</p>
-              <p className="text-xs text-textMuted mt-1">Preparación y salida en 24-48h laborables.</p>
+              <p className="mobile-safe-wrap text-xs text-textMuted mt-1">Preparación y salida en 24-48h laborables.</p>
             </div>
-            <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+            <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
               <p className="text-primary text-sm font-semibold">Revisado y testado</p>
-              <p className="text-xs text-textMuted mt-1">Cada pieza se comprueba antes de publicarse.</p>
+              <p className="mobile-safe-wrap text-xs text-textMuted mt-1">Cada pieza se comprueba antes de publicarse.</p>
             </div>
-            <div className="min-w-[240px] md:min-w-0 rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
+            <div className="rounded-xl border border-line p-3 bg-[rgba(12,22,36,0.66)]">
               <p className="text-primary text-sm font-semibold">Garantía coleccionista</p>
-              <p className="text-xs text-textMuted mt-1">Soporte por ticket y seguimiento real del pedido.</p>
+              <p className="mobile-safe-wrap text-xs text-textMuted mt-1">Soporte por ticket y seguimiento real del pedido.</p>
             </div>
           </div>
         </div>
@@ -1131,10 +1131,10 @@ function CatalogContent({ initialProducts = [], initialSource = 'server' }: Cata
         </div>
 
         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8">
-          <div className="max-w-[34rem]">
+          <div className="max-w-[34rem] min-w-0">
             <p className="text-xs uppercase tracking-[0.2em] text-primary">Catálogo profesional</p>
             <h1 className="title-display mt-3 text-3xl sm:text-4xl">Catálogo</h1>
-            <p className="text-textMuted mt-2">Retro revisado por coleccionistas y listo para tu vitrina.</p>
+            <p className="mobile-safe-wrap text-textMuted mt-2">Retro revisado por coleccionistas y listo para tu vitrina.</p>
           </div>
           <div className="flex flex-col gap-2 xl:min-w-[52%]">
             <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:gap-2 sm:overflow-visible sm:pb-0">

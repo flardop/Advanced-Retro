@@ -444,12 +444,14 @@ body::before {
   margin-inline: auto;
   width: 100%;
   max-width: var(--theme-content-max);
+  min-width: 0;
 }
 
 .wide-content-rail {
   margin-inline: auto;
   width: 100%;
   max-width: min(var(--theme-header-max), calc(var(--theme-content-max) + clamp(64px, 7vw, 140px)));
+  min-width: 0;
 }
 
 .reading-rail {
@@ -494,6 +496,7 @@ body::before {
   margin-inline: auto;
   width: 100%;
   max-width: var(--theme-content-max);
+  min-width: 0;
 }
 
 .glass,
@@ -511,6 +514,7 @@ body::before {
   background: var(--theme-card-bg);
   box-shadow: var(--theme-card-shadow);
   backdrop-filter: blur(var(--theme-card-blur));
+  min-width: 0;
 }
 
 .featured-product-card,
@@ -613,6 +617,7 @@ body::before {
   font-family: var(--theme-font-title, var(--font-display));
   letter-spacing: 0.01em;
   line-height: 1.12;
+  overflow-wrap: anywhere;
 }
 
 .button-primary {
@@ -1139,6 +1144,11 @@ a {
 }
 
 @media (max-width: 640px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   .container {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
@@ -1173,6 +1183,12 @@ a {
     min-height: 44px;
     padding: 0.62rem 0.92rem;
     font-size: 0.84rem;
+  }
+
+  .mobile-safe-wrap {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
 

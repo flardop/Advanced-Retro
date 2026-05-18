@@ -10,10 +10,10 @@ export default function FinalCTA() {
     <section className="section pt-2">
       <div className="container">
         <div className="content-rail glass flex flex-col gap-5 p-7 sm:p-9 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl min-w-0">
             <p className="section-kicker">{t('home.cta.badge', 'Siguiente paso')}</p>
-            <h2 className="title-display mt-3 text-3xl sm:text-4xl">{t('home.cta.title', 'Empieza por una compra simple, escala tu colección después.')}</h2>
-            <p className="mt-3 text-textMuted">
+            <h2 className="title-display mobile-safe-wrap mt-3 text-3xl sm:text-4xl">{t('home.cta.title', 'Empieza por una compra simple, escala tu colección después.')}</h2>
+            <p className="mobile-safe-wrap mt-3 text-textMuted">
               {t('home.cta.description', 'Tienda + comunidad + encargo: elige el flujo que mejor encaja con tu forma de comprar retro.')}
             </p>
           </div>

@@ -120,12 +120,12 @@ export default function Hero() {
                 </div>
 
                 <h1
-                  className={`${heroDisplay.className} mt-5 text-[3.4rem] uppercase leading-[0.92] text-white sm:mt-6 sm:text-[5.2rem] lg:text-[7.2rem]`}
+                  className={`${heroDisplay.className} mobile-safe-wrap mt-5 text-[clamp(3.25rem,15vw,4.7rem)] uppercase leading-[0.92] text-white sm:mt-6 lg:text-[clamp(5.2rem,8vw,6.8rem)] 2xl:text-[7.2rem]`}
                 >
                   {copy.title}
                 </h1>
 
-                <p className="mt-4 max-w-full text-base leading-relaxed text-slate-300 sm:max-w-[38rem] sm:text-lg">
+                <p className="mobile-safe-wrap mt-4 max-w-full text-base leading-relaxed text-slate-300 sm:max-w-[38rem] sm:text-lg xl:max-w-[34rem]">
                   {copy.subtitle}
                 </p>
 
@@ -180,7 +180,7 @@ export default function Hero() {
                     </span>
                   </div>
 
-                  <p className="max-w-full text-sm leading-relaxed text-textMuted sm:max-w-[28rem]">
+                  <p className="mobile-safe-wrap max-w-full text-sm leading-relaxed text-textMuted sm:max-w-[28rem]">
                     {copy.shelfBody}
                   </p>
 

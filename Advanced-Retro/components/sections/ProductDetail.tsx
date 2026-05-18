@@ -1429,14 +1429,14 @@ export default function ProductDetail({
   return (
     <section className="section pb-32 lg:pb-14">
       <div className="container">
-        <div className="wide-content-rail grid gap-6 sm:gap-8 lg:grid-cols-2">
-        <div className="glass p-4 sm:p-6">
-          <div className="photo-frame-glow relative w-full h-[320px] sm:h-[500px] bg-surface border border-line rounded-2xl flex items-center justify-center overflow-hidden">
+        <div className="wide-content-rail grid min-w-0 gap-6 sm:gap-8 lg:grid-cols-2">
+        <div className="glass min-w-0 p-4 sm:p-6">
+          <div className="photo-frame-glow relative mx-auto flex h-[320px] w-full items-center justify-center overflow-hidden rounded-2xl border border-line bg-surface sm:h-[500px]">
             <Image
               src={images[selectedImage] || images[0] || PLACEHOLDER}
               alt={product.name}
               fill
-              className="object-contain p-4 photo-breath photo-hover-pop"
+              className="object-contain object-center p-4 photo-breath photo-hover-pop"
               priority
               sizes="(max-width: 1024px) 96vw, 48vw"
             />
@@ -1444,12 +1444,12 @@ export default function ProductDetail({
             <span className="absolute bottom-3 right-3 chip text-[11px]">Foto {selectedImage + 1} / {images.length}</span>
           </div>
 
-          <div className="mt-4 mobile-scroll-row no-scrollbar sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0">
+          <div className="mt-4 flex flex-wrap justify-center gap-2 sm:grid sm:grid-cols-4">
             {images.slice(0, 12).map((img: string, index: number) => (
               <button
                 type="button"
                 key={`${img}-${index}`}
-                className={`group relative h-20 w-20 shrink-0 sm:w-auto rounded-xl border bg-surface overflow-hidden transition-colors ${
+                className={`group relative h-20 w-20 overflow-hidden rounded-xl border bg-surface transition-colors sm:w-auto ${
                   selectedImage === index ? 'border-primary' : 'border-line'
                 }`}
                 onClick={() => setSelectedImage(index)}
@@ -1466,11 +1466,11 @@ export default function ProductDetail({
           </div>
         </div>
 
-        <div className="glass p-4 sm:p-6">
+        <div className="glass min-w-0 p-4 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <p className="text-xs text-textMuted font-mono">Stock: {product.stock}</p>
             {socialHighlightChips.length > 0 ? (
-              <div className="mobile-scroll-row no-scrollbar sm:flex sm:flex-wrap sm:items-center sm:gap-2 sm:overflow-visible sm:pb-0 text-xs text-textMuted">
+              <div className="flex flex-wrap gap-2 text-xs text-textMuted">
                 {socialHighlightChips.map((chip) => (
                   <span key={chip} className="chip">{chip}</span>
                 ))}
@@ -1478,11 +1478,11 @@ export default function ProductDetail({
             ) : null}
           </div>
 
-          <h1 className="title-display text-[1.85rem] sm:text-4xl mt-3 leading-[1.1]">{product.name}</h1>
+          <h1 className="title-display mobile-safe-wrap mt-3 text-[clamp(2rem,8vw,2.35rem)] leading-[1.06] sm:text-4xl">{product.name}</h1>
           <p className="text-primary text-[1.9rem] sm:text-3xl mt-3 sm:mt-4 font-semibold">{(Number(product.price || 0) / 100).toFixed(2)} €</p>
-          <p className="text-textMuted mt-3 sm:mt-4 leading-relaxed text-[0.94rem] sm:text-base">{product.long_description || product.description}</p>
+          <p className="mobile-safe-wrap mt-3 text-[0.94rem] leading-relaxed text-textMuted sm:mt-4 sm:text-base">{product.long_description || product.description}</p>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 lg:hidden">
+          <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:hidden">
             <button type="button" className="button-primary !px-4 !py-2 !w-full" onClick={scrollToBuySection}>
               Comprar ahora
             </button>
@@ -1491,16 +1491,16 @@ export default function ProductDetail({
             </button>
           </div>
 
-          <div className="mt-4 mobile-scroll-row no-scrollbar sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
-            <div className="min-w-[240px] sm:min-w-0 rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-3">
               <p className="text-xs text-textMuted">Compra segura</p>
-              <p className="text-sm mt-1">Soporte por ticket y seguimiento del pedido</p>
+              <p className="mobile-safe-wrap mt-1 text-sm">Soporte por ticket y seguimiento del pedido</p>
             </div>
-            <div className="min-w-[240px] sm:min-w-0 rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+            <div className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-3">
               <p className="text-xs text-textMuted">Opciones de compra</p>
-              <p className="text-sm mt-1">Cartucho, caja, manual, insert y protectores</p>
+              <p className="mobile-safe-wrap mt-1 text-sm">Cartucho, caja, manual, insert y protectores</p>
             </div>
-            <div className="min-w-[240px] sm:min-w-0 rounded-xl border border-line p-3 bg-[rgba(10,18,30,0.55)]">
+            <div className="rounded-xl border border-line bg-[rgba(10,18,30,0.55)] p-3">
               <p className="text-xs text-textMuted">Ayuda personalizada</p>
               <div className="mt-1 flex flex-wrap gap-2">
                 <Link href="/perfil?tab=tickets" className="chip border-primary text-primary">
@@ -1641,8 +1641,8 @@ export default function ProductDetail({
                           sizes="56px"
                         />
                       </div>
-                      <div>
-                        <p className="text-sm">
+                      <div className="min-w-0">
+                        <p className="mobile-safe-wrap text-sm">
                           <span className="text-textMuted">{BUNDLE_TYPE_LABEL[option.type]}:</span>{' '}
                           {isCurrentProduct ? (
                             <span className="font-semibold">{option.name}</span>
@@ -1667,7 +1667,7 @@ export default function ProductDetail({
                           </Link>
                         ) : null}
                         {option.isVirtual && option.stock <= 0 ? (
-                          <p className="text-xs text-textMuted mt-1">No disponible todavía para este juego.</p>
+                          <p className="mobile-safe-wrap mt-1 text-xs text-textMuted">No disponible todavía para este juego.</p>
                         ) : null}
                       </div>
                     </div>
@@ -1767,8 +1767,8 @@ export default function ProductDetail({
 
       <div className="lg:hidden fixed inset-x-0 bottom-0 z-40 border-t border-line bg-[rgba(7,13,22,0.95)] backdrop-blur-md">
         <div className="container py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-col gap-3 min-[420px]:flex-row min-[420px]:items-start min-[420px]:justify-between">
+            <div className="min-w-0">
               <p className="text-[11px] text-textMuted uppercase tracking-[0.08em]">Selección actual</p>
               <p className="text-primary font-semibold">{(selectedTotalPrice / 100).toFixed(2)} €</p>
               <p className="text-[11px] text-textMuted">
@@ -1776,7 +1776,7 @@ export default function ProductDetail({
               </p>
             </div>
 
-            <div className="flex items-center rounded-xl border border-line overflow-hidden shrink-0">
+            <div className="flex w-fit items-center rounded-xl border border-line overflow-hidden shrink-0">
               <button
                 type="button"
                 className="px-3 py-2 text-sm border-r border-line"
@@ -1834,7 +1834,7 @@ export default function ProductDetail({
                     </div>
                   </div>
 
-                  <p className="text-sm mt-3 text-textMuted">{currentReview.comment}</p>
+                  <p className="mobile-safe-wrap mt-3 text-sm text-textMuted">{currentReview.comment}</p>
                   {currentReview.photos?.length ? (
                     <div className="grid grid-cols-3 gap-2 mt-3">
                       {currentReview.photos.map((photo) => (
