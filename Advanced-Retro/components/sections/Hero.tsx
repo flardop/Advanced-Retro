@@ -112,17 +112,19 @@ export default function Hero() {
       <div className="container relative">
         <div className="content-rail">
           <div className="hero-shell overflow-hidden rounded-[1.7rem] border border-white/10 bg-[rgba(5,8,16,0.72)] shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl">
-            <div className="grid gap-0 xl:min-h-[calc(100vh-9rem)] xl:grid-cols-[1.04fr,0.96fr]">
-              <div className="hero-copy relative min-w-0 p-5 sm:p-8 lg:p-10 xl:flex xl:flex-col xl:justify-center xl:p-14">
+            <div className="grid gap-0 xl:min-h-[calc(100vh-9rem)] xl:grid-cols-[1.12fr,0.88fr] 2xl:grid-cols-[1.08fr,0.92fr]">
+              <div className="hero-copy relative min-w-0 p-5 sm:p-8 lg:p-10 xl:flex xl:flex-col xl:justify-center xl:p-12 2xl:p-14">
                 <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary shadow-[0_0_24px_rgba(75,228,214,0.15)] sm:text-xs sm:tracking-[0.18em]">
                   <span className="text-sm">🎮</span>
                   <span className="min-w-0">{copy.badge}</span>
                 </div>
 
                 <h1
-                  className={`${heroDisplay.className} mobile-safe-wrap mt-5 text-[clamp(3.25rem,15vw,4.7rem)] uppercase leading-[0.92] text-white sm:mt-6 lg:text-[clamp(5.2rem,8vw,6.8rem)] 2xl:text-[7.2rem]`}
+                  aria-label={copy.title}
+                  className={`${heroDisplay.className} title-display mt-5 max-w-full text-[clamp(3.25rem,15vw,4.7rem)] uppercase text-white sm:mt-6 lg:text-[clamp(4.85rem,6.9vw,5.9rem)] 2xl:text-[clamp(5.8rem,5vw,6.7rem)]`}
                 >
-                  {copy.title}
+                  ADVANCED<wbr />
+                  RETRO
                 </h1>
 
                 <p className="mobile-safe-wrap mt-4 max-w-full text-base leading-relaxed text-slate-300 sm:max-w-[38rem] sm:text-lg xl:max-w-[34rem]">
@@ -168,7 +170,7 @@ export default function Hero() {
                 </div>
               </div>
 
-              <div className="hero-media relative min-w-0 border-t border-white/10 bg-[radial-gradient(circle_at_50%_24%,rgba(105,74,255,0.24),transparent_30%),linear-gradient(160deg,#0d1323,#090d17)] p-4 sm:p-6 xl:border-l xl:border-t-0 xl:p-8">
+              <div className="hero-media relative min-w-0 border-t border-white/10 bg-[radial-gradient(circle_at_50%_24%,rgba(105,74,255,0.24),transparent_30%),linear-gradient(160deg,#0d1323,#090d17)] p-4 sm:p-6 xl:border-l xl:border-t-0 xl:p-7 2xl:p-8">
                 <div className="rounded-[1.55rem] border border-white/10 bg-[rgba(8,14,26,0.68)] p-4 sm:p-5 xl:flex xl:h-full xl:flex-col">
                   <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
