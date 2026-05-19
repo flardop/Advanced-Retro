@@ -678,6 +678,17 @@ export default function RetrovilleDesktopExperience({
 
           <div className={styles.heroCenter}>
             <p className={styles.heroEyebrow}>Serie original en desarrollo</p>
+            <div className="mx-auto mt-5 w-full max-w-[360px]">
+              <Image
+                src="/images/retroville/retroville-logo.png"
+                alt="Logo de Retroville"
+                width={1536}
+                height={1023}
+                priority
+                sizes="(max-width: 1280px) 320px, 360px"
+                className="h-auto w-full object-contain drop-shadow-[0_18px_44px_rgba(255,168,26,0.18)]"
+              />
+            </div>
             <h1 className={`${displayFont.className} ${styles.heroTitleWord}`}>
               {titleLetters.map((letter, index) => (
                 <span

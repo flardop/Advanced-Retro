@@ -273,6 +273,17 @@ export default function RetrovilleExperience({
             <div className="mx-auto inline-flex items-center rounded-full border border-white/12 bg-white/[0.03] px-4 py-2 text-[11px] uppercase tracking-[0.26em] text-[var(--rv-gold)]">
               Cinematic universe reveal
             </div>
+            <div className="mx-auto mt-6 w-full max-w-[270px] sm:max-w-[320px]">
+              <Image
+                src="/images/retroville/retroville-logo.png"
+                alt="Logo de Retroville"
+                width={1536}
+                height={1023}
+                priority
+                sizes="(max-width: 640px) 270px, 320px"
+                className="h-auto w-full object-contain drop-shadow-[0_16px_38px_rgba(255,168,26,0.18)]"
+              />
+            </div>
             <h1 className={`${displayFont.className} mt-6 text-[clamp(4.6rem,14vw,11rem)] uppercase leading-[0.85] tracking-[0.03em] text-white`}>
               <span className={styles.titleWord}>
                 {titleLetters.map((letter, index) => {
