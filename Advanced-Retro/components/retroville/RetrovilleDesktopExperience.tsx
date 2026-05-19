@@ -96,6 +96,19 @@ const districtCards = [
   },
 ] as const;
 
+const retrovilleSocials = [
+  {
+    label: 'YouTube',
+    href: 'https://www.youtube.com/@RetroVille-y9v',
+    ariaLabel: 'Abrir YouTube de Retroville',
+  },
+  {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/retroville_show/',
+    ariaLabel: 'Abrir Instagram de Retroville',
+  },
+] as const;
+
 const worldSlides = [
   {
     eyebrow: 'SECTOR 01',
@@ -605,7 +618,23 @@ export default function RetrovilleDesktopExperience({
         <div className={styles.waitlistCard}>
           <RetrovilleWaitlistForm />
           <div className={styles.waitlistFooter}>
-            <p>© AdvancedRetro · Retroville está en desarrollo como serie original.</p>
+            <div className={styles.waitlistFooterMeta}>
+              <p>© AdvancedRetro · Retroville está en desarrollo como serie original.</p>
+              <div className={styles.socialLinks}>
+                {retrovilleSocials.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={social.ariaLabel}
+                    className={styles.socialLink}
+                  >
+                    {social.label}
+                  </a>
+                ))}
+              </div>
+            </div>
             <Link href="/" className={styles.backHomeLink}>
               Volver a AdvancedRetro
             </Link>
@@ -711,6 +740,20 @@ export default function RetrovilleDesktopExperience({
               <button type="button" className={styles.secondaryButton} onClick={() => jumpToStep(slideCount)}>
                 Ir a la waitlist
               </button>
+            </div>
+            <div className={styles.heroSocials}>
+              {retrovilleSocials.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={social.ariaLabel}
+                  className={styles.socialLink}
+                >
+                  {social.label}
+                </a>
+              ))}
             </div>
           </div>
         </section>

@@ -147,6 +147,19 @@ const drops = [
   },
 ] as const;
 
+const retrovilleSocials = [
+  {
+    label: 'YouTube',
+    href: 'https://www.youtube.com/@RetroVille-y9v',
+    ariaLabel: 'Abrir YouTube de Retroville',
+  },
+  {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/retroville_show/',
+    ariaLabel: 'Abrir Instagram de Retroville',
+  },
+] as const;
+
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value));
 }
@@ -328,6 +341,20 @@ export default function RetrovilleExperience({
                 <ArrowRight className="h-4 w-4" />
               </button>
               <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-text-dim)]">Lanzamiento previsto · {launchLabel}</p>
+            </div>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              {retrovilleSocials.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={social.ariaLabel}
+                  className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 text-[11px] uppercase tracking-[0.2em] text-white/82 transition hover:border-[var(--rv-cyan)]/30 hover:bg-white/[0.08] hover:text-white"
+                >
+                  {social.label}
+                </a>
+              ))}
             </div>
           </div>
 
@@ -585,6 +612,20 @@ export default function RetrovilleExperience({
             </div>
             <div className="mt-12 border-t border-white/8 pt-6 text-sm text-[var(--rv-text-dim)]">
               <p>© AdvancedRetro · Retroville está en desarrollo.</p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                {retrovilleSocials.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={social.ariaLabel}
+                    className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 text-[11px] uppercase tracking-[0.2em] text-white/82 transition hover:border-[var(--rv-green)]/30 hover:bg-white/[0.08] hover:text-white"
+                  >
+                    {social.label}
+                  </a>
+                ))}
+              </div>
               <Link href="/" className="mt-3 inline-flex text-white transition hover:text-[var(--rv-green)]">
                 ← Volver a AdvancedRetro
               </Link>
