@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Bebas_Neue, DM_Sans, Space_Mono } from 'next/font/google';
 import RetrovilleCountdown from '@/components/retroville/RetrovilleCountdown';
@@ -31,6 +31,9 @@ const marqueeItems = [
   'NOX',
   'BUTTON CREW',
   'LUNA',
+  'NORA',
+  'JOY & GRUMP',
+  'YAYA',
   'PIXEL GRAVEYARD',
   'RAM DISTRICT',
   'CORRUPTED SAVE',
@@ -54,9 +57,8 @@ const marqueeItems = [
 
 const manifestoLines = ['EVERY', 'FORGOTTEN', 'GAME', 'ENDS UP', 'SOMEWHERE.'] as const;
 
-const characterCards = [
+const featuredCharacters = [
   {
-    key: 'nox',
     name: 'NOX',
     subtitle: 'El Guardián del Núcleo',
     subtitleColor: 'var(--rv-purple)',
@@ -65,12 +67,12 @@ const characterCards = [
     role: 'Proteger el corazón pulsante de Retroville',
     description:
       'Construido de píxeles perdidos y capas de código que nadie quiso borrar. NOX no recuerda de qué juego vino, pero recuerda cada uno de los que llegaron después. Guarda el Núcleo de Retroville desde antes de que la ciudad tuviera nombre.',
-    image: '/images/retroville/nox-push.png',
-    objectPosition: 'left center',
-    accent: 'rgba(155, 92, 255, 0.18)',
+    image: '/images/retroville/nox-character-large.png',
+    accent: 'rgba(97, 174, 255, 0.22)',
+    chips: ['Turno de noche', 'Sarcasmo', 'Batería baja'],
+    imageClassName: 'object-contain object-center scale-[1.02]',
   },
   {
-    key: 'crew',
     name: 'BUTTON CREW',
     subtitle: 'Los Que Mantienen las Luces Encendidas',
     subtitleColor: 'var(--rv-gold)',
@@ -79,12 +81,12 @@ const characterCards = [
     role: 'Mantener Retroville operativa cuando todo debería haber fallado',
     description:
       'Llevan demasiado tiempo en el juego. Literalmente. Nadie recuerda quién los creó ni para qué juego. Pero están aquí, y sin ellos, Retroville habría oscurecido hace mucho.',
-    image: '/images/retroville/button-crew-push.png',
-    objectPosition: 'right center',
-    accent: 'rgba(255, 201, 64, 0.12)',
+    image: '/images/retroville/button-crew-character-large.png',
+    accent: 'rgba(255, 189, 82, 0.22)',
+    chips: ['A / B / Y / X', 'Caos social', 'Ruido colectivo'],
+    imageClassName: 'object-contain object-center scale-[1.05]',
   },
   {
-    key: 'luna',
     name: 'LUNA',
     subtitle: 'Encanto, ruido y sabotaje emocional',
     subtitleColor: '#d985ab',
@@ -93,9 +95,31 @@ const characterCards = [
     role: 'Desestabilizar a NOX y convertir la atención en moneda',
     description:
       'Manipulativa, juguetona, caótica e impredecible. Luna atraviesa Retroville dejando ruido, confusión y una clase muy concreta de magnetismo tóxico. No busca amor. Busca control.',
-    image: '/images/retroville/luna-styleguide.png',
-    objectPosition: '18% center',
-    accent: 'rgba(217, 133, 171, 0.16)',
+    image: '/images/retroville/luna-character-large.png',
+    accent: 'rgba(217, 133, 171, 0.24)',
+    chips: ['Magnetismo', 'Glamour tóxico', 'Interferencia'],
+    imageClassName: 'object-contain object-center scale-[1.02]',
+  },
+] as const;
+
+const supportingCast = [
+  {
+    name: 'NORA',
+    role: 'City Hall clerk',
+    description: 'Orden, formularios y memoria institucional. La clase de personaje que hace que la ciudad parezca real.',
+    image: '/images/retroville/retroville-nora-sheet.png',
+  },
+  {
+    name: 'JOY & GRUMP',
+    role: 'Neighbour controllers',
+    description: 'Vecinos eternamente molestos, perfectos para el tono de sitcom adulta y caos cotidiano.',
+    image: '/images/retroville/retroville-joy-grump-sheet.png',
+  },
+  {
+    name: 'YAYA',
+    role: 'Leyenda del barrio',
+    description: 'Memoria viva, energía rara y la sensación de que conoce secretos que el resto ya olvidó.',
+    image: '/images/retroville/retroville-yaya-sheet.png',
   },
 ] as const;
 
@@ -126,6 +150,69 @@ const worldbuildingItems = [
     image: '/images/retroville/retroville-urban-props-concept.png',
     imageAlt: 'Concept art de The Neon Boneyard',
     imagePosition: 'center center',
+  },
+] as const;
+
+const lifeSections = [
+  {
+    title: 'RETROVILLE CENTRAL SCHOOL',
+    text: 'Aulas, patios y normas absurdas. Si Retroville va a ser una serie, necesita también vida cotidiana y generaciones nuevas dentro del mundo.',
+    image: '/images/retroville/retroville-school-concept.png',
+    alt: 'Concept art de la escuela central de Retroville',
+  },
+  {
+    title: 'TOP SLOT NIGHTCLUB',
+    text: 'La noche elegante y peligrosa del universo: música, membresía, ruido social y decisiones dudosas después de medianoche.',
+    image: '/images/retroville/retroville-club-concept.png',
+    alt: 'Concept art del club nocturno de Retroville',
+  },
+  {
+    title: 'CASA DE NOX',
+    text: 'La serie también necesita intimidad. Refugios, interiores y lugares donde el personaje deje de ser icono y se vuelva persona.',
+    image: '/images/retroville/retroville-nox-house-concept.png',
+    alt: 'Concept art de la casa de NOX en Retroville',
+  },
+] as const;
+
+const transitSections = [
+  {
+    title: 'RETROVILLE METRO POD',
+    text: 'Movilidad compacta para una ciudad rara: cápsulas, trenes y sistemas que parecen diseñados dentro de una consola.',
+    image: '/images/retroville/retroville-metro-pod-concept.png',
+    alt: 'Concept art del metro pod de Retroville',
+  },
+  {
+    title: 'TAXI POD',
+    text: 'Pequeño, extraño y perfectamente reconocible. El transporte también suma identidad cuando el mundo quiere sentirse propio.',
+    image: '/images/retroville/retroville-taxi-pod-concept.png',
+    alt: 'Concept art del taxi pod de Retroville',
+  },
+  {
+    title: 'ZAPPERBIKE',
+    text: 'Velocidad urbana, energía arcade y el tipo de vehículo que hace que la ciudad tenga personalidad incluso cuando nadie está hablando.',
+    image: '/images/retroville/retroville-zapperbike-concept.png',
+    alt: 'Concept art de la Zapperbike de Retroville',
+  },
+] as const;
+
+const ecosystemCards = [
+  {
+    title: 'CRIATURAS',
+    text: 'Fauna hecha de discos, cables y cartuchos. El mundo ya no depende solo de humanos o mandos antropomorfos.',
+    image: '/images/retroville/retroville-creatures-concept.png',
+    alt: 'Concept art de criaturas de Retroville',
+  },
+  {
+    title: 'COMERCIO Y CALLE',
+    text: 'Kioscos, bares, props urbanos y objetos cotidianos que hacen que cada rincón parezca habitable.',
+    image: '/images/retroville/retroville-urban-props-concept.png',
+    alt: 'Concept art de props y comercio urbano en Retroville',
+  },
+  {
+    title: 'ARQUITECTURA DOMÉSTICA',
+    text: 'Edificios apilados, casas modulares y bloques que refuerzan que Retroville es una ciudad con cultura propia.',
+    image: '/images/retroville/retroville-stacked-housing-concept.png',
+    alt: 'Concept art de viviendas apiladas de Retroville',
   },
 ] as const;
 
@@ -197,13 +284,16 @@ export default function RetrovilleExperience({
 }) {
   const heroRef = useRef<HTMLElement | null>(null);
   const [heroProgress, setHeroProgress] = useState(0);
-  const [activeCharacter, setActiveCharacter] = useState<(typeof characterCards)[number]['key']>('nox');
   const manifestoReveal = useInView<HTMLDivElement>();
   const charactersReveal = useInView<HTMLElement>();
   const worldReveal = useInView<HTMLElement>();
   const dropsReveal = useInView<HTMLElement>();
   const countdownReveal = useInView<HTMLElement>();
   const waitlistReveal = useInView<HTMLElement>();
+  const residentsReveal = useInView<HTMLElement>();
+  const lifeReveal = useInView<HTMLElement>();
+  const transitReveal = useInView<HTMLElement>();
+  const ecosystemReveal = useInView<HTMLElement>();
 
   useEffect(() => {
     const update = () => {
@@ -223,11 +313,6 @@ export default function RetrovilleExperience({
       window.removeEventListener('resize', update);
     };
   }, []);
-
-  const activeCharacterData = useMemo(
-    () => characterCards.find((item) => item.key === activeCharacter) || characterCards[0],
-    [activeCharacter]
-  );
 
   const repeatedMarqueeItems = [...marqueeItems, ...marqueeItems];
   const waitlistGoal = 5000;
@@ -382,28 +467,53 @@ export default function RetrovilleExperience({
           </div>
         </div>
 
-        <div className="relative z-10 mt-12 grid gap-6 sm:grid-cols-2 lg:hidden">
-          <div className="relative h-[280px] overflow-hidden rounded-[2rem] border border-white/8 bg-black/30">
+        <div className="relative z-10 mt-12 grid gap-4 lg:hidden">
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-[rgba(7,10,20,0.72)] shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
             <Image
-              src="/images/retroville/nox-push.png"
-              alt="NOX empujando el núcleo de Retroville"
-              fill
+              src="/images/retroville/retroville-central-plaza-concept.png"
+              alt="Concept art de la plaza central de Retroville"
+              width={1600}
+              height={1200}
               sizes="100vw"
-              className="object-cover"
-              style={{ objectPosition: 'left center' }}
+              className="h-auto w-full object-cover"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.2),transparent_20%,transparent_88%,rgba(4,4,10,0.92))]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.18),transparent_24%,transparent_78%,rgba(4,4,10,0.94))]" />
+            <div className="absolute inset-x-0 bottom-0 p-4 text-left">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-green)]">Serie original</p>
+              <p className={`${displayFont.className} mt-2 text-2xl uppercase text-white`}>La ciudad ya existe</p>
+            </div>
           </div>
-          <div className="relative h-[280px] overflow-hidden rounded-[2rem] border border-white/8 bg-black/30">
-            <Image
-              src="/images/retroville/button-crew-push.png"
-              alt="Button Crew empujando hacia el centro del universo Retroville"
-              fill
-              sizes="100vw"
-              className="object-cover"
-              style={{ objectPosition: 'right center' }}
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.2),transparent_20%,transparent_88%,rgba(4,4,10,0.92))]" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="relative overflow-hidden rounded-[1.7rem] border border-white/8 bg-[rgba(7,10,20,0.72)]">
+              <Image
+                src="/images/retroville/luna-nox-lounge.png"
+                alt="Luna y NOX en un interior de Retroville"
+                width={1400}
+                height={900}
+                sizes="(max-width: 640px) 100vw, 50vw"
+                className="h-auto w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.08),transparent_30%,rgba(4,4,10,0.82))]" />
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-pink-200/84">Personajes</p>
+                <p className={`${displayFont.className} mt-2 text-xl uppercase text-white`}>Tensión social</p>
+              </div>
+            </div>
+            <div className="relative overflow-hidden rounded-[1.7rem] border border-white/8 bg-[rgba(7,10,20,0.72)]">
+              <Image
+                src="/images/retroville/retroville-nightclub-concept.png"
+                alt="Concept art del nightlife de Retroville"
+                width={1400}
+                height={900}
+                sizes="(max-width: 640px) 100vw, 50vw"
+                className="h-auto w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.08),transparent_30%,rgba(4,4,10,0.82))]" />
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Lugares</p>
+                <p className={`${displayFont.className} mt-2 text-xl uppercase text-white`}>Noche y ruido</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -454,58 +564,94 @@ export default function RetrovilleExperience({
       <section ref={charactersReveal.ref} className={styles.characterSection}>
         <div className="mx-auto max-w-[1200px] px-6 text-center sm:px-8">
           <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-green)]">Personajes</p>
-          <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,8vw,5.5rem)] uppercase text-white`}>Los primeros en despertar</h2>
+          <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,8vw,5.5rem)] uppercase text-white`}>El reparto principal</h2>
+          <p className="mx-auto mt-5 max-w-[44rem] text-base leading-8 text-[var(--rv-text-muted)] sm:text-lg">
+            En móvil funciona mejor presentar el universo como serie: personajes protagonistas en grande, con presencia real y sin adornos que los encierren.
+          </p>
         </div>
-        <div className={styles.characterTabs}>
-          {characterCards.map((character) => (
-            <button
-              key={character.key}
-              type="button"
-              onClick={() => setActiveCharacter(character.key)}
-              className={`${styles.characterTab} ${activeCharacter === character.key ? styles.characterTabActive : ''}`}
+        <div className="mx-auto mt-12 grid max-w-[1200px] gap-6 px-6 sm:px-8">
+          {featuredCharacters.map((character, index) => (
+            <article
+              key={character.name}
+              className={`${styles.reveal} ${charactersReveal.visible ? styles.revealVisible : ''} overflow-hidden rounded-[2rem] border border-white/8 bg-[linear-gradient(180deg,rgba(10,14,24,0.96),rgba(7,9,18,0.96))] shadow-[0_24px_80px_rgba(0,0,0,0.28)]`}
+              style={{ transitionDelay: `${index * 80}ms` }}
             >
-              {character.name}
-            </button>
+              <div
+                className="relative overflow-hidden px-6 pt-7"
+                style={{
+                  background: `radial-gradient(circle at 50% 32%, ${character.accent}, transparent 58%), linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0))`,
+                }}
+              >
+                <div className="absolute inset-x-8 top-6 h-24 rounded-full blur-3xl" style={{ background: character.accent }} />
+                <div className="relative h-[340px] sm:h-[420px]">
+                  <Image
+                    src={character.image}
+                    alt={character.name}
+                    fill
+                    sizes="100vw"
+                    className={character.imageClassName}
+                  />
+                </div>
+              </div>
+              <div className="px-6 pb-6 pt-5">
+                <p className="text-[11px] uppercase tracking-[0.24em]" style={{ color: character.subtitleColor }}>
+                  {character.subtitle}
+                </p>
+                <h3 className={`${displayFont.className} mt-3 text-[clamp(2.6rem,8vw,4rem)] uppercase leading-[0.9] text-white`}>
+                  {character.name}
+                </h3>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {character.chips.map((chip) => (
+                    <span
+                      key={chip}
+                      className="inline-flex min-h-[34px] items-center rounded-full border border-white/10 bg-white/[0.04] px-3 text-[10px] uppercase tracking-[0.18em] text-white/78"
+                    >
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-5 grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 text-sm">
+                  <span className="font-semibold uppercase tracking-[0.16em] text-[var(--rv-gold)]">tipo</span>
+                  <span className="text-white/86">{character.type}</span>
+                  <span className="font-semibold uppercase tracking-[0.16em] text-[var(--rv-gold)]">origen</span>
+                  <span className="text-white/86">{character.origin}</span>
+                  <span className="font-semibold uppercase tracking-[0.16em] text-[var(--rv-gold)]">función</span>
+                  <span className="text-white/86">{character.role}</span>
+                </div>
+                <p className="mt-5 text-base leading-8 text-[var(--rv-text-muted)]">{character.description}</p>
+              </div>
+            </article>
           ))}
         </div>
-        <div className={`${styles.characterCard} ${charactersReveal.visible ? styles.revealVisible : styles.reveal}`}>
-          <div className={styles.characterImageWrap}>
-            <div className={styles.characterCircle} style={{ ['--character-accent' as string]: activeCharacterData.accent }}>
-              <Image
-                src={activeCharacterData.image}
-                alt=""
-                fill
-                sizes="40vw"
-                className={styles.characterCircleBackdrop}
-                style={{ objectPosition: activeCharacterData.objectPosition }}
-                aria-hidden
-              />
-              <Image
-                src={activeCharacterData.image}
-                alt={activeCharacterData.name}
-                fill
-                sizes="40vw"
-                className={styles.characterCircleArt}
-                style={{ objectPosition: activeCharacterData.objectPosition }}
-              />
-              <div className={styles.characterCircleFade} />
-            </div>
-          </div>
+      </section>
 
-          <div>
-            <h3 className={`${displayFont.className} ${styles.characterInfoName}`}>{activeCharacterData.name}</h3>
-            <p className={styles.characterInfoSubtitle} style={{ color: activeCharacterData.subtitleColor }}>
-              {activeCharacterData.subtitle}
+      <section ref={residentsReveal.ref} className="bg-[var(--rv-bg-section-alt)] px-6 py-20 sm:px-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-green)]">Reparto civil</p>
+            <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,8vw,5.2rem)] uppercase text-white`}>La ciudad también necesita vecinos</h2>
+            <p className="mx-auto mt-5 max-w-[42rem] text-base leading-8 text-[var(--rv-text-muted)] sm:text-lg">
+              Una serie no vive solo de sus tres protagonistas. Aquí empieza a verse el humor social, la burocracia, la rutina y la gente rara que hace que el mundo respire.
             </p>
-            <div className={styles.characterStats}>
-              <span className={styles.characterStatLabel}>tipo</span>
-              <span className={styles.characterStatValue}>{activeCharacterData.type}</span>
-              <span className={styles.characterStatLabel}>origen</span>
-              <span className={styles.characterStatValue}>{activeCharacterData.origin}</span>
-              <span className={styles.characterStatLabel}>función</span>
-              <span className={styles.characterStatValue}>{activeCharacterData.role}</span>
-            </div>
-            <p className={styles.characterDescription}>{activeCharacterData.description}</p>
+          </div>
+          <div className="mt-12 grid gap-6">
+            {supportingCast.map((resident, index) => (
+              <article
+                key={resident.name}
+                className={`${styles.reveal} ${residentsReveal.visible ? styles.revealVisible : ''} overflow-hidden rounded-[1.8rem] border border-white/8 bg-[rgba(11,14,24,0.94)]`}
+                style={{ transitionDelay: `${index * 90}ms` }}
+              >
+                <div className="relative aspect-[16/12] overflow-hidden">
+                  <Image src={resident.image} alt={resident.name} fill sizes="100vw" className="object-cover object-top" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.02),transparent_30%,rgba(4,4,10,0.88))]" />
+                </div>
+                <div className="px-5 pb-5 pt-4">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-cyan)]">{resident.role}</p>
+                  <h3 className={`${displayFont.className} mt-2 text-[2.2rem] uppercase text-white`}>{resident.name}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)]">{resident.description}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -543,6 +689,87 @@ export default function RetrovilleExperience({
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section ref={lifeReveal.ref} className="bg-[var(--rv-bg-deep)] px-6 py-20 sm:px-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-green)]">Vida civil</p>
+            <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,8vw,5.2rem)] uppercase text-white`}>Lugares de la serie</h2>
+          </div>
+          <div className="mt-12 grid gap-6">
+            {lifeSections.map((section, index) => (
+              <article
+                key={section.title}
+                className={`${styles.reveal} ${lifeReveal.visible ? styles.revealVisible : ''} overflow-hidden rounded-[1.8rem] border border-white/8 bg-[rgba(11,14,24,0.94)] shadow-[0_22px_64px_rgba(0,0,0,0.24)]`}
+                style={{ transitionDelay: `${index * 80}ms` }}
+              >
+                <div className="relative aspect-[16/11]">
+                  <Image src={section.image} alt={section.alt} fill sizes="100vw" className="object-cover" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.08),transparent_34%,rgba(4,4,10,0.9))]" />
+                </div>
+                <div className="px-5 pb-5 pt-4">
+                  <h3 className={`${displayFont.className} text-[2.2rem] uppercase text-[var(--rv-gold)]`}>{section.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)]">{section.text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section ref={transitReveal.ref} className="bg-[var(--rv-bg-section-alt)] px-6 py-20 sm:px-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-green)]">Movilidad</p>
+            <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,8vw,5.2rem)] uppercase text-white`}>Cómo se mueve la ciudad</h2>
+          </div>
+          <div className="mt-12 grid gap-6">
+            {transitSections.map((section, index) => (
+              <article
+                key={section.title}
+                className={`${styles.reveal} ${transitReveal.visible ? styles.revealVisible : ''} overflow-hidden rounded-[1.8rem] border border-white/8 bg-[rgba(11,14,24,0.94)]`}
+                style={{ transitionDelay: `${index * 80}ms` }}
+              >
+                <div className="relative aspect-[16/11] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))]">
+                  <Image src={section.image} alt={section.alt} fill sizes="100vw" className="object-cover" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.04),transparent_36%,rgba(4,4,10,0.88))]" />
+                </div>
+                <div className="px-5 pb-5 pt-4">
+                  <h3 className={`${displayFont.className} text-[2.2rem] uppercase text-white`}>{section.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)]">{section.text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section ref={ecosystemReveal.ref} className="bg-[var(--rv-bg-deep)] px-6 py-20 sm:px-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-green)]">Ecosistema</p>
+            <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,8vw,5.2rem)] uppercase text-white`}>Ciudad viva, no solo decorado</h2>
+          </div>
+          <div className="mt-12 grid gap-6">
+            {ecosystemCards.map((card, index) => (
+              <article
+                key={card.title}
+                className={`${styles.reveal} ${ecosystemReveal.visible ? styles.revealVisible : ''} overflow-hidden rounded-[1.8rem] border border-white/8 bg-[rgba(11,14,24,0.94)]`}
+                style={{ transitionDelay: `${index * 80}ms` }}
+              >
+                <div className="relative aspect-[16/11]">
+                  <Image src={card.image} alt={card.alt} fill sizes="100vw" className="object-cover" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.04),transparent_36%,rgba(4,4,10,0.88))]" />
+                </div>
+                <div className="px-5 pb-5 pt-4">
+                  <h3 className={`${displayFont.className} text-[2.2rem] uppercase text-white`}>{card.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)]">{card.text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
