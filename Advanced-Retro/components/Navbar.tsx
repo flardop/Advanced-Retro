@@ -169,8 +169,8 @@ function NavbarContent() {
         <div className="container py-2.5">
           <div className="header-rail">
             <div className="rounded-[1.4rem] border border-line/80 bg-[rgba(7,14,24,0.78)] px-3 py-2 shadow-[0_10px_26px_rgba(0,0,0,0.14)] sm:px-4">
-              <div className="flex min-h-[60px] items-center justify-between gap-3 sm:min-h-[66px]">
-                <Link href="/" className="flex shrink-0 items-center rounded-xl px-1 py-1 hover:bg-white/5">
+              <div className="flex min-h-[60px] items-center justify-between gap-3 sm:min-h-[66px] xl:grid xl:grid-cols-[minmax(176px,1fr)_auto_minmax(176px,1fr)] xl:gap-4">
+                <Link href="/" className="flex shrink-0 items-center rounded-xl px-1 py-1 hover:bg-white/5 xl:justify-self-start">
                   <Image
                     src="/logo.png"
                     alt="Advanced Retro"
@@ -181,7 +181,7 @@ function NavbarContent() {
                   />
                 </Link>
 
-                <nav className="hidden xl:flex xl:flex-1 xl:items-center xl:justify-center">
+                <nav className="hidden xl:flex xl:items-center xl:justify-center xl:justify-self-center">
                   <div
                     className="relative flex items-center gap-1.5"
                     onMouseEnter={clearDesktopMenuCloseTimer}
@@ -261,7 +261,7 @@ function NavbarContent() {
                   </div>
                 </nav>
 
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 xl:justify-self-end">
                   <Link href="/carrito" className="chip hover:border-primary/50 hover:text-text">
                     {locale === 'en' ? 'Cart' : t('nav.cart', 'Carrito')}
                   </Link>

@@ -103,23 +103,29 @@ const worldbuildingItems = [
   {
     title: 'Retroville City',
     text: 'Un horizonte como el de cualquier gran ciudad, pero construido con cartuchos apilados, blisteres rotos y cajas de coleccionista que nadie reclamó. Aquí los vehículos tienen forma de cassette y los rascacielos están hechos de consolas apiladas.',
-    reference: 'Basada en concept art propio — añadir imagen de concept art cuando esté disponible',
+    reference: 'Concept art del skyline central de Retroville.',
     reverse: false,
-    placeholder: 'CONCEPT ART — RETROVILLE CITY',
+    image: '/images/retroville/retroville-buildings-concept.png',
+    imageAlt: 'Concept art del skyline de Retroville',
+    imagePosition: 'center center',
   },
   {
     title: 'The Pixel Graveyard',
     text: 'Un barrio en el límite de la ciudad donde van a parar los juegos que nadie completó. Lápidas de cartuchos. Procesiones de personajes sin final. El silencio aquí es diferente: suena a pantalla de Game Over que nadie apagó.',
-    reference: 'Concept art pendiente de publicación',
+    reference: 'Concept art del vertedero de hardware y cartuchos olvidados.',
     reverse: true,
-    placeholder: 'CONCEPT ART — THE PIXEL GRAVEYARD',
+    image: '/images/retroville/retroville-bit-grave-concept.png',
+    imageAlt: 'Concept art de The Pixel Graveyard',
+    imagePosition: 'center center',
   },
   {
     title: 'The Neon Boneyard',
     text: 'Donde el hardware va a morir lentamente. Consolas medio encendidas, cables que ya no conectan a nada, letreros de neón que parpadean mensajes de juegos que ya no existen. El lugar más honesto de Retroville.',
-    reference: 'Concept art pendiente de publicación',
+    reference: 'Concept art de calles, señalética y restos urbanos del distrito.',
     reverse: false,
-    placeholder: 'CONCEPT ART — THE NEON BONEYARD',
+    image: '/images/retroville/retroville-urban-props-concept.png',
+    imageAlt: 'Concept art de The Neon Boneyard',
+    imagePosition: 'center center',
   },
 ] as const;
 
@@ -483,10 +489,18 @@ export default function RetrovilleExperience({
                 <p className={styles.worldbuildingReferences}>{item.reference}</p>
               </div>
               <div className={styles.worldbuildingImage}>
-                <div className={styles.worldbuildingPlaceholder}>
-                  <span style={{ fontSize: '32px' }}>🎮</span>
-                  <span>{item.placeholder}</span>
-                  <span style={{ fontSize: '12px', color: 'var(--rv-green)' }}>EN DESARROLLO</span>
+                <Image
+                  src={item.image}
+                  alt={item.imageAlt}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 48vw"
+                  className={styles.worldbuildingConceptImage}
+                  style={{ objectPosition: item.imagePosition }}
+                />
+                <div className="absolute inset-x-0 top-0 flex justify-end p-3">
+                  <span className="rounded-full border border-white/10 bg-[rgba(4,4,10,0.72)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[var(--rv-green)]">
+                    Concept art
+                  </span>
                 </div>
               </div>
             </article>
