@@ -30,6 +30,97 @@ const progressCards = [
   { label: 'Sistema de torneos', state: 'No iniciado', progress: 0, color: 'from-violet-400 to-purple-500' },
 ];
 
+const devCharacterDossiers = [
+  {
+    name: 'JOY & GRUMP',
+    role: 'Neighbor controllers',
+    district: 'Bloques residenciales',
+    tags: ['Vecindario', 'Humor negro', 'Dúo civil'],
+    image: '/images/retroville/dev-characters/joy-grump-sheet.png',
+    notes: 'Pareja de vecinos gruñones que mete tono de sitcom adulta y conflicto cotidiano en Retroville.',
+  },
+  {
+    name: 'TRIMP',
+    role: 'Motion controller alpha',
+    district: 'Arena social',
+    tags: ['Competitivo', 'Showboat', 'Presencia'],
+    image: '/images/retroville/dev-characters/trimp-sheet.png',
+    notes: 'Figura dominante y exhibicionista. Funciona como energía de ego, ranking y espectáculo.',
+  },
+  {
+    name: 'PATROL CREW',
+    role: 'Retroville patrol operators',
+    district: 'Calles / control nocturno',
+    tags: ['Orden', 'Patrulla', 'Noche'],
+    image: '/images/retroville/dev-characters/patrol-chief-sheet.png',
+    notes: 'Brazo visible del orden en la ciudad. Fatiga, burocracia y vigilancia con humor seco.',
+  },
+  {
+    name: 'PUBLIC CREW',
+    role: 'Transport operators',
+    district: 'Rutas públicas',
+    tags: ['Transporte', 'Rutina', 'Calle'],
+    image: '/images/retroville/dev-characters/public-crew-sheet.png',
+    notes: 'Operadores del sistema público. Dan identidad a la movilidad urbana del mundo.',
+  },
+  {
+    name: 'SHIFT STICK',
+    role: 'Transit operator',
+    district: 'Infraestructura urbana',
+    tags: ['Transporte', 'Burnout', 'Commuter'],
+    image: '/images/retroville/dev-characters/shift-stick-sheet.png',
+    notes: 'Personaje muy bueno para representar cansancio funcional, horarios y la vida repetitiva de la ciudad.',
+  },
+  {
+    name: 'CRUX',
+    role: 'City Hall clerk',
+    district: 'Ayuntamiento',
+    tags: ['Burocracia', 'Reglas', 'Papeles'],
+    image: '/images/retroville/dev-characters/crux-sheet.png',
+    notes: 'Ancla institucional de Retroville. Ideal para toda la capa administrativa del universo.',
+  },
+  {
+    name: 'NORA',
+    role: 'Senior resident',
+    district: 'Riverside district',
+    tags: ['Civil', 'Memoria del barrio', 'Observación'],
+    image: '/images/retroville/dev-characters/nora-senior-sheet.png',
+    notes: 'Figura vecinal con historia y autoridad pasiva. Añade textura social y memoria colectiva.',
+  },
+  {
+    name: 'MAYOR TUBE',
+    role: 'Mayor of Retroville',
+    district: 'City Hall',
+    tags: ['Política', 'Poder', 'Satira'],
+    image: '/images/retroville/dev-characters/mayor-tube-sheet.png',
+    notes: 'Perfecto para el eje cívico-político de la serie. Carisma falso, control y propaganda.',
+  },
+  {
+    name: 'TOMO',
+    role: 'Retroville kid',
+    district: 'Playground district',
+    tags: ['Infancia', 'Caos', 'Barrio'],
+    image: '/images/retroville/dev-characters/tomo-sheet.png',
+    notes: 'Niño callejero con energía de problema constante. Muy útil para el lado más gamberro de la serie.',
+  },
+  {
+    name: 'PIPO',
+    role: 'Retroville kid',
+    district: 'Playground district',
+    tags: ['Infancia', 'Mala leche', 'Travieso'],
+    image: '/images/retroville/dev-characters/pipo-sheet.png',
+    notes: 'Complementa a Tomo con otra energía infantil más descarada y provocadora.',
+  },
+  {
+    name: 'NANO',
+    role: 'Pocket MP3 kid',
+    district: 'Playground district',
+    tags: ['Música', 'Dreamy', 'Nueva generación'],
+    image: '/images/retroville/dev-characters/nano-sheet.png',
+    notes: 'Introduce sensibilidad más blanda y contemporánea. Muy útil para ampliar el rango emocional del reparto.',
+  },
+];
+
 export default function DevRetrovilleAccess() {
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState('');
@@ -191,6 +282,62 @@ export default function DevRetrovilleAccess() {
               <p className="mt-3 text-sm text-slate-300">{card.progress}%</p>
             </article>
           ))}
+        </section>
+
+        <section className="rounded-[2rem] border border-white/10 bg-[rgba(8,10,18,0.8)] p-6 backdrop-blur-xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/72">Biblia de personajes</p>
+              <h3 className="mt-3 text-3xl font-black text-white sm:text-4xl">Dossiers internos del reparto civil de Retroville</h3>
+            </div>
+            <p className="max-w-xl text-sm leading-relaxed text-slate-300">
+              Ya no estamos solo con NOX, Luna y Button Crew. Aquí queda centralizado el resto del reparto que está construyendo la sociedad,
+              la burocracia, la infancia, el transporte y el orden público del universo.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 xl:grid-cols-2">
+            {devCharacterDossiers.map((character) => (
+              <article
+                key={character.name}
+                className="overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(41,10,19,0.94),rgba(22,8,16,0.98))] shadow-[0_24px_60px_rgba(0,0,0,0.28)]"
+              >
+                <div className="flex flex-col gap-4 border-b border-white/8 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-fuchsia-200/72">{character.role}</p>
+                    <h4 className="mt-2 text-2xl font-black uppercase tracking-[0.08em] text-white sm:text-3xl">{character.name}</h4>
+                    <p className="mt-2 text-sm text-slate-300">{character.district}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 sm:justify-end">
+                    {character.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/72"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="px-3 py-3 sm:px-4 sm:py-4">
+                  <div className="relative aspect-[16/9] overflow-hidden rounded-[1.35rem] border border-white/10 bg-[rgba(255,255,255,0.03)]">
+                    <Image
+                      src={character.image}
+                      alt={`${character.name} character sheet`}
+                      fill
+                      className="object-contain object-center"
+                      sizes="(max-width: 1280px) 100vw, 46vw"
+                    />
+                  </div>
+                </div>
+
+                <div className="px-5 pb-5">
+                  <p className="text-sm leading-relaxed text-slate-300">{character.notes}</p>
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
 
         <LunaDevGuide />
