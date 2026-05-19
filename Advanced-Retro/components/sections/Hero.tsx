@@ -112,8 +112,8 @@ export default function Hero() {
       <div className="container relative">
         <div className="content-rail">
           <div className="hero-shell overflow-hidden rounded-[1.7rem] border border-white/10 bg-[rgba(5,8,16,0.72)] shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl">
-            <div className="grid gap-0 xl:min-h-[calc(100vh-9rem)] xl:grid-cols-[1.12fr,0.88fr] 2xl:grid-cols-[1.08fr,0.92fr]">
-              <div className="hero-copy relative min-w-0 p-5 sm:p-8 lg:p-10 xl:flex xl:flex-col xl:justify-center xl:p-12 2xl:p-14">
+            <div className="grid gap-0 xl:min-h-[calc(100vh-9rem)] xl:grid-cols-[1.18fr,0.82fr] 2xl:grid-cols-[1.12fr,0.88fr]">
+              <div className="hero-copy relative min-w-0 p-5 sm:p-8 lg:p-10 xl:flex xl:flex-col xl:justify-center xl:p-10 2xl:p-14">
                 <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary shadow-[0_0_24px_rgba(75,228,214,0.15)] sm:text-xs sm:tracking-[0.18em]">
                   <span className="text-sm">🎮</span>
                   <span className="min-w-0">{copy.badge}</span>
@@ -121,10 +121,10 @@ export default function Hero() {
 
                 <h1
                   aria-label={copy.title}
-                  className={`${heroDisplay.className} title-display mt-5 max-w-full text-[clamp(3.25rem,15vw,4.7rem)] uppercase text-white sm:mt-6 lg:text-[clamp(4.85rem,6.9vw,5.9rem)] 2xl:text-[clamp(5.8rem,5vw,6.7rem)]`}
+                  className={`${heroDisplay.className} title-display mt-5 max-w-[9.2ch] text-[clamp(3.25rem,15vw,4.7rem)] uppercase leading-[0.9] text-white sm:mt-6 lg:text-[clamp(4rem,5.8vw,5.25rem)] xl:max-w-[8.9ch] 2xl:max-w-none 2xl:text-[clamp(5.35rem,5vw,6.15rem)]`}
                 >
-                  ADVANCED<wbr />
-                  RETRO
+                  <span className="block 2xl:inline">ADVANCED</span>
+                  <span className="block 2xl:ml-[0.05em] 2xl:inline">RETRO</span>
                 </h1>
 
                 <p className="mobile-safe-wrap mt-4 max-w-full text-base leading-relaxed text-slate-300 sm:max-w-[38rem] sm:text-lg xl:max-w-[34rem]">
