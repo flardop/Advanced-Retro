@@ -280,7 +280,33 @@ function fallbackReply(locale: string, prompt: string, context: AssistantContext
   const text = prompt.toLowerCase();
   let baseMessage = '';
 
-  if (text.includes('pedido') || text.includes('order') || text.includes('tracking')) {
+  if (
+    text.includes('mystery') ||
+    text.includes('ruleta') ||
+    text.includes('roulette') ||
+    text.includes('box') ||
+    text.includes('ticket')
+  ) {
+    baseMessage =
+      locale === 'en'
+        ? 'Mystery Boxes and Roulette are related, but they are not the same flow.\n\n1. In Mystery Boxes you buy the experience or the spin.\n2. In Roulette you spend tickets you already earned.\n\nIf you want, I can also tell you which option makes more sense depending on whether you want surprise, collectible prizes or a lower spend.'
+        : 'Mystery Boxes y Ruleta están relacionadas, pero no son el mismo flujo.\n\n1. En Mystery Boxes compras la experiencia o la tirada.\n2. En Ruleta gastas tickets que ya has conseguido.\n\nSi quieres, también puedo decirte qué opción encaja mejor contigo según busques sorpresa, premios coleccionables o gastar menos.';
+  } else if (text.includes('retroville') || text.includes('serie') || text.includes('show')) {
+    baseMessage =
+      locale === 'en'
+        ? 'Retroville is the original narrative universe of AdvancedRetro. It is being developed as a series with its own characters, districts, transport, strange humour and forgotten hardware culture.'
+        : 'Retroville es el universo narrativo original de AdvancedRetro. Se está desarrollando como una serie con personajes propios, distritos, transporte, humor extraño y cultura de hardware olvidado.';
+  } else if (
+    text.includes('regalo') ||
+    text.includes('gift') ||
+    text.includes('recomienda') ||
+    text.includes('recommend')
+  ) {
+    baseMessage =
+      locale === 'en'
+        ? 'Yes, I can help you narrow it down properly. Tell me 3 things: budget, main console/platform, and whether you want something safe or something more special and collectible.'
+        : 'Sí, puedo ayudarte a afinarlo bien. Dime 3 cosas: presupuesto, consola o plataforma principal y si buscas algo seguro o algo más especial y coleccionable.';
+  } else if (text.includes('pedido') || text.includes('order') || text.includes('tracking')) {
     baseMessage =
       locale === 'en'
         ? 'If this is about a specific order, open your profile and contact support with the order number so the team can review it properly.'
@@ -294,17 +320,6 @@ function fallbackReply(locale: string, prompt: string, context: AssistantContext
       locale === 'en'
         ? 'AdvancedRetro ships from Spain. For exact delivery timing or shipping costs, review checkout details or contact support from your profile.'
         : 'AdvancedRetro prepara envíos desde España. Para plazos exactos o costes de envío, revisa el checkout o contacta con soporte desde tu perfil.';
-  } else if (
-    text.includes('mystery') ||
-    text.includes('ruleta') ||
-    text.includes('roulette') ||
-    text.includes('box') ||
-    text.includes('ticket')
-  ) {
-    baseMessage =
-      locale === 'en'
-        ? 'Mystery Boxes and Roulette are separate flows. In Mystery Boxes you buy spins, and in Roulette you spend tickets you already earned.'
-        : 'Mystery Boxes y Ruleta son flujos separados. En Mystery Boxes compras tiradas, y en Ruleta gastas los tickets que ya has conseguido.';
   } else if (
     text.includes('subasta') ||
     text.includes('auction') ||
@@ -457,6 +472,10 @@ export async function POST(req: Request) {
             locale === 'en'
               ? 'Tell me what you need and I will guide you as clearly as possible.'
               : 'Cuéntame qué necesitas y te orientaré de la forma más clara posible.',
+          content:
+            locale === 'en'
+              ? 'Tell me what you need and I will guide you as clearly as possible.'
+              : 'Cuéntame qué necesitas y te orientaré de la forma más clara posible.',
           provider: 'fallback',
           links: buildRouteSuggestions(locale, ''),
           productMatches: [],
@@ -488,6 +507,7 @@ export async function POST(req: Request) {
       if (anthropicResult) {
         return NextResponse.json({
           message: anthropicResult.message,
+          content: anthropicResult.message,
           provider: anthropicResult.provider,
           links: context.links,
           productMatches: context.productHints,
@@ -502,6 +522,7 @@ export async function POST(req: Request) {
       if (openAiResult) {
         return NextResponse.json({
           message: openAiResult.message,
+          content: openAiResult.message,
           provider: openAiResult.provider,
           links: context.links,
           productMatches: context.productHints,
@@ -511,8 +532,10 @@ export async function POST(req: Request) {
       // Intentionally continue to local fallback.
     }
 
+    const fallbackMessage = fallbackReply(locale, latestUserMessage.content, context);
     return NextResponse.json({
-      message: fallbackReply(locale, latestUserMessage.content, context),
+      message: fallbackMessage,
+      content: fallbackMessage,
       provider: 'fallback' as AssistantProvider,
       links: context.links,
       productMatches: context.productHints,
@@ -526,6 +549,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         message,
+        content: message,
         provider: 'fallback' as AssistantProvider,
         links: [],
         productMatches: [],

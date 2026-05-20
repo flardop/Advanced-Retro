@@ -97,16 +97,19 @@ export default function AIAssistant({ onTrigger, triggerClassName = '' }: AIAssi
       });
 
       const data = await response.json().catch(() => ({}));
+      const reply =
+        typeof data.message === 'string' && data.message.trim()
+          ? data.message.trim()
+          : typeof data.content === 'string' && data.content.trim()
+            ? data.content.trim()
+            : '';
 
       setMessages((previous) => [
         ...previous,
         {
           id: makeId(),
           role: 'assistant',
-          content:
-            typeof data.content === 'string' && data.content.trim()
-              ? data.content.trim()
-              : 'Lo siento, no pude procesar tu mensaje. Inténtalo de nuevo.',
+          content: reply || 'Lo siento, no pude procesar tu mensaje. Inténtalo de nuevo.',
         },
       ]);
     } catch {
