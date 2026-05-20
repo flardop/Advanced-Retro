@@ -284,6 +284,7 @@ export default function RetrovilleDesktopExperience({
 }) {
   const [activeStep, setActiveStep] = useState(0);
   const [portalTransition, setPortalTransition] = useState(false);
+  const [activeRelic, setActiveRelic] = useState(0);
   const activeStepRef = useRef(0);
   const portalTransitionRef = useRef(false);
   const wheelAccumulatorRef = useRef(0);
@@ -297,6 +298,15 @@ export default function RetrovilleDesktopExperience({
   const hypeGoal = 5000;
   const waitlistPct = Math.max(0, Math.min(1, waitlistCount / hypeGoal));
   const repeatedMarqueeItems = useMemo(() => [...marqueeItems, ...marqueeItems], []);
+  const currentRelic = relicGallery[activeRelic] ?? relicGallery[0];
+
+  const prevRelic = useCallback(() => {
+    setActiveRelic((current) => (current - 1 + relicGallery.length) % relicGallery.length);
+  }, []);
+
+  const nextRelic = useCallback(() => {
+    setActiveRelic((current) => (current + 1) % relicGallery.length);
+  }, []);
 
   const clearWheelReset = useCallback(() => {
     if (wheelResetTimerRef.current) {
@@ -555,24 +565,67 @@ export default function RetrovilleDesktopExperience({
     if (slide.kind === 'gallery') {
       return (
         <div className={styles.slideShellWide}>
-          <div className={styles.slideCopyCompact}>
-            <p className={styles.eyebrow}>{slide.eyebrow}</p>
-            <h2 className={`${displayFont.className} ${styles.slideTitle}`}>{slide.title}</h2>
-            <p className={styles.slideBody}>{slide.description}</p>
-          </div>
-          <div className={styles.galleryGrid}>
-            {relicGallery.map((item) => (
-              <article key={item.title} className={styles.galleryCard}>
-                <div className={styles.galleryImageWrap}>
-                  <Image src={item.image} alt={item.alt} fill sizes="22vw" className={styles.galleryImage} />
-                </div>
-                <div className={styles.galleryCopy}>
-                  <p className={styles.galleryEyebrow}>{item.eyebrow}</p>
-                  <h3 className={`${displayFont.className} ${styles.galleryTitle}`}>{item.title}</h3>
-                  <p className={styles.galleryBody}>{item.body}</p>
-                </div>
-              </article>
-            ))}
+          <div className={styles.galleryLayout}>
+            <div className={styles.slideCopyCompact}>
+              <p className={styles.eyebrow}>{slide.eyebrow}</p>
+              <h2 className={`${displayFont.className} ${styles.slideTitle}`}>{slide.title}</h2>
+              <p className={styles.slideBody}>{slide.description}</p>
+            </div>
+
+            <div className={styles.archiveCarousel}>
+              <div className={styles.archiveCarouselStage}>
+                <button
+                  type="button"
+                  className={styles.archiveNav}
+                  aria-label="Ver archivo anterior"
+                  onClick={prevRelic}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+
+                <article className={styles.archiveHeroCard}>
+                  <div className={styles.archiveHeroImageWrap}>
+                    <Image src={currentRelic.image} alt={currentRelic.alt} fill sizes="48vw" className={styles.archiveHeroImage} />
+                  </div>
+                  <div className={styles.archiveHeroCopy}>
+                    <p className={styles.galleryEyebrow}>{currentRelic.eyebrow}</p>
+                    <h3 className={`${displayFont.className} ${styles.galleryTitle}`}>{currentRelic.title}</h3>
+                    <p className={styles.galleryBody}>{currentRelic.body}</p>
+                  </div>
+                </article>
+
+                <button
+                  type="button"
+                  className={styles.archiveNav}
+                  aria-label="Ver siguiente archivo"
+                  onClick={nextRelic}
+                >
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className={styles.archiveThumbRow} role="tablist" aria-label="Galería de Archive Visions">
+                {relicGallery.map((item, itemIndex) => (
+                  <button
+                    key={item.title}
+                    type="button"
+                    role="tab"
+                    aria-selected={itemIndex === activeRelic}
+                    aria-label={`Abrir ${item.title}`}
+                    onClick={() => setActiveRelic(itemIndex)}
+                    className={`${styles.archiveThumb} ${itemIndex === activeRelic ? styles.archiveThumbActive : ''}`}
+                  >
+                    <div className={styles.archiveThumbImageWrap}>
+                      <Image src={item.image} alt={item.alt} fill sizes="12vw" className={styles.archiveThumbImage} />
+                    </div>
+                    <div className={styles.archiveThumbCopy}>
+                      <p className={styles.archiveThumbEyebrow}>{item.eyebrow}</p>
+                      <p className={styles.archiveThumbTitle}>{item.title}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       );

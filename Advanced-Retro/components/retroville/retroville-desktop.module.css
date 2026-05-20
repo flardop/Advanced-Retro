@@ -772,6 +772,141 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.galleryLayout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(320px, 0.72fr) minmax(720px, 1.28fr);
+  align-items: center;
+  gap: 34px;
+  height: 100%;
+}
+
+.archiveCarousel {
+  display: grid;
+  gap: 22px;
+  align-self: stretch;
+}
+
+.archiveCarouselStage {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) 60px;
+  align-items: center;
+  gap: 18px;
+}
+
+.archiveNav {
+  min-height: 56px;
+  width: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 14, 24, 0.82);
+  color: rgba(255, 255, 255, 0.78);
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.archiveNav:hover {
+  transform: translateY(-1px);
+  background: rgba(14, 18, 32, 0.96);
+  border-color: rgba(138, 215, 255, 0.28);
+  color: #fff;
+}
+
+.archiveHeroCard {
+  overflow: hidden;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 80% 14%, rgba(123, 47, 255, 0.14), transparent 24%),
+    radial-gradient(circle at 20% 18%, rgba(0, 212, 255, 0.12), transparent 24%),
+    rgba(12, 16, 28, 0.86);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.3);
+}
+
+.archiveHeroImageWrap {
+  position: relative;
+  aspect-ratio: 16 / 8.8;
+  overflow: hidden;
+}
+
+.archiveHeroImage {
+  object-fit: cover;
+  object-position: center center;
+}
+
+.archiveHeroCopy {
+  padding: 22px 24px 26px;
+}
+
+.archiveThumbRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.archiveThumb {
+  text-align: left;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 14, 24, 0.78);
+  padding: 0;
+  color: inherit;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.archiveThumb:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.archiveThumbActive {
+  border-color: rgba(138, 215, 255, 0.32);
+  background: rgba(13, 18, 32, 0.94);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.archiveThumbImageWrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.archiveThumbImage {
+  object-fit: cover;
+}
+
+.archiveThumbCopy {
+  padding: 12px 14px 14px;
+}
+
+.archiveThumbEyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.archiveThumbTitle {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .galleryCard {
   border-radius: 24px;
   overflow: hidden;
@@ -919,10 +1054,19 @@
     padding-inline: 28px;
   }
 
+  .galleryLayout {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
   .slideShell,
   .slideShellWaitlist {
     grid-template-columns: minmax(280px, 0.9fr) minmax(380px, 1.1fr);
     padding: 40px;
+  }
+
+  .archiveThumbRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .slideTitle {
@@ -937,6 +1081,14 @@
 @media (max-height: 860px) {
   .slideInner {
     height: min(82vh, 760px);
+  }
+
+  .archiveCarousel {
+    gap: 18px;
+  }
+
+  .archiveHeroImageWrap {
+    aspect-ratio: 16 / 8.2;
   }
 
   .heroTitleWord {
