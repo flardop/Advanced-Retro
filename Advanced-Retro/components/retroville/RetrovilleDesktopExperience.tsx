@@ -603,28 +603,6 @@ export default function RetrovilleDesktopExperience({
                   <ArrowRight className="h-5 w-5" />
                 </button>
               </div>
-
-              <div className={styles.archiveThumbRow} role="tablist" aria-label="Galería de Archive Visions">
-                {relicGallery.map((item, itemIndex) => (
-                  <button
-                    key={item.title}
-                    type="button"
-                    role="tab"
-                    aria-selected={itemIndex === activeRelic}
-                    aria-label={`Abrir ${item.title}`}
-                    onClick={() => setActiveRelic(itemIndex)}
-                    className={`${styles.archiveThumb} ${itemIndex === activeRelic ? styles.archiveThumbActive : ''}`}
-                  >
-                    <div className={styles.archiveThumbImageWrap}>
-                      <Image src={item.image} alt={item.alt} fill sizes="12vw" className={styles.archiveThumbImage} />
-                    </div>
-                    <div className={styles.archiveThumbCopy}>
-                      <p className={styles.archiveThumbEyebrow}>{item.eyebrow}</p>
-                      <p className={styles.archiveThumbTitle}>{item.title}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </div>
