@@ -31,7 +31,8 @@ type ChatbotContext = {
 };
 
 const CHATBOT_RATE_LIMIT_WINDOW_MS = 60_000;
-const CHATBOT_RATE_LIMIT_MAX_REQUESTS = 18;
+const CHATBOT_RATE_LIMIT_MAX_REQUESTS = 8;
+const OPENAI_MAX_TOKENS = 220;
 const GLOBAL_RL_KEY = '__advancedRetroChatbotRateLimitStore';
 
 function getRateLimitStore(): Map<string, number[]> {
@@ -294,6 +295,7 @@ async function callOpenAI(messages: ChatMessage[], context: ChatbotContext) {
   const promptContext = buildContextPrompt(context);
   const body = {
     model,
+    max_tokens: OPENAI_MAX_TOKENS,
     temperature: 0.3,
     messages: [
       { role: 'system', content: systemPrompt() },

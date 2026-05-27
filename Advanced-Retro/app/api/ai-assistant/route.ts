@@ -34,7 +34,8 @@ type AssistantContext = {
 };
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX_REQUESTS = 18;
+const RATE_LIMIT_MAX_REQUESTS = 8;
+const OPENAI_MAX_TOKENS = 220;
 const GLOBAL_RL_KEY = '__advancedRetroAiAssistantRateLimitStore';
 
 function getRateLimitStore(): Map<string, number[]> {
@@ -424,6 +425,7 @@ async function callOpenAI(
     },
     body: JSON.stringify({
       model,
+      max_tokens: OPENAI_MAX_TOKENS,
       temperature: 0.35,
       messages: [
         { role: 'system', content: getSystemPrompt(locale) },
