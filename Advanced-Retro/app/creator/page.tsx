@@ -5,11 +5,13 @@ import { absoluteUrl } from '@/lib/siteConfig';
 
 export const metadata = buildPageMetadata({
   title: 'Joel Rivera Rodriguez — Creador de AdvancedRetro',
-  description: 'UX/UI Designer y Developer. Creador de AdvancedRetro.es y el universo Retroville.',
+  description:
+    'Portfolio online de Joel Rivera Rodriguez: UX/UI & Web Designer, developer y creador de AdvancedRetro.es y Retroville.',
   path: '/creator',
   keywords: [
     'Joel Rivera Rodriguez',
-    'UX/UI designer',
+    'portfolio UX/UI designer',
+    'web designer portfolio',
     'developer portfolio',
     'AdvancedRetro creator',
     'Retroville',
@@ -23,15 +25,36 @@ export default function CreatorPage() {
     '@type': 'Person',
     name: 'Joel Rivera Rodriguez',
     jobTitle: 'UX/UI & Web Designer · Developer · Creator',
-    description: 'UX/UI Designer y Developer. Creador de AdvancedRetro.es y el universo Retroville.',
+    description:
+      'Portfolio online de Joel Rivera Rodriguez: UX/UI & Web Designer, developer y creador de AdvancedRetro.es y Retroville.',
     image: absoluteUrl('/images/creator/joel-color.jpg'),
     url: absoluteUrl('/creator'),
-    sameAs: ['https://flardop44.wixsite.com/portafolio-joel'],
+    email: 'mailto:flardop44@gmail.com',
+    telephone: '+34 690 380 559',
+    sameAs: [
+      'https://www.linkedin.com/in/joel-rivera-rodriguez-7140a6334/',
+      'https://www.instagram.com/joel_riiveraa/',
+      'https://www.twitch.tv/flardop',
+      'https://www.youtube.com/@JoelGamer44',
+      'https://www.kickstarter.com/profile/1318310768',
+      'https://flardop44.wixsite.com/portafolio-joel/acerca-de',
+    ],
     worksFor: {
       '@type': 'Organization',
       name: 'AdvancedRetro.es',
       url: absoluteUrl('/'),
     },
+    knowsAbout: [
+      'UX/UI Design',
+      'Web Development',
+      'Next.js',
+      'WordPress',
+      'Wix',
+      'E-commerce',
+      'Storytelling',
+      'Narrative design',
+      'Creative direction',
+    ],
   };
 
   return (
