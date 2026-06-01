@@ -1,6 +1,7 @@
 const PLACEHOLDER = '/placeholder.svg';
 const GENERATED_PRODUCT_BASE = '/images/products/generated';
 const generatedProductImage = (fileName: string) => `${GENERATED_PRODUCT_BASE}/${fileName}`;
+const componentImage = (fileName: string) => `/images/components/${fileName}`;
 
 function normalizeLookup(value: unknown): string {
   return String(value || '')
@@ -15,39 +16,39 @@ type ComponentAssetKey = 'manual' | 'insert' | 'protector_juego' | 'protector_ca
 
 const COMPONENT_IMAGE_BY_PLATFORM: Record<PlatformAssetKey, Record<ComponentAssetKey, string>> = {
   gameboy: {
-    manual: generatedProductImage('cartridge-gameboy-neon.png'),
-    insert: generatedProductImage('cartridge-gameboy-neon.png'),
-    protector_juego: generatedProductImage('gameboy-protector-neon.png'),
-    protector_caja: generatedProductImage('gameboy-protector-neon.png'),
-    caja: generatedProductImage('gameboy-box-neon.png'),
+    manual: componentImage('gameboy-manual.svg'),
+    insert: componentImage('gameboy-insert.svg'),
+    protector_juego: componentImage('gameboy-protector-juego.svg'),
+    protector_caja: componentImage('gameboy-protector-caja.svg'),
+    caja: componentImage('gameboy-caja.svg'),
   },
   gbc: {
-    manual: generatedProductImage('cartridge-gameboy-neon.png'),
-    insert: generatedProductImage('cartridge-gameboy-neon.png'),
-    protector_juego: generatedProductImage('gameboy-protector-neon.png'),
-    protector_caja: generatedProductImage('gameboy-protector-neon.png'),
-    caja: generatedProductImage('gameboy-box-neon.png'),
+    manual: componentImage('gbc-manual.svg'),
+    insert: componentImage('gbc-insert.svg'),
+    protector_juego: componentImage('gbc-protector-juego.svg'),
+    protector_caja: componentImage('gbc-protector-caja.svg'),
+    caja: componentImage('gbc-caja.svg'),
   },
   gba: {
-    manual: generatedProductImage('cartridge-gba-neon.png'),
-    insert: generatedProductImage('cartridge-gba-neon.png'),
-    protector_juego: generatedProductImage('gameboy-protector-neon.png'),
-    protector_caja: generatedProductImage('gameboy-protector-neon.png'),
-    caja: generatedProductImage('cartridge-gba-neon.png'),
+    manual: componentImage('gba-manual.svg'),
+    insert: componentImage('gba-insert.svg'),
+    protector_juego: componentImage('gba-protector-juego.svg'),
+    protector_caja: componentImage('gba-protector-caja.svg'),
+    caja: componentImage('gba-caja.svg'),
   },
   snes: {
-    manual: generatedProductImage('cartridge-snes-neon.png'),
-    insert: generatedProductImage('cartridge-snes-neon.png'),
-    protector_juego: generatedProductImage('cartridge-snes-neon.png'),
-    protector_caja: generatedProductImage('cartridge-snes-neon.png'),
-    caja: generatedProductImage('cartridge-snes-neon.png'),
+    manual: componentImage('snes-manual.svg'),
+    insert: componentImage('snes-insert.svg'),
+    protector_juego: componentImage('snes-protector-juego.svg'),
+    protector_caja: componentImage('snes-protector-caja.svg'),
+    caja: componentImage('snes-caja.svg'),
   },
   gamecube: {
-    manual: generatedProductImage('console-gamecube-neon.png'),
-    insert: generatedProductImage('console-gamecube-neon.png'),
-    protector_juego: generatedProductImage('console-gamecube-neon.png'),
-    protector_caja: generatedProductImage('console-gamecube-neon.png'),
-    caja: generatedProductImage('console-gamecube-neon.png'),
+    manual: componentImage('gamecube-manual.svg'),
+    insert: componentImage('gamecube-insert.svg'),
+    protector_juego: componentImage('gamecube-protector-juego.svg'),
+    protector_caja: componentImage('gamecube-protector-caja.svg'),
+    caja: componentImage('gamecube-caja.svg'),
   },
 };
 
@@ -334,16 +335,8 @@ export function getProductFallbackImageUrl(product: any): string {
   const has = (token: string) => name.includes(token) || category.includes(token) || platform.includes(token);
   const hasAny = (tokens: string[]) => tokens.some((token) => has(token));
 
-  // Fallbacks específicos para componentes (evita placeholders en manuales/protectores/inserts).
-  if (hasAny(['manual', 'manuales', 'insert', 'inlay', 'interior', 'cartucho'])) {
-    return generatedProductImage('cartridge-gameboy-neon.png');
-  }
-  if ((has('protector') && hasAny(['caja', 'box'])) || has('protector') || has('funda')) {
-    return generatedProductImage('gameboy-protector-neon.png');
-  }
-  if (has('caja')) {
-    return generatedProductImage('gameboy-box-neon.png');
-  }
+  const componentFallback = getConsoleComponentImageOverride(product) || getComponentImageOverride(product);
+  if (componentFallback) return componentFallback;
 
   if (category.includes('misterios') || category.includes('mystery') || Boolean(product?.is_mystery_box)) {
     if (name.includes('vip') || String(product?.slug || '').toLowerCase().includes('vip')) {

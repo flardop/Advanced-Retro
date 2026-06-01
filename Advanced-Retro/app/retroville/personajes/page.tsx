@@ -169,6 +169,57 @@ const renderedCharacters = [
   },
 ] as const;
 
+const ensembleCharacters = [
+  {
+    name: 'REPARTO DE CALLE',
+    role: 'Figurantes, currantes y ciudadanos',
+    image: '/images/retroville/characters/ensemble-citizens.png',
+    accent: '#6fd2ff',
+    description:
+      'Grupo de apoyo para poblar estaciones, barrios, oficinas y rincones de paso. Aquí es donde Retroville empieza a sentirse como ciudad habitada y no solo como concepto bonito.',
+    facts: ['Vida cotidiana', 'Background cast', 'Ciudad en marcha'],
+  },
+  {
+    name: 'JOW & ANDREW',
+    role: 'Duo emocional / escena íntima',
+    image: '/images/retroville/characters/jow-andrew.png',
+    accent: '#f2a8c9',
+    description:
+      'Una pieza más cálida dentro del universo: nostalgia, afecto y diseño de personajes pensado para escenas que bajan el ruido y dejan espacio a vínculo real.',
+    facts: ['Pareja', 'Cinta + música', 'Tono humano'],
+  },
+  {
+    name: 'MAFIA DE RETROVILLE',
+    role: 'Facción social de presión',
+    image: '/images/retroville/characters/retroville-mafia.png',
+    accent: '#c98b34',
+    description:
+      'No todo el caos de la ciudad es espontáneo. Esta facción empuja jerarquías, barrio, amenaza y presencia visual más dura para equilibrar el tono cómico con tensión.',
+    facts: ['Poder local', 'Presión grupal', 'Barrio caliente'],
+  },
+] as const;
+
+const developmentSheets = [
+  {
+    title: 'FIGURANTE DE BOTONES',
+    tag: 'Hoja base',
+    image: '/images/retroville/characters/button-crew-sheet.png',
+    text: 'La estructura del grupo A / B / X / Y con poses, volumen y personalidad antes del acabado final.',
+  },
+  {
+    title: 'BASES ANATOMICAS',
+    tag: 'Proceso',
+    image: '/images/retroville/characters/character-anatomy-sheet.png',
+    text: 'NOX, GLAM3 y Luna antes del vestuario final: proporciones, silueta y lectura corporal del reparto principal.',
+  },
+  {
+    title: 'STYLE GUIDE DEL CAOS',
+    tag: 'Refinamiento',
+    image: '/images/retroville/button-crew-styleguide.png',
+    text: 'Una fase más pulida para fijar actitud, expresividad y consistencia visual del Button Crew.',
+  },
+] as const;
+
 export default function RetrovilleCharactersPage() {
   return (
     <main className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} ${styles.page}`}>
@@ -210,6 +261,75 @@ export default function RetrovilleCharactersPage() {
             </div>
           </article>
         ))}
+      </section>
+
+      <section className={styles.secondarySection} aria-label="Nuevos grupos y facciones">
+        <div className={styles.sectionHeader}>
+          <p className={styles.eyebrow}>Nuevo reparto</p>
+          <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>MAS PERSONAJES PARA POBLAR RETROVILLE</h2>
+          <p>
+            Aquí van los grupos y dúos que completan la ciudad: más calle, más escenas posibles y más variedad visual
+            para que el mundo no dependa solo del reparto principal.
+          </p>
+        </div>
+
+        <div className={styles.ensembleGrid}>
+          {ensembleCharacters.map((character) => (
+            <article key={character.name} className={styles.ensembleCard} style={{ ['--accent' as string]: character.accent }}>
+              <div className={styles.ensembleImageWrap}>
+                <div className={styles.ensembleGlow} />
+                <Image
+                  src={character.image}
+                  alt={character.name}
+                  fill
+                  sizes="(max-width: 980px) 100vw, 33vw"
+                  className={styles.ensembleImage}
+                />
+              </div>
+              <div className={styles.ensembleCopy}>
+                <p className={styles.eyebrow}>{character.role}</p>
+                <h3 className={`${displayFont.className} ${styles.placeholderName}`}>{character.name}</h3>
+                <p>{character.description}</p>
+                <div className={styles.factRow}>
+                  {character.facts.map((fact) => (
+                    <span key={fact}>{fact}</span>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.plannedSection} aria-label="Hojas de diseño y desarrollo">
+        <div className={styles.sectionHeader}>
+          <p className={styles.eyebrow}>Archivo visual</p>
+          <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>HOJAS DE DISENO Y PROCESO</h2>
+          <p>
+            No todo está en render final. Esta parte enseña cómo se piensan las proporciones, las poses y la energía del reparto antes de cerrar cada personaje.
+          </p>
+        </div>
+
+        <div className={styles.sheetGrid}>
+          {developmentSheets.map((sheet) => (
+            <article key={sheet.title} className={styles.sheetCard}>
+              <div className={styles.sheetImageWrap}>
+                <Image
+                  src={sheet.image}
+                  alt={sheet.title}
+                  fill
+                  sizes="(max-width: 980px) 100vw, 33vw"
+                  className={styles.sheetImage}
+                />
+              </div>
+              <div className={styles.sheetCopy}>
+                <span className={styles.eyebrow}>{sheet.tag}</span>
+                <h3 className={`${displayFont.className} ${styles.placeholderName}`}>{sheet.title}</h3>
+                <p>{sheet.text}</p>
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
       <footer className={styles.footer}>

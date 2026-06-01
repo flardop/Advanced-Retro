@@ -91,6 +91,10 @@
   padding: 0 clamp(18px, 4vw, 72px) 86px;
 }
 
+.secondarySection {
+  padding: 0 clamp(18px, 4vw, 72px) 86px;
+}
+
 .characterPanel {
   min-height: 74vh;
   display: grid;
@@ -194,6 +198,70 @@
   gap: 20px;
 }
 
+.ensembleGrid,
+.sheetGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.ensembleCard,
+.sheetCard {
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 13, 24, 0.78);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.22);
+}
+
+.ensembleCard {
+  background:
+    radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 32%),
+    rgba(10, 13, 24, 0.78);
+}
+
+.ensembleImageWrap,
+.sheetImageWrap {
+  position: relative;
+  background: linear-gradient(180deg, rgba(8, 10, 16, 0.94), rgba(14, 18, 28, 0.84));
+}
+
+.ensembleImageWrap {
+  min-height: 420px;
+}
+
+.sheetImageWrap {
+  aspect-ratio: 4 / 3;
+  background: #f2eee6;
+}
+
+.ensembleGlow {
+  position: absolute;
+  inset: 16% 14% 12%;
+  border-radius: 999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 28%, transparent), transparent 62%);
+  filter: blur(52px);
+}
+
+.ensembleImage,
+.sheetImage {
+  object-fit: contain;
+}
+
+.ensembleImage {
+  padding: 18px;
+  filter: drop-shadow(0 28px 54px rgba(0, 0, 0, 0.44));
+}
+
+.sheetImage {
+  padding: 12px;
+}
+
+.ensembleCopy,
+.sheetCopy {
+  padding: 24px;
+}
+
 .placeholderCard {
   overflow: hidden;
   border-radius: 28px;
@@ -246,7 +314,9 @@
     min-height: 460px;
   }
 
-  .placeholderGrid {
+  .placeholderGrid,
+  .ensembleGrid,
+  .sheetGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -275,7 +345,13 @@
     height: min(58vh, 520px);
   }
 
-  .placeholderGrid {
+  .placeholderGrid,
+  .ensembleGrid,
+  .sheetGrid {
     grid-template-columns: 1fr;
+  }
+
+  .ensembleImageWrap {
+    min-height: 360px;
   }
 }

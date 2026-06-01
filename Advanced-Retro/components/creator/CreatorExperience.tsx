@@ -165,20 +165,20 @@ const storyBlocks = [
     caption: 'Curiosidad, juego y construcción desde el principio.',
   },
   {
+    title: 'Crear desde lo cercano',
+    body:
+      'Mi historia creativa no sale solo de las pantallas o de los juegos. También viene de mi familia, de los recuerdos que me acompañan y de la necesidad de construir algo propio con sentido.',
+    image: '/images/creator/joel-parents-photo.png',
+    alt: 'Joel de niño con sus padres en una foto familiar antigua',
+    caption: 'Lo personal también forma parte del porqué de todo esto.',
+  },
+  {
     title: 'Aprender haciendo',
     body:
       'He intentado muchas cosas y no todas salieron bien. Pero cada proyecto me enseñó algo nuevo. Aprendí que los errores no son un freno, sino parte natural del proceso creativo y técnico.',
     image: '/images/creator/joel-memory-collage.png',
     alt: 'Collage de fotos de la infancia de Joel',
     caption: 'Mi portafolio no es solo trabajo: también es recorrido.',
-  },
-  {
-    title: 'Crear para compartir',
-    body:
-      'Mi objetivo es lograr independencia económica creando cosas que tengan sentido y que otros puedan disfrutar. Para mí, esfuerzo, generosidad y construcción de experiencias van juntas.',
-    image: '/images/creator/joel-family.jpg',
-    alt: 'Joel con su familia en una foto antigua',
-    caption: 'Lo personal también forma parte del porqué de todo esto.',
   },
 ];
 

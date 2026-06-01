@@ -12,13 +12,13 @@ const monoFont = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], variab
 export const metadata: Metadata = {
   title: 'Sketchbook de Retroville | AdvancedRetro.es',
   description:
-    'Archivo de concept art y sketches de Retroville: ciudad, transporte, props, criaturas y lugares del universo original de AdvancedRetro.',
+    'Archivo visual curado de Retroville: referencias, tableros de traducción, mapas de ciudad y hojas de desarrollo del universo original de AdvancedRetro.',
   alternates: {
     canonical: 'https://advancedretro.es/retroville/sketches',
   },
   openGraph: {
     title: 'Sketchbook de Retroville',
-    description: 'Concept art, mapas visuales y desarrollo de mundo para Retroville.',
+    description: 'Referencias, traducción visual y desarrollo de mundo para Retroville.',
     url: 'https://advancedretro.es/retroville/sketches',
     siteName: 'AdvancedRetro.es',
     locale: 'es_ES',
@@ -26,127 +26,103 @@ export const metadata: Metadata = {
   },
 };
 
-const sketchGroups = [
+const curatedSections = [
   {
-    title: 'Ciudad & Arquitectura',
+    title: 'De Referencia A Traduccion',
     intro:
-      'La base visual de Retroville: edificios construidos como hardware, plazas que parecen menús interactivos y barrios con humor propio.',
+      'Esta parte enseña justo lo que faltaba: de dónde nace cada idea, qué objeto o lenguaje visual la dispara y cómo se convierte en arquitectura o espacio de Retroville.',
     items: [
       {
-        title: 'Retroville Central',
-        tag: 'City core',
-        image: '/images/retroville/retroville-central-plaza-concept.png',
-        text: 'El centro público de la ciudad. Una plaza pensada para que se entienda que Retroville no es un fondo: es un sistema vivo.',
+        title: 'Comisaria Retroville',
+        tag: 'Seguridad',
+        image: '/images/retroville/process/police-translation-board.png',
+        text: 'Un ejemplo perfecto de método: la caja táctica real se traduce a cierres, refuerzos, cámaras y lenguaje de edificio vigilado.',
       },
       {
-        title: 'Stacked Housing',
-        tag: 'Housing',
-        image: '/images/retroville/retroville-stacked-housing-concept.png',
-        text: 'Viviendas modulares, apiladas y raras. Cada bloque parece haber sido ensamblado con piezas de otra consola.',
+        title: 'Hotel Retroville',
+        tag: 'Hospitality',
+        image: '/images/retroville/process/hotel-translation-board.png',
+        text: 'El hotel nace de enchufes, regletas, cableado y señal de encendido. Aquí la referencia no se copia: se convierte en reglas de forma.',
       },
       {
-        title: 'City Hall',
-        tag: 'Institución',
-        image: '/images/retroville/retroville-civic-hall-concept.png',
-        text: 'La cara administrativa de Retroville: orden, propaganda y una sensación de control demasiado limpio para ser verdad.',
+        title: 'Biblioteca Retroville',
+        tag: 'Cultura',
+        image: '/images/retroville/process/library-translation-board.png',
+        text: 'Juegos apilados, lomos, slots y orden físico se convierten en fachada, acceso y sistema de devolución.',
       },
       {
-        title: 'School District',
-        tag: 'Educación',
-        image: '/images/retroville/retroville-school-concept.png',
-        text: 'Una escuela hecha para formar pequeños ciudadanos digitales. Bonita por fuera, sospechosa por dentro.',
+        title: 'Reset Medical Center',
+        tag: 'Salud',
+        image: '/images/retroville/process/hospital-translation-board.png',
+        text: 'Una pieza que mezcla iconografía hospitalaria y lógica de videojuego: triage, recovery y reboot dentro del mismo edificio.',
       },
       {
-        title: 'Nox House',
-        tag: 'Interior',
-        image: '/images/retroville/retroville-nox-house-concept.png',
-        text: 'La vida privada de NOX: objetos gastados, pantallas, silencio y ese cansancio que también cuenta historia.',
+        title: 'Aquarium District',
+        tag: 'Costa',
+        image: '/images/retroville/process/aquarium-translation-board.png',
+        text: 'El acuario trabaja con transparencia, circulación interior y escala pública para abrir un distrito costero más limpio y luminoso.',
       },
       {
-        title: 'Bit Grave',
-        tag: 'Ruina',
-        image: '/images/retroville/retroville-bit-grave-concept.png',
-        text: 'El cementerio de hardware. El sitio donde los juegos olvidados dejan de ser producto y empiezan a ser fantasma.',
+        title: 'Retroville Public School',
+        tag: 'Educacion',
+        image: '/images/retroville/process/school-translation-board.png',
+        text: 'La escuela no es un volumen cualquiera: se entiende enseguida que la inspiración sale de una consola de doble pantalla y su jerarquía frontal.',
       },
     ],
   },
   {
-    title: 'Transporte & Movimiento',
+    title: 'Sistemas Jugables',
     intro:
-      'Retroville se mueve con vehículos que parecen mecánicas jugables: metro-pods, taxis cápsula, motos y barcos con memoria de consola.',
+      'Cuando la ciudad se mueve o se usa, los sketches empiezan a funcionar como diseño de sistema: transporte, ocio, flujo de gente y lectura rápida.',
     items: [
       {
         title: 'Metro-Pod',
         tag: 'Transit',
-        image: '/images/retroville/retroville-metro-pod-concept.png',
-        text: 'Transporte público compacto y panorámico. No solo lleva personajes: enseña cómo respira la ciudad.',
+        image: '/images/retroville/process/metro-pod-translation-board.png',
+        text: 'Una hoja de diseño pensada para fijar accesibilidad, visibilidad y lenguaje de transporte urbano dentro de la ciudad.',
       },
       {
-        title: 'Taxi-Pod',
-        tag: 'Taxi',
-        image: '/images/retroville/retroville-taxi-pod-concept.png',
-        text: 'Un taxi autónomo, amable y raro. Tiene el punto justo entre objeto útil y personaje secundario.',
+        title: 'Retroville Fleet',
+        tag: 'Marina',
+        image: '/images/retroville/process/boats-translation-board.png',
+        text: 'Ferrys, taxis de agua, patrullas y cruceros con ADN de consola. No son props sueltos: amplían el mapa y la vida pública.',
       },
       {
-        title: 'Vehicle Lineup',
-        tag: 'Sistema',
-        image: '/images/retroville/retroville-vehicle-lineup-concept.png',
-        text: 'Una hoja de exploración para definir lenguaje: siluetas simples, hardware retro y funciones reconocibles.',
-      },
-      {
-        title: 'Gripper',
-        tag: 'City car',
-        image: '/images/retroville/retroville-gripper-car-concept.png',
-        text: 'Coche urbano para compartir ciudad. Compacto, claro y con personalidad suficiente para aparecer en escena.',
-      },
-      {
-        title: 'Zapperbike',
-        tag: 'Moto',
-        image: '/images/retroville/retroville-zapperbike-concept.png',
-        text: 'Ligera, rápida y dudosa. Perfecta para recados, decisiones cuestionables y persecuciones pequeñas.',
-      },
-      {
-        title: 'Boat Concepts',
-        tag: 'Agua',
-        image: '/images/retroville/retroville-boats-concept.png',
-        text: 'Exploración marítima para ampliar Retroville más allá de sus calles: ferrys, taxis de agua y barcos-cassette.',
+        title: 'Gym Gate',
+        tag: 'Leisure',
+        image: '/images/retroville/process/gym-translation-board.png',
+        text: 'El gimnasio lleva la idea de hardware al gesto arquitectónico: una entrada que ya comunica actividad, energía y juego físico.',
       },
     ],
   },
   {
-    title: 'Vida Urbana & Props',
+    title: 'Mapas Y Distritos',
     intro:
-      'Los detalles pequeños sostienen el mundo: farolas, señales, tiendas, criaturas y clubs donde cada objeto tiene intención.',
+      'Después de traducir objetos a edificios, toca colocarlos dentro del conjunto. Estas hojas enseñan cómo encaja cada barrio dentro del plan general.',
     items: [
       {
-        title: 'Urban Props',
-        tag: 'Props',
-        image: '/images/retroville/retroville-urban-props-concept.png',
-        text: 'Señales, papeleras, marquesinas, carteles y basura con diseño propio. Aquí el mobiliario también cuenta chistes.',
+        title: 'Masterplan Overview',
+        tag: 'Mapa',
+        image: '/images/retroville/process/masterplan-overview-board.png',
+        text: 'La visión general de la ciudad: núcleo central, distritos, zonas residenciales y la conexión con Bit Grave.',
       },
       {
-        title: 'Shops & Storefronts',
-        tag: 'Comercio',
-        image: '/images/retroville/retroville-buildings-concept.png',
-        text: 'Tiendas que convierten consumo, nostalgia y absurdo en fachadas reconocibles: cafés, moteles, reparaciones y snacks.',
+        title: 'CRT Central Plaza',
+        tag: 'Centro',
+        image: '/images/retroville/process/central-plaza-board.png',
+        text: 'La plaza central como corazón visible del sistema: señalización, televisión pública y lectura inmediata del tono de la ciudad.',
       },
       {
-        title: 'Creature Concepts',
-        tag: 'Fauna',
-        image: '/images/retroville/retroville-creatures-concept.png',
-        text: 'Animales y criaturas nacidas de discos, cables, cartuchos y periféricos. Vida salvaje con puerto de conexión.',
+        title: 'Cinema & Mall District',
+        tag: 'Ocio',
+        image: '/images/retroville/process/cinema-mall-district-board.png',
+        text: 'Un distrito de consumo, juegos y escaparate construido para que se entienda como foco de vida urbana y reunión.',
       },
       {
-        title: 'Top Slot Club',
-        tag: 'Noche',
-        image: '/images/retroville/retroville-club-concept.png',
-        text: 'La parte nocturna de la ciudad: letreros, puerta grande, VIP dudoso y el tipo de sitio donde NOX no debería entrar.',
-      },
-      {
-        title: 'Retroville Nightclub',
-        tag: 'Nightlife',
-        image: '/images/retroville/retroville-nightclub-concept.png',
-        text: 'Otra lectura del ocio nocturno: más calle, más suciedad visual y más posibilidades para escenas de serie.',
+        title: 'Bit Grave',
+        tag: 'Ruina',
+        image: '/images/retroville/process/bit-grave-district-board.png',
+        text: 'El reverso del brillo: hardware muerto, basura histórica y un barrio entero definido por lo desechado y lo recuperado.',
       },
     ],
   },
@@ -166,36 +142,35 @@ export default function RetrovilleSketchesPage() {
         <section className={styles.heroGrid}>
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>Retroville development archive</p>
-            <h1 className={`${displayFont.className} ${styles.heroTitle}`}>SKETCHBOOK DE LA CIUDAD</h1>
+            <h1 className={`${displayFont.className} ${styles.heroTitle}`}>SKETCHBOOK CURADO</h1>
             <p className={styles.heroText}>
-              Esta página separa el material de desarrollo para que se pueda mirar mejor: cómo nacen las calles,
-              edificios, vehículos, criaturas y objetos que hacen que Retroville se sienta como una serie y no como una landing.
+              Esta página ya no junta sketches al azar. Ahora el archivo enseña el proceso real: referencia,
+              traducción visual, decisión de lenguaje y sitio que ocupa cada idea dentro del mundo.
+            </p>
+            <p className={styles.heroText}>
+              La intención es que se vea de dónde sale cada edificio, cómo se interpreta la inspiración y qué parte
+              del universo Retroville está construyendo cada hoja.
             </p>
           </div>
 
-          <div className={styles.sampleBoard} aria-label="Proceso visual de Retroville">
-            <div className={styles.referenceCard}>
-              <span>INPUT</span>
-              <strong>Hardware retro + vida urbana</strong>
-            </div>
-            <div className={styles.operator}>+</div>
-            <div className={styles.referenceCard}>
-              <span>RULE</span>
-              <strong>Todo debe poder contar una escena</strong>
-            </div>
-            <div className={styles.operatorAlt}>=</div>
-            <div className={styles.outputCard}>
-              <Image src="/images/retroville/retroville-central-plaza-concept.png" alt="Sketch de plaza central de Retroville" fill sizes="34vw" className={styles.outputImage} priority />
-              <div className={styles.speechBubble}>Aquí empieza el mundo.</div>
-            </div>
+          <div className={styles.heroBoard}>
+            <Image
+              src="/images/retroville/process/hotel-translation-board.png"
+              alt="Tablero de traducción visual del hotel de Retroville"
+              fill
+              sizes="(max-width: 1500px) 100vw, 54vw"
+              className={styles.heroBoardImage}
+              priority
+            />
+            <div className={styles.heroBoardNote}>Referencia real a traduccion a edificio con identidad.</div>
           </div>
         </section>
       </header>
 
-      {sketchGroups.map((group) => (
+      {curatedSections.map((group) => (
         <section key={group.title} className={styles.groupSection}>
           <div className={styles.groupHeader}>
-            <p className={styles.eyebrow}>Concept area</p>
+            <p className={styles.eyebrow}>Curated selection</p>
             <h2 className={`${displayFont.className} ${styles.groupTitle}`}>{group.title}</h2>
             <p>{group.intro}</p>
           </div>
@@ -218,7 +193,7 @@ export default function RetrovilleSketchesPage() {
       ))}
 
       <footer className={styles.footer}>
-        <p>Retroville está en fase demo. Esta página crecerá con renders finales, modelos y nuevas referencias.</p>
+        <p>El archivo seguirá creciendo con más tableros, props, transporte, fauna y revisiones de distrito.</p>
         <Link href="/retroville/personajes" className={styles.footerCta}>
           Ver personajes <ArrowRight className="h-4 w-4" />
         </Link>
