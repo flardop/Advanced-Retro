@@ -37,7 +37,7 @@ const devCharacterDossiers = [
     district: 'Bloques residenciales',
     group: 'Vecindario',
     tags: ['Vecindario', 'Humor negro', 'Dúo civil'],
-    image: '/images/retroville/dev-characters/joy-grump-sheet.png',
+    image: '/images/retroville/dev-characters/joy-grump-expression-sheet.png',
     notes: 'Pareja de vecinos gruñones que mete tono de sitcom adulta y conflicto cotidiano en Retroville.',
   },
   {
@@ -46,7 +46,7 @@ const devCharacterDossiers = [
     district: 'Arena social',
     group: 'Escena competitiva',
     tags: ['Competitivo', 'Showboat', 'Presencia'],
-    image: '/images/retroville/dev-characters/trimp-sheet.png',
+    image: '/images/retroville/dev-characters/trimp-v2-sheet.png',
     notes: 'Figura dominante y exhibicionista. Funciona como energía de ego, ranking y espectáculo.',
   },
   {
@@ -55,7 +55,7 @@ const devCharacterDossiers = [
     district: 'Calles / control nocturno',
     group: 'Orden público',
     tags: ['Orden', 'Patrulla', 'Noche'],
-    image: '/images/retroville/dev-characters/patrol-chief-sheet.png',
+    image: '/images/retroville/dev-characters/patrol-crew-v2-sheet.png',
     notes: 'Brazo visible del orden en la ciudad. Fatiga, burocracia y vigilancia con humor seco.',
   },
   {
@@ -64,7 +64,7 @@ const devCharacterDossiers = [
     district: 'Rutas públicas',
     group: 'Transporte',
     tags: ['Transporte', 'Rutina', 'Calle'],
-    image: '/images/retroville/dev-characters/public-crew-sheet.png',
+    image: '/images/retroville/dev-characters/public-crew-v2-sheet.png',
     notes: 'Operadores del sistema público. Dan identidad a la movilidad urbana del mundo.',
   },
   {
@@ -82,7 +82,7 @@ const devCharacterDossiers = [
     district: 'Ayuntamiento',
     group: 'Ayuntamiento',
     tags: ['Burocracia', 'Reglas', 'Papeles'],
-    image: '/images/retroville/dev-characters/crux-sheet.png',
+    image: '/images/retroville/dev-characters/city-hall-worker-sheet.png',
     notes: 'Ancla institucional de Retroville. Ideal para toda la capa administrativa del universo.',
   },
   {
@@ -91,7 +91,7 @@ const devCharacterDossiers = [
     district: 'Riverside district',
     group: 'Vecindario',
     tags: ['Civil', 'Memoria del barrio', 'Observación'],
-    image: '/images/retroville/dev-characters/nora-senior-sheet.png',
+    image: '/images/retroville/dev-characters/nora-v2-sheet.png',
     notes: 'Figura vecinal con historia y autoridad pasiva. Añade textura social y memoria colectiva.',
   },
   {
@@ -100,7 +100,7 @@ const devCharacterDossiers = [
     district: 'City Hall',
     group: 'Ayuntamiento',
     tags: ['Política', 'Poder', 'Satira'],
-    image: '/images/retroville/dev-characters/mayor-tube-sheet.png',
+    image: '/images/retroville/dev-characters/mayor-tube-v2-sheet.png',
     notes: 'Perfecto para el eje cívico-político de la serie. Carisma falso, control y propaganda.',
   },
   {
@@ -109,7 +109,7 @@ const devCharacterDossiers = [
     district: 'Playground district',
     group: 'Infancia',
     tags: ['Infancia', 'Caos', 'Barrio'],
-    image: '/images/retroville/dev-characters/tomo-sheet.png',
+    image: '/images/retroville/dev-characters/tomo-v2-sheet.png',
     notes: 'Niño callejero con energía de problema constante. Muy útil para el lado más gamberro de la serie.',
   },
   {
@@ -118,7 +118,7 @@ const devCharacterDossiers = [
     district: 'Playground district',
     group: 'Infancia',
     tags: ['Infancia', 'Mala leche', 'Travieso'],
-    image: '/images/retroville/dev-characters/pipo-sheet.png',
+    image: '/images/retroville/dev-characters/pipo-v2-sheet.png',
     notes: 'Complementa a Tomo con otra energía infantil más descarada y provocadora.',
   },
   {
@@ -127,7 +127,7 @@ const devCharacterDossiers = [
     district: 'Playground district',
     group: 'Infancia',
     tags: ['Música', 'Dreamy', 'Nueva generación'],
-    image: '/images/retroville/dev-characters/nano-sheet.png',
+    image: '/images/retroville/dev-characters/nona-girl-sheet.png',
     notes: 'Introduce sensibilidad más blanda y contemporánea. Muy útil para ampliar el rango emocional del reparto.',
   },
 ];

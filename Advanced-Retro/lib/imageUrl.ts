@@ -1,4 +1,6 @@
 const PLACEHOLDER = '/placeholder.svg';
+const GENERATED_PRODUCT_BASE = '/images/products/generated';
+const generatedProductImage = (fileName: string) => `${GENERATED_PRODUCT_BASE}/${fileName}`;
 
 function normalizeLookup(value: unknown): string {
   return String(value || '')
@@ -13,39 +15,39 @@ type ComponentAssetKey = 'manual' | 'insert' | 'protector_juego' | 'protector_ca
 
 const COMPONENT_IMAGE_BY_PLATFORM: Record<PlatformAssetKey, Record<ComponentAssetKey, string>> = {
   gameboy: {
-    manual: '/images/products/consoles-extra/cartridge-dmg-back.png',
-    insert: '/images/products/consoles-extra/cartridge-dmg-back.png',
-    protector_juego: '/images/products/consoles-extra/cartridge-gbc-front.png',
-    protector_caja: '/images/products/consoles-extra/cartridge-gbc-front.png',
-    caja: '/images/products/consoles-extra/cartridge-dmg-front.png',
+    manual: generatedProductImage('cartridge-gameboy-neon.png'),
+    insert: generatedProductImage('cartridge-gameboy-neon.png'),
+    protector_juego: generatedProductImage('gameboy-protector-neon.png'),
+    protector_caja: generatedProductImage('gameboy-protector-neon.png'),
+    caja: generatedProductImage('gameboy-box-neon.png'),
   },
   gbc: {
-    manual: '/images/products/consoles-extra/cartridge-gbc-front.png',
-    insert: '/images/products/consoles-extra/cartridge-gbc-front.png',
-    protector_juego: '/images/products/consoles-extra/cartridge-gbc-front.png',
-    protector_caja: '/images/products/consoles-extra/cartridge-gbc-front.png',
-    caja: '/images/products/consoles-extra/cartridge-gbc-front.png',
+    manual: generatedProductImage('cartridge-gameboy-neon.png'),
+    insert: generatedProductImage('cartridge-gameboy-neon.png'),
+    protector_juego: generatedProductImage('gameboy-protector-neon.png'),
+    protector_caja: generatedProductImage('gameboy-protector-neon.png'),
+    caja: generatedProductImage('gameboy-box-neon.png'),
   },
   gba: {
-    manual: '/images/products/consoles-extra/cartridge-gba-front.png',
-    insert: '/images/products/consoles-extra/cartridge-gba-front.png',
-    protector_juego: '/images/products/consoles-extra/cartridge-gba-front.png',
-    protector_caja: '/images/products/consoles-extra/cartridge-gba-front.png',
-    caja: '/images/products/consoles-extra/cartridge-gba-front.png',
+    manual: generatedProductImage('cartridge-gba-neon.png'),
+    insert: generatedProductImage('cartridge-gba-neon.png'),
+    protector_juego: generatedProductImage('gameboy-protector-neon.png'),
+    protector_caja: generatedProductImage('gameboy-protector-neon.png'),
+    caja: generatedProductImage('cartridge-gba-neon.png'),
   },
   snes: {
-    manual: '/images/products/consoles-extra/cartridge-snes-back-angled.png',
-    insert: '/images/products/consoles-extra/cartridge-snes-back-angled.png',
-    protector_juego: '/images/products/consoles-extra/cartridge-snes-back.png',
-    protector_caja: '/images/products/consoles-extra/cartridge-snes-back.png',
-    caja: '/images/products/consoles-extra/cartridge-snes-back-angled.png',
+    manual: generatedProductImage('cartridge-snes-neon.png'),
+    insert: generatedProductImage('cartridge-snes-neon.png'),
+    protector_juego: generatedProductImage('cartridge-snes-neon.png'),
+    protector_caja: generatedProductImage('cartridge-snes-neon.png'),
+    caja: generatedProductImage('cartridge-snes-neon.png'),
   },
   gamecube: {
-    manual: '/images/products/console-gamecube.jpg',
-    insert: '/images/products/console-gamecube.jpg',
-    protector_juego: '/images/products/console-gamecube.jpg',
-    protector_caja: '/images/products/console-gamecube.jpg',
-    caja: '/images/products/console-gamecube.jpg',
+    manual: generatedProductImage('console-gamecube-neon.png'),
+    insert: generatedProductImage('console-gamecube-neon.png'),
+    protector_juego: generatedProductImage('console-gamecube-neon.png'),
+    protector_caja: generatedProductImage('console-gamecube-neon.png'),
+    caja: generatedProductImage('console-gamecube-neon.png'),
   },
 };
 
@@ -80,6 +82,37 @@ function getComponentImageOverride(product: any): string | null {
   return COMPONENT_IMAGE_BY_PLATFORM[platform][component] || null;
 }
 
+function getConsoleComponentImageOverride(product: any): string | null {
+  const name = normalizeLookup(product?.name);
+  const category = normalizeLookup(product?.category || product?.category_id);
+  const componentType = normalizeLookup(product?.component_type);
+  const source = `${name} ${category} ${componentType}`;
+
+  if (source.includes('game boy light')) {
+    return '/images/products/special-editions/console-special-gameboy-light.png';
+  }
+
+  const isConsoleComponent =
+    name.includes('consola') ||
+    category.includes('consolas-retro') ||
+    category.includes('hardware') ||
+    componentType.includes('consola') ||
+    componentType.includes('console');
+
+  if (!isConsoleComponent) return null;
+
+  const platform = detectPlatformAssetKey(product);
+
+  if (source.includes('protector')) return COMPONENT_IMAGE_BY_PLATFORM[platform].protector_caja;
+  if (source.includes('insert') || source.includes('inlay') || source.includes('interior')) {
+    return COMPONENT_IMAGE_BY_PLATFORM[platform].insert;
+  }
+  if (source.includes('manual')) return COMPONENT_IMAGE_BY_PLATFORM[platform].manual;
+  if (source.includes('caja')) return COMPONENT_IMAGE_BY_PLATFORM[platform].caja;
+
+  return null;
+}
+
 function getConsoleImageOverride(product: any): string | null {
   const name = normalizeLookup(product?.name);
   const category = normalizeLookup(product?.category || product?.category_id);
@@ -96,10 +129,12 @@ function getConsoleImageOverride(product: any): string | null {
 
   if (!isConsoleDomain) return null;
 
-  if (componentType.includes('manual')) return '/images/products/consoles-extra/cartridge-dmg-back.png';
-  if (componentType.includes('insert')) return '/images/products/consoles-extra/cartridge-dmg-back.png';
-  if (componentType.includes('protector')) return '/images/products/consoles-extra/cartridge-gbc-front.png';
-  if (componentType === 'caja' || name.includes('caja consola')) return '/images/products/consoles-extra/cartridge-dmg-front.png';
+  const platformKey = detectPlatformAssetKey(product);
+
+  if (componentType.includes('manual')) return COMPONENT_IMAGE_BY_PLATFORM[platformKey].manual;
+  if (componentType.includes('insert')) return COMPONENT_IMAGE_BY_PLATFORM[platformKey].insert;
+  if (componentType.includes('protector')) return COMPONENT_IMAGE_BY_PLATFORM[platformKey].protector_caja;
+  if (componentType === 'caja' || name.includes('caja consola')) return COMPONENT_IMAGE_BY_PLATFORM[platformKey].caja;
 
   if (name.includes('panasonic q')) return '/images/products/special-editions/console-special-panasonic-q.jpg';
   if (name.includes('game boy light')) return '/images/products/special-editions/console-special-gameboy-light.png';
@@ -112,10 +147,10 @@ function getConsoleImageOverride(product: any): string | null {
   }
 
   if (name.includes('playstation 2') || platform.includes('playstation-2') || platform.includes('ps2')) {
-    return '/images/products/consoles-extra/console-ps2-slim.png';
+    return generatedProductImage('console-ps2-neon.png');
   }
   if (name.includes('dreamcast') || platform.includes('dreamcast')) {
-    return '/images/products/consoles-extra/console-dreamcast.png';
+    return generatedProductImage('console-dreamcast-neon.png');
   }
   if (
     name.includes('playstation') ||
@@ -126,13 +161,13 @@ function getConsoleImageOverride(product: any): string | null {
     platform.includes('ps1') ||
     platform.includes('psx')
   ) {
-    return '/images/products/consoles-extra/console-ps1.png';
+    return generatedProductImage('console-ps1-neon.png');
   }
   if (name.includes('sega saturn') || name.includes('saturn') || platform.includes('saturn')) {
-    return '/images/products/consoles-extra/console-sega-saturn.png';
+    return generatedProductImage('console-saturn-neon.png');
   }
   if (name.includes('mega drive') || name.includes('genesis') || platform.includes('mega-drive') || platform.includes('genesis')) {
-    return '/images/products/consoles-extra/console-genesis.png';
+    return generatedProductImage('console-genesis-neon.png');
   }
   if (
     name.includes('nintendo 64') ||
@@ -141,7 +176,7 @@ function getConsoleImageOverride(product: any): string | null {
     platform.includes('nintendo-64') ||
     platform.includes('n64')
   ) {
-    return '/images/products/consoles-extra/console-n64.png';
+    return generatedProductImage('console-n64-neon.png');
   }
   if (
     name.includes('nintendo entertainment system') ||
@@ -152,32 +187,40 @@ function getConsoleImageOverride(product: any): string | null {
     platform.includes('nes') ||
     platform.includes('famicom')
   ) {
-    return '/images/products/consoles-extra/console-nes-modern.png';
+    return generatedProductImage('console-nes-neon.png');
   }
 
   if (name.includes('gamecube') || name.includes('game cube') || platform.includes('gamecube')) {
-    return '/images/products/console-gamecube.jpg';
+    return generatedProductImage('console-gamecube-neon.png');
   }
   if (name.includes('super nintendo') || name.includes('snes') || platform.includes('super-nintendo')) {
-    return '/images/products/console-snes-pal.jpg';
+    return generatedProductImage('console-snes-neon.png');
   }
   if (name.includes('game boy advance sp') || name.includes('gba sp')) {
-    return '/images/products/consoles-extra/console-gba-sp.png';
+    return generatedProductImage('console-gba-sp-neon.png');
   }
   if (name.includes('game boy advance') || platform.includes('game-boy-advance') || platform.includes('gba')) {
-    return '/images/products/console-gba.jpg';
+    return generatedProductImage('console-gba-neon.png');
   }
   if (name.includes('game boy color') || platform.includes('game-boy-color') || platform.includes('gbc')) {
-    return '/images/products/console-gbc.jpg';
+    return generatedProductImage('console-gameboy-transparent-neon.png');
   }
   if (name.includes('game boy pocket')) {
-    return '/images/products/consoles-extra/console-gameboy-pocket.png';
+    return generatedProductImage('console-gameboy-classic-front-neon.png');
   }
   if (name.includes('game boy') || platform.includes('game-boy') || platform.includes('gb')) {
-    return '/images/products/console-gb-dmg.jpg';
+    return generatedProductImage('console-gameboy-classic-neon.png');
   }
 
-  return '/images/products/console-gb-dmg.jpg';
+  return generatedProductImage('console-gameboy-classic-neon.png');
+}
+
+function getStrongImageOverride(product: any): string | null {
+  return (
+    getConsoleComponentImageOverride(product) ||
+    getComponentImageOverride(product) ||
+    getConsoleImageOverride(product)
+  );
 }
 
 function isValidImageUrl(url: unknown): url is string {
@@ -207,6 +250,7 @@ function scoreImageCandidate(url: string): number {
   if (!lower) return 0;
   if (lower.includes('named_boxarts')) return 100;
   if (lower.includes('boxart')) return 95;
+  if (lower.startsWith('/images/products/generated/')) return 98;
   if (lower.startsWith('/images/generated/')) return 92;
   if (lower.startsWith('/images/collections/')) return 86;
   if (lower.startsWith('/images/components/')) return 84;
@@ -243,6 +287,9 @@ function parseImageCollection(raw: unknown): string[] {
 }
 
 export function getProductImageUrl(product: any): string {
+  const strongOverride = getStrongImageOverride(product);
+  if (strongOverride) return strongOverride;
+
   const fromArray = parseImageCollection(product?.images);
   const fromSingle = parseImageCollection(product?.image);
   const fromLegacy = parseImageCollection(product?.gallery_images);
@@ -253,16 +300,11 @@ export function getProductImageUrl(product: any): string {
     return sorted[0];
   }
 
-  const componentOverride = getComponentImageOverride(product);
-  if (componentOverride) return componentOverride;
-
-  const consoleOverride = getConsoleImageOverride(product);
-  if (consoleOverride) return consoleOverride;
-
   return getProductFallbackImageUrl(product);
 }
 
 export function getProductImageUrls(product: any): string[] {
+  const strongOverride = getStrongImageOverride(product);
   const raw = [
     ...parseImageCollection(product?.images),
     ...parseImageCollection(product?.image),
@@ -273,23 +315,17 @@ export function getProductImageUrls(product: any): string[] {
   const valid = deduped
     .filter(isValidImageUrl)
     .sort((a, b) => scoreImageCandidate(b) - scoreImageCandidate(a));
+  if (strongOverride) {
+    return [strongOverride, ...valid.filter((image) => image !== strongOverride)];
+  }
   if (valid.length > 0) return valid;
-
-  const componentOverride = getComponentImageOverride(product);
-  if (componentOverride) return [componentOverride];
-
-  const consoleOverride = getConsoleImageOverride(product);
-  if (consoleOverride) return [consoleOverride];
 
   return [getProductFallbackImageUrl(product)];
 }
 
 export function getProductFallbackImageUrl(product: any): string {
-  const componentOverride = getComponentImageOverride(product);
-  if (componentOverride) return componentOverride;
-
-  const consoleOverride = getConsoleImageOverride(product);
-  if (consoleOverride) return consoleOverride;
+  const strongOverride = getStrongImageOverride(product);
+  if (strongOverride) return strongOverride;
 
   const name = String(product?.name || '').toLowerCase();
   const category = String(product?.category || product?.category_id || '').toLowerCase();
@@ -299,23 +335,14 @@ export function getProductFallbackImageUrl(product: any): string {
   const hasAny = (tokens: string[]) => tokens.some((token) => has(token));
 
   // Fallbacks específicos para componentes (evita placeholders en manuales/protectores/inserts).
-  if (hasAny(['manual', 'manuales'])) {
-    return '/images/fallbacks/manual.svg';
+  if (hasAny(['manual', 'manuales', 'insert', 'inlay', 'interior', 'cartucho'])) {
+    return generatedProductImage('cartridge-gameboy-neon.png');
   }
-  if (hasAny(['insert', 'inlay', 'interior'])) {
-    return '/images/fallbacks/insert.svg';
-  }
-  if (has('protector') && hasAny(['caja', 'box'])) {
-    return '/images/fallbacks/protector-caja.svg';
-  }
-  if (has('protector') || has('funda')) {
-    return '/images/fallbacks/protector-juego.svg';
-  }
-  if (has('cartucho')) {
-    return '/images/fallbacks/cartucho.svg';
+  if ((has('protector') && hasAny(['caja', 'box'])) || has('protector') || has('funda')) {
+    return generatedProductImage('gameboy-protector-neon.png');
   }
   if (has('caja')) {
-    return '/images/fallbacks/caja.svg';
+    return generatedProductImage('gameboy-box-neon.png');
   }
 
   if (category.includes('misterios') || category.includes('mystery') || Boolean(product?.is_mystery_box)) {
@@ -335,7 +362,7 @@ export function getProductFallbackImageUrl(product: any): string {
     name.includes('gamecube') ||
     name.includes('game cube')
   ) {
-    return '/images/collections/gamecube.svg';
+    return generatedProductImage('console-gamecube-neon.png');
   }
 
   if (
@@ -345,7 +372,7 @@ export function getProductFallbackImageUrl(product: any): string {
     name.includes('super nintendo') ||
     name.includes('snes')
   ) {
-    return '/images/collections/super-nintendo.svg';
+    return generatedProductImage('cartridge-snes-neon.png');
   }
 
   if (
@@ -356,7 +383,7 @@ export function getProductFallbackImageUrl(product: any): string {
     name.includes('game boy advance') ||
     name.includes('gameboy advance')
   ) {
-    return '/images/collections/game-boy-advance.svg';
+    return generatedProductImage('cartridge-gba-neon.png');
   }
 
   if (
@@ -367,7 +394,7 @@ export function getProductFallbackImageUrl(product: any): string {
     name.includes('game boy color') ||
     name.includes('gameboy color')
   ) {
-    return '/images/collections/game-boy-color.svg';
+    return generatedProductImage('cartridge-gameboy-neon.png');
   }
 
   if (
@@ -377,8 +404,8 @@ export function getProductFallbackImageUrl(product: any): string {
     platform.includes('gameboy') ||
     name.includes('game boy')
   ) {
-    return '/images/collections/game-boy.svg';
+    return generatedProductImage('cartridge-gameboy-neon.png');
   }
 
-  return PLACEHOLDER;
+  return generatedProductImage('controller-neon.png');
 }

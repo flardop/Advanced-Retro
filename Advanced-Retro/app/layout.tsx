@@ -4,6 +4,7 @@ import '../styles/retroville.css';
 import '../styles/z-index.css';
 import { JetBrains_Mono, Manrope, Sora } from 'next/font/google';
 import { LocaleProvider } from '@/components/LocaleProvider';
+import GlobalPageTranslator from '@/components/GlobalPageTranslator';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
 import StructuredData from '@/components/StructuredData';
 import StoreChromeShell from '@/components/StoreChromeShell';
@@ -177,7 +178,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       '@type': 'Country',
       name: 'Spain',
     },
-    availableLanguage: ['es-ES', 'en'],
+    availableLanguage: ['es-ES', 'en', 'fr', 'it', 'de', 'pt'],
     hasMerchantReturnPolicy: {
       '@type': 'MerchantReturnPolicy',
       applicableCountry: 'ES',
@@ -192,7 +193,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         contactType: 'customer support',
         email: contactEmail,
         telephone: contactPhone || undefined,
-        availableLanguage: ['es', 'en'],
+        availableLanguage: ['es', 'en', 'fr', 'it', 'de', 'pt'],
       },
     ],
   };
@@ -222,6 +223,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               id="schema-org"
               data={[organizationSchema, websiteSchema, onlineStoreSchema, localBusinessSchema]}
             />
+            <GlobalPageTranslator />
             <StoreChromeShell>{children}</StoreChromeShell>
           </LocaleProvider>
         </GlobalErrorBoundary>

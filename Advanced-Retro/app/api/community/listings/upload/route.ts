@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { ApiError, requireUserContext } from '@/lib/serverAuth';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import {
+  COMMUNITY_MARKETPLACE_DISABLED_MESSAGE,
+  COMMUNITY_MARKETPLACE_ENABLED,
+} from '@/lib/userListings';
 import { validateImageBinarySignature, validateListingImageName } from '@/lib/uploadSafety';
 
 export const dynamic = 'force-dynamic';
@@ -108,6 +112,10 @@ function tooManyRequests(message: string, retryAfterSeconds: number) {
 
 export async function POST(req: Request) {
   try {
+    if (!COMMUNITY_MARKETPLACE_ENABLED) {
+      return NextResponse.json({ error: COMMUNITY_MARKETPLACE_DISABLED_MESSAGE }, { status: 403 });
+    }
+
     const { user } = await requireUserContext();
     const requesterIp = getRequesterIp(req);
     const rl = checkRateLimit({

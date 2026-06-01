@@ -3,6 +3,7 @@ import ProductDetail from '@/components/sections/ProductDetail';
 import BreadcrumbsNav from '@/components/BreadcrumbsNav';
 import SafeImage from '@/components/SafeImage';
 import { absoluteUrl } from '@/lib/siteConfig';
+import { getProductImageUrl } from '@/lib/imageUrl';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getProductHref, getProductRouteSegment, parseProductRouteParam } from '@/lib/productUrl';
 import { sampleProducts } from '@/lib/sampleData';
@@ -293,7 +294,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       priceCents: Number((product as any)?.price || 0),
       stock: Number((product as any)?.stock || 0),
     });
-    const imageUrl = String(product.image || absoluteUrl('/logo.png'));
+    const productImageUrl = getProductImageUrl(product);
+    const imageUrl = productImageUrl.startsWith('http') ? productImageUrl : absoluteUrl(productImageUrl);
     const canonicalPath = getProductHref(product);
 
     return buildPageMetadata({

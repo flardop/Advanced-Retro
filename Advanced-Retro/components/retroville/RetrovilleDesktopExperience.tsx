@@ -7,7 +7,6 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Anton, DM_Sans, Space_Mono } from 'next/font/google';
 import RetrovilleCountdown from '@/components/retroville/RetrovilleCountdown';
 import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
-import { lunaProfile } from '@/lib/retroville-luna';
 import styles from './retroville-desktop.module.css';
 
 const displayFont = Anton({ subsets: ['latin'], weight: '400', variable: '--font-display' });
@@ -109,93 +108,18 @@ const retrovilleSocials = [
   },
 ] as const;
 
-const worldSlides = [
+const sketchPreviewCards = [
   {
-    eyebrow: 'SECTOR 01',
-    title: 'RETROVILLE CITY',
-    description:
-      'Una ciudad vertical, compacta y rara. Cartuchos convertidos en arquitectura, plazas hechas de pantallas y una lógica urbana que parece diseñada por alguien que creció dentro de un catálogo de consolas.',
+    label: 'CITY CORE',
     image: '/images/retroville/retroville-central-plaza-concept.png',
-    accent: 'rgba(123, 47, 255, 0.22)',
-    note: 'Plaza central, skyline y núcleo cívico',
   },
   {
-    eyebrow: 'SECTOR 02',
-    title: 'STACKED HOUSING',
-    description:
-      'La vivienda en Retroville no es neutral. Todo parece modular, reensamblado y construido desde piezas que ya vivieron otra vida.',
-    image: '/images/retroville/retroville-stacked-housing-concept.png',
-    accent: 'rgba(102, 196, 255, 0.2)',
-    note: 'Arquitectura doméstica y densidad urbana',
-  },
-  {
-    eyebrow: 'SECTOR 03',
-    title: 'CITY HALL',
-    description:
-      'La fachada institucional del mundo: orden, progreso y un sentido muy sospechoso de la autoridad. Todo parece limpio hasta que miras mejor.',
-    image: '/images/retroville/retroville-civic-hall-concept.png',
-    accent: 'rgba(255, 201, 64, 0.18)',
-    note: 'Poder, administración y propaganda',
-  },
-  {
-    eyebrow: 'SECTOR 04',
-    title: 'THE PIXEL GRAVEYARD',
-    description:
-      'El borde emocional de la ciudad. Montañas de hardware roto, pantallas muertas y rutas de chatarra donde aún queda memoria atrapada.',
-    image: '/images/retroville/retroville-bit-grave-concept.png',
-    accent: 'rgba(255, 84, 84, 0.18)',
-    note: 'Ruina, abandono y reliquias jugables',
-  },
-  {
-    eyebrow: 'SECTOR 05',
-    title: 'RETROVILLE TRANSIT',
-    description:
-      'Metro-pods, taxis cápsula, motos y vehículos improbables. El transporte de la ciudad se siente como una mecánica, no como infraestructura genérica.',
+    label: 'TRANSIT',
     image: '/images/retroville/retroville-metro-pod-concept.png',
-    accent: 'rgba(0, 212, 255, 0.2)',
-    note: 'Movimiento, ritmo y movilidad absurda',
   },
   {
-    eyebrow: 'SECTOR 06',
-    title: 'URBAN PROP SYSTEM',
-    description:
-      'Farolas, señales, marquesinas, kioscos, basura y pequeños objetos con identidad propia. Aquí los props hacen tanto mundo como los protagonistas.',
+    label: 'URBAN PROPS',
     image: '/images/retroville/retroville-urban-props-concept.png',
-    accent: 'rgba(0, 255, 136, 0.18)',
-    note: 'Mobiliario urbano y lenguaje visual de calle',
-  },
-] as const;
-
-const characterSlides = [
-  {
-    eyebrow: 'PERSONAJE 01',
-    title: 'NOX',
-    description:
-      'Sarcasmo, batería baja y una dignidad bastante discutible. NOX no dirige la ciudad por épica. Lo hace porque nadie más soporta el turno de noche.',
-    image: '/images/retroville/nox-character-large.png',
-    accent: 'rgba(97, 174, 255, 0.22)',
-    chips: ['Superviviente', 'Turno de noche', 'Batería baja'],
-    align: 'right' as const,
-  },
-  {
-    eyebrow: 'PERSONAJE 02',
-    title: 'BUTTON CREW',
-    description:
-      'A, B, Y y X son la conversación permanente de Retroville: impulsivos, cínicos, analíticos y caóticos. Siempre llegan juntos. Siempre complican algo.',
-    image: '/images/retroville/button-crew-character-large.png',
-    accent: 'rgba(255, 189, 82, 0.22)',
-    chips: ['A / B / Y / X', 'Ruido social', 'Caos coordinado'],
-    align: 'left' as const,
-  },
-  {
-    eyebrow: 'PERSONAJE 03',
-    title: lunaProfile.name,
-    description:
-      'Luna entra en Retroville como una interferencia elegante: magnética, caprichosa y peligrosamente divertida. Manipula la atención y convierte el caos en estilo.',
-    image: '/images/retroville/luna-character-large.png',
-    accent: 'rgba(217, 133, 171, 0.24)',
-    chips: ['Magnetismo', 'Glamour tóxico', 'Interferencia'],
-    align: 'right' as const,
   },
 ] as const;
 
@@ -203,25 +127,8 @@ type Slide =
   | { kind: 'countdown'; eyebrow: string; title: string; description: string }
   | { kind: 'manifesto'; eyebrow: string; title: string; description: string }
   | { kind: 'districts'; eyebrow: string; title: string; description: string }
-  | {
-      kind: 'world';
-      eyebrow: string;
-      title: string;
-      description: string;
-      image: string;
-      accent: string;
-      note: string;
-    }
-  | {
-      kind: 'character';
-      eyebrow: string;
-      title: string;
-      description: string;
-      image: string;
-      accent: string;
-      chips: readonly string[];
-      align: 'left' | 'right';
-    }
+  | { kind: 'sketchPreview'; eyebrow: string; title: string; description: string }
+  | { kind: 'characterPreview'; eyebrow: string; title: string; description: string }
   | { kind: 'gallery'; eyebrow: string; title: string; description: string }
   | { kind: 'signals'; eyebrow: string; title: string; description: string }
   | { kind: 'waitlist'; eyebrow: string; title: string; description: string };
@@ -247,8 +154,20 @@ const slides: readonly Slide[] = [
     description:
       'Antes de que la ciudad se explique sola, hay nombres que ya suenan como lugares reales: barrios, plazas, residuos, clubs y sistemas enteros a punto de desbordarse.',
   },
-  ...worldSlides.map((slide) => ({ kind: 'world' as const, ...slide })),
-  ...characterSlides.map((slide) => ({ kind: 'character' as const, ...slide })),
+  {
+    kind: 'sketchPreview',
+    eyebrow: 'SKETCHBOOK',
+    title: 'CÓMO SE CONSTRUYE RETROVILLE',
+    description:
+      'Arquitectura, vehículos, tiendas, criaturas, props y sistemas urbanos. Esta demo solo enseña una muestra; el archivo completo vive en una página aparte para verlo con calma.',
+  },
+  {
+    kind: 'characterPreview',
+    eyebrow: 'CAST',
+    title: 'CONOCE A LOS PERSONAJES',
+    description:
+      'NOX, Button Crew y Luna ya tienen render final. El resto del reparto existe como ficha de desarrollo y quedará preparado para recibir sus imágenes renderizadas.',
+  },
   {
     kind: 'gallery',
     eyebrow: 'ARCHIVE VISIONS',
@@ -514,49 +433,74 @@ export default function RetrovilleDesktopExperience({
       );
     }
 
-    if (slide.kind === 'world') {
+    if (slide.kind === 'sketchPreview') {
       return (
-        <div className={styles.slideShell}>
-          <div className={styles.slideCopy}>
-            <p className={styles.eyebrow}>{slide.eyebrow}</p>
-            <h2 className={`${displayFont.className} ${styles.slideTitle}`}>{slide.title}</h2>
-            <p className={styles.slideBody}>{slide.description}</p>
-            <p className={styles.slideMeta}>{slide.note}</p>
-          </div>
-          <div className={styles.worldVisual} style={{ ['--slide-accent' as string]: slide.accent }}>
-            <Image src={slide.image} alt={slide.title} fill sizes="56vw" className={styles.worldImage} />
+        <div className={styles.slideShellWide}>
+          <div className={styles.previewLayout}>
+            <div className={styles.slideCopyCompact}>
+              <p className={styles.eyebrow}>{slide.eyebrow}</p>
+              <h2 className={`${displayFont.className} ${styles.slideTitle}`}>{slide.title}</h2>
+              <p className={styles.slideBody}>{slide.description}</p>
+              <Link href="/retroville/sketches" className={styles.previewButton}>
+                Ver archivo de sketches <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className={styles.sketchPreviewBoard}>
+              <div className={styles.sampleFormula}>
+                <div className={styles.sampleInputCard}>
+                  <span>RETRO HARDWARE</span>
+                  <strong>OBJETO</strong>
+                </div>
+                <div className={styles.samplePlus}>+</div>
+                <div className={styles.sampleInputCard}>
+                  <span>CIUDAD</span>
+                  <strong>SISTEMA</strong>
+                </div>
+                <div className={styles.sampleEquals}>=</div>
+              </div>
+              <div className={styles.sketchCards}>
+                {sketchPreviewCards.map((card) => (
+                  <article key={card.label} className={styles.sketchCard}>
+                    <Image src={card.image} alt={card.label} fill sizes="24vw" className={styles.sketchCardImage} />
+                    <span>{card.label}</span>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       );
     }
 
-    if (slide.kind === 'character') {
-      const figureOnRight = slide.align === 'right';
+    if (slide.kind === 'characterPreview') {
       return (
-        <div className={`${styles.slideShell} ${figureOnRight ? styles.characterShellRight : styles.characterShellLeft}`}>
-          <div className={styles.slideCopy}>
-            <p className={styles.eyebrow}>{slide.eyebrow}</p>
-            <h2 className={`${displayFont.className} ${styles.slideTitle}`}>{slide.title}</h2>
-            <p className={styles.slideBody}>{slide.description}</p>
-            <div className={styles.characterChips}>
-              {slide.chips.map((chip) => (
-                <span key={chip} className={styles.characterChip}>
-                  {chip}
-                </span>
-              ))}
+        <div className={styles.slideShellWide}>
+          <div className={styles.previewLayout}>
+            <div className={styles.slideCopyCompact}>
+              <p className={styles.eyebrow}>{slide.eyebrow}</p>
+              <h2 className={`${displayFont.className} ${styles.slideTitle}`}>{slide.title}</h2>
+              <p className={styles.slideBody}>{slide.description}</p>
+              <Link href="/retroville/personajes" className={styles.previewButton}>
+                Abrir reparto <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
-          </div>
-          <div className={styles.characterFigureStage} style={{ ['--slide-accent' as string]: slide.accent }}>
-            <div className={styles.characterGlow} />
-            <div className={styles.characterLightSweep} />
-            <Image
-              src={slide.image}
-              alt={slide.title}
-              width={1200}
-              height={1600}
-              className={styles.characterFigure}
-              priority={index < 4}
-            />
+
+            <div className={styles.castPresentationStage}>
+              <div className={styles.castPresentationGlow} />
+              <Image
+                src="/images/retroville/retroville-cast-presentation.png"
+                alt="NOX, Luna y Button Crew presentando el reparto principal de Retroville"
+                width={1092}
+                height={768}
+                className={styles.castPresentationImage}
+                priority={index < 5}
+              />
+              <div className={styles.castPresentationMeta}>
+                <span>REPARTO PRINCIPAL</span>
+                <strong>NOX · LUNA · BUTTON CREW</strong>
+              </div>
+            </div>
           </div>
         </div>
       );
@@ -664,6 +608,9 @@ export default function RetrovilleDesktopExperience({
                     {social.label}
                   </a>
                 ))}
+                <Link href="/retroville/legal" className={styles.socialLink}>
+                  Legal
+                </Link>
               </div>
             </div>
             <Link href="/" className={styles.backHomeLink}>

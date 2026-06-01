@@ -23,6 +23,9 @@ export const COMMUNITY_FEATURED_FEE_PER_DAY_CENTS = 100;
 export const COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS = 500;
 export const COMMUNITY_MIN_IMAGES = 3;
 export const COMMUNITY_MAX_IMAGES = 10;
+export const COMMUNITY_MARKETPLACE_ENABLED = false;
+export const COMMUNITY_MARKETPLACE_DISABLED_MESSAGE =
+  'El marketplace de usuarios está desactivado. La comunidad de AdvancedRetro queda enfocada en contenido, soporte y participación, sin productos publicados por usuarios.';
 
 type PublicLocation = {
   city: string | null;
@@ -283,6 +286,7 @@ export function validateListingInput(input: any): CreateListingInput {
 }
 
 export async function createUserListing(userId: string, payload: CreateListingInput) {
+  if (!COMMUNITY_MARKETPLACE_ENABLED) throw new Error(COMMUNITY_MARKETPLACE_DISABLED_MESSAGE);
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const nowIso = new Date().toISOString();
@@ -352,6 +356,7 @@ export async function createUserListing(userId: string, payload: CreateListingIn
 }
 
 export async function getUserListings(userId: string) {
+  if (!COMMUNITY_MARKETPLACE_ENABLED) return [];
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const { data, error } = await supabaseAdmin
@@ -365,6 +370,7 @@ export async function getUserListings(userId: string) {
 }
 
 export async function getAdminListings() {
+  if (!COMMUNITY_MARKETPLACE_ENABLED) return [];
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const { data, error } = await supabaseAdmin
@@ -401,6 +407,7 @@ export async function getAdminListings() {
 }
 
 export async function getPublicApprovedListings(limit = 60) {
+  if (!COMMUNITY_MARKETPLACE_ENABLED) return [];
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const safeLimit = Math.min(Math.max(Number(limit || 0), 1), 120);
@@ -442,6 +449,7 @@ export async function getPublicApprovedListings(limit = 60) {
 }
 
 export async function getPublicApprovedListingWithSellerById(listingId: string) {
+  if (!COMMUNITY_MARKETPLACE_ENABLED) throw new Error('Publicación no encontrada');
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const safeId = String(listingId || '').trim();
@@ -503,6 +511,7 @@ export async function getListingById(listingId: string) {
 }
 
 export async function getPublicSellerProfileByUserId(userId: string, viewerUserId?: string | null) {
+  if (!COMMUNITY_MARKETPLACE_ENABLED) throw new Error('Vendedor no encontrado');
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const safeUserId = String(userId || '').trim();
@@ -723,6 +732,7 @@ export async function getCommunitySellerRanking(
   limit = 10,
   period: CommunitySellerRankingPeriod = 'historical'
 ): Promise<CommunitySellerRankingEntry[]> {
+  if (!COMMUNITY_MARKETPLACE_ENABLED) return [];
   if (!supabaseAdmin) throw new Error('Supabase not configured');
 
   const safeLimit = Math.min(Math.max(Number(limit || 0), 1), 20);

@@ -4,6 +4,8 @@ import {
   COMMUNITY_COMMISSION_RATE,
   COMMUNITY_FEATURED_FEE_PER_DAY_CENTS,
   COMMUNITY_LISTING_FEE_CENTS,
+  COMMUNITY_MARKETPLACE_DISABLED_MESSAGE,
+  COMMUNITY_MARKETPLACE_ENABLED,
   COMMUNITY_MAX_IMAGES,
   COMMUNITY_MIN_IMAGES,
   COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS,
@@ -29,6 +31,8 @@ export async function GET() {
     return NextResponse.json({
       policy: {
         listing_fee_cents: COMMUNITY_LISTING_FEE_CENTS,
+        marketplace_enabled: COMMUNITY_MARKETPLACE_ENABLED,
+        disabled_message: COMMUNITY_MARKETPLACE_DISABLED_MESSAGE,
         commission_rate: COMMUNITY_COMMISSION_RATE,
         featured_fee_per_day_cents: COMMUNITY_FEATURED_FEE_PER_DAY_CENTS,
         showcase_fee_per_day_cents: COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS,
@@ -44,6 +48,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    if (!COMMUNITY_MARKETPLACE_ENABLED) {
+      return NextResponse.json({ error: COMMUNITY_MARKETPLACE_DISABLED_MESSAGE }, { status: 403 });
+    }
+
     const { user, profile } = await requireUserContext();
 
     if (!profile.is_verified_seller && profile.role !== 'admin') {

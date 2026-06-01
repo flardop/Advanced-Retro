@@ -43,7 +43,7 @@ const VERIFICATION_PRODUCTS: VerificationProduct[] = [
     id: 'auth-red',
     name: 'Pokemon Edicion Roja',
     subtitle: 'Cartucho Game Boy - revision europea',
-    image: '/images/products/console-box-gb.jpg',
+    image: '/images/products/consoles-extra/cartridge-dmg-front.png',
     status: 'ORIGINAL / AUTENTICO',
     confidenceLabel: '92% autentico',
     confidencePercent: 92,

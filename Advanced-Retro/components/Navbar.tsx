@@ -183,7 +183,7 @@ function NavbarContent() {
 
                 <nav className="hidden xl:flex xl:items-center xl:justify-center xl:justify-self-center">
                   <div
-                    className="relative flex items-center gap-1.5"
+                    className="relative flex h-12 items-center justify-center gap-1.5"
                     onMouseEnter={clearDesktopMenuCloseTimer}
                     onMouseLeave={scheduleDesktopMenuClose}
                   >
@@ -191,19 +191,19 @@ function NavbarContent() {
                       const active = groupIsActive(group);
                       const expanded = desktopMenu === group.key;
                       return (
-                        <div key={group.key} className="relative pb-4">
+                        <div key={group.key} className="relative flex h-12 items-center">
                           <button
                             type="button"
                             onMouseEnter={() => openDesktopMenu(group.key)}
                             onFocus={() => openDesktopMenu(group.key)}
-                            className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-[0.92rem] transition ${
+                            className={`flex h-11 items-center justify-center gap-2 rounded-full px-3 text-[0.92rem] leading-none transition ${
                               active || expanded
                                 ? 'border border-primary/40 bg-primary/10 text-primary'
                                 : 'border border-transparent text-textMuted hover:bg-white/5 hover:text-text'
                             }`}
                           >
-                            <span>{group.label}</span>
-                            <ChevronDown className={`h-4 w-4 transition ${expanded ? 'rotate-180' : ''}`} />
+                            <span className="flex h-full items-center">{group.label}</span>
+                            <ChevronDown className={`h-4 w-4 shrink-0 transition ${expanded ? 'rotate-180' : ''}`} />
                           </button>
                         </div>
                       );
@@ -212,17 +212,18 @@ function NavbarContent() {
                     {directLinks.map((item) => {
                       const active = isItemActive(item.href);
                       return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className={`rounded-full px-3 py-2 text-[0.92rem] transition ${
-                            active
-                              ? 'border border-primary/40 bg-primary/10 text-primary'
-                              : 'border border-transparent text-textMuted hover:bg-white/5 hover:text-text'
-                          }`}
-                        >
-                          {item.label}
-                        </Link>
+                        <div key={item.href} className="relative flex h-12 items-center">
+                          <Link
+                            href={item.href}
+                            className={`flex h-11 items-center justify-center rounded-full px-3 text-[0.92rem] leading-none transition ${
+                              active
+                                ? 'border border-primary/40 bg-primary/10 text-primary'
+                                : 'border border-transparent text-textMuted hover:bg-white/5 hover:text-text'
+                            }`}
+                          >
+                            <span className="flex h-full items-center">{item.label}</span>
+                          </Link>
+                        </div>
                       );
                     })}
 

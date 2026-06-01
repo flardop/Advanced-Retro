@@ -1,19 +1,51 @@
 import type { CatalogImagePlatform } from './catalogPlatform';
 
+const GENERATED_PRODUCT_BASE = '/images/products/generated';
+const generatedProductImage = (fileName: string) => `${GENERATED_PRODUCT_BASE}/${fileName}`;
+
 const UNSPLASH_RETRO_1 =
   'https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=1200&h=1200&fit=crop&q=80';
 const UNSPLASH_RETRO_2 =
   'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=1200&h=1200&fit=crop&q=80';
 
-const WIKIMEDIA_GB =
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Game-Boy-FL.png/1920px-Game-Boy-FL.png';
-const WIKIMEDIA_GBC =
-  'https://upload.wikimedia.org/wikipedia/commons/2/26/Nintendo_Game_Boy_Color.png';
+const CONSOLE_BOX_GB = generatedProductImage('gameboy-box-neon.png');
+const CONSOLE_INSERT_UNIVERSAL = generatedProductImage('cartridge-gameboy-neon.png');
+const CONSOLE_MANUAL_GB = generatedProductImage('cartridge-gameboy-neon.png');
+const CONSOLE_PROTECTOR_UNIVERSAL = generatedProductImage('gameboy-protector-neon.png');
+const CONSOLE_GAMEBOY_LIGHT = '/images/products/special-editions/console-special-gameboy-light.png';
 
-const LIBRETRO_GB_TETRIS =
-  'https://thumbnails.libretro.com/Nintendo%20-%20Game%20Boy/Named_Boxarts/Tetris%20(World)%20(Rev%201).png';
-const LIBRETRO_GB_POKEMON_RED =
-  'https://thumbnails.libretro.com/Nintendo%20-%20Game%20Boy/Named_Boxarts/Pokemon%20-%20Red%20Version%20(USA%2C%20Europe)%20(SGB%20Enhanced).png';
+const COMPONENT_IMAGE_BY_PLATFORM: Record<string, Record<'caja' | 'insert' | 'manual' | 'protector', string>> = {
+  gameboy: {
+    caja: CONSOLE_BOX_GB,
+    insert: CONSOLE_INSERT_UNIVERSAL,
+    manual: CONSOLE_MANUAL_GB,
+    protector: CONSOLE_PROTECTOR_UNIVERSAL,
+  },
+  gbc: {
+    caja: generatedProductImage('gameboy-box-neon.png'),
+    insert: generatedProductImage('cartridge-gameboy-neon.png'),
+    manual: generatedProductImage('cartridge-gameboy-neon.png'),
+    protector: generatedProductImage('gameboy-protector-neon.png'),
+  },
+  gba: {
+    caja: generatedProductImage('cartridge-gba-neon.png'),
+    insert: generatedProductImage('cartridge-gba-neon.png'),
+    manual: generatedProductImage('cartridge-gba-neon.png'),
+    protector: generatedProductImage('gameboy-protector-neon.png'),
+  },
+  snes: {
+    caja: generatedProductImage('cartridge-snes-neon.png'),
+    insert: generatedProductImage('cartridge-snes-neon.png'),
+    manual: generatedProductImage('cartridge-snes-neon.png'),
+    protector: generatedProductImage('cartridge-snes-neon.png'),
+  },
+  gamecube: {
+    caja: generatedProductImage('console-gamecube-neon.png'),
+    insert: generatedProductImage('console-gamecube-neon.png'),
+    manual: generatedProductImage('console-gamecube-neon.png'),
+    protector: generatedProductImage('console-gamecube-neon.png'),
+  },
+};
 
 const KNOWN_IMAGE_HOSTS = new Set([
   'images.unsplash.com',
@@ -93,26 +125,82 @@ export function getFallbackImageUrls(input: {
 }): string[] {
   const category = normalizeText(input.category);
   const name = normalizeText(input.name);
+  const platform = normalizeText(input.platform);
+  const source = `${name} ${category} ${platform}`;
+  const platformKey = source.includes('gamecube') || source.includes('game cube')
+    ? 'gamecube'
+    : source.includes('super nintendo') || source.includes('snes')
+      ? 'snes'
+      : source.includes('game boy advance') || source.includes('gameboy advance') || source.includes('gba')
+        ? 'gba'
+        : source.includes('game boy color') || source.includes('gameboy color') || source.includes('gbc')
+          ? 'gbc'
+          : 'gameboy';
+
+  if (source.includes('game boy light')) {
+    return unique([CONSOLE_GAMEBOY_LIGHT]);
+  }
+
+  const isConsoleComponent =
+    source.includes('consola') ||
+    category.includes('consolas-retro') ||
+    category.includes('hardware');
+
+  if (isConsoleComponent && source.includes('protector')) {
+    return unique([COMPONENT_IMAGE_BY_PLATFORM[platformKey].protector]);
+  }
+
+  if (isConsoleComponent && (source.includes('insert') || source.includes('inlay') || source.includes('interior'))) {
+    return unique([COMPONENT_IMAGE_BY_PLATFORM[platformKey].insert]);
+  }
+
+  if (isConsoleComponent && source.includes('manual')) {
+    return unique([COMPONENT_IMAGE_BY_PLATFORM[platformKey].manual]);
+  }
+
+  if (isConsoleComponent && source.includes('caja')) {
+    return unique([COMPONENT_IMAGE_BY_PLATFORM[platformKey].caja]);
+  }
 
   if (category.includes('cajas-misteriosas') || name.includes('mystery') || name.includes('misteriosa') || name.includes('ruleta')) {
     return unique([UNSPLASH_RETRO_1, UNSPLASH_RETRO_2]);
   }
 
   if (category.includes('consolas')) {
-    return unique([WIKIMEDIA_GB, WIKIMEDIA_GBC, UNSPLASH_RETRO_1]);
+    return unique([
+      generatedProductImage('console-gameboy-classic-neon.png'),
+      generatedProductImage('console-snes-neon.png'),
+      generatedProductImage('console-ps1-neon.png'),
+    ]);
   }
 
   if (category.includes('accesorios') || category.includes('manuales')) {
-    return unique([UNSPLASH_RETRO_2, UNSPLASH_RETRO_1, LIBRETRO_GB_TETRIS]);
+    return unique([
+      generatedProductImage('controller-neon.png'),
+      generatedProductImage('gameboy-protector-neon.png'),
+      generatedProductImage('cartridge-gameboy-neon.png'),
+    ]);
   }
 
   if (category.includes('cajas')) {
-    return unique([LIBRETRO_GB_POKEMON_RED, LIBRETRO_GB_TETRIS, UNSPLASH_RETRO_2]);
+    return unique([
+      generatedProductImage('gameboy-box-neon.png'),
+      generatedProductImage('cartridge-gameboy-neon.png'),
+      generatedProductImage('cartridge-gba-neon.png'),
+    ]);
   }
 
   if (category.includes('juegos') || String(input.platform || '').length > 0) {
-    return unique([LIBRETRO_GB_TETRIS, LIBRETRO_GB_POKEMON_RED, UNSPLASH_RETRO_1]);
+    return unique([
+      generatedProductImage('cartridge-gameboy-neon.png'),
+      generatedProductImage('cartridge-gba-neon.png'),
+      generatedProductImage('cartridge-snes-neon.png'),
+    ]);
   }
 
-  return unique([UNSPLASH_RETRO_1, UNSPLASH_RETRO_2, LIBRETRO_GB_TETRIS]);
+  return unique([
+    generatedProductImage('controller-neon.png'),
+    generatedProductImage('console-gameboy-classic-neon.png'),
+    generatedProductImage('cartridge-gameboy-neon.png'),
+  ]);
 }

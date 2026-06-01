@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getCommunitySellerRanking, type CommunitySellerRankingPeriod } from '@/lib/userListings';
+import {
+  COMMUNITY_MARKETPLACE_DISABLED_MESSAGE,
+  COMMUNITY_MARKETPLACE_ENABLED,
+  getCommunitySellerRanking,
+  type CommunitySellerRankingPeriod,
+} from '@/lib/userListings';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +18,8 @@ export async function GET(req: Request) {
     const ranking = await getCommunitySellerRanking(limit, period);
     return NextResponse.json({
       period,
+      marketplace_enabled: COMMUNITY_MARKETPLACE_ENABLED,
+      disabled_message: COMMUNITY_MARKETPLACE_DISABLED_MESSAGE,
       ranking,
       total: ranking.length,
     });

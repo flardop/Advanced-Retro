@@ -33,7 +33,10 @@ const marqueeItems = [
   'LUNA',
   'NORA',
   'JOY & GRUMP',
-  'YAYA',
+  'TRIMP',
+  'MAYOR TUBE',
+  'PIPO',
+  'NANO',
   'PIXEL GRAVEYARD',
   'RAM DISTRICT',
   'CORRUPTED SAVE',
@@ -105,21 +108,51 @@ const featuredCharacters = [
 const supportingCast = [
   {
     name: 'NORA',
-    role: 'City Hall clerk',
-    description: 'Orden, formularios y memoria institucional. La clase de personaje que hace que la ciudad parezca real.',
-    image: '/images/retroville/retroville-nora-sheet.png',
+    role: 'Vecina del Riverside District',
+    description: 'Observa, juzga y guarda más secretos de los que parece. La memoria social de la ciudad.',
+    image: '/images/retroville/characters/nora.png',
   },
   {
     name: 'JOY & GRUMP',
     role: 'Neighbour controllers',
     description: 'Vecinos eternamente molestos, perfectos para el tono de sitcom adulta y caos cotidiano.',
-    image: '/images/retroville/retroville-joy-grump-sheet.png',
+    image: '/images/retroville/characters/joy-grump.png',
   },
   {
-    name: 'YAYA',
-    role: 'Leyenda del barrio',
-    description: 'Memoria viva, energía rara y la sensación de que conoce secretos que el resto ya olvidó.',
-    image: '/images/retroville/retroville-yaya-sheet.png',
+    name: 'TRIMP',
+    role: 'Motion controller competitivo',
+    description: 'Ego, foco y dominio. TRIMP no sigue el juego: intenta dictar las reglas.',
+    image: '/images/retroville/characters/trimp.png',
+  },
+  {
+    name: 'MAYOR TUBE',
+    role: 'Alcalde de Retroville',
+    description: 'Sonrisa de pantalla, promesas de progreso y una calma política demasiado perfecta.',
+    image: '/images/retroville/characters/mayor-tube.png',
+  },
+  {
+    name: 'PIPO',
+    role: 'Virtual pet kid',
+    description: 'Pequeño, molesto y convencido de que nada es culpa suya. Ego de bolsillo.',
+    image: '/images/retroville/characters/pipo.png',
+  },
+  {
+    name: 'NANO',
+    role: 'Pocket MP3 kid',
+    description: 'Vive en su playlist y baja el volumen del mundo cuando Retroville grita demasiado.',
+    image: '/images/retroville/characters/nano.png',
+  },
+  {
+    name: 'MIA',
+    role: 'Influencer de Retroville',
+    description: 'Convierte cualquier crisis en contenido. Brillo, cámara frontal y atención como combustible.',
+    image: '/images/retroville/characters/influencer.png',
+  },
+  {
+    name: 'PUBLIC CREW',
+    role: 'Transporte público',
+    description: 'Rutas, cambio exacto y cero ganas de explicar la misma parada dos veces.',
+    image: '/images/retroville/characters/public-crew.png',
   },
 ] as const;
 
@@ -641,9 +674,10 @@ export default function RetrovilleExperience({
                 className={`${styles.reveal} ${residentsReveal.visible ? styles.revealVisible : ''} overflow-hidden rounded-[1.8rem] border border-white/8 bg-[rgba(11,14,24,0.94)]`}
                 style={{ transitionDelay: `${index * 90}ms` }}
               >
-                <div className="relative aspect-[16/12] overflow-hidden">
-                  <Image src={resident.image} alt={resident.name} fill sizes="100vw" className="object-cover object-top" />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.02),transparent_30%,rgba(4,4,10,0.88))]" />
+                <div className="relative h-[360px] overflow-hidden bg-[radial-gradient(circle_at_50%_36%,rgba(138,215,255,0.18),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0))] sm:h-[430px]">
+                  <div className="absolute inset-x-[18%] bottom-4 h-16 rounded-full bg-black/45 blur-2xl" />
+                  <Image src={resident.image} alt={resident.name} fill sizes="100vw" className="object-contain object-bottom p-5" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.02),transparent_58%,rgba(4,4,10,0.82))]" />
                 </div>
                 <div className="px-5 pb-5 pt-4">
                   <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-cyan)]">{resident.role}</p>
@@ -852,6 +886,12 @@ export default function RetrovilleExperience({
                     {social.label}
                   </a>
                 ))}
+                <Link
+                  href="/retroville/legal"
+                  className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 text-[11px] uppercase tracking-[0.2em] text-white/82 transition hover:border-[var(--rv-green)]/30 hover:bg-white/[0.08] hover:text-white"
+                >
+                  Legal
+                </Link>
               </div>
               <Link href="/" className="mt-3 inline-flex text-white transition hover:text-[var(--rv-green)]">
                 ← Volver a AdvancedRetro

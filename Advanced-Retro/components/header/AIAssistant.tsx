@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import styles from './AIAssistant.module.css';
 
@@ -7,6 +8,7 @@ type Message = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  links?: { label: string; href: string }[];
 };
 
 type AIAssistantProps = {
@@ -18,7 +20,13 @@ const starterMessage: Message = {
   id: '0',
   role: 'assistant',
   content:
-    '¡Hola! Soy el asistente de AdvancedRetro. Puedo ayudarte a encontrar productos, resolver dudas sobre pedidos y contarte sobre Retroville.',
+    '¡Hola! Soy el asistente de AdvancedRetro. Puedo ayudarte a encontrar productos, orientarte con pedidos, explicarte Mystery Boxes y Ruleta o contarte qué es Retroville.',
+  links: [
+    { label: 'Tienda', href: '/tienda' },
+    { label: 'Mystery Boxes', href: '/mystery-boxes' },
+    { label: 'Ruleta', href: '/ruleta' },
+    { label: 'Retroville', href: '/retroville' },
+  ],
 };
 
 const quickPrompts = [
@@ -103,6 +111,16 @@ export default function AIAssistant({ onTrigger, triggerClassName = '' }: AIAssi
           : typeof data.content === 'string' && data.content.trim()
             ? data.content.trim()
             : '';
+      const links = Array.isArray(data.links)
+        ? data.links
+            .filter((item: unknown) => item && typeof item === 'object')
+            .map((item: unknown) => ({
+              label: String((item as { label?: string }).label || '').trim(),
+              href: String((item as { href?: string }).href || '').trim(),
+            }))
+            .filter((item: { label: string; href: string }) => item.label && item.href)
+            .slice(0, 6)
+        : undefined;
 
       setMessages((previous) => [
         ...previous,
@@ -110,6 +128,7 @@ export default function AIAssistant({ onTrigger, triggerClassName = '' }: AIAssi
           id: makeId(),
           role: 'assistant',
           content: reply || 'Lo siento, no pude procesar tu mensaje. Inténtalo de nuevo.',
+          links,
         },
       ]);
     } catch {
@@ -170,6 +189,32 @@ export default function AIAssistant({ onTrigger, triggerClassName = '' }: AIAssi
               className={`${styles.message} ${message.role === 'user' ? styles.messageUser : styles.messageAssistant}`}
             >
               <p>{message.content}</p>
+              {message.role === 'assistant' && Array.isArray(message.links) && message.links.length > 0 ? (
+                <div className={styles.linkRow}>
+                  {message.links.map((link) => {
+                    const external = /^https?:\/\//.test(link.href);
+                    return external ? (
+                      <a
+                        key={`${message.id}-${link.href}`}
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.linkChip}
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        key={`${message.id}-${link.href}`}
+                        href={link.href}
+                        className={styles.linkChip}
+                      >
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
           ))}
 

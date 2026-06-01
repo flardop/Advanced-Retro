@@ -3,15 +3,15 @@ import CommunityFeed from '@/components/sections/CommunityFeed';
 import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Comunidad retro | Compra y venta entre coleccionistas',
+  title: 'Comunidad retro | AdvancedRetro.es',
   description:
-    'Marketplace de comunidad de AdvancedRetro.es para publicar anuncios, vender productos retro y comprar con seguimiento y revisión de tienda.',
+    'Comunidad de AdvancedRetro.es para seguir novedades, contenido retro, soporte y actualizaciones del ecosistema.',
   path: '/comunidad',
   keywords: [
     'comunidad retro',
-    'marketplace retro',
-    'vender juegos retro',
-    'comprar juegos retro entre usuarios',
+    'advancedretro comunidad',
+    'retro gaming españa',
+    'coleccionismo retro',
   ],
 });
 
@@ -27,7 +27,7 @@ export default function CommunityPage() {
     name: 'Comunidad AdvancedRetro.es',
     url: 'https://advancedretro.es/comunidad',
     description:
-      'Marketplace de usuarios para compra y venta de productos retro con sistema de revisión y seguimiento.',
+      'Comunidad de AdvancedRetro.es para contenido, soporte, novedades y cultura retro.',
   };
 
   return (

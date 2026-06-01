@@ -19,7 +19,7 @@ export const sampleProducts = [
     tips: ['Guarda la caja en ambiente seco.'],
     images: [
       '/images/products/console-gb-dmg.jpg',
-      '/images/products/console-box-gb.jpg'
+      '/images/components/gameboy-caja.svg'
     ],
     trailer_url: 'https://www.youtube.com/watch?v=e7wP0f4vT3Q',
     purchase_options: [ 'Juego completo', 'Solo cartucho', 'Caja', 'Manual (completo)', 'Parte interior del manual (separada)' ],

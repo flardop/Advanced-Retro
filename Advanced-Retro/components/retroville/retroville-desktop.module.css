@@ -791,6 +791,231 @@
   color: rgba(255, 255, 255, 0.72);
 }
 
+.previewLayout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(300px, 0.58fr) minmax(680px, 1.42fr);
+  align-items: center;
+  gap: clamp(30px, 3vw, 64px);
+  height: 100%;
+  min-width: 0;
+}
+
+.previewButton {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 28px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(138, 215, 255, 0.34);
+  background: rgba(138, 215, 255, 0.12);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.previewButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(138, 215, 255, 0.58);
+  background: rgba(138, 215, 255, 0.18);
+}
+
+.sketchPreviewBoard {
+  position: relative;
+  min-width: 0;
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 28px;
+  padding: clamp(22px, 2vw, 34px);
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 20% 12%, rgba(255, 210, 110, 0.16), transparent 24%),
+    radial-gradient(circle at 88% 22%, rgba(138, 215, 255, 0.16), transparent 28%),
+    rgba(8, 11, 20, 0.74);
+  overflow: hidden;
+}
+
+.sketchPreviewBoard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(180deg, black, transparent 88%);
+  pointer-events: none;
+}
+
+.sampleFormula {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr) 54px;
+  align-items: center;
+  gap: 14px;
+}
+
+.sampleInputCard {
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  color: #11131b;
+  padding: 20px;
+}
+
+.sampleInputCard span,
+.sketchCard span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sampleInputCard strong {
+  font-size: 1.2rem;
+}
+
+.samplePlus,
+.sampleEquals {
+  width: 54px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ffc940;
+  color: #170f2c;
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.sampleEquals {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffc940;
+}
+
+.sketchCards {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  min-height: 0;
+}
+
+.sketchCard {
+  position: relative;
+  min-height: 0;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #f5f0e7;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 26px 54px rgba(0, 0, 0, 0.25);
+}
+
+.sketchCardImage {
+  object-fit: contain;
+  padding: 12px;
+  filter: contrast(1.04);
+}
+
+.sketchCard span {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(5, 7, 12, 0.78);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.castPresentationStage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 20% 32%, rgba(255, 83, 170, 0.18), transparent 30%),
+    radial-gradient(circle at 82% 38%, rgba(255, 201, 64, 0.18), transparent 34%),
+    radial-gradient(circle at 52% 80%, rgba(138, 215, 255, 0.18), transparent 38%),
+    linear-gradient(180deg, rgba(13, 17, 30, 0.76), rgba(5, 7, 14, 0.94));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 26px 80px rgba(0, 0, 0, 0.32);
+}
+
+.castPresentationGlow {
+  position: absolute;
+  inset: 10% 8% 8%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 14% 40%, rgba(255, 78, 180, 0.22), transparent 32%),
+    radial-gradient(circle at 55% 38%, rgba(137, 196, 255, 0.22), transparent 34%),
+    radial-gradient(circle at 84% 44%, rgba(255, 213, 106, 0.22), transparent 36%);
+  filter: blur(36px);
+  opacity: 0.92;
+}
+
+.castPresentationImage {
+  position: relative;
+  z-index: 1;
+  width: auto;
+  height: min(84%, 640px);
+  max-width: 96%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 34px 62px rgba(0, 0, 0, 0.56));
+}
+
+.castPresentationMeta {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 22px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(5, 7, 14, 0.72);
+  padding: 14px 18px;
+  backdrop-filter: blur(18px);
+}
+
+.castPresentationMeta strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2vw, 2.25rem);
+  line-height: 1;
+  letter-spacing: 0.03em;
+  color: #fff;
+}
+
+.castPresentationMeta span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.58);
+}
+
 .galleryGrid,
 .signalGrid {
   position: relative;

@@ -36,7 +36,7 @@ export default function RetroStory() {
                 </li>
                 <li className="flex gap-2">
                   <span className="text-primary">•</span>
-                  <span>{t('home.story.point_03', 'Marketplace comunidad con revisión y trazabilidad.')}</span>
+                  <span>{t('home.story.point_03', 'Comunidad, soporte y novedades del ecosistema.')}</span>
                 </li>
               </ul>
             </div>

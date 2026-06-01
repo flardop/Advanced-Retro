@@ -1,0 +1,128 @@
+{
+  "es": {
+    "greeting": {
+      "lead": "Puedo ayudarte con productos, pedidos, envíos, membresías, Mystery Boxes, Ruleta y Retroville.",
+      "note": "Si quieres, también puedo orientarte según tus favoritos y tu actividad reciente en la cuenta."
+    },
+    "mystery": {
+      "lead": "Mystery Boxes y Ruleta están relacionadas, pero no son lo mismo.",
+      "details": [
+        "En Mystery Boxes compras la experiencia o la tirada.",
+        "En Ruleta usas tickets o participaciones que ya has conseguido.",
+        "Si buscas sorpresa pura suele encajar más Mystery Boxes; si quieres aprovechar tickets ya ganados, Ruleta tiene más sentido."
+      ]
+    },
+    "retroville": {
+      "lead": "Retroville es el universo narrativo original de AdvancedRetro y se está planteando como una serie.",
+      "details": [
+        "La ciudad mezcla humor oscuro, hardware olvidado, transporte propio, personajes civiles y jerarquías rarísimas.",
+        "No es solo una landing: la idea es construir un mundo con barrios, fauna, política, ocio y tono de sitcom adulta retrofuturista."
+      ]
+    },
+    "shipping": {
+      "lead": "AdvancedRetro prepara envíos desde España.",
+      "details": [
+        "Para plazo y coste exactos, la referencia buena es siempre el checkout o tu pedido real en perfil.",
+        "Si el pedido ya existe, puedo orientarte mejor si veo tracking, estado o tickets asociados."
+      ]
+    },
+    "returns": {
+      "lead": "Para devoluciones, garantía o incidencias, lo útil es abrir ticket con contexto.",
+      "details": [
+        "Si puedes, incluye fotos y explica si el problema es de estado, funcionamiento o envío.",
+        "Así el equipo puede revisar algo concreto en lugar de hacerte dar vueltas."
+      ]
+    },
+    "memberships": {
+      "lead": "AdvancedRetro tiene tres niveles: Explorador, Coleccionista y VIP Retro.",
+      "details": [
+        "La diferencia práctica está en acceso preferente, descuentos y tienda propia dentro del ecosistema.",
+        "Si tu objetivo es comprar mejor, crear tienda o entrar antes a drops, puedo decirte qué plan encaja más."
+      ]
+    },
+    "creator": {
+      "lead": "La página de creador es la capa portfolio de Joel dentro de AdvancedRetro.",
+      "details": [
+        "Está separada de la tienda y sirve como portfolio online y carta de presentación profesional.",
+        "Si quieres, puedo llevarte a la ruta o resumirte su enfoque."
+      ]
+    },
+    "community": {
+      "lead": "La parte de comunidad mezcla contenido, blog, ecosistema y participación.",
+      "details": [
+        "Si lo tuyo es comprar, te llevo a tienda.",
+        "Si lo tuyo es crear o lanzar tienda, te llevo a membresías y creador de tiendas."
+      ]
+    },
+    "support": {
+      "lead": "Si el tema depende de tu cuenta, pedidos o tickets, puedo darte una lectura bastante más útil si detecto tu sesión.",
+      "details": [
+        "No reemplazo al equipo de soporte, pero sí puedo orientarte con lo que ya tienes abierto o comprado.",
+        "Si algo requiere verificación humana, te mandaré al perfil o al ticket correcto."
+      ]
+    }
+  },
+  "en": {
+    "greeting": {
+      "lead": "I can help with products, orders, shipping, memberships, Mystery Boxes, Roulette and Retroville.",
+      "note": "If you want, I can also guide you using your favourites and recent account activity."
+    },
+    "mystery": {
+      "lead": "Mystery Boxes and Roulette are related, but they are not the same thing.",
+      "details": [
+        "In Mystery Boxes you buy the experience or the spin itself.",
+        "In Roulette you use tickets or entries you already earned.",
+        "If you want pure surprise, Mystery Boxes usually fit better; if you want to use earned tickets, Roulette makes more sense."
+      ]
+    },
+    "retroville": {
+      "lead": "Retroville is the original narrative universe of AdvancedRetro and it is being developed as a series.",
+      "details": [
+        "The city mixes dark comedy, abandoned hardware, custom transport, civil characters and strange hierarchies.",
+        "It is not just a landing page: the idea is to build a full world with districts, fauna, politics, nightlife and retro-futurist sitcom energy."
+      ]
+    },
+    "shipping": {
+      "lead": "AdvancedRetro ships from Spain.",
+      "details": [
+        "For exact timing and shipping cost, checkout or your real order view is the reliable source.",
+        "If the order already exists, I can be more useful if I can see tracking, status or linked tickets."
+      ]
+    },
+    "returns": {
+      "lead": "For returns, warranty or item issues, the useful move is opening a ticket with context.",
+      "details": [
+        "If possible, include photos and explain whether the issue is condition, functionality or shipping-related.",
+        "That lets the team review something concrete instead of sending you in circles."
+      ]
+    },
+    "memberships": {
+      "lead": "AdvancedRetro has three tiers: Explorer, Collector and VIP Retro.",
+      "details": [
+        "The practical difference is early access, discounts and whether you can run your own store inside the ecosystem.",
+        "If your goal is to buy smarter, launch a store or enter drops early, I can point you to the best fit."
+      ]
+    },
+    "creator": {
+      "lead": "The creator page is Joel’s portfolio layer inside AdvancedRetro.",
+      "details": [
+        "It is separate from the store and works as an online portfolio and professional presentation page.",
+        "If you want, I can take you there or summarise its focus."
+      ]
+    },
+    "community": {
+      "lead": "The community side blends content, blog, ecosystem layers and participation.",
+      "details": [
+        "If your goal is buying, I will point you to the store.",
+        "If your goal is creating, I will point you to memberships and the creator-store flow."
+      ]
+    },
+    "support": {
+      "lead": "If the topic depends on your account, orders or tickets, I can be more helpful if I detect your session.",
+      "details": [
+        "I do not replace the support team, but I can guide you using what is already open or purchased.",
+        "If something requires a human check, I will point you to the right profile or ticket flow."
+      ]
+    }
+  }
+}

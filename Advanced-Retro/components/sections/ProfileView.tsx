@@ -1737,14 +1737,11 @@ export default function ProfileView() {
     },
     {
       id: 'sell',
-      label: 'Vender',
-      kicker: 'Marketplace comunidad',
+      label: 'Comunidad',
+      kicker: 'Marketplace desactivado',
       description:
-        'Prepara publicaciones, revisa tus anuncios y controla el estado de tus ventas en comunidad.',
-      badge:
-        profile && (profile.is_verified_seller || profile.role === 'admin')
-          ? `${listings.length} publicaciones`
-          : 'Verificación pendiente',
+        'La comunidad ya no permite publicar productos de usuarios. Usa este espacio para soporte y novedades.',
+      badge: 'Sin anuncios',
     },
   ];
 
@@ -3390,102 +3387,16 @@ export default function ProfileView() {
         )}
 
         {tab === 'sell' && (
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="glass p-6">
-              <h2 className="font-semibold">Marketplace comunidad</h2>
-              <p className="text-sm text-textMuted mt-2">
-                Publicación gratuita (0,00 €). Si se aprueba y se vende, la comisión para la tienda es del 5%.
-              </p>
-              {!profile.is_verified_seller && profile.role !== 'admin' ? (
-                <p className="text-sm text-textMuted mt-2">
-                  Tu cuenta aún no está verificada para publicar. Pide revisión desde soporte.
-                </p>
-              ) : (
-                <>
-                  <p className="text-sm text-textMuted mt-2">
-                    Requisitos mínimos: 3 fotos (máx. 10), descripción completa y detalle de autenticidad.
-                  </p>
-                  <div className="grid gap-3 mt-4">
-                    <input className="bg-transparent border border-line px-3 py-2" placeholder="Título" value={listingTitle} onChange={(e) => setListingTitle(e.target.value)} />
-                    <textarea className="bg-transparent border border-line px-3 py-2 min-h-[120px]" placeholder="Descripción" value={listingDescription} onChange={(e) => setListingDescription(e.target.value)} />
-                    <input className="bg-transparent border border-line px-3 py-2" placeholder="Precio en € (ej. 49.99)" value={listingPrice} onChange={(e) => setListingPrice(e.target.value)} />
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <select className="bg-transparent border border-line px-3 py-2" value={listingCategory} onChange={(e) => setListingCategory(e.target.value)}>
-                        <option value="juegos-gameboy">Juegos Game Boy</option>
-                        <option value="juegos-gameboy-color">Juegos Game Boy Color</option>
-                        <option value="juegos-gameboy-advance">Juegos Game Boy Advance</option>
-                        <option value="juegos-super-nintendo">Juegos Super Nintendo</option>
-                        <option value="juegos-gamecube">Juegos GameCube</option>
-                        <option value="cajas-gameboy">Cajas Game Boy</option>
-                        <option value="manuales">Manuales</option>
-                        <option value="accesorios">Accesorios</option>
-                        <option value="consolas-retro">Consolas Retro</option>
-                      </select>
-
-                      <select className="bg-transparent border border-line px-3 py-2" value={listingCondition} onChange={(e) => setListingCondition(e.target.value)}>
-                        <option value="used">Usado</option>
-                        <option value="new">Nuevo</option>
-                        <option value="restored">Restaurado</option>
-                      </select>
-                    </div>
-
-                    <select className="bg-transparent border border-line px-3 py-2" value={listingOriginality} onChange={(e) => setListingOriginality(e.target.value)}>
-                      <option value="original_verificado">Original verificado</option>
-                      <option value="original_sin_verificar">Original sin verificar</option>
-                      <option value="repro_1_1">Repro 1:1</option>
-                      <option value="mixto">Mixto (parte original + parte repro)</option>
-                    </select>
-
-                    <textarea
-                      className="bg-transparent border border-line px-3 py-2 min-h-[90px]"
-                      placeholder="Explica por qué es original/repro (sellos, placas, fotos macro, etc.)"
-                      value={listingOriginalityNotes}
-                      onChange={(e) => setListingOriginalityNotes(e.target.value)}
-                    />
-
-                    <textarea
-                      className="bg-transparent border border-line px-3 py-2 min-h-[90px]"
-                      placeholder="URLs de fotos (mínimo 3, máximo 10), una por línea"
-                      value={listingImageText}
-                      onChange={(e) => setListingImageText(e.target.value)}
-                    />
-
-                    <button className="button-primary" onClick={publishListing} disabled={publishingListing}>
-                      {publishingListing ? 'Publicando...' : 'Enviar publicación'}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="glass p-6">
-              <h2 className="font-semibold mb-3">Mis publicaciones ({listings.length})</h2>
-              <div className="space-y-3 max-h-[700px] overflow-auto pr-1">
-                {listings.length === 0 ? (
-                  <p className="text-textMuted text-sm">Aún no tienes publicaciones.</p>
-                ) : (
-                  listings.map((listing) => (
-                    <div key={listing.id} className="border border-line p-4">
-                      <p className="font-semibold">{listing.title}</p>
-                      <p className="text-xs text-textMuted">{(listing.price / 100).toFixed(2)} € · {listing.status}</p>
-                      <p className="text-xs text-textMuted mt-1">
-                        Publicar: {((Number(listing.listing_fee_cents || 0)) / 100).toFixed(2)} € · Comisión:
-                        {' '}{Number(listing.commission_rate || 5).toFixed(0)}% ({((Number(listing.commission_cents || 0)) / 100).toFixed(2)} €)
-                      </p>
-                      <p className="text-xs text-textMuted mt-1">Originalidad: {listing.originality_status}</p>
-                      <p className="text-xs text-textMuted mt-1">Entrega: {listing.delivery_status || 'pending'}</p>
-                      {listing.shipping_tracking_code ? (
-                        <p className="text-xs text-primary mt-1">Tracking: {listing.shipping_tracking_code}</p>
-                      ) : null}
-                      <p className="text-sm text-textMuted mt-2 line-clamp-3">{listing.description}</p>
-                      {listing.admin_notes ? (
-                        <p className="text-xs text-primary mt-2">Nota admin: {listing.admin_notes}</p>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
+          <div className="glass p-6">
+            <p className="text-xs uppercase tracking-[0.18em] text-primary">Comunidad AdvancedRetro</p>
+            <h2 className="mt-2 text-2xl font-semibold">Marketplace de usuarios desactivado</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-textMuted">
+              Ya no se pueden publicar ni gestionar productos de usuarios. La comunidad queda centrada en soporte,
+              contenido, eventos y novedades de AdvancedRetro.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <a href="/comunidad" className="button-primary">Ir a comunidad</a>
+              <a href="/tienda" className="button-secondary">Ver tienda oficial</a>
             </div>
           </div>
         )}

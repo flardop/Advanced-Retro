@@ -25,6 +25,6 @@ values
   ('Resident Evil 4', 'Acción y terror para GameCube.', 4999, '/images/products/gc-resident-evil-4.jpg', array['/images/products/gc-resident-evil-4.jpg'], 'juegos-gamecube', 8, 'full_game', 'sin-especificar', 'gamecube'),
   ('Consola Game Boy DMG-01', 'Consola original Game Boy Classic.', 11999, '/images/products/console-gb-dmg.jpg', array['/images/products/console-gb-dmg.jpg'], 'consolas-retro', 4, 'full_game', 'original', 'game-boy'),
   ('Consola Super Nintendo PAL', 'Consola SNES modelo PAL.', 14999, '/images/products/console-snes-pal.jpg', array['/images/products/console-snes-pal.jpg'], 'consolas-retro', 3, 'full_game', 'original', 'super-nintendo'),
-  ('Caja consola Game Boy original', 'Caja suelta para consola Game Boy.', 3999, '/images/products/console-box-gb.jpg', array['/images/products/console-box-gb.jpg'], 'consolas-retro', 5, 'caja', 'sin-especificar', 'game-boy'),
-  ('Manual consola Game Boy', 'Manual de instrucciones de consola Game Boy.', 1999, '/images/products/console-manual-gb.jpg', array['/images/products/console-manual-gb.jpg'], 'manuales', 10, 'manual', 'sin-especificar', 'game-boy')
+  ('Caja consola Game Boy original', 'Caja suelta para consola Game Boy.', 3999, '/images/components/gameboy-caja.svg', array['/images/components/gameboy-caja.svg'], 'consolas-retro', 5, 'caja', 'sin-especificar', 'game-boy'),
+  ('Manual consola Game Boy', 'Manual de instrucciones de consola Game Boy.', 1999, '/images/components/gameboy-manual.svg', array['/images/components/gameboy-manual.svg'], 'manuales', 10, 'manual', 'sin-especificar', 'game-boy')
 on conflict do nothing;

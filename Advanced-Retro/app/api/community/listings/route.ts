@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import {
   COMMUNITY_COMMISSION_RATE,
   COMMUNITY_FEATURED_FEE_PER_DAY_CENTS,
+  COMMUNITY_MARKETPLACE_DISABLED_MESSAGE,
+  COMMUNITY_MARKETPLACE_ENABLED,
   COMMUNITY_SHOWCASE_FEE_PER_DAY_CENTS,
   getPublicApprovedListings,
 } from '@/lib/userListings';
@@ -15,6 +17,8 @@ export async function GET(req: Request) {
     const listings = await getPublicApprovedListings(limitRaw);
     return NextResponse.json({
       policy: {
+        marketplace_enabled: COMMUNITY_MARKETPLACE_ENABLED,
+        disabled_message: COMMUNITY_MARKETPLACE_DISABLED_MESSAGE,
         publish_fee_cents: 0,
         commission_rate: COMMUNITY_COMMISSION_RATE,
         featured_fee_per_day_cents: COMMUNITY_FEATURED_FEE_PER_DAY_CENTS,

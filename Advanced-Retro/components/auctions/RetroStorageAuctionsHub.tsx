@@ -36,40 +36,48 @@ function formatRelativeCountdown(targetIso: string, now: number): string {
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
-  if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
-  return `${minutes}m ${seconds}s`;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
 function formatDateTime(value: string): string {
   return new Intl.DateTimeFormat('es-ES', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(new Date(value));
 }
 
 function statusLabel(status: RetroStorageAuctionListItem['status']) {
   switch (status) {
     case 'live':
-      return 'En subasta';
+      return 'En directo';
     case 'upcoming':
-      return 'Proximamente';
+      return 'Próxima';
     default:
-      return 'Finalizado';
+      return 'Finalizada';
   }
 }
 
 function statusClasses(status: RetroStorageAuctionListItem['status']) {
   switch (status) {
     case 'live':
-      return 'border-cyan-400/40 bg-cyan-400/10 text-cyan-200';
+      return 'border-primary/50 bg-primary/12 text-primary';
     case 'upcoming':
-      return 'border-amber-400/40 bg-amber-400/10 text-amber-200';
+      return 'border-amber-300/40 bg-amber-300/10 text-amber-100';
     default:
-      return 'border-emerald-400/40 bg-emerald-400/10 text-emerald-200';
+      return 'border-white/12 bg-white/[0.04] text-textMuted';
   }
 }
+
+const filters: Array<{ value: FilterValue; label: string }> = [
+  { value: 'all', label: 'Todas' },
+  { value: 'live', label: 'En directo' },
+  { value: 'upcoming', label: 'Próximas' },
+  { value: 'ended', label: 'Finalizadas' },
+];
 
 export default function RetroStorageAuctionsHub({ initialData = null }: { initialData?: AuctionsResponse | null }) {
   const [payload, setPayload] = useState<AuctionsResponse | null>(initialData);
@@ -101,7 +109,7 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
 
   useEffect(() => {
     const tick = window.setInterval(() => setNow(Date.now()), 1000);
-    const poll = window.setInterval(() => load('refresh'), 15000);
+    const poll = window.setInterval(() => load('refresh'), 20000);
     return () => {
       window.clearInterval(tick);
       window.clearInterval(poll);
@@ -115,18 +123,17 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
   }, [auctions, filter]);
 
   const liveCount = auctions.filter((auction) => auction.status === 'live').length;
-  const totalReminderCount = auctions.reduce((total, auction) => total + auction.remindersCount, 0);
+  const upcomingCount = auctions.filter((auction) => auction.status === 'upcoming').length;
 
   const toggleReminder = async (slug: string) => {
     if (!payload?.isAuthenticated) {
-      toast('Inicia sesion para guardar recordatorios.');
+      toast('Inicia sesión para guardar recordatorios.');
       return;
     }
+
     setActionSlug(slug);
     try {
-      const res = await fetch(`/api/auctions/${slug}/reminder`, {
-        method: 'POST',
-      });
+      const res = await fetch(`/api/auctions/${slug}/reminder`, { method: 'POST' });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'No se pudo actualizar el recordatorio');
       await load('refresh');
@@ -139,250 +146,186 @@ export default function RetroStorageAuctionsHub({ initialData = null }: { initia
 
   return (
     <section className="section">
-      <div className="wide-content-rail space-y-8">
-        <div className="glass overflow-hidden p-6 sm:p-8">
-          <div className="grid gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] xl:items-start">
-            <div className="min-w-0 space-y-5">
-              <p className="chip w-fit border-cyan-400/40 bg-cyan-400/10 text-cyan-200">RETRO STORAGE AUCTIONS</p>
-              <div className="space-y-3">
-                <h1 className="title-display text-4xl sm:text-5xl">Almacenes digitales con puja, trazabilidad y revelado real</h1>
-                <p className="max-w-3xl text-base leading-relaxed text-textMuted">
-                  Advanced Retro documenta lotes fisicos reales, oculta solo una parte del contenido y abre el
-                  almacen al cierre para mantener emocion sin perder transparencia. Puedes pujar, guardar
-                  recordatorio, reservar compra directa o solicitar almacenamiento.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <a href="#retro-storage-grid" className="button-primary">
-                  Ver almacenes activos
+      <div className="wide-content-rail space-y-7">
+        <header className="overflow-hidden rounded-[2rem] border border-line/80 bg-[linear-gradient(135deg,rgba(14,22,34,0.96),rgba(8,12,22,0.98))] p-6 shadow-[0_26px_80px_rgba(0,0,0,0.24)] sm:p-8 lg:p-10">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)] lg:items-end">
+            <div className="min-w-0">
+              <p className="w-fit rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+                Subastas AdvancedRetro
+              </p>
+              <h1 className="title-display mt-5 max-w-4xl text-[clamp(2.7rem,7vw,6.2rem)] leading-[0.9] tracking-tight">
+                Pujas retro claras, simples y verificadas.
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-textMuted sm:text-lg">
+                Lotes seleccionados por AdvancedRetro con contenido mínimo documentado. Entra, revisa el lote y puja sin ruido visual ni bloques innecesarios.
+              </p>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <a href="#retro-storage-grid" className="button-primary justify-center text-center">
+                  Ver subastas
                 </a>
-                <Link href="/comunidad" className="button-secondary">
-                  Conectar con marketplace
+                <Link href="/tienda" className="button-secondary justify-center text-center">
+                  Volver a tienda
                 </Link>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="glass p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-primary">Directo ahora</p>
-                <p className="mt-3 text-3xl font-semibold">{liveCount}</p>
-                <p className="mt-2 text-sm text-textMuted">Subastas en vivo con extension automatica si entra una puja al final.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-3xl border border-line/70 bg-white/[0.035] p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-textMuted">En directo</p>
+                <p className="mt-3 text-4xl font-semibold text-primary">{liveCount}</p>
               </div>
-              <div className="glass p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-primary">Recordatorios guardados</p>
-                <p className="mt-3 text-3xl font-semibold">{totalReminderCount}</p>
-                <p className="mt-2 text-sm text-textMuted">Usuarios pendientes de apertura y ultima llamada de cada lote.</p>
+              <div className="rounded-3xl border border-line/70 bg-white/[0.035] p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-textMuted">Próximas</p>
+                <p className="mt-3 text-4xl font-semibold">{upcomingCount}</p>
               </div>
-              <div className="glass p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-primary">Valor minimo garantizado</p>
-                <p className="mt-3 text-2xl font-semibold">{toEuro(payload?.summary.minimumGuaranteedValueCents || 0)}</p>
-                <p className="mt-2 text-sm text-textMuted">Todos los lotes muestran un contenido minimo documentado antes de pujar.</p>
+              <div className="col-span-2 rounded-3xl border border-line/70 bg-white/[0.035] p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-textMuted">Valor mínimo total</p>
+                <p className="mt-3 text-3xl font-semibold">{toEuro(payload?.summary.minimumGuaranteedValueCents || 0)}</p>
               </div>
-              <div className="glass p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-primary">Top revelado</p>
-                <p className="mt-3 text-2xl font-semibold">{toEuro(payload?.summary.maximumRevealedValueCents || 0)}</p>
-                <p className="mt-2 text-sm text-textMuted">Valor maximo mostrado tras apertura publica dentro de la plataforma.</p>
-              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="rounded-[1.5rem] border border-line/80 bg-[rgba(10,16,27,0.72)] p-4 sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-primary">Listado</p>
+              <h2 className="mt-1 text-2xl font-semibold">Subastas disponibles</h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filters.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setFilter(item.value)}
+                  className={`min-h-[42px] rounded-full border px-4 text-sm transition ${
+                    filter === item.value
+                      ? 'border-primary/60 bg-primary/12 text-primary'
+                      : 'border-line/80 bg-white/[0.02] text-textMuted hover:border-primary/30 hover:text-white'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
-          <div className="min-w-0 space-y-4">
-            <div className="glass p-4 sm:p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-primary">Panel de lotes</p>
-                  <h2 className="mt-2 text-2xl font-semibold">Listado de almacenes</h2>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {(['all', 'live', 'upcoming', 'ended'] as FilterValue[]).map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setFilter(value)}
-                      className={`chip ${filter === value ? 'border-primary/60 bg-primary/10 text-primary' : ''}`}
-                    >
-                      {value === 'all'
-                        ? 'Todos'
-                        : value === 'live'
-                          ? 'En subasta'
-                          : value === 'upcoming'
-                            ? 'Proximamente'
-                            : 'Finalizados'}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        <div id="retro-storage-grid" className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {loading ? (
+            <div className="rounded-[1.5rem] border border-line/80 bg-[rgba(10,16,27,0.72)] p-6 text-textMuted md:col-span-2 xl:col-span-3">
+              Cargando subastas...
             </div>
+          ) : visibleAuctions.length === 0 ? (
+            <div className="rounded-[1.5rem] border border-line/80 bg-[rgba(10,16,27,0.72)] p-6 text-textMuted md:col-span-2 xl:col-span-3">
+              No hay subastas en este filtro ahora mismo.
+            </div>
+          ) : (
+            visibleAuctions.map((auction) => {
+              const countdownTarget = auction.status === 'upcoming' ? auction.startsAt : auction.effectiveEndsAt;
+              const timeLabel = auction.status === 'ended' ? 'Cerrado' : formatRelativeCountdown(countdownTarget, now);
 
-            <div id="retro-storage-grid" className="grid gap-5">
-              {loading ? (
-                <div className="glass p-6 text-textMuted">Cargando almacenes...</div>
-              ) : visibleAuctions.length === 0 ? (
-                <div className="glass p-6 text-textMuted">No hay almacenes en este filtro ahora mismo.</div>
-              ) : (
-                visibleAuctions.map((auction) => (
-                  <article
-                    key={auction.slug}
-                    className={`glass overflow-hidden p-4 transition-all sm:p-5 ${
-                      auction.status === 'live' ? 'auction-live-shell' : ''
-                    }`}
-                  >
-                    <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start">
-                      <div className="relative aspect-[4/3] overflow-hidden rounded-[1rem] border border-line/80 bg-[radial-gradient(circle_at_top,rgba(90,170,255,0.18),rgba(8,14,25,0.92))]">
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(38,229,255,0.16),transparent_38%),radial-gradient(circle_at_80%_18%,rgba(255,78,207,0.18),transparent_36%)]" />
-                        <Image
-                          src={auction.image}
-                          alt={auction.title}
-                          fill
-                          className={`object-cover transition duration-700 ${
-                            auction.previewMode === 'blur' && !auction.isRevealed
-                              ? 'scale-[1.06] blur-[12px] opacity-72'
-                              : auction.previewMode === 'partial' && !auction.isRevealed
-                                ? 'scale-[1.04] opacity-92'
-                                : 'opacity-100'
-                          }`}
-                        />
-                        {auction.previewMode === 'partial' && !auction.isRevealed ? (
-                          <div className="absolute inset-y-0 right-0 w-[30%] bg-[linear-gradient(90deg,transparent,rgba(8,14,25,0.62)_28%,rgba(8,14,25,0.96))]" />
-                        ) : null}
-                        <div className="absolute left-3 top-3">
-                          <span className={`chip ${statusClasses(auction.status)}`}>{statusLabel(auction.status)}</span>
-                        </div>
-                        <div className="absolute bottom-3 left-3">
-                          <span className="chip border-white/10 bg-[rgba(8,14,25,0.72)] text-white/80">{auction.warehouseCode}</span>
-                        </div>
-                        <div className="absolute bottom-3 right-3">
-                          <span className="chip border-white/10 bg-[rgba(8,14,25,0.72)] text-white/80">Vista del almacén</span>
-                        </div>
-                      </div>
-
-                      <div className="min-w-0 flex flex-col gap-4">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0 max-w-3xl">
-                            <p className="text-xs uppercase tracking-[0.18em] text-primary">{auction.category}</p>
-                            <h3 className="mt-2 text-2xl font-semibold text-balance sm:text-[2rem]">{auction.title}</h3>
-                            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-textMuted sm:text-[0.95rem]">
-                              {auction.subtitle}
-                            </p>
-                          </div>
-                          <span className="chip border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-100">
-                            {auction.rarityLabel}
-                          </span>
-                        </div>
-
-                        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
-                          <div className="rounded-2xl border border-line/80 bg-[rgba(8,14,25,0.42)] p-3">
-                            <p className="text-xs uppercase tracking-[0.16em] text-textMuted">Puja actual</p>
-                            <p className="mt-2 text-xl font-semibold text-primary">{toEuro(auction.currentBidCents)}</p>
-                            <p className="mt-1 text-xs text-textMuted">Siguiente: {toEuro(auction.nextBidCents)}</p>
-                          </div>
-                          <div className="rounded-2xl border border-line/80 bg-[rgba(8,14,25,0.42)] p-3">
-                            <p className="text-xs uppercase tracking-[0.16em] text-textMuted">Tiempo</p>
-                            <p className="mt-2 text-xl font-semibold">
-                              {auction.status === 'ended'
-                                ? 'Cerrado'
-                                : formatRelativeCountdown(
-                                    auction.status === 'upcoming' ? auction.startsAt : auction.effectiveEndsAt,
-                                    now
-                                  )}
-                            </p>
-                            <p className="mt-1 text-xs text-textMuted">
-                              {auction.status === 'upcoming' ? 'Empieza' : 'Cierra'} {formatDateTime(
-                                auction.status === 'upcoming' ? auction.startsAt : auction.effectiveEndsAt
-                              )}
-                            </p>
-                          </div>
-                          <div className="rounded-2xl border border-line/80 bg-[rgba(8,14,25,0.42)] p-3">
-                            <p className="text-xs uppercase tracking-[0.16em] text-textMuted">Trazabilidad</p>
-                            <p className="mt-2 text-xl font-semibold">{toEuro(auction.minimumEstimatedValueCents)}</p>
-                            <p className="mt-1 text-xs text-textMuted">Valor minimo garantizado</p>
-                          </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-line/80 bg-[rgba(8,14,25,0.42)] p-4">
-                          <p className="text-xs uppercase tracking-[0.16em] text-primary">Minimo garantizado</p>
-                          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-textMuted">{auction.guaranteedMinimum}</p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-textMuted">
-                          {auction.bidsCount > 0 ? <span className="chip">Pujas {auction.bidsCount}</span> : null}
-                          {auction.remindersCount > 0 ? <span className="chip">Recordatorios {auction.remindersCount}</span> : null}
-                          {auction.buyRequestsCount > 0 ? <span className="chip">Compra directa {auction.buyRequestsCount}</span> : null}
-                          {auction.rentRequestsCount > 0 ? <span className="chip">Alquiler {auction.rentRequestsCount}</span> : null}
-                          {auction.leaderName ? <span className="chip text-primary">Lider {auction.leaderName}</span> : null}
-                          {auction.isExtended ? <span className="chip border-cyan-400/30 bg-cyan-400/10 text-cyan-200">Extension activa</span> : null}
-                          {auction.isRevealed ? <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-200">Contenido revelado</span> : null}
-                        </div>
-
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(3,minmax(0,1fr))]">
-                          <Link href={`/subastas/${auction.slug}`} className="button-primary w-full text-center">
-                            Ver lote
-                          </Link>
-                          <button
-                            type="button"
-                            className="button-secondary w-full text-center"
-                            onClick={() => toggleReminder(auction.slug)}
-                            disabled={actionSlug === auction.slug}
-                          >
-                            {auction.isReminderActive ? 'Quitar recordatorio' : 'Guardar recordatorio'}
-                          </button>
-                          <a
-                            href={`/api/auctions/${auction.slug}/calendar`}
-                            className="button-secondary w-full text-center"
-                          >
-                            Anadir a calendario
-                          </a>
-                        </div>
+              return (
+                <article
+                  key={auction.slug}
+                  className="group overflow-hidden rounded-[1.65rem] border border-line/80 bg-[rgba(11,17,29,0.86)] shadow-[0_18px_52px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-primary/35"
+                >
+                  <Link href={`/subastas/${auction.slug}`} className="block" aria-label={`Ver subasta ${auction.title}`}>
+                    <div className="relative aspect-[4/3] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(90,170,255,0.14),rgba(8,14,25,0.94))]">
+                      <Image
+                        src={auction.image}
+                        alt={auction.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                        className={`object-cover transition duration-700 group-hover:scale-[1.04] ${
+                          auction.previewMode === 'blur' && !auction.isRevealed
+                            ? 'scale-[1.04] blur-[10px] opacity-80'
+                            : auction.previewMode === 'partial' && !auction.isRevealed
+                              ? 'scale-[1.03] opacity-95'
+                              : 'opacity-100'
+                        }`}
+                      />
+                      {auction.previewMode === 'partial' && !auction.isRevealed ? (
+                        <div className="absolute inset-y-0 right-0 w-[32%] bg-[linear-gradient(90deg,transparent,rgba(8,14,25,0.64)_28%,rgba(8,14,25,0.96))]" />
+                      ) : null}
+                      <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(auction.status)}`}>
+                          {statusLabel(auction.status)}
+                        </span>
+                        <span className="rounded-full border border-white/10 bg-[rgba(8,14,25,0.72)] px-3 py-1 text-xs text-white/78">
+                          {auction.warehouseCode}
+                        </span>
                       </div>
                     </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </div>
+                  </Link>
 
-          <aside className="space-y-4 xl:sticky xl:top-24">
-            <div className="glass p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-primary">Mejores pujadores</p>
-              <h3 className="mt-2 text-xl font-semibold">Ranking activo</h3>
-              <div className="mt-4 space-y-3">
-                {(payload?.leaderboard || []).map((entry, index) => (
-                  <div key={entry.name} className="rounded-2xl border border-line/80 bg-[rgba(8,14,25,0.42)] p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">{index + 1}. {entry.name}</p>
-                        <p className="mt-1 text-xs text-textMuted">Liderando {entry.liveWins} lotes</p>
+                  <div className="space-y-4 p-5">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-primary">{auction.category}</p>
+                      <h3 className="mt-2 text-balance text-2xl font-semibold leading-tight">{auction.title}</h3>
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-textMuted">{auction.subtitle}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl border border-line/70 bg-white/[0.03] p-3">
+                        <p className="text-xs text-textMuted">Puja actual</p>
+                        <p className="mt-1 text-xl font-semibold text-primary">{toEuro(auction.currentBidCents)}</p>
                       </div>
-                      <span className="chip text-primary">{toEuro(entry.totalBidValueCents)}</span>
+                      <div className="rounded-2xl border border-line/70 bg-white/[0.03] p-3">
+                        <p className="text-xs text-textMuted">Tiempo</p>
+                        <p className="mt-1 text-xl font-semibold">{timeLabel}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 text-xs text-textMuted">
+                      <span className="rounded-full border border-line/80 px-3 py-1">Siguiente {toEuro(auction.nextBidCents)}</span>
+                      <span className="rounded-full border border-line/80 px-3 py-1">Mínimo {toEuro(auction.minimumEstimatedValueCents)}</span>
+                      {auction.bidsCount > 0 ? <span className="rounded-full border border-line/80 px-3 py-1">{auction.bidsCount} pujas</span> : null}
+                      {auction.isExtended ? <span className="rounded-full border border-primary/35 bg-primary/10 px-3 py-1 text-primary">Extensión activa</span> : null}
+                    </div>
+
+                    <p className="text-xs leading-5 text-textMuted">
+                      {auction.status === 'upcoming' ? 'Empieza' : auction.status === 'ended' ? 'Finalizó' : 'Cierra'} {formatDateTime(countdownTarget)}
+                    </p>
+
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Link href={`/subastas/${auction.slug}`} className="button-primary justify-center text-center">
+                        Ver lote
+                      </Link>
+                      <button
+                        type="button"
+                        className="button-secondary justify-center text-center"
+                        onClick={() => toggleReminder(auction.slug)}
+                        disabled={actionSlug === auction.slug}
+                      >
+                        {auction.isReminderActive ? 'Quitar aviso' : 'Recordarme'}
+                      </button>
                     </div>
                   </div>
-                ))}
-                {!payload?.leaderboard?.length ? (
-                  <p className="text-sm text-textMuted">El ranking se llenara con la actividad real de las primeras pujas.</p>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="glass p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-primary">Como funciona</p>
-              <div className="mt-4 space-y-3 text-sm text-textMuted">
-                <p>1. Publicamos un lote fisico verificado con contenido minimo garantizado.</p>
-                <p>2. Los usuarios guardan recordatorio, entran al directo y pujan con extension final.</p>
-                <p>3. Al cerrar, se abre el almacen y se muestra el inventario completo.</p>
-                <p>4. El ganador puede conservarlo, almacenarlo o mover piezas al marketplace.</p>
-              </div>
-            </div>
-
-            <div className="glass p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-primary">Estado de panel</p>
-              <p className="mt-3 text-sm text-textMuted">
-                {refreshing ? 'Refrescando actividad de lotes...' : 'Actividad sincronizada. El panel se actualiza periodicamente.'}
-              </p>
-            </div>
-          </aside>
+                </article>
+              );
+            })
+          )}
         </div>
+
+        <section className="grid gap-4 rounded-[1.5rem] border border-line/80 bg-[rgba(10,16,27,0.62)] p-5 md:grid-cols-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-primary">1. Revisas</p>
+            <p className="mt-2 text-sm leading-6 text-textMuted">Cada lote muestra estado, mínimo garantizado y puja actual.</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-primary">2. Pujas</p>
+            <p className="mt-2 text-sm leading-6 text-textMuted">Entras en el detalle y decides si quieres competir por el lote.</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-primary">3. Se revela</p>
+            <p className="mt-2 text-sm leading-6 text-textMuted">Al cierre, el contenido completo queda documentado en AdvancedRetro.</p>
+          </div>
+        </section>
+
+        <p className="text-center text-xs text-textMuted">
+          {refreshing ? 'Actualizando subastas...' : 'Panel sincronizado automáticamente.'}
+        </p>
       </div>
     </section>
   );

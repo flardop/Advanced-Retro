@@ -28,7 +28,6 @@ export default function Footer() {
         { href: '/subastas', label: 'Subastas' },
         { href: '/servicio-compra', label: 'Encargos 5€' },
         { href: '/comunidad', label: 'Comunidad' },
-        { href: '/comunidad/publicar', label: 'Publicar anuncio' },
       ],
     },
     {

@@ -28,7 +28,7 @@ export default function SupportAssistantWidget() {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [provider, setProvider] = useState<'openai' | 'fallback' | ''>('');
+  const [provider, setProvider] = useState<'local' | 'openai' | 'fallback' | ''>('');
   const [messages, setMessages] = useState<UiMessage[]>([
     {
       id: makeId(),
@@ -74,10 +74,19 @@ export default function SupportAssistantWidget() {
               label: String(item.label || '').trim(),
               href: String(item.href || '').trim(),
             }))
-            .filter((item: { label: string; href: string }) => item.label && item.href.startsWith('/'))
+            .filter(
+              (item: { label: string; href: string }) =>
+                item.label && (item.href.startsWith('/') || /^https?:\/\//.test(item.href))
+            )
             .slice(0, 6)
         : [];
-      setProvider(data?.provider === 'openai' ? 'openai' : 'fallback');
+      setProvider(
+        data?.provider === 'openai'
+          ? 'openai'
+          : data?.provider === 'local'
+            ? 'local'
+            : 'fallback'
+      );
       setMessages((prev) => [
         ...prev,
         { id: makeId(), role: 'assistant', content: answer, links: links.length ? links : undefined },
@@ -119,6 +128,8 @@ export default function SupportAssistantWidget() {
               <p className="text-[11px] text-textMuted">
                 {provider === 'openai'
                   ? 'Modo ChatGPT'
+                  : provider === 'local'
+                    ? 'Modo local inteligente'
                   : provider === 'fallback'
                     ? 'Modo ayuda local'
                     : 'Ayuda rápida'}
@@ -146,13 +157,25 @@ export default function SupportAssistantWidget() {
                 {msg.role === 'assistant' && Array.isArray(msg.links) && msg.links.length > 0 ? (
                   <div className="mt-2 flex flex-wrap gap-2">
                     {msg.links.map((link) => (
-                      <Link
-                        key={`${msg.id}-${link.href}`}
-                        href={link.href}
-                        className="rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] text-primary hover:bg-primary/15"
-                      >
-                        {link.label}
-                      </Link>
+                      /^https?:\/\//.test(link.href) ? (
+                        <a
+                          key={`${msg.id}-${link.href}`}
+                          href={link.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] text-primary hover:bg-primary/15"
+                        >
+                          {link.label}
+                        </a>
+                      ) : (
+                        <Link
+                          key={`${msg.id}-${link.href}`}
+                          href={link.href}
+                          className="rounded-full border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] text-primary hover:bg-primary/15"
+                        >
+                          {link.label}
+                        </Link>
+                      )
                     ))}
                   </div>
                 ) : null}

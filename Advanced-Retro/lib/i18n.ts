@@ -75,7 +75,7 @@ const ES: TranslationMap = {
   'home.hero.description':
     'Juegos, consolas y piezas de coleccionismo con fichas claras, stock real y opciones para completar tu edición sin perder tiempo.',
   'home.hero.cta_shop': 'Explorar tienda',
-  'home.hero.cta_community': 'Marketplace comunidad',
+  'home.hero.cta_community': 'Comunidad',
   'home.hero.cta_request': 'Encargo 1:1',
   'home.hero.stat_preparation': 'Preparación',
   'home.hero.stat_coverage': 'Cobertura',
@@ -138,7 +138,7 @@ const ES: TranslationMap = {
   'home.story.commitment': 'Compromiso operativo',
   'home.story.point_01': 'Inventario con stock real y visibilidad de componentes.',
   'home.story.point_02': 'Servicio de encargo y validación en ticket privado.',
-  'home.story.point_03': 'Marketplace comunidad con revisión y trazabilidad.',
+  'home.story.point_03': 'Comunidad, soporte y novedades del ecosistema.',
   'home.narrative.title': 'Tienda retro para coleccionistas y jugadores',
   'home.narrative.p1':
     'En Advanced Retro encontrarás catálogo especializado de videojuegos retro con foco en Game Boy, Game Boy Color, Game Boy Advance, Super Nintendo y GameCube. Cada ficha de producto está pensada para compra clara: estado, fotos, componentes y precio.',
@@ -213,7 +213,7 @@ const EN: TranslationMap = {
   'home.hero.description':
     'Games, consoles and collectible pieces with clear listings, real stock and options to complete your edition without wasting time.',
   'home.hero.cta_shop': 'Explore store',
-  'home.hero.cta_community': 'Community marketplace',
+  'home.hero.cta_community': 'Community',
   'home.hero.cta_request': '1:1 request',
   'home.hero.stat_preparation': 'Preparation',
   'home.hero.stat_coverage': 'Coverage',
@@ -276,7 +276,7 @@ const EN: TranslationMap = {
   'home.story.commitment': 'Operational commitment',
   'home.story.point_01': 'Inventory with real stock and component visibility.',
   'home.story.point_02': 'Request service and validation through private ticket.',
-  'home.story.point_03': 'Community marketplace with review and traceability.',
+  'home.story.point_03': 'Community, support and ecosystem updates.',
   'home.narrative.title': 'Retro store for collectors and players',
   'home.narrative.p1':
     'At Advanced Retro you will find a specialized retro video game catalog focused on Game Boy, Game Boy Color, Game Boy Advance, Super Nintendo and GameCube. Each product listing is designed for clear buying decisions: condition, photos, components and price.',
