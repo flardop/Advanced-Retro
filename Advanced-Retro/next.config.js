@@ -65,8 +65,9 @@ const nextConfig = {
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: nextPublicStripePublishableKey,
   },
   images: {
-    // Use Next.js optimizer in production for better LCP and bandwidth.
-    unoptimized: false,
+    // Vercel is rejecting optimized image requests in production with 402,
+    // so serve original image URLs directly to keep the catalog and Retroville visible.
+    unoptimized: true,
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns,
