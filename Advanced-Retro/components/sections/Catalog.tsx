@@ -1222,7 +1222,7 @@ function CatalogContent({ initialProducts = [], initialSource = 'server' }: Cata
                       alt={String(product?.name || 'Producto de consola')}
                       fill
                       sizes="(max-width: 768px) 42vw, (max-width: 1280px) 24vw, 18vw"
-                      priority={index === 0}
+                      priority={index < 2}
                       className="object-contain p-2"
                     />
                   </div>
@@ -1262,7 +1262,7 @@ function CatalogContent({ initialProducts = [], initialSource = 'server' }: Cata
                       alt={String(product?.name || 'Edición especial')}
                       fill
                       sizes="(max-width: 768px) 42vw, (max-width: 1280px) 24vw, 18vw"
-                      priority={index === 0}
+                      priority={index < 2}
                       className="object-contain p-2"
                     />
                   </div>
@@ -1343,7 +1343,7 @@ function CatalogContent({ initialProducts = [], initialSource = 'server' }: Cata
                       alt={product.name}
                       fill
                       sizes="(max-width: 640px) 34vw, (max-width: 1024px) 42vw, (max-width: 1536px) 24vw, 18vw"
-                      priority={index < 2}
+                      priority={index < 4}
                       className="object-contain p-2 sm:p-3 object-center photo-hover-pop"
                     />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-2">

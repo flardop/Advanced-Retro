@@ -337,6 +337,18 @@
     padding-bottom: 56px;
   }
 
+  .heroTitle {
+    font-size: clamp(2.45rem, 11.8vw, 4.35rem);
+  }
+
+  .sectionTitle {
+    font-size: clamp(2.2rem, 10vw, 3.3rem);
+  }
+
+  .characterName {
+    font-size: clamp(2.55rem, 11.2vw, 4.1rem);
+  }
+
   .characterImageStage {
     min-height: 380px;
   }

@@ -36,3 +36,4 @@ server/
 
 # Local tooling artifacts
 .playwright-cli/
+Advanced-Retro/output/

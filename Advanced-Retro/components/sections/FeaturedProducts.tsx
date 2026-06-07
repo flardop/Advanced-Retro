@@ -124,7 +124,7 @@ export default function FeaturedProducts({ initialProducts = [] }: FeaturedProdu
         </div>
 
         <div className="content-rail grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {products.map((product: any) => {
+          {products.map((product: any, index) => {
             const productMetrics = metrics[String(product.id)] || { visits: 0, likes: 0 };
             const metricChips = [
               productMetrics.visits > 0 ? `${productMetrics.visits} ${t('home.featured.visits', 'visitas')}` : null,
@@ -143,6 +143,8 @@ export default function FeaturedProducts({ initialProducts = [] }: FeaturedProdu
                     fallbackSrc={getProductFallbackImageUrl(product)}
                     alt={product.name}
                     fill
+                    sizes="(max-width: 768px) 92vw, (max-width: 1280px) 46vw, 30vw"
+                    priority={index < 3}
                     className="object-contain p-3 photo-breath photo-hover-pop"
                   />
                 </div>

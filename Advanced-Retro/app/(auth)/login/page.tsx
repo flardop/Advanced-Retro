@@ -4,6 +4,24 @@ import { Suspense, useState, useEffect } from 'react';
 import { supabaseClient } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import {
+  persistRememberSessionPreference,
+  readRememberSessionPreference,
+  type RememberSessionPreset,
+} from '@/lib/sessionPersistence';
+
+const REMEMBER_OPTIONS: Array<{
+  value: RememberSessionPreset;
+  label: string;
+  description: string;
+}> = [
+  { value: '12h', label: '12 horas', description: 'Para usarlo hoy y volver a pedir login pronto.' },
+  { value: '7d', label: '7 días', description: 'Si entras varias veces durante la semana.' },
+  { value: '30d', label: '30 días', description: 'Equilibrio cómodo para el día a día.' },
+  { value: '180d', label: '180 días', description: 'Pensado para uso frecuente durante meses.' },
+  { value: '365d', label: '1 año', description: 'Mantener la cuenta lista casi siempre.' },
+  { value: 'forever', label: 'Indefinido', description: 'Hasta que cierres sesión manualmente en este dispositivo.' },
+];
 
 function normalizeOrigin(raw: string): string | undefined {
   const value = String(raw || '').trim();
@@ -71,6 +89,8 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberPreset, setRememberPreset] =
+    useState<RememberSessionPreset>('30d');
 
   useEffect(() => {
     const params =
@@ -100,6 +120,13 @@ function LoginForm() {
     }
   }, []);
 
+  useEffect(() => {
+    const existingPreference = readRememberSessionPreference();
+    if (existingPreference?.preset) {
+      setRememberPreset(existingPreference.preset);
+    }
+  }, []);
+
   const handleAuth = async () => {
     setLoading(true);
     try {
@@ -119,11 +146,13 @@ function LoginForm() {
           return;
         }
         if (data?.session) {
+          persistRememberSessionPreference(rememberPreset);
           toast.success('Cuenta creada. Ya estás dentro.');
           router.replace('/perfil');
           router.refresh();
           return;
         }
+        persistRememberSessionPreference(rememberPreset);
         toast.success(
           'Te hemos enviado un correo de confirmación. Haz clic en el enlace del correo para activar tu cuenta. Revisa también la carpeta de spam.',
           { duration: 8000 }
@@ -138,6 +167,7 @@ function LoginForm() {
           }
           throw error;
         }
+        persistRememberSessionPreference(rememberPreset);
         toast.success('Sesión iniciada');
         router.replace('/perfil');
         router.refresh();
@@ -190,6 +220,7 @@ function LoginForm() {
       toast.error('No se pudo preparar el callback de login. Revisa NEXT_PUBLIC_SITE_URL.');
       return;
     }
+    persistRememberSessionPreference(rememberPreset);
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider,
       options: { redirectTo },
@@ -240,6 +271,31 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          <label className="mb-4 block rounded-[1.2rem] border border-line/80 bg-[rgba(255,255,255,0.03)] px-4 py-3">
+            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-textMuted">
+              Mantener sesión en este dispositivo
+            </span>
+            <select
+              value={rememberPreset}
+              onChange={(event) =>
+                setRememberPreset(event.target.value as RememberSessionPreset)
+              }
+              className="mt-3 w-full bg-transparent text-sm font-semibold text-text"
+            >
+              {REMEMBER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs leading-6 text-textMuted">
+              {
+                REMEMBER_OPTIONS.find((option) => option.value === rememberPreset)
+                  ?.description
+              }
+            </p>
+          </label>
 
           <button
             className="button-primary w-full"

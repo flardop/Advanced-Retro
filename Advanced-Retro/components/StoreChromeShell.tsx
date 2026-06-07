@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SessionPersistenceGuard from '@/components/SessionPersistenceGuard';
 import TrackerBootstrap from '@/components/TrackerBootstrap';
 import FloatingActionDock from '@/components/FloatingActionDock';
 const ClientToaster = dynamic(() => import('@/components/ClientToaster'), {
@@ -32,6 +33,7 @@ export default function StoreChromeShell({ children }: { children: React.ReactNo
   if (standalone) {
     return (
       <>
+        <SessionPersistenceGuard />
         {children}
       </>
     );
@@ -39,6 +41,7 @@ export default function StoreChromeShell({ children }: { children: React.ReactNo
 
   return (
     <>
+      <SessionPersistenceGuard />
       <Suspense fallback={null}>
         <TrackerBootstrap />
       </Suspense>

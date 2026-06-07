@@ -63,6 +63,7 @@ function NavbarContent() {
 
   const directLinks = useMemo<NavLeaf[]>(() => [
     { href: '/comunidad', label: t('nav.community', 'Comunidad') },
+    { href: '/finanzas', label: 'Finanzas' },
     { href: '/creator', label: 'Creador' },
   ], [t]);
 
@@ -75,6 +76,7 @@ function NavbarContent() {
       { href: '/comunidad', label: 'Comunidad' },
       { href: '/blog', label: 'Blog' },
       { href: '/retroville', label: 'Retroville' },
+      { href: '/finanzas', label: 'Finanzas' },
       { href: '/creator', label: 'Creador' },
       { href: '/contacto', label: 'Contacto' },
     ],

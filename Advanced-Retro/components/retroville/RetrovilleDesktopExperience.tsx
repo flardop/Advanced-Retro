@@ -97,14 +97,44 @@ const districtCards = [
 
 const retrovilleSocials = [
   {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/retroville_show/',
+    ariaLabel: 'Abrir Instagram de Retroville',
+  },
+  {
     label: 'YouTube',
     href: 'https://www.youtube.com/@RetroVille-y9v',
     ariaLabel: 'Abrir YouTube de Retroville',
   },
   {
-    label: 'Instagram',
-    href: 'https://www.instagram.com/retroville_show/',
-    ariaLabel: 'Abrir Instagram de Retroville',
+    label: 'X',
+    href: 'https://x.com/Retr0ViIIe',
+    ariaLabel: 'Abrir X de Retroville',
+  },
+  {
+    label: 'Discord',
+    href: 'https://discord.gg/EyRRQJWW5D',
+    ariaLabel: 'Abrir Discord de Retroville',
+  },
+  {
+    label: 'Reddit',
+    href: 'https://www.reddit.com/user/Flardop/',
+    ariaLabel: 'Abrir Reddit de Retroville',
+  },
+  {
+    label: 'Facebook',
+    href: 'https://www.facebook.com/profile.php?id=61590571767017',
+    ariaLabel: 'Abrir Facebook de Retroville',
+  },
+  {
+    label: 'Threads',
+    href: 'https://www.threads.com/@retroville_show?hl=es',
+    ariaLabel: 'Abrir Threads de Retroville',
+  },
+  {
+    label: 'Kickstarter',
+    href: 'https://www.kickstarter.com/profile/1318310768',
+    ariaLabel: 'Abrir Kickstarter de Retroville',
   },
 ] as const;
 
@@ -718,6 +748,9 @@ export default function RetrovilleDesktopExperience({
               <button type="button" className={styles.secondaryButton} onClick={() => jumpToStep(slideCount)}>
                 Ir a la waitlist
               </button>
+              <Link href="/retroville/presentaciones" className={styles.secondaryButton}>
+                Ver 5 tratamientos
+              </Link>
             </div>
             <div className={styles.heroSocials}>
               {retrovilleSocials.map((social) => (

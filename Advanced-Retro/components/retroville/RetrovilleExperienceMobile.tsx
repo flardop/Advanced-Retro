@@ -269,14 +269,44 @@ const drops = [
 
 const retrovilleSocials = [
   {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/retroville_show/',
+    ariaLabel: 'Abrir Instagram de Retroville',
+  },
+  {
     label: 'YouTube',
     href: 'https://www.youtube.com/@RetroVille-y9v',
     ariaLabel: 'Abrir YouTube de Retroville',
   },
   {
-    label: 'Instagram',
-    href: 'https://www.instagram.com/retroville_show/',
-    ariaLabel: 'Abrir Instagram de Retroville',
+    label: 'X',
+    href: 'https://x.com/Retr0ViIIe',
+    ariaLabel: 'Abrir X de Retroville',
+  },
+  {
+    label: 'Discord',
+    href: 'https://discord.gg/EyRRQJWW5D',
+    ariaLabel: 'Abrir Discord de Retroville',
+  },
+  {
+    label: 'Reddit',
+    href: 'https://www.reddit.com/user/Flardop/',
+    ariaLabel: 'Abrir Reddit de Retroville',
+  },
+  {
+    label: 'Facebook',
+    href: 'https://www.facebook.com/profile.php?id=61590571767017',
+    ariaLabel: 'Abrir Facebook de Retroville',
+  },
+  {
+    label: 'Threads',
+    href: 'https://www.threads.com/@retroville_show?hl=es',
+    ariaLabel: 'Abrir Threads de Retroville',
+  },
+  {
+    label: 'Kickstarter',
+    href: 'https://www.kickstarter.com/profile/1318310768',
+    ariaLabel: 'Abrir Kickstarter de Retroville',
   },
 ] as const;
 
@@ -458,6 +488,12 @@ export default function RetrovilleExperience({
                 Entrar en Retroville
                 <ArrowRight className="h-4 w-4" />
               </button>
+              <Link
+                href="/retroville/presentaciones"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:border-[var(--rv-cyan)]/30 hover:bg-white/[0.08]"
+              >
+                Ver 5 tratamientos
+              </Link>
               <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-text-dim)]">Lanzamiento previsto · {launchLabel}</p>
             </div>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">

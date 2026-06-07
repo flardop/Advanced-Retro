@@ -57,34 +57,44 @@ export function useAdvancedAdminTracker() {
     if (!pathname || !isTrackedPath(pathname)) return;
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
     const fullPath = `${pathname}${searchParams?.toString() ? `?${searchParams.toString()}` : ''}`;
+    let disposed = false;
 
     const startView = async () => {
-      const response = await fetch('/api/admin/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        keepalive: true,
-        body: JSON.stringify({
-          mode: 'start',
-          url: fullPath,
-          page_title: document.title,
-          referrer: document.referrer || null,
-          session_id: sessionId,
-          device_type: detectDeviceType(userAgent),
-          browser: detectBrowser(userAgent),
-          os: detectOs(userAgent),
-        }),
-      });
-      const payload = await response.json().catch(() => null);
-      if (payload?.success && payload?.data?.viewId) {
-        viewIdRef.current = String(payload.data.viewId);
+      viewIdRef.current = null;
+      try {
+        const response = await fetch('/api/admin/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          keepalive: true,
+          body: JSON.stringify({
+            mode: 'start',
+            url: fullPath,
+            pageTitle: document.title,
+            referrer: document.referrer || null,
+            sessionId,
+            deviceType: detectDeviceType(userAgent),
+            browser: detectBrowser(userAgent),
+            os: detectOs(userAgent),
+          }),
+        });
+        const payload = await response.json().catch(() => null);
+        if (!disposed && payload?.success && payload?.data?.viewId) {
+          viewIdRef.current = String(payload.data.viewId);
+        }
+      } catch {
+        viewIdRef.current = null;
       }
-      lastPathRef.current = fullPath;
-      lastSeenAtRef.current = Date.now();
+
+      if (!disposed) {
+        lastPathRef.current = fullPath;
+        lastSeenAtRef.current = Date.now();
+      }
     };
 
     const finishView = async (keepalive = false) => {
       if (!viewIdRef.current || !lastPathRef.current) return;
+      const viewId = viewIdRef.current;
       const now = Date.now();
       const duration = Math.max(1, Math.round((now - lastSeenAtRef.current) / 1000));
       lastSeenAtRef.current = now;
@@ -95,12 +105,15 @@ export function useAdvancedAdminTracker() {
         keepalive,
         body: JSON.stringify({
           mode: 'complete',
-          view_id: viewIdRef.current,
+          viewId,
           url: lastPathRef.current,
-          duration_seconds: duration,
-          session_id: sessionId,
+          durationSeconds: duration,
+          sessionId,
         }),
       }).catch(() => null);
+      if (!disposed && viewIdRef.current === viewId) {
+        viewIdRef.current = null;
+      }
     };
 
     if (lastPathRef.current && lastPathRef.current !== fullPath) {
@@ -117,11 +130,14 @@ export function useAdvancedAdminTracker() {
         credentials: 'include',
         keepalive: true,
         body: JSON.stringify({
-          session_id: sessionId,
-          current_page: fullPath,
-          page_title: document.title,
+          sessionId,
+          currentPage: fullPath,
+          pageTitle: document.title,
+          deviceType: detectDeviceType(userAgent),
+          browser: detectBrowser(userAgent),
+          os: detectOs(userAgent),
         }),
-      });
+      }).catch(() => null);
     }, TRACKING_HEARTBEAT_MS);
 
     const handleVisibility = () => {
@@ -138,6 +154,7 @@ export function useAdvancedAdminTracker() {
     window.addEventListener('pagehide', handlePageHide);
 
     return () => {
+      disposed = true;
       window.clearInterval(heartbeat);
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('pagehide', handlePageHide);

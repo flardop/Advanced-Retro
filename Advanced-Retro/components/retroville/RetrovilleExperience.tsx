@@ -21,7 +21,11 @@ export default function RetrovilleExperience({
   const [useMobileExperience, setUseMobileExperience] = useState(initialMobileExperience);
 
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 1023px), (prefers-reduced-motion: reduce)');
+    // Tablets and touch-first mid-size devices read better in the mobile flow
+    // than in the full-screen desktop slide experience.
+    const media = window.matchMedia(
+      '(max-width: 1023px), ((max-width: 1366px) and (pointer: coarse)), ((max-width: 1366px) and (hover: none)), (prefers-reduced-motion: reduce)'
+    );
     const sync = () => setUseMobileExperience(media.matches);
     sync();
     media.addEventListener('change', sync);

@@ -13,18 +13,28 @@ function getRequestIp(request: NextRequest) {
   return (request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '0.0.0.0').split(',')[0].trim();
 }
 
+function readPayloadString(payload: Record<string, unknown>, ...keys: string[]) {
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!supabaseService) {
       return adminJson({ updated: false, reason: 'missing-service-role' });
     }
-    const payload = await request.json();
-    const sessionId = String(payload.sessionId || '');
+    const payload = (await request.json()) as Record<string, unknown>;
+    const sessionId = readPayloadString(payload, 'sessionId', 'session_id');
     if (!sessionId) {
       return Response.json({ success: false, error: 'sessionId requerido' }, { status: 400 });
     }
 
-    const url = String(payload.currentPage || '/');
+    const url = readPayloadString(payload, 'currentPage', 'current_page') || '/';
     if (url.startsWith('/admin')) {
       return adminJson({ updated: false, reason: 'admin-route' });
     }
@@ -37,12 +47,12 @@ export async function POST(request: NextRequest) {
         user_id: authData.user?.id || null,
         session_id: sessionId,
         current_page: url,
-        device_type: typeof payload.deviceType === 'string' ? payload.deviceType : null,
-        browser: typeof payload.browser === 'string' ? payload.browser : null,
-        os: typeof payload.os === 'string' ? payload.os : null,
+        device_type: readPayloadString(payload, 'deviceType', 'device_type') || null,
+        browser: readPayloadString(payload, 'browser') || null,
+        os: readPayloadString(payload, 'os') || null,
         ip_hash: hashIp(getRequestIp(request)),
-        country: typeof payload.country === 'string' ? payload.country : null,
-        city: typeof payload.city === 'string' ? payload.city : null,
+        country: readPayloadString(payload, 'country') || null,
+        city: readPayloadString(payload, 'city') || null,
         last_heartbeat: new Date().toISOString(),
       },
       { onConflict: 'session_id' }

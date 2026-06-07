@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 
+const PERSISTENT_SESSION_MAX_AGE = 60 * 60 * 24 * 365 * 5;
+
 export function getSupabaseServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey =
@@ -18,7 +20,7 @@ export function getSupabaseServerClient() {
     cookieOptions: {
       path: '/',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 365,
+      maxAge: PERSISTENT_SESSION_MAX_AGE,
       secure:
         process.env.NODE_ENV === 'production' ||
         process.env.VERCEL_ENV === 'production',

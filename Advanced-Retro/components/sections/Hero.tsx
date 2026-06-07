@@ -112,8 +112,8 @@ export default function Hero() {
       <div className="container relative">
         <div className="content-rail">
           <div className="hero-shell overflow-hidden rounded-[1.7rem] border border-white/10 bg-[rgba(5,8,16,0.72)] shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl">
-            <div className="grid gap-0 xl:min-h-[calc(100vh-9rem)] xl:grid-cols-[1.18fr,0.82fr] 2xl:grid-cols-[1.12fr,0.88fr]">
-              <div className="hero-copy relative min-w-0 p-5 sm:p-8 lg:p-10 xl:flex xl:flex-col xl:justify-center xl:p-10 2xl:p-14">
+            <div className="grid gap-0 xl:min-h-[clamp(40rem,72vh,48rem)] xl:grid-cols-[1.18fr,0.82fr] 2xl:grid-cols-[1.12fr,0.88fr]">
+              <div className="hero-copy relative min-w-0 p-5 sm:p-8 lg:p-10 xl:flex xl:flex-col xl:justify-start xl:p-10 2xl:p-14">
                 <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary shadow-[0_0_24px_rgba(75,228,214,0.15)] sm:text-xs sm:tracking-[0.18em]">
                   <span className="text-sm">🎮</span>
                   <span className="min-w-0">{copy.badge}</span>
@@ -209,7 +209,7 @@ export default function Hero() {
                               src={box.image}
                               alt={box.name}
                               fill
-                              priority={box.tier === 'vip'}
+                              priority
                               sizes="(max-width: 1024px) 70vw, 30vw"
                               className="object-cover object-center transition duration-500 group-hover:scale-[1.03]"
                             />

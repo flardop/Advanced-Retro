@@ -1,0 +1,1234 @@
+.page {
+  --pitch-border: rgba(255, 255, 255, 0.1);
+  --pitch-surface: rgba(12, 15, 28, 0.78);
+  --pitch-surface-2: rgba(255, 255, 255, 0.05);
+  --pitch-text: rgba(244, 247, 255, 0.98);
+  --pitch-muted: rgba(211, 218, 235, 0.72);
+  --pitch-card-shadow: 0 30px 80px rgba(0, 0, 0, 0.32);
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(13, 29, 56, 0.64), transparent 34%),
+    linear-gradient(180deg, #04060c 0%, #08111f 42%, #05070c 100%);
+  color: var(--pitch-text);
+  font-family: var(--pitch-font-body), sans-serif;
+}
+
+.pageGlow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 12%, var(--pitch-accent-soft), transparent 26%),
+    radial-gradient(circle at 84% 18%, var(--pitch-glow), transparent 24%);
+  opacity: 0.92;
+}
+
+.hero,
+.selectorSection,
+.activeMeta,
+.stage,
+.footerBand {
+  position: relative;
+  z-index: 1;
+}
+
+.hero {
+  padding: 3rem 1.5rem 1rem;
+}
+
+.heroTopline {
+  margin: 0 auto;
+  display: flex;
+  max-width: 1380px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.backLink,
+.heroTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid var(--pitch-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pitch-muted);
+  text-decoration: none;
+  transition:
+    border-color 180ms ease,
+    color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.backLink:hover,
+.secondaryAction:hover,
+.selectorArrows button:hover,
+.selectorCard:hover {
+  transform: translateY(-1px);
+}
+
+.backLink:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--pitch-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.heroGrid {
+  margin: 2.2rem auto 0;
+  display: grid;
+  max-width: 1380px;
+  gap: 1.8rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+}
+
+.heroCopy,
+.heroPreview {
+  border: 1px solid var(--pitch-border);
+  border-radius: 2rem;
+  background: rgba(7, 10, 18, 0.74);
+  box-shadow: var(--pitch-card-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.heroCopy {
+  padding: 2rem;
+}
+
+.heroEyebrow,
+.heroTag,
+.variantEyebrow,
+.blockHeader p,
+.selectorHeader p,
+.activeMeta p,
+.activeMetaInfo {
+  font-family: var(--pitch-font-mono), monospace;
+}
+
+.heroEyebrow {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--pitch-accent);
+}
+
+.heroTitle {
+  margin: 0.85rem 0 0;
+  max-width: 13ch;
+  font-family: var(--pitch-font-grid), sans-serif;
+  font-size: clamp(2.8rem, 6vw, 5.6rem);
+  line-height: 0.94;
+}
+
+.heroBody {
+  margin: 1.2rem 0 0;
+  max-width: 58ch;
+  font-size: 1.04rem;
+  line-height: 1.85;
+  color: var(--pitch-muted);
+}
+
+.heroActions {
+  margin-top: 1.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.95rem 1.3rem;
+  text-decoration: none;
+  font-weight: 700;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    background 180ms ease;
+}
+
+.primaryAction {
+  background: linear-gradient(135deg, var(--pitch-accent), rgba(255, 255, 255, 0.9));
+  color: #05070d;
+}
+
+.secondaryAction {
+  border: 1px solid var(--pitch-border);
+  color: var(--pitch-text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.secondaryAction:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.heroPreview {
+  padding: 1rem;
+}
+
+.heroPreviewImage {
+  position: relative;
+  min-height: 420px;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.heroPreviewCard {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1.35rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.heroPreviewCard strong {
+  font-size: 1.15rem;
+}
+
+.heroPreviewCard span {
+  color: var(--pitch-muted);
+  line-height: 1.7;
+}
+
+.selectorSection {
+  padding: 1.4rem 1.5rem 0;
+}
+
+.selectorHeader {
+  margin: 0 auto 1rem;
+  display: flex;
+  max-width: 1380px;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.selectorHeader p,
+.blockHeader p,
+.activeMeta p {
+  margin: 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pitch-accent);
+}
+
+.selectorHeader h2,
+.blockHeader h3,
+.activeMeta h2 {
+  margin: 0.45rem 0 0;
+  font-family: var(--pitch-font-grid), sans-serif;
+  font-size: clamp(1.7rem, 2vw, 2.4rem);
+  line-height: 1.06;
+}
+
+.selectorArrows {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.selectorArrows button {
+  display: inline-flex;
+  height: 44px;
+  width: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--pitch-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--pitch-text);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.selectorArrows button:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.selectorGrid {
+  margin: 0 auto;
+  display: grid;
+  max-width: 1380px;
+  gap: 0.95rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.selectorCard {
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid var(--pitch-border);
+  border-radius: 1.45rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1rem 1rem 1.15rem;
+  text-align: left;
+  color: var(--pitch-text);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+  text-decoration: none;
+}
+
+.selectorCard span {
+  font-family: var(--pitch-font-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pitch-accent);
+}
+
+.selectorCard strong {
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.selectorCard p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--pitch-muted);
+}
+
+.selectorCard:hover {
+  border-color: var(--pitch-accent);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), var(--pitch-accent-soft));
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.24);
+}
+
+.deckColumn {
+  display: grid;
+  gap: 2rem;
+  margin-top: 1.3rem;
+}
+
+.deckSection {
+  display: grid;
+  gap: 0.9rem;
+  scroll-margin-top: 1.5rem;
+}
+
+.activeMetaInfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--pitch-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pitch-muted);
+}
+
+.stage {
+  margin: 0 auto;
+  max-width: 1380px;
+  padding: 0 1.5rem;
+}
+
+.stageInner {
+  border: 1px solid var(--pitch-border);
+  border-radius: 2rem;
+  overflow: hidden;
+  box-shadow: var(--pitch-card-shadow);
+  animation: pitch-fade-in 260ms ease;
+}
+
+.stageNeon .stageInner {
+  background:
+    radial-gradient(circle at top, rgba(49, 129, 255, 0.2), transparent 30%),
+    linear-gradient(180deg, #040710 0%, #081322 100%);
+}
+
+.stageBible .stageInner {
+  background:
+    radial-gradient(circle at top, rgba(234, 208, 177, 0.2), transparent 28%),
+    linear-gradient(180deg, #f5eee4 0%, #ecdfcc 100%);
+  color: #241c14;
+}
+
+.stageSignal .stageInner {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, #080911 0%, #101325 100%);
+  background-size: 48px 48px, 48px 48px, auto;
+}
+
+.stageRiot .stageInner {
+  background:
+    radial-gradient(circle at top left, rgba(255, 93, 145, 0.22), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(255, 184, 0, 0.18), transparent 28%),
+    linear-gradient(180deg, #0f0711 0%, #180915 100%);
+}
+
+.stageAtlas .stageInner {
+  background:
+    radial-gradient(circle at top, rgba(124, 227, 139, 0.14), transparent 26%),
+    linear-gradient(180deg, #09100d 0%, #0d1612 100%);
+}
+
+.variantStack {
+  display: grid;
+  gap: 1.6rem;
+  padding: 1.35rem;
+}
+
+.variantEyebrow {
+  margin: 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pitch-accent);
+}
+
+.variantBody {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--pitch-muted);
+}
+
+.neonHero,
+.riotHero,
+.atlasHero,
+.signalHero,
+.bibleHero,
+.bibleSpread,
+.signalBreakdown {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.neonHero {
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+}
+
+.neonCopy,
+.signalHeader,
+.atlasCopy,
+.riotCopy,
+.bibleIntro,
+.bibleSynopsis {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.neonTitle,
+.signalTitle,
+.riotTitle,
+.atlasTitle,
+.bibleTitle {
+  margin: 0;
+  line-height: 0.95;
+}
+
+.neonTitle {
+  max-width: 10ch;
+  font-family: var(--pitch-font-neon), sans-serif;
+  font-size: clamp(3.2rem, 6vw, 6.2rem);
+  text-transform: uppercase;
+}
+
+.statGrid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.statCard,
+.footerInsight,
+.signalModule,
+.paperCard,
+.rosterRow,
+.tagTile {
+  border: 1px solid var(--pitch-border);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 1.35rem;
+}
+
+.statCard {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.statCard span {
+  font-family: var(--pitch-font-mono), monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--pitch-accent);
+}
+
+.statCard strong {
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.neonPosterWall {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.48fr);
+  grid-template-areas:
+    'main side-a'
+    'main side-b';
+}
+
+.posterMain,
+.posterSide,
+.bibleVisualImage,
+.archiveImageWrap,
+.boardTile,
+.riotSceneImage,
+.atlasMap,
+.ecologyImageWrap,
+.atlasBoardImage,
+.characterImageWrap,
+.worldImageWrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.55rem;
+  min-height: 220px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.posterMain {
+  grid-area: main;
+  min-height: 560px;
+}
+
+.posterSide {
+  min-height: 270px;
+}
+
+.posterMain::after,
+.posterSide::after,
+.heroPreviewImage::after,
+.bibleVisualImage::after,
+.archiveImageWrap::after,
+.riotSceneImage::after,
+.atlasMap::after,
+.ecologyImageWrap::after,
+.atlasBoardImage::after,
+.characterImageWrap::after,
+.worldImageWrap::after,
+.boardTile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 9, 18, 0.05), transparent 35%, rgba(4, 6, 12, 0.8) 100%);
+}
+
+.sectionBlock,
+.archiveSpread,
+.signalFooter,
+.atlasSystems,
+.atlasBoardsSection,
+.riotSupport {
+  display: grid;
+  gap: 1rem;
+}
+
+.blockHeader {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.characterGrid,
+.worldGrid,
+.archiveTriptych,
+.signalGrid,
+.signalFooterGrid,
+.riotSupportGrid,
+.riotTagWall,
+.ecologyGrid,
+.atlasBoardGrid,
+.boardMosaic,
+.proofLinks {
+  display: grid;
+  gap: 1rem;
+}
+
+.characterGrid,
+.worldGrid,
+.archiveTriptych,
+.riotSupportGrid,
+.ecologyGrid,
+.proofLinks {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.characterCard,
+.worldCard,
+.archiveCard,
+.riotScene,
+.ecologyCard,
+.proofLink,
+.atlasBoardCard {
+  overflow: hidden;
+  border: 1px solid var(--pitch-border);
+  border-radius: 1.55rem;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.characterCard,
+.worldCard,
+.archiveCard,
+.riotScene,
+.ecologyCard,
+.atlasBoardCard {
+  display: grid;
+}
+
+.characterImageWrap {
+  min-height: 320px;
+}
+
+.characterImage,
+.coverImage,
+.worldImage,
+.posterImage {
+  object-fit: cover;
+  object-position: center;
+}
+
+.characterImage {
+  object-fit: contain;
+  object-position: center top;
+}
+
+.characterMeta,
+.worldMeta,
+.archiveCardMeta,
+.ecologyMeta {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.15rem 1.1rem 1.25rem;
+}
+
+.characterMeta p,
+.worldMeta p,
+.archiveCardMeta p,
+.ecologyMeta p,
+.proofLink span,
+.signalModule p,
+.paperCard strong,
+.bibleVisualCaption,
+.rosterRow p,
+.footerInsight p,
+.tagTile span {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.characterMeta p,
+.worldMeta p,
+.archiveCardMeta p,
+.ecologyMeta p,
+.proofLink span,
+.signalModule p,
+.bibleVisualCaption,
+.rosterRow p,
+.footerInsight p,
+.tagTile span {
+  color: var(--pitch-muted);
+}
+
+.characterMeta h3,
+.worldMeta h3,
+.archiveCardMeta h4 {
+  margin: 0;
+  font-size: 1.18rem;
+}
+
+.characterMeta span {
+  color: var(--pitch-muted);
+}
+
+.proofLink {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.1rem 1.15rem;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.proofLink strong {
+  font-size: 1.05rem;
+}
+
+.proofLink:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.stageBible .proofLink,
+.stageBible .paperCard,
+.stageBible .rosterRow,
+.stageBible .archiveCard,
+.stageBible .bibleVisualCaption {
+  color: #241c14;
+}
+
+.stageBible .proofLink span,
+.stageBible .paperCard strong,
+.stageBible .rosterRow p,
+.stageBible .archiveCardMeta p,
+.stageBible .bibleVisualCaption {
+  color: rgba(36, 28, 20, 0.72);
+}
+
+.stageBible .variantEyebrow,
+.stageBible .blockHeader p,
+.stageBible .paperCard span,
+.stageBible .rosterRow span {
+  color: #8d6748;
+}
+
+.bibleHero {
+  align-items: start;
+  padding: 1rem 0.25rem 0.3rem;
+}
+
+.bibleIntro {
+  gap: 0.9rem;
+}
+
+.bibleTitle {
+  max-width: 11ch;
+  font-family: var(--pitch-font-bible), serif;
+  font-size: clamp(3.4rem, 6vw, 6rem);
+}
+
+.bibleQuote {
+  margin: 0;
+  max-width: 28ch;
+  border-left: 3px solid rgba(141, 103, 72, 0.36);
+  padding-left: 1rem;
+  font-family: var(--pitch-font-bible), serif;
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  line-height: 1.5;
+  color: rgba(36, 28, 20, 0.82);
+}
+
+.bibleColumns {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.paperCard {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.paperCard span,
+.rosterRow span {
+  font-family: var(--pitch-font-mono), monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.bibleSpread {
+  grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1fr);
+  align-items: start;
+}
+
+.bibleSynopsis h3 {
+  margin: 0;
+  max-width: 16ch;
+  font-family: var(--pitch-font-bible), serif;
+  font-size: clamp(2rem, 3vw, 3rem);
+}
+
+.bibleSynopsis p {
+  margin: 0;
+  color: rgba(36, 28, 20, 0.74);
+  line-height: 1.8;
+}
+
+.bibleRoster {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.rosterRow {
+  display: grid;
+  gap: 0.3rem;
+  padding: 1rem 1.05rem;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.rosterRow strong {
+  font-size: 1rem;
+}
+
+.bibleVisual {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.bibleVisualImage {
+  min-height: 500px;
+}
+
+.bibleVisualCaption {
+  padding: 0 0.35rem;
+  font-size: 0.96rem;
+}
+
+.archiveCardMeta h4 {
+  font-family: var(--pitch-font-bible), serif;
+  font-size: 1.5rem;
+}
+
+.signalTitle {
+  max-width: 12ch;
+  font-family: var(--pitch-font-grid), sans-serif;
+  font-size: clamp(2.8rem, 5.4vw, 5.4rem);
+}
+
+.signalGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.signalModule {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.15rem;
+}
+
+.signalModule span {
+  font-family: var(--pitch-font-mono), monospace;
+  font-size: 1.1rem;
+  color: var(--pitch-accent);
+}
+
+.signalModule h3 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.signalBreakdown {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.signalPanel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1.2rem;
+  border: 1px solid var(--pitch-border);
+  border-radius: 1.55rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.signalPanel h3 {
+  margin: 0;
+  font-family: var(--pitch-font-grid), sans-serif;
+  font-size: 1.5rem;
+}
+
+.timeline {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--pitch-muted);
+  line-height: 1.8;
+}
+
+.boardMosaic {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.boardTile {
+  min-height: 180px;
+}
+
+.boardTile span {
+  position: absolute;
+  left: 0.9rem;
+  bottom: 0.85rem;
+  z-index: 1;
+  font-family: var(--pitch-font-mono), monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.signalFooterGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.footerInsight {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1.2rem;
+}
+
+.footerInsight strong {
+  font-size: 1.05rem;
+}
+
+.riotHero {
+  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1fr);
+}
+
+.riotPoster {
+  position: relative;
+  min-height: 660px;
+  padding: 0.8rem;
+  overflow: hidden;
+  border: 1px solid var(--pitch-border);
+  border-radius: 1.8rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.riotPosterImage {
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+  border-radius: 1.25rem;
+}
+
+.riotSticker,
+.riotBadge {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(8, 8, 8, 0.68);
+  padding: 0.7rem 0.95rem;
+  font-family: var(--pitch-font-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.riotSticker {
+  top: 1.25rem;
+  left: 1.25rem;
+}
+
+.riotBadge {
+  right: 1.25rem;
+  bottom: 1.25rem;
+}
+
+.riotTitle {
+  max-width: 10ch;
+  font-family: var(--pitch-font-riot), sans-serif;
+  font-size: clamp(3rem, 5.6vw, 5.6rem);
+}
+
+.quoteCluster {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.quoteCluster article {
+  display: grid;
+  gap: 0.4rem;
+  border: 1px solid var(--pitch-border);
+  border-radius: 1.3rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1rem 1.05rem;
+}
+
+.quoteCluster strong {
+  color: var(--pitch-accent);
+  letter-spacing: 0.06em;
+}
+
+.quoteCluster p {
+  margin: 0;
+  color: var(--pitch-muted);
+  line-height: 1.75;
+}
+
+.riotScene {
+  gap: 0;
+}
+
+.riotSceneImage {
+  min-height: 290px;
+}
+
+.riotScene p {
+  margin: 0;
+  padding: 1rem 1.1rem 1.15rem;
+  color: var(--pitch-muted);
+  line-height: 1.75;
+}
+
+.riotTagWall {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tagTile {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.1rem;
+}
+
+.tagTile strong {
+  font-size: 1.08rem;
+}
+
+.atlasHero {
+  grid-template-columns: minmax(0, 0.8fr) minmax(360px, 1.2fr);
+  align-items: start;
+}
+
+.atlasTitle {
+  max-width: 12ch;
+  font-family: var(--pitch-font-grid), sans-serif;
+  font-size: clamp(2.8rem, 5.2vw, 5.1rem);
+}
+
+.atlasMap {
+  min-height: 620px;
+}
+
+.ecologyCard {
+  gap: 0;
+}
+
+.ecologyImageWrap {
+  min-height: 280px;
+}
+
+.ecologyMeta strong {
+  font-size: 1.08rem;
+}
+
+.atlasBoardGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.atlasBoardCard {
+  overflow: hidden;
+}
+
+.atlasBoardImage {
+  min-height: 250px;
+}
+
+.atlasBoardCard span {
+  display: block;
+  padding: 0.95rem 1rem 1.05rem;
+  font-family: var(--pitch-font-mono), monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pitch-muted);
+}
+
+.footerBand {
+  margin: 0 auto;
+  display: flex;
+  max-width: 1380px;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 0 1.5rem 3rem;
+  color: var(--pitch-muted);
+}
+
+.footerBand p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+@keyframes pitch-fade-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (max-width: 1180px) {
+  .selectorGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .heroGrid,
+  .neonHero,
+  .bibleSpread,
+  .signalBreakdown,
+  .riotHero,
+  .atlasHero {
+    grid-template-columns: 1fr;
+  }
+
+  .signalGrid,
+  .characterGrid,
+  .worldGrid,
+  .archiveTriptych,
+  .signalFooterGrid,
+  .riotSupportGrid,
+  .riotTagWall,
+  .ecologyGrid,
+  .atlasBoardGrid,
+  .proofLinks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .hero,
+  .selectorSection,
+  .activeMeta,
+  .stage,
+  .footerBand {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .heroTopline,
+  .selectorHeader,
+  .activeMeta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .heroTitle,
+  .neonTitle,
+  .signalTitle,
+  .riotTitle,
+  .atlasTitle,
+  .bibleTitle {
+    max-width: none;
+  }
+
+  .selectorGrid,
+  .signalGrid,
+  .characterGrid,
+  .worldGrid,
+  .archiveTriptych,
+  .signalFooterGrid,
+  .riotSupportGrid,
+  .riotTagWall,
+  .ecologyGrid,
+  .atlasBoardGrid,
+  .proofLinks,
+  .bibleColumns,
+  .boardMosaic,
+  .statGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .neonPosterWall {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'main'
+      'side-a'
+      'side-b';
+  }
+
+  .posterMain,
+  .bibleVisualImage,
+  .atlasMap,
+  .riotPoster {
+    min-height: 420px;
+  }
+
+  .characterImageWrap,
+  .worldImageWrap,
+  .archiveImageWrap,
+  .riotSceneImage,
+  .ecologyImageWrap,
+  .atlasBoardImage {
+    min-height: 240px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding-top: 1.5rem;
+  }
+
+  .heroCopy,
+  .heroPreview,
+  .stageInner {
+    border-radius: 1.5rem;
+  }
+
+  .variantStack {
+    padding: 1rem;
+  }
+
+  .heroTitle {
+    font-size: clamp(2.4rem, 12vw, 3.7rem);
+  }
+
+  .heroBody,
+  .variantBody,
+  .proofLink span,
+  .characterMeta span,
+  .worldMeta p,
+  .archiveCardMeta p,
+  .riotScene p,
+  .ecologyMeta p,
+  .footerBand p {
+    font-size: 0.95rem;
+    line-height: 1.72;
+  }
+
+  .heroPreviewImage,
+  .posterMain,
+  .posterSide,
+  .bibleVisualImage,
+  .riotPoster,
+  .atlasMap {
+    min-height: 300px;
+  }
+
+  .riotPoster {
+    min-height: 420px;
+  }
+
+  .riotSticker,
+  .riotBadge {
+    font-size: 0.64rem;
+    letter-spacing: 0.12em;
+  }
+}
