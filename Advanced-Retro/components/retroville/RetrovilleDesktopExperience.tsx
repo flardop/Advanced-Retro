@@ -4,14 +4,20 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { Anton, DM_Sans, Space_Mono } from 'next/font/google';
+import RetrovilleAudienceProof from '@/components/retroville/RetrovilleAudienceProof';
 import RetrovilleCountdown from '@/components/retroville/RetrovilleCountdown';
+import RetrovilleProductionDesk from '@/components/retroville/RetrovilleProductionDesk';
 import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
+import {
+  RETROVILLE_NEWSLETTER_NAME,
+  shouldShowRetrovilleSignupCount,
+} from '@/app/retroville/shared';
+import {
+  retrovilleBodyFont as bodyFont,
+  retrovilleDisplayFont as displayFont,
+  retrovilleMonoFont as monoFont,
+} from '@/lib/retroville/fonts';
 import styles from './retroville-desktop.module.css';
-
-const displayFont = Anton({ subsets: ['latin'], weight: '400', variable: '--font-display' });
-const bodyFont = DM_Sans({ subsets: ['latin'], variable: '--font-body' });
-const monoFont = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-mono' });
 
 const titleLetters = ['R', 'E', 'T', 'R', 'O', 'V', 'I', 'L', 'L', 'E'] as const;
 const manifestoLines = ['EVERY', 'FORGOTTEN', 'GAME', 'ENDS UP', 'SOMEWHERE.'] as const;
@@ -117,11 +123,6 @@ const retrovilleSocials = [
     ariaLabel: 'Abrir Discord de Retroville',
   },
   {
-    label: 'Reddit',
-    href: 'https://www.reddit.com/user/Flardop/',
-    ariaLabel: 'Abrir Reddit de Retroville',
-  },
-  {
     label: 'Facebook',
     href: 'https://www.facebook.com/profile.php?id=61590571767017',
     ariaLabel: 'Abrir Facebook de Retroville',
@@ -141,15 +142,49 @@ const retrovilleSocials = [
 const sketchPreviewCards = [
   {
     label: 'CITY CORE',
-    image: '/images/retroville/retroville-central-plaza-concept.png',
+    image: '/images/retroville/retroville-central-plaza-concept.webp',
+    alt: 'Concept art de la plaza central de Retroville y su núcleo urbano',
   },
   {
     label: 'TRANSIT',
-    image: '/images/retroville/retroville-metro-pod-concept.png',
+    image: '/images/retroville/retroville-metro-pod-concept.webp',
+    alt: 'Concept art del Metro-Pod de Retroville para el sistema de transporte',
   },
   {
     label: 'URBAN PROPS',
-    image: '/images/retroville/retroville-urban-props-concept.png',
+    image: '/images/retroville/retroville-urban-props-concept.webp',
+    alt: 'Concept art de props urbanos y señalética de calle en Retroville',
+  },
+] as const;
+
+const productLine = 'Retroville es una serie animada original ambientada en una ciudad construida con hardware abandonado.';
+const launchEventCopy =
+  'El 10 de noviembre de 2026 llega la primera señal publica de Retroville: activamos el primer reveal, abrimos el siguiente drop y avisamos primero a quienes ya reciben La Señal.';
+const waitlistBenefits = [
+  'Aviso prioritario el dia del primer reveal publico.',
+  'Una señal quincenal con avances, materiales y drops del proyecto.',
+  'Acceso anticipado a nuevos archivos y contenido exclusivo del desarrollo.',
+] as const;
+const landingDepthHighlights = [
+  '14+ personajes con renders y roles claros.',
+  'Masterplan de ciudad con distritos y sistema social.',
+  'Sketchbook activo con proceso y traduccion visual.',
+] as const;
+const characterTeasers = [
+  {
+    name: 'NOX',
+    district: 'Console Core',
+    pitch: 'El protagonista cansado que mantiene el nucleo encendido aunque la ciudad ya le de asco.',
+  },
+  {
+    name: 'LUNA',
+    district: 'Top Slot',
+    pitch: 'Encanto toxico, control social y el tipo de energia que arruina una noche perfecta.',
+  },
+  {
+    name: 'BUTTON CREW',
+    district: 'Power Plaza',
+    pitch: 'Una pandilla de botones con vocacion de disturbio publico y cero interes por la calma.',
   },
 ] as const;
 
@@ -158,6 +193,7 @@ type Slide =
   | { kind: 'manifesto'; eyebrow: string; title: string; description: string }
   | { kind: 'districts'; eyebrow: string; title: string; description: string }
   | { kind: 'sketchPreview'; eyebrow: string; title: string; description: string }
+  | { kind: 'productionDesk'; eyebrow: string; title: string; description: string }
   | { kind: 'characterPreview'; eyebrow: string; title: string; description: string }
   | { kind: 'gallery'; eyebrow: string; title: string; description: string }
   | { kind: 'signals'; eyebrow: string; title: string; description: string }
@@ -169,34 +205,35 @@ const slides: readonly Slide[] = [
     eyebrow: 'LAUNCH WINDOW TARGET',
     title: 'VENTANA DE LANZAMIENTO',
     description:
-      'La primera gran señal de Retroville ya tiene fecha. Este tramo funciona como antesala de una serie original que todavía se está formando.',
-  },
-  {
-    kind: 'manifesto',
-    eyebrow: 'MANIFIESTO',
-    title: 'EVERY FORGOTTEN GAME ENDS UP SOMEWHERE.',
-    description: 'Una ciudad oscura. Hardware olvidado. Memorias corruptas. Humor extraño con ambición real.',
-  },
-  {
-    kind: 'districts',
-    eyebrow: 'DISTRICTS & SIGNALS',
-    title: 'MAPA DEL UNIVERSO',
-    description:
-      'Antes de que la ciudad se explique sola, hay nombres que ya suenan como lugares reales: barrios, plazas, residuos, clubs y sistemas enteros a punto de desbordarse.',
-  },
-  {
-    kind: 'sketchPreview',
-    eyebrow: 'SKETCHBOOK',
-    title: 'CÓMO SE CONSTRUYE RETROVILLE',
-    description:
-      'Arquitectura, vehículos, tiendas, criaturas, props y sistemas urbanos. Esta demo solo enseña una muestra; el archivo completo vive en una página aparte para verlo con calma.',
+      'La primera gran señal de Retroville ya tiene fecha. Esta cuenta atras apunta al primer reveal publico del proyecto.',
   },
   {
     kind: 'characterPreview',
     eyebrow: 'CAST',
     title: 'CONOCE A LOS PERSONAJES',
     description:
-      'NOX, Button Crew y Luna ya tienen render final. El resto del reparto existe como ficha de desarrollo y quedará preparado para recibir sus imágenes renderizadas.',
+      'Retroville ya tiene 14+ personajes, facciones y vecinos listos para vender el mundo como serie. Aqui ves la punta del reparto y desde aqui entras al cast completo.',
+  },
+  {
+    kind: 'districts',
+    eyebrow: 'DISTRICTS & SIGNALS',
+    title: 'MAPA DEL UNIVERSO',
+    description:
+      'Power Plaza, Bit Grave y Top Slot ya funcionan como lugares reales. La ciudad no es fondo: es parte del conflicto, del humor y del sistema social.',
+  },
+  {
+    kind: 'sketchPreview',
+    eyebrow: 'SKETCHBOOK',
+    title: 'CÓMO SE CONSTRUYE RETROVILLE',
+    description:
+      'El proyecto ya tiene masterplan, traducciones visuales y archivo de proceso activo. El sketchbook enseña como cada referencia se convierte en edificio, barrio o sistema.',
+  },
+  {
+    kind: 'productionDesk',
+    eyebrow: 'PRODUCTION DESK',
+    title: 'BIBLIA, DOSSIERS Y TEMPORADA 1',
+    description:
+      'Retroville ya puede empezar a enseñar sus materiales tecnicos. La biblia general esta abierta y los episodios 01-10 se iran desbloqueando como archivos incoming.',
   },
   {
     kind: 'gallery',
@@ -211,10 +248,17 @@ const slides: readonly Slide[] = [
     description: 'World building, drops narrativos y caos social dentro de una misma frecuencia visual.',
   },
   {
+    kind: 'manifesto',
+    eyebrow: 'MANIFIESTO',
+    title: 'EVERY FORGOTTEN GAME ENDS UP SOMEWHERE.',
+    description: 'Una ciudad oscura. Hardware olvidado. Memorias corruptas. Humor raro con ambición real de serie adulta.',
+  },
+  {
     kind: 'waitlist',
-    eyebrow: 'WAITLIST',
-    title: 'ENTRA ANTES DE QUE EL RESTO LO RECUERDE',
-    description: 'Primer drop. Primer reveal. Primera señal jugable. Aquí termina la página y empieza la espera.',
+    eyebrow: 'NEWSLETTER',
+    title: 'LA SEÑAL DE RETROVILLE',
+    description:
+      'No es un formulario generico: es la newsletter oficial para recibir el primer reveal, los drops siguientes y un resumen quincenal del desarrollo del universo.',
   },
 ] as const;
 
@@ -245,6 +289,7 @@ export default function RetrovilleDesktopExperience({
   const trackVisible = activeStep > 0 || portalTransition;
   const trackIndex = Math.max(activeStep - 1, 0);
   const hypeGoal = 5000;
+  const showAudienceCount = shouldShowRetrovilleSignupCount(waitlistCount);
   const waitlistPct = Math.max(0, Math.min(1, waitlistCount / hypeGoal));
   const repeatedMarqueeItems = useMemo(() => [...marqueeItems, ...marqueeItems], []);
   const currentRelic = relicGallery[activeRelic] ?? relicGallery[0];
@@ -401,6 +446,7 @@ export default function RetrovilleDesktopExperience({
             <h2 className={`${displayFont.className} ${styles.slideTitle}`}>{slide.title}</h2>
             <p className={styles.slideBody}>{slide.description}</p>
             <p className={styles.slideMeta}>Objetivo actual: {launchLabel}</p>
+            <p className="mt-4 max-w-[44ch] text-sm leading-7 text-white/72">{launchEventCopy}</p>
           </div>
           <div className={styles.countdownShell}>
             <RetrovilleCountdown targetIso={launchIso} className="border-0 bg-transparent p-0 shadow-none" />
@@ -492,7 +538,7 @@ export default function RetrovilleDesktopExperience({
               <div className={styles.sketchCards}>
                 {sketchPreviewCards.map((card) => (
                   <article key={card.label} className={styles.sketchCard}>
-                    <Image src={card.image} alt={card.label} fill sizes="24vw" className={styles.sketchCardImage} />
+                    <Image src={card.image} alt={card.alt} fill sizes="24vw" className={styles.sketchCardImage} loading="lazy" />
                     <span>{card.label}</span>
                   </article>
                 ))}
@@ -511,20 +557,29 @@ export default function RetrovilleDesktopExperience({
               <p className={styles.eyebrow}>{slide.eyebrow}</p>
               <h2 className={`${displayFont.className} ${styles.slideTitle}`}>{slide.title}</h2>
               <p className={styles.slideBody}>{slide.description}</p>
+              <div className="mt-6 grid gap-3">
+                {characterTeasers.map((character) => (
+                  <article key={character.name} className="rounded-[1.2rem] border border-white/10 bg-white/[0.04] p-4 text-left">
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-green)]">{character.district}</p>
+                    <h3 className={`${displayFont.className} mt-2 text-[1.7rem] uppercase leading-[0.92] text-white`}>{character.name}</h3>
+                    <p className="mt-2 text-sm leading-6 text-white/72">{character.pitch}</p>
+                  </article>
+                ))}
+              </div>
               <Link href="/retroville/personajes" className={styles.previewButton}>
-                Abrir reparto <ArrowRight className="h-4 w-4" />
+                Ver reparto completo <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
             <div className={styles.castPresentationStage}>
               <div className={styles.castPresentationGlow} />
               <Image
-                src="/images/retroville/retroville-cast-presentation.png"
+                src="/images/retroville/retroville-cast-presentation.webp"
                 alt="NOX, Luna y Button Crew presentando el reparto principal de Retroville"
                 width={1092}
                 height={768}
                 className={styles.castPresentationImage}
-                priority={index < 5}
+                loading="lazy"
               />
               <div className={styles.castPresentationMeta}>
                 <span>REPARTO PRINCIPAL</span>
@@ -532,6 +587,19 @@ export default function RetrovilleDesktopExperience({
               </div>
             </div>
           </div>
+        </div>
+      );
+    }
+
+    if (slide.kind === 'productionDesk') {
+      return (
+        <div className={styles.slideShellWide}>
+          <div className={styles.slideCopyCompact}>
+            <p className={styles.eyebrow}>{slide.eyebrow}</p>
+            <h2 className={`${displayFont.className} ${styles.slideTitle}`}>{slide.title}</h2>
+            <p className={styles.slideBody}>{slide.description}</p>
+          </div>
+          <RetrovilleProductionDesk mode="desktop" />
         </div>
       );
     }
@@ -613,15 +681,34 @@ export default function RetrovilleDesktopExperience({
           <div className={styles.waitlistStatRow}>
             <div>
               <p className={styles.waitlistStatLabel}>Señal actual</p>
-              <p className={styles.waitlistStatValue}>{waitlistCount.toLocaleString('es-ES')} dentro</p>
+              <p className={styles.waitlistStatValue}>
+                {showAudienceCount ? `${waitlistCount.toLocaleString('es-ES')} personas ya reciben la señal` : 'Sé de los primeros'}
+              </p>
+              {showAudienceCount ? null : <p className={styles.slideMeta}>La newsletter acaba de abrirse y todavia puedes entrar en la primera tanda.</p>}
             </div>
-            <div className={styles.waitlistMeter}>
-              <span style={{ width: `${waitlistPct * 100}%` }} />
-            </div>
+            {showAudienceCount ? (
+              <div className={styles.waitlistMeter}>
+                <span style={{ width: `${waitlistPct * 100}%` }} />
+              </div>
+            ) : null}
           </div>
+          <RetrovilleAudienceProof waitlistCount={waitlistCount} />
         </div>
         <div className={styles.waitlistCard}>
-          <RetrovilleWaitlistForm />
+          <div className="mb-6 rounded-[1.35rem] border border-white/10 bg-white/[0.04] p-4 text-left">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Si te apuntas, recibes</p>
+            <div className="mt-3 grid gap-2">
+              {waitlistBenefits.map((benefit) => (
+                <p key={benefit} className="text-sm leading-6 text-white/78">
+                  {benefit}
+                </p>
+              ))}
+            </div>
+          </div>
+          <RetrovilleWaitlistForm
+            buttonLabel={`QUIERO RECIBIR ${RETROVILLE_NEWSLETTER_NAME.toUpperCase()}`}
+            successMessage={`Perfecto. Ya estas dentro de ${RETROVILLE_NEWSLETTER_NAME} y recibiras el primer aviso.`}
+          />
           <div className={styles.waitlistFooter}>
             <div className={styles.waitlistFooterMeta}>
               <p>© AdvancedRetro · Retroville está en desarrollo como serie original.</p>
@@ -640,6 +727,12 @@ export default function RetrovilleDesktopExperience({
                 ))}
                 <Link href="/retroville/legal" className={styles.socialLink}>
                   Legal
+                </Link>
+                <Link href="/retroville/press" className={styles.socialLink}>
+                  Press
+                </Link>
+                <Link href="/retroville/faq" className={styles.socialLink}>
+                  FAQ
                 </Link>
               </div>
             </div>
@@ -673,8 +766,8 @@ export default function RetrovilleDesktopExperience({
         <section className={`${styles.heroLayer} ${activeStep > 0 ? styles.heroLayerHidden : ''} ${portalTransition ? styles.heroLayerOpening : ''}`}>
           <div className={styles.heroBackground}>
             <Image
-              src="/images/retroville/retroville-hero-portal-bg.png"
-              alt=""
+              src="/images/retroville/retroville-hero-portal-bg.webp"
+              alt="Vista del portal central de Retroville con el universo emergiendo al fondo"
               fill
               priority
               sizes="100vw"
@@ -688,7 +781,7 @@ export default function RetrovilleDesktopExperience({
           <div className={`${styles.heroSide} ${styles.heroSideLeft}`}>
             <div className={styles.heroSideWash} />
             <Image
-              src="/images/retroville/nox-push.png"
+              src="/images/retroville/nox-push.webp"
               alt="NOX empujando el núcleo de Retroville"
               fill
               sizes="32vw"
@@ -702,7 +795,7 @@ export default function RetrovilleDesktopExperience({
           <div className={`${styles.heroSide} ${styles.heroSideRight}`}>
             <div className={styles.heroSideWash} />
             <Image
-              src="/images/retroville/button-crew-push.png"
+              src="/images/retroville/button-crew-push.webp"
               alt="Button Crew empujando desde el otro lado"
               fill
               sizes="32vw"
@@ -717,7 +810,7 @@ export default function RetrovilleDesktopExperience({
             <p className={styles.heroEyebrow}>Serie original en desarrollo</p>
             <div className="mx-auto mt-5 w-full max-w-[360px]">
               <Image
-                src="/images/retroville/retroville-logo.png"
+                src="/images/retroville/retroville-logo.webp"
                 alt="Logo de Retroville"
                 width={1536}
                 height={1023}
@@ -738,19 +831,91 @@ export default function RetrovilleDesktopExperience({
               ))}
             </h1>
             <p className={styles.heroTagline}>Every forgotten game ends up somewhere.</p>
+            <p className={styles.heroBody}>{productLine}</p>
+            <p className="mx-auto mt-4 max-w-[720px] text-sm leading-7 text-[var(--rv-gold)]">
+              NOX lo resumiria peor, pero mas claro: &quot;Aqui hasta los cartuchos muertos siguen pagando alquiler.&quot;
+            </p>
             <p className={styles.heroBody}>
-              Un universo narrativo donde el hardware olvidado sigue vivo. NOX, Button Crew y Luna habitan una ciudad que se siente más cerca de una serie que de una simple página promocional.
+              Un universo narrativo donde el hardware olvidado sigue vivo. NOX, Button Crew y Luna habitan una ciudad con barrios, facciones y humor negro propio, pensada para presentarse como serie y no como decorado.
             </p>
             <div className={styles.heroActions}>
               <button type="button" className={styles.primaryButton} onClick={() => moveStep(1)}>
                 Enter Retroville <ArrowRight className="h-4 w-4" />
               </button>
               <button type="button" className={styles.secondaryButton} onClick={() => jumpToStep(slideCount)}>
-                Ir a la waitlist
+                Ir a la newsletter
               </button>
-              <Link href="/retroville/presentaciones" className={styles.secondaryButton}>
-                Ver 5 tratamientos
-              </Link>
+            </div>
+            <div className="mx-auto mt-8 grid w-full max-w-[1040px] gap-4 text-left md:grid-cols-3">
+              <article className="rounded-[1.55rem] border border-white/10 bg-[rgba(7,10,20,0.72)] p-5 shadow-[0_18px_44px_rgba(0,0,0,0.22)]">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-green)]">Que hay ya dentro</p>
+                <h3 className={`${displayFont.className} mt-3 text-[2rem] uppercase leading-[0.92] text-white`}>
+                  Universo ya presentable
+                </h3>
+                <div className="mt-4 grid gap-2">
+                  {landingDepthHighlights.map((highlight) => (
+                    <p key={highlight} className="text-sm leading-6 text-white/74">
+                      {highlight}
+                    </p>
+                  ))}
+                </div>
+              </article>
+
+              <article className="rounded-[1.55rem] border border-white/10 bg-[rgba(7,10,20,0.72)] p-5 shadow-[0_18px_44px_rgba(0,0,0,0.22)]">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-cyan)]">10 de noviembre de 2026</p>
+                <h3 className={`${displayFont.className} mt-3 text-[2rem] uppercase leading-[0.92] text-white`}>
+                  Primer reveal publico
+                </h3>
+                <p className="mt-4 text-sm leading-7 text-white/74">{launchEventCopy}</p>
+              </article>
+
+              <article className="rounded-[1.55rem] border border-white/10 bg-[rgba(7,10,20,0.72)] p-5 shadow-[0_18px_44px_rgba(0,0,0,0.22)]">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Newsletter con utilidad real</p>
+                <h3 className={`${displayFont.className} mt-3 text-[2rem] uppercase leading-[0.92] text-white`}>
+                  {showAudienceCount ? `${waitlistCount.toLocaleString('es-ES')} personas ya reciben la señal` : 'Sé de los primeros'}
+                </h3>
+                <div className="mt-4 grid gap-2">
+                  {waitlistBenefits.map((benefit) => (
+                    <p key={benefit} className="text-sm leading-6 text-white/74">
+                      {benefit}
+                    </p>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => jumpToStep(slideCount)}
+                  className="mt-4 inline-flex min-h-[42px] items-center justify-center rounded-full border border-[var(--rv-green)]/24 bg-[rgba(0,255,136,0.08)] px-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--rv-green)] transition hover:border-[var(--rv-green)]/40 hover:bg-[rgba(0,255,136,0.14)]"
+                >
+                  Abrir newsletter
+                </button>
+              </article>
+            </div>
+            <div className="mx-auto mt-5 grid w-full max-w-[1040px] gap-3 rounded-[1.55rem] border border-white/10 bg-[rgba(7,10,20,0.68)] p-5 text-left lg:grid-cols-[1.15fr_0.85fr]">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-cyan)]">Teaser de reparto</p>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  {characterTeasers.map((character) => (
+                    <article key={character.name} className="rounded-[1.15rem] border border-white/8 bg-white/[0.03] p-4">
+                      <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-gold)]">{character.district}</p>
+                      <h3 className={`${displayFont.className} mt-2 text-[1.55rem] uppercase leading-[0.92] text-white`}>
+                        {character.name}
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-white/72">{character.pitch}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col justify-between rounded-[1.2rem] border border-white/8 bg-white/[0.03] p-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-green)]">Por que entrar ahora</p>
+                  <p className="mt-3 text-sm leading-7 text-white/74">
+                    Si alguien aterriza hoy, ya puede entender que Retroville tiene reparto, ciudad, tono y proceso real de serie, no solo un manifiesto bonito.
+                  </p>
+                </div>
+                <Link href="/retroville/personajes" className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-full bg-white px-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-black transition hover:brightness-110">
+                  Ver reparto completo
+                </Link>
+              </div>
             </div>
             <div className={styles.heroSocials}>
               {retrovilleSocials.map((social) => (

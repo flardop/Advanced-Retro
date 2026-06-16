@@ -24,6 +24,26 @@ const FEATURED_COLUMNS = [
   'component_type',
 ].join(',');
 
+function humanizeValue(value: string): string {
+  const source = String(value || '')
+    .trim()
+    .replace(/[-_]+/g, ' ')
+    .toLowerCase();
+
+  if (!source) return '';
+  if (source === 'game boy' || source === 'gameboy') return 'Game Boy';
+  if (source === 'game boy color' || source === 'gameboy color' || source === 'gbc') return 'Game Boy Color';
+  if (source === 'game boy advance' || source === 'gameboy advance' || source === 'gba') return 'Game Boy Advance';
+  if (source === 'super nintendo' || source === 'snes') return 'Super Nintendo';
+  if (source === 'gamecube' || source === 'game cube') return 'GameCube';
+
+  return source
+    .split(' ')
+    .filter(Boolean)
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(' ');
+}
+
 function filterFeaturedProducts(input: any[]): any[] {
   return dedupeCatalogProducts(input).filter((product) => !isManualProduct(product)).slice(0, 6);
 }
@@ -126,7 +146,11 @@ export default function FeaturedProducts({ initialProducts = [] }: FeaturedProdu
         <div className="content-rail grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {products.map((product: any, index) => {
             const productMetrics = metrics[String(product.id)] || { visits: 0, likes: 0 };
+            const platformLabel = humanizeValue(String(product?.platform || ''));
+            const statusLabel = String(product?.status || '').trim();
             const metricChips = [
+              platformLabel || null,
+              statusLabel || null,
               productMetrics.visits > 0 ? `${productMetrics.visits} ${t('home.featured.visits', 'visitas')}` : null,
               productMetrics.likes > 0 ? `${productMetrics.likes} ${t('home.featured.likes', 'likes')}` : null,
             ].filter((value): value is string => Boolean(value));
@@ -151,10 +175,6 @@ export default function FeaturedProducts({ initialProducts = [] }: FeaturedProdu
                 <div className="flex flex-1 flex-col p-5">
                   <h3 className="line-clamp-2 text-lg font-semibold">{product.name}</h3>
                   <p className="mt-2 line-clamp-2 text-sm text-textMuted">{product.description}</p>
-                  <div className="mt-4 flex items-end justify-between gap-2">
-                    <p className="text-2xl font-black text-primary">{(product.price / 100).toFixed(2)} €</p>
-                    <span className="text-xs text-textMuted">{t('home.featured.view', 'Ver ficha')}</span>
-                  </div>
                   {metricChips.length > 0 ? (
                     <div className="mt-4 flex flex-wrap gap-1.5 text-[11px]">
                       {metricChips.map((chip) => (
@@ -164,6 +184,10 @@ export default function FeaturedProducts({ initialProducts = [] }: FeaturedProdu
                       ))}
                     </div>
                   ) : null}
+                  <div className="mt-4 flex items-end justify-between gap-2">
+                    <p className="text-2xl font-black text-primary">{(product.price / 100).toFixed(2)} €</p>
+                    <span className="text-xs text-textMuted">{t('home.featured.view', 'Ver ficha')}</span>
+                  </div>
                   <p className="mt-3 text-xs text-textMuted">{t('home.featured.stock', 'Stock')} {Number(product.stock || 0)}</p>
                 </div>
               </Link>

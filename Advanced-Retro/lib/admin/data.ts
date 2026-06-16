@@ -1,6 +1,7 @@
 import { addMonths, endOfDay, endOfMonth, endOfWeek, format, isWithinInterval, parseISO, startOfDay, startOfMonth, startOfWeek, subDays, subMonths } from 'date-fns';
 import type {
   ActivityFeedItem,
+  AnalyticsEventRecord,
   AdminOrderMeta,
   AdminOrderStatusEvent,
   AdminProductMeta,
@@ -16,6 +17,8 @@ import type {
   LoginActivityRecord,
   MessageReviewStatus,
   PageViewRecord,
+  RetrovilleAnalyticsSnapshot,
+  RetrovilleWaitlistRecord,
   ScheduledEmailRecord,
   UserSessionRecord,
 } from '@/types/admin';
@@ -72,6 +75,68 @@ function groupCounts(values: Array<string | null | undefined>) {
   return Array.from(map.entries())
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
+}
+
+function classifyTrafficSource(referrer: string | null | undefined) {
+  const ref = String(referrer || '').toLowerCase().trim();
+  if (!ref) return 'Direct';
+  if (ref.includes('google') || ref.includes('bing') || ref.includes('duckduckgo') || ref.includes('yahoo')) {
+    return 'Search';
+  }
+  if (
+    ref.includes('facebook') ||
+    ref.includes('instagram') ||
+    ref.includes('threads') ||
+    ref.includes('reddit') ||
+    ref.includes('discord') ||
+    ref.includes('kickstarter') ||
+    ref.includes('youtube') ||
+    ref.includes('t.co') ||
+    ref.includes('x.com') ||
+    ref.includes('twitter')
+  ) {
+    return 'Social';
+  }
+  if (ref.includes('mail') || ref.includes('gmail') || ref.includes('outlook')) return 'Email';
+  return 'Referral';
+}
+
+function humanizeWaitlistSource(source: string | null | undefined) {
+  const raw = String(source || '').trim().toLowerCase();
+  if (!raw || raw === 'public') return 'Web publica';
+  if (raw === 'dev') return 'Desarrollo';
+  if (raw.includes('discord')) return 'Discord';
+  if (raw.includes('kickstarter')) return 'Kickstarter';
+  if (raw.includes('reddit')) return 'Reddit';
+  if (raw.includes('thread')) return 'Threads';
+  if (raw.includes('facebook')) return 'Facebook';
+  if (raw.includes('instagram')) return 'Instagram';
+  if (raw.includes('youtube')) return 'YouTube';
+  if (raw === 'x' || raw.includes('x.com') || raw.includes('twitter')) return 'X / Twitter';
+  return raw
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function normalizeTrackedPath(url: string | null | undefined) {
+  const raw = String(url || '/').trim();
+  if (!raw) return '/';
+  try {
+    const absolute = /^https?:\/\//i.test(raw) ? new URL(raw) : null;
+    const pathname = absolute?.pathname || raw.split('?')[0] || '/';
+    return pathname !== '/' ? pathname.replace(/\/+$/, '') || '/' : '/';
+  } catch {
+    const pathname = raw.split('?')[0] || '/';
+    return pathname !== '/' ? pathname.replace(/\/+$/, '') || '/' : '/';
+  }
+}
+
+function maskEmailAddress(email: string | null | undefined) {
+  const raw = String(email || '').trim().toLowerCase();
+  const [local, domain] = raw.split('@');
+  if (!local || !domain) return 'oculto@retroville.local';
+  const localPreview = local.length <= 2 ? `${local[0] || '*'}*` : `${local.slice(0, 2)}***`;
+  return `${localPreview}@${domain}`;
 }
 
 async function selectRows(table: string, query = '*', limit = 5000) {
@@ -336,14 +401,7 @@ export async function getAnalyticsSnapshot(input?: { from?: string; to?: string 
     .sort((a, b) => b.views - a.views)
     .slice(0, 50);
 
-  const sourceBuckets = filtered.map((row) => {
-    const ref = String(row.referrer || '').toLowerCase();
-    if (!ref) return 'Direct';
-    if (ref.includes('google') || ref.includes('bing') || ref.includes('duckduckgo')) return 'Search';
-    if (ref.includes('facebook') || ref.includes('instagram') || ref.includes('x.com') || ref.includes('twitter')) return 'Social';
-    if (ref.includes('mail')) return 'Email';
-    return 'Referral';
-  });
+  const sourceBuckets = filtered.map((row) => classifyTrafficSource(row.referrer));
 
   const geographyMap = new Map<string, { country: string; city: string; sessions: Set<string> }>();
   for (const row of filtered) {
@@ -416,6 +474,152 @@ export async function getAnalyticsSnapshot(input?: { from?: string; to?: string 
     heatmap,
     newVsReturning,
     activeHours,
+  };
+}
+
+export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to?: string }): Promise<RetrovilleAnalyticsSnapshot> {
+  const [pageViewRows, waitlistRows, analyticsEventRows, settings] = await Promise.all([
+    selectRows('page_views', '*', 10000),
+    selectRows('retroville_waitlist', '*', 5000),
+    selectRows('analytics_events', '*', 10000),
+    listAdminSettings(),
+  ]);
+
+  const rows = pageViewRows as PageViewRecord[];
+  const waitlist = waitlistRows as RetrovilleWaitlistRecord[];
+  const analyticsEvents = analyticsEventRows as AnalyticsEventRecord[];
+  const from = safeDate(input?.from) || startOfDay(subDays(now(), 29));
+  const to = safeDate(input?.to) || endOfDay(now());
+
+  const rowsInRange = rows.filter((row) => {
+    const date = safeDate(row.timestamp);
+    return date ? isWithinInterval(date, { start: from, end: to }) : false;
+  });
+
+  const retrovilleRows = rowsInRange.filter((row) => {
+    const path = normalizeTrackedPath(row.url);
+    return path === '/retroville' || path.startsWith('/retroville/');
+  });
+
+  const uniqueSessions = new Set(retrovilleRows.map((row) => row.session_id).filter(Boolean)).size;
+  const totalDuration = retrovilleRows.reduce((sum, row) => sum + toNumber(row.duration_seconds), 0);
+
+  const topPagesMap = new Map<string, { url: string; page_title: string | null; views: number; sessions: Set<string>; totalDuration: number }>();
+  for (const row of retrovilleRows) {
+    const path = normalizeTrackedPath(row.url);
+    const current = topPagesMap.get(path) || {
+      url: path,
+      page_title: row.page_title || null,
+      views: 0,
+      sessions: new Set<string>(),
+      totalDuration: 0,
+    };
+    current.views += 1;
+    if (!current.page_title && row.page_title) current.page_title = row.page_title;
+    if (row.session_id) current.sessions.add(row.session_id);
+    current.totalDuration += toNumber(row.duration_seconds);
+    topPagesMap.set(path, current);
+  }
+
+  const topPages = Array.from(topPagesMap.values())
+    .map((item) => ({
+      url: item.url,
+      page_title: item.page_title,
+      views: item.views,
+      uniqueSessions: item.sessions.size,
+      avgDuration: item.views > 0 ? item.totalDuration / item.views : 0,
+    }))
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 25);
+
+  const geographyMap = new Map<string, { country: string; city: string; sessions: Set<string> }>();
+  for (const row of retrovilleRows) {
+    const key = `${row.country || 'Desconocido'}|${row.city || '—'}`;
+    const current = geographyMap.get(key) || {
+      country: row.country || 'Desconocido',
+      city: row.city || '—',
+      sessions: new Set<string>(),
+    };
+    if (row.session_id) current.sessions.add(row.session_id);
+    geographyMap.set(key, current);
+  }
+
+  const geography = Array.from(geographyMap.values())
+    .map((entry) => ({
+      country: entry.country,
+      city: entry.city,
+      sessions: entry.sessions.size,
+      percentage: uniqueSessions > 0 ? (entry.sessions.size / uniqueSessions) * 100 : 0,
+    }))
+    .sort((a, b) => b.sessions - a.sessions)
+    .slice(0, 20);
+
+  const waitlistInRange = waitlist.filter((row) => {
+    const date = safeDate(row.created_at);
+    return date ? isWithinInterval(date, { start: from, end: to }) : false;
+  });
+  const waitlistLast30Days = waitlist.filter((row) => {
+    const date = safeDate(row.created_at);
+    return date ? date >= startOfDay(subDays(now(), 29)) : false;
+  });
+  const newsletterEventsInRange = analyticsEvents.filter((row) => {
+    if (row.event_name !== 'retroville_newsletter_signup') return false;
+    const date = safeDate(row.created_at);
+    return date ? isWithinInterval(date, { start: from, end: to }) : false;
+  });
+  const newsletterSignupPages = groupCounts(
+    newsletterEventsInRange.map((row) => normalizeTrackedPath(row.path || String(row.meta?.path || '/retroville')))
+  );
+  const newsletterSignupDevices = groupCounts(
+    newsletterEventsInRange.map((row) => {
+      const device = row.meta?.device_type;
+      return typeof device === 'string' ? device : 'Desconocido';
+    })
+  );
+
+  const settingsMap = new Map(settings.map((setting) => [setting.key, setting.value]));
+  const launchDate = settingsMap.get(RETROVILLE_SETTING_KEY) || addMonths(now(), DEFAULT_RETROVILLE_MONTHS_AHEAD).toISOString();
+
+  return {
+    summary: {
+      totalPageViews: retrovilleRows.length,
+      uniqueSessions,
+      avgSessionDuration: retrovilleRows.length > 0 ? totalDuration / retrovilleRows.length : 0,
+      waitlistTotal: waitlist.length,
+      waitlistInRange: waitlistInRange.length,
+      waitlistLast30Days: waitlistLast30Days.length,
+      waitlistConversionRate: uniqueSessions > 0 ? (waitlistInRange.length / uniqueSessions) * 100 : 0,
+      newsletterSignupsInRange: newsletterEventsInRange.length,
+      newsletterConversionRate: uniqueSessions > 0 ? (newsletterEventsInRange.length / uniqueSessions) * 100 : 0,
+      trafficShare: rowsInRange.length > 0 ? (retrovilleRows.length / rowsInRange.length) * 100 : 0,
+      launchDate,
+    },
+    pageViewsOverTime: toChartSeriesByDay(
+      retrovilleRows,
+      (row) => row.timestamp,
+      () => 1,
+      Math.max(1, Math.ceil((to.getTime() - from.getTime()) / 86_400_000) + 1)
+    ),
+    topPages,
+    trafficSources: groupCounts(retrovilleRows.map((row) => classifyTrafficSource(row.referrer))),
+    geography,
+    deviceBreakdown: groupCounts(retrovilleRows.map((row) => row.device_type)),
+    browserBreakdown: groupCounts(retrovilleRows.map((row) => row.browser)),
+    waitlistSources: groupCounts(waitlist.map((row) => humanizeWaitlistSource(row.source))),
+    waitlistRoles: groupCounts(waitlist.map((row) => row.role_label || 'Sin etiqueta')),
+    newsletterSignupPages,
+    newsletterSignupDevices,
+    recentWaitlist: waitlist
+      .slice()
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+      .slice(0, 20)
+      .map((row) => ({
+        id: row.id,
+        email_masked: maskEmailAddress(row.email),
+        created_at: row.created_at,
+        source: humanizeWaitlistSource(row.source),
+        role_label: row.role_label || 'Sin etiqueta',
+      })),
   };
 }
 

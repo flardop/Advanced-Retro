@@ -1,5 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import type { NextRequest, NextResponse } from 'next/server';
+import {
+  PERSISTENT_SESSION_MAX_AGE,
+  SUPABASE_AUTH_STORAGE_KEY,
+} from '@/lib/supabase/config';
 
 export function createMiddlewareSupabaseClient(request: NextRequest, response: NextResponse) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,9 +18,10 @@ export function createMiddlewareSupabaseClient(request: NextRequest, response: N
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookieOptions: {
+      name: SUPABASE_AUTH_STORAGE_KEY,
       path: '/',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 365,
+      maxAge: PERSISTENT_SESSION_MAX_AGE,
       secure:
         process.env.NODE_ENV === 'production' ||
         process.env.VERCEL_ENV === 'production',

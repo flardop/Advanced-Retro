@@ -1,0 +1,14 @@
+<svg width="1800" height="600" viewBox="0 0 1800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1800" height="600" rx="48" fill="#070A14"/>
+  <rect x="36" y="36" width="1728" height="528" rx="28" stroke="#1D2338" stroke-width="4"/>
+  <path d="M1459 151L1484.33 214.667L1552 220L1499.67 261.333L1516 328L1459 292L1402 328L1418.33 261.333L1366 220L1433.67 214.667L1459 151Z" fill="#FFC940"/>
+  <text x="120" y="330" fill="#F7F5EF" font-family="Arial Black, Arial, sans-serif" font-size="184" letter-spacing="6">
+    RETROVILLE
+  </text>
+  <text x="128" y="420" fill="#8AD7FF" font-family="Courier New, monospace" font-size="42" letter-spacing="18">
+    ORIGINAL ANIMATED SERIES
+  </text>
+  <text x="129" y="476" fill="#98A1C4" font-family="Courier New, monospace" font-size="28" letter-spacing="6">
+    HARDWARE ABANDONADO · HUMOR OSCURO · WORLD BUILDING
+  </text>
+</svg>

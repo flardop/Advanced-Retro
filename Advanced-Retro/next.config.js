@@ -21,6 +21,7 @@ function getHostnameFromUrl(input) {
 }
 
 const configuredSupabaseHost = getHostnameFromUrl(configuredSupabaseUrl);
+const isProduction = process.env.NODE_ENV === 'production';
 const allowedImageHosts = [
   configuredSupabaseHost,
   'images.unsplash.com',
@@ -72,6 +73,9 @@ const nextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns,
   },
+  async redirects() {
+    return [];
+  },
   async headers() {
     return [
       {
@@ -79,12 +83,23 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: isProduction
+              ? 'public, max-age=31536000, immutable'
+              : 'no-store, no-cache, must-revalidate, max-age=0',
           },
         ],
       },
       {
         source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=2592000, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        source: '/downloads/:path*',
         headers: [
           {
             key: 'Cache-Control',

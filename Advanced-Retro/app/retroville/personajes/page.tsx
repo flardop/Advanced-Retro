@@ -2,35 +2,51 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { Anton, DM_Sans, Space_Mono } from 'next/font/google';
+import StructuredData from '@/components/StructuredData';
+import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
+import { buildRetrovilleSeriesJsonLd } from '@/app/retroville/shared';
+import {
+  retrovilleBodyFont as bodyFont,
+  retrovilleDisplayFont as displayFont,
+  retrovilleMonoFont as monoFont,
+} from '@/lib/retroville/fonts';
 import styles from './personajes.module.css';
 
-const displayFont = Anton({ subsets: ['latin'], weight: '400', variable: '--font-display' });
-const bodyFont = DM_Sans({ subsets: ['latin'], variable: '--font-body' });
-const monoFont = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-mono' });
-
-export const metadata: Metadata = {
-  title: 'Personajes de Retroville | AdvancedRetro.es',
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Personajes de Retroville | Reparto completo y distritos de la serie',
   description:
-    'Reparto de Retroville: NOX, Button Crew, Luna y personajes en desarrollo del universo original de AdvancedRetro.',
-  alternates: {
-    canonical: 'https://advancedretro.es/retroville/personajes',
-  },
-  openGraph: {
-    title: 'Personajes de Retroville',
-    description: 'Conoce el reparto principal y personajes en desarrollo del universo Retroville.',
-    url: 'https://advancedretro.es/retroville/personajes',
-    siteName: 'AdvancedRetro.es',
-    locale: 'es_ES',
-    type: 'website',
-  },
-};
+    'Descubre el reparto completo de Retroville: NOX, Luna, Button Crew y mas personajes con renders, tono de serie y el distrito exacto que ocupan dentro de la ciudad.',
+  path: '/retroville/personajes',
+  category: 'entertainment',
+  inheritBaseKeywords: false,
+  keywords: [
+    'personajes de retroville',
+    'nox retroville',
+    'luna retroville',
+    'button crew',
+    'distritos de retroville',
+    'reparto retroville',
+    'serie animada retroville',
+    'advancedretro personajes',
+  ],
+  image: '/images/retroville/retroville-cast-presentation.png',
+});
+
+function toCharacterAnchor(name: string) {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 const renderedCharacters = [
   {
     name: 'NOX',
     role: 'Protagonista principal',
-    image: '/images/retroville/nox-character-large.png',
+    district: 'Console Core',
+    image: '/images/retroville/nox-character-large.webp',
     accent: '#67b8ff',
     status: 'Render final disponible',
     description:
@@ -40,7 +56,8 @@ const renderedCharacters = [
   {
     name: 'BUTTON CREW',
     role: 'Caos social permanente',
-    image: '/images/retroville/button-crew-character-large.png',
+    district: 'Power Plaza',
+    image: '/images/retroville/button-crew-character-large.webp',
     accent: '#ffc940',
     status: 'Render final disponible',
     description:
@@ -50,7 +67,8 @@ const renderedCharacters = [
   {
     name: 'LUNA',
     role: 'Controladora magnética',
-    image: '/images/retroville/luna-character-large.png',
+    district: 'Top Slot',
+    image: '/images/retroville/luna-character-large.webp',
     accent: '#ff78b7',
     status: 'Render final disponible',
     description:
@@ -60,7 +78,8 @@ const renderedCharacters = [
   {
     name: 'NORA',
     role: 'Vecina del Riverside District',
-    image: '/images/retroville/characters/nora.png',
+    district: 'Riverside District',
+    image: '/images/retroville/characters/nora.webp',
     accent: '#b99bd3',
     status: 'Render final disponible',
     description:
@@ -70,7 +89,8 @@ const renderedCharacters = [
   {
     name: 'JOY & GRUMP',
     role: 'Vecinos controladores',
-    image: '/images/retroville/characters/joy-grump.png',
+    district: 'Memory Leak Lane',
+    image: '/images/retroville/characters/joy-grump.webp',
     accent: '#d4474b',
     status: 'Render final disponible',
     description:
@@ -80,7 +100,8 @@ const renderedCharacters = [
   {
     name: 'TRIMP',
     role: 'Motion controller competitivo',
-    image: '/images/retroville/characters/trimp.png',
+    district: 'Playfield Complex',
+    image: '/images/retroville/characters/trimp.webp',
     accent: '#d46cff',
     status: 'Render final disponible',
     description:
@@ -90,7 +111,8 @@ const renderedCharacters = [
   {
     name: 'PATROL CHIEF',
     role: 'Jefe de policía',
-    image: '/images/retroville/characters/patrol-chief.png',
+    district: 'Reset Avenue Precinct',
+    image: '/images/retroville/characters/patrol-chief.webp',
     accent: '#4f85c7',
     status: 'Render final disponible',
     description:
@@ -100,7 +122,8 @@ const renderedCharacters = [
   {
     name: 'PUBLIC CREW',
     role: 'Transporte público',
-    image: '/images/retroville/characters/public-crew.png',
+    district: 'Transit Loop',
+    image: '/images/retroville/characters/public-crew.webp',
     accent: '#d75f5f',
     status: 'Render final disponible',
     description:
@@ -110,7 +133,8 @@ const renderedCharacters = [
   {
     name: 'SHIFT STICK',
     role: 'Operador de tránsito',
-    image: '/images/retroville/characters/crux.png',
+    district: 'Central Station',
+    image: '/images/retroville/characters/crux.webp',
     accent: '#d6c0a2',
     status: 'Render final disponible',
     description:
@@ -120,7 +144,8 @@ const renderedCharacters = [
   {
     name: 'MAYOR TUBE',
     role: 'Alcalde de Retroville',
-    image: '/images/retroville/characters/mayor-tube.png',
+    district: 'City Hall / Power Plaza',
+    image: '/images/retroville/characters/mayor-tube.webp',
     accent: '#d6a85a',
     status: 'Render final disponible',
     description:
@@ -130,7 +155,8 @@ const renderedCharacters = [
   {
     name: 'TOMO',
     role: 'Kid de Retroville',
-    image: '/images/retroville/characters/tomo.png',
+    district: 'Pixel Park',
+    image: '/images/retroville/characters/tomo.webp',
     accent: '#d77870',
     status: 'Render final disponible',
     description:
@@ -140,7 +166,8 @@ const renderedCharacters = [
   {
     name: 'PIPO',
     role: 'Kid de Retroville',
-    image: '/images/retroville/characters/pipo.png',
+    district: 'Glitch Market',
+    image: '/images/retroville/characters/pipo.webp',
     accent: '#db5b6e',
     status: 'Render final disponible',
     description:
@@ -150,7 +177,8 @@ const renderedCharacters = [
   {
     name: 'NANO',
     role: 'Pocket MP3 kid',
-    image: '/images/retroville/characters/nano.png',
+    district: 'Sound Alley',
+    image: '/images/retroville/characters/nano.webp',
     accent: '#8d78ff',
     status: 'Render final disponible',
     description:
@@ -160,7 +188,8 @@ const renderedCharacters = [
   {
     name: 'MIA',
     role: 'Influencer de Retroville',
-    image: '/images/retroville/characters/influencer.png',
+    district: 'Broadcast Row',
+    image: '/images/retroville/characters/influencer.webp',
     accent: '#ff7fbf',
     status: 'Render final disponible',
     description:
@@ -173,7 +202,8 @@ const ensembleCharacters = [
   {
     name: 'REPARTO DE CALLE',
     role: 'Figurantes, currantes y ciudadanos',
-    image: '/images/retroville/characters/ensemble-citizens.png',
+    district: '8-Bit Boulevard',
+    image: '/images/retroville/characters/ensemble-citizens.webp',
     accent: '#6fd2ff',
     description:
       'Grupo de apoyo para poblar estaciones, barrios, oficinas y rincones de paso. Aquí es donde Retroville empieza a sentirse como ciudad habitada y no solo como concepto bonito.',
@@ -182,7 +212,8 @@ const ensembleCharacters = [
   {
     name: 'JOW & ANDREW',
     role: 'Duo emocional / escena íntima',
-    image: '/images/retroville/characters/jow-andrew.png',
+    district: 'Riverside District',
+    image: '/images/retroville/characters/jow-andrew.webp',
     accent: '#f2a8c9',
     description:
       'Una pieza más cálida dentro del universo: nostalgia, afecto y diseño de personajes pensado para escenas que bajan el ruido y dejan espacio a vínculo real.',
@@ -191,7 +222,8 @@ const ensembleCharacters = [
   {
     name: 'MAFIA DE RETROVILLE',
     role: 'Facción social de presión',
-    image: '/images/retroville/characters/retroville-mafia.png',
+    district: 'Cartridge Quarter',
+    image: '/images/retroville/characters/retroville-mafia.webp',
     accent: '#c98b34',
     description:
       'No todo el caos de la ciudad es espontáneo. Esta facción empuja jerarquías, barrio, amenaza y presencia visual más dura para equilibrar el tono cómico con tensión.',
@@ -199,59 +231,120 @@ const ensembleCharacters = [
   },
 ] as const;
 
-const developmentSheets = [
+const colorGuideSlides = [
   {
-    title: 'FIGURANTE DE BOTONES',
-    tag: 'Hoja base',
-    image: '/images/retroville/characters/button-crew-sheet.png',
-    text: 'La estructura del grupo A / B / X / Y con poses, volumen y personalidad antes del acabado final.',
+    title: 'NOX style guide',
+    image: '/images/retroville/nox-styleguide.png',
+    alt: 'Guía visual a color de NOX con actitud, silueta y acabado final para Retroville',
   },
   {
-    title: 'BASES ANATOMICAS',
-    tag: 'Proceso',
-    image: '/images/retroville/characters/character-anatomy-sheet.png',
-    text: 'NOX, GLAM3 y Luna antes del vestuario final: proporciones, silueta y lectura corporal del reparto principal.',
+    title: 'Button Crew style guide',
+    image: '/images/retroville/button-crew-styleguide.webp',
+    alt: 'Guía visual a color del Button Crew con personalidad y acabado final del grupo en Retroville',
   },
   {
-    title: 'STYLE GUIDE DEL CAOS',
-    tag: 'Refinamiento',
-    image: '/images/retroville/button-crew-styleguide.png',
-    text: 'Una fase más pulida para fijar actitud, expresividad y consistencia visual del Button Crew.',
+    title: 'Luna style guide',
+    image: '/images/retroville/luna-styleguide.png',
+    alt: 'Guía visual a color de Luna con pose, textura y acabado final del personaje en Retroville',
   },
 ] as const;
 
 export default function RetrovilleCharactersPage() {
+  const pageSchema = buildCollectionPageJsonLd({
+    name: 'Personajes de Retroville',
+    path: '/retroville/personajes',
+    description:
+      'Página de reparto de Retroville con personajes principales, elenco secundario y material visual del universo original de AdvancedRetro.',
+    image: '/images/retroville/retroville-cast-presentation.png',
+    about: ['NOX', 'Luna', 'Button Crew', 'Serie original Retroville', 'Animacion retro'],
+  });
+  const castSchema = buildItemListJsonLd(
+    renderedCharacters.map((character) => ({
+      name: character.name,
+      path: `/retroville/personajes#${toCharacterAnchor(character.name)}`,
+      image: character.image,
+      description: character.description,
+    })),
+    'Reparto principal de Retroville'
+  );
+  const breadcrumbs = buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/' },
+    { name: 'Retroville', path: '/retroville' },
+    { name: 'Personajes', path: '/retroville/personajes' },
+  ]);
+  const retrovilleSeriesSchema = buildRetrovilleSeriesJsonLd({
+    path: '/retroville/personajes',
+    description:
+      'Página oficial del reparto de Retroville con personajes, distritos, renders finales y material de desarrollo de la serie original.',
+    image: '/images/retroville/retroville-cast-presentation.png',
+    name: 'Personajes de Retroville',
+  });
+
   return (
-    <main className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} ${styles.page}`}>
+    <>
+      <StructuredData
+        id="retroville-characters-schema"
+        data={[pageSchema, retrovilleSeriesSchema, castSchema, breadcrumbs]}
+      />
+      <main className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} ${styles.page}`}>
       <header className={styles.hero}>
         <nav className={styles.nav} aria-label="Navegación personajes Retroville">
           <Link href="/retroville" className={styles.backLink}>
             <ArrowLeft className="h-4 w-4" /> Volver a Retroville
           </Link>
-          <Image src="/images/retroville/retroville-logo.png" alt="Retroville" width={260} height={173} className={styles.logo} priority />
+          <Image src="/images/retroville/retroville-logo.webp" alt="Logo de Retroville" width={260} height={173} className={styles.logo} priority />
         </nav>
 
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>Cast development</p>
           <h1 className={`${displayFont.className} ${styles.heroTitle}`}>PERSONAJES DE RETROVILLE</h1>
+          <div className="mt-4 inline-flex items-center rounded-full border border-[#8ad7ff]/20 bg-[#8ad7ff]/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-[#8ad7ff]">
+            14 personajes · 3 en desarrollo
+          </div>
           <p>
             Página de reparto con renders transparentes listos para enseñar en formato más limpio. Las fichas largas y
             guías de estilo quedan para el entorno dev; aquí priorizamos presencia, tono y lectura rápida.
           </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/retroville/sketches" className={styles.footerCta}>
+              Ver sketchbook <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="/retroville/presentaciones" className={styles.footerCta}>
+              Ver presentación <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link href="/retroville/press" className={styles.footerCta}>
+              Press kit <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </header>
 
       <section className={styles.renderedSection} aria-label="Personajes con render final">
         {renderedCharacters.map((character, index) => (
-          <article key={character.name} className={`${styles.characterPanel} ${index % 2 === 1 ? styles.characterPanelReverse : ''}`}>
+          <article
+            key={character.name}
+            id={toCharacterAnchor(character.name)}
+            className={`${styles.characterPanel} ${index % 2 === 1 ? styles.characterPanelReverse : ''}`}
+          >
             <div className={styles.characterImageStage} style={{ ['--accent' as string]: character.accent }}>
               <div className={styles.characterAura} />
-              <Image src={character.image} alt={character.name} width={1100} height={1500} className={styles.characterImage} priority={index === 0} />
+              <Image
+                src={character.image}
+                alt={`Render de ${character.name}, personaje de Retroville del distrito ${character.district}`}
+                width={1100}
+                height={1500}
+                className={styles.characterImage}
+                priority={index === 0}
+                loading={index === 0 ? undefined : 'lazy'}
+              />
             </div>
             <div className={styles.characterCopy}>
               <p className={styles.eyebrow}>{character.status}</p>
               <h2 className={`${displayFont.className} ${styles.characterName}`}>{character.name}</h2>
               <p className={styles.role}>{character.role}</p>
+              <p className="mb-6 mt-[-12px] text-sm uppercase tracking-[0.18em] text-[rgba(138,215,255,0.84)] [font-family:var(--font-mono)]">
+                Distrito · {character.district}
+              </p>
               <p className={styles.description}>{character.description}</p>
               <div className={styles.factRow}>
                 {character.facts.map((fact) => (
@@ -280,15 +373,19 @@ export default function RetrovilleCharactersPage() {
                 <div className={styles.ensembleGlow} />
                 <Image
                   src={character.image}
-                  alt={character.name}
+                  alt={`Render del grupo ${character.name} en Retroville, vinculado al distrito ${character.district}`}
                   fill
                   sizes="(max-width: 980px) 100vw, 33vw"
                   className={styles.ensembleImage}
+                  loading="lazy"
                 />
               </div>
               <div className={styles.ensembleCopy}>
                 <p className={styles.eyebrow}>{character.role}</p>
                 <h3 className={`${displayFont.className} ${styles.placeholderName}`}>{character.name}</h3>
+                <p className="mt-2 text-sm uppercase tracking-[0.18em] text-[rgba(138,215,255,0.84)] [font-family:var(--font-mono)]">
+                  Distrito · {character.district}
+                </p>
                 <p>{character.description}</p>
                 <div className={styles.factRow}>
                   {character.facts.map((fact) => (
@@ -301,31 +398,20 @@ export default function RetrovilleCharactersPage() {
         </div>
       </section>
 
-      <section className={styles.plannedSection} aria-label="Hojas de diseño y desarrollo">
-        <div className={styles.sectionHeader}>
-          <p className={styles.eyebrow}>Archivo visual</p>
-          <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>HOJAS DE DISENO Y PROCESO</h2>
-          <p>
-            No todo está en render final. Esta parte enseña cómo se piensan las proporciones, las poses y la energía del reparto antes de cerrar cada personaje.
-          </p>
-        </div>
-
-        <div className={styles.sheetGrid}>
-          {developmentSheets.map((sheet) => (
-            <article key={sheet.title} className={styles.sheetCard}>
-              <div className={styles.sheetImageWrap}>
+      <section className={styles.visualGuidesSection} aria-label="Guías visuales a color de Retroville">
+        <h2 className={styles.srOnly}>Guías visuales a color</h2>
+        <div className={styles.visualGuidesRail}>
+          {colorGuideSlides.map((guide) => (
+            <article key={guide.title} className={styles.visualGuideCard} aria-label={guide.title}>
+              <div className={styles.visualGuideImageWrap}>
                 <Image
-                  src={sheet.image}
-                  alt={sheet.title}
+                  src={guide.image}
+                  alt={guide.alt}
                   fill
-                  sizes="(max-width: 980px) 100vw, 33vw"
-                  className={styles.sheetImage}
+                  sizes="(max-width: 640px) 72vw, (max-width: 980px) 42vw, 28vw"
+                  className={styles.visualGuideImage}
+                  loading="lazy"
                 />
-              </div>
-              <div className={styles.sheetCopy}>
-                <span className={styles.eyebrow}>{sheet.tag}</span>
-                <h3 className={`${displayFont.className} ${styles.placeholderName}`}>{sheet.title}</h3>
-                <p>{sheet.text}</p>
               </div>
             </article>
           ))}
@@ -333,10 +419,22 @@ export default function RetrovilleCharactersPage() {
       </section>
 
       <footer className={styles.footer}>
-        <Link href="/retroville/sketches" className={styles.footerCta}>
-          Ver sketches del mundo <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link href="/retroville/presentaciones" className={styles.footerCta}>
+            Ver presentación oficial <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link href="/retroville/sketches" className={styles.footerCta}>
+            Ver sketches del mundo <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link href="/retroville/press" className={styles.footerCta}>
+            Descargar press kit <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link href="/retroville/faq" className={styles.footerCta}>
+            Ver FAQ <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </footer>
-    </main>
+      </main>
+    </>
   );
 }

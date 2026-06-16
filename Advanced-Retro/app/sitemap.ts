@@ -13,8 +13,11 @@ const STATIC_ROUTES = [
   '/subastas',
   '/ruleta',
   '/retroville',
+  '/retroville/faq',
   '/retroville/legal',
   '/retroville/personajes',
+  '/retroville/press',
+  '/retroville/presentaciones',
   '/retroville/sketches',
   '/creator',
   '/memberships',
@@ -37,8 +40,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
     url: `${siteUrl}${path}`,
     lastModified: now,
-    changeFrequency: path === '/' || path === '/tienda' ? 'daily' : 'weekly',
-    priority: path === '/' ? 1 : path === '/tienda' ? 0.95 : path === '/comunidad' ? 0.85 : 0.7,
+    changeFrequency:
+      path === '/' || path === '/tienda' || path === '/retroville'
+        ? 'daily'
+        : path.startsWith('/retroville/')
+          ? 'weekly'
+          : 'weekly',
+    priority:
+      path === '/'
+        ? 1
+        : path === '/tienda'
+          ? 0.95
+          : path === '/retroville'
+            ? 0.92
+            : path.startsWith('/retroville/')
+              ? 0.84
+              : path === '/comunidad'
+                ? 0.85
+                : 0.7,
   }));
 
   const platformEntries: MetadataRoute.Sitemap = PLATFORM_LANDING_SLUGS.map((slug) => ({

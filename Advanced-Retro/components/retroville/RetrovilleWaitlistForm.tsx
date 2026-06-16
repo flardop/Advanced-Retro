@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { RETROVILLE_NEWSLETTER_NAME } from '@/app/retroville/shared';
+import { getTrackerClientContext } from '@/lib/admin/tracker';
 
 type Props = {
-  source?: 'public' | 'dev';
+  source?: string;
   showRole?: boolean;
   buttonLabel?: string;
   successMessage?: string;
@@ -13,8 +15,8 @@ type Props = {
 export default function RetrovilleWaitlistForm({
   source = 'public',
   showRole = false,
-  buttonLabel = 'Quiero ser el primero',
-  successMessage = 'Perfecto. Ya estás dentro de la lista de espera de Retroville.',
+  buttonLabel = 'Quiero recibir la señal',
+  successMessage = `Perfecto. Ya estás dentro de ${RETROVILLE_NEWSLETTER_NAME}.`,
   darkMode = true,
 }: Props) {
   const [email, setEmail] = useState('');
@@ -34,6 +36,7 @@ export default function RetrovilleWaitlistForm({
     setSuccess(null);
 
     try {
+      const trackingContext = getTrackerClientContext();
       const response = await fetch('/api/retroville/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -41,6 +44,13 @@ export default function RetrovilleWaitlistForm({
           email,
           role_label: showRole ? roleLabel : null,
           source,
+          path: trackingContext.path,
+          page_title: trackingContext.pageTitle,
+          session_id: trackingContext.sessionId,
+          device_type: trackingContext.deviceType,
+          browser: trackingContext.browser,
+          os: trackingContext.os,
+          referrer: trackingContext.referrer,
         }),
       });
 
@@ -50,6 +60,30 @@ export default function RetrovilleWaitlistForm({
       }
 
       setSuccess(successMessage);
+      if (typeof window !== 'undefined') {
+        window.gtag?.('event', 'retroville_newsletter_signup', {
+          event_category: 'retroville',
+          event_label: source,
+          page_path: trackingContext.path,
+          device_type: trackingContext.deviceType,
+        });
+        window.plausible?.('Retroville newsletter signup', {
+          props: {
+            source,
+            page: trackingContext.path,
+            device: trackingContext.deviceType,
+          },
+        });
+        window.dispatchEvent(
+          new CustomEvent('retroville:newsletter-signup', {
+            detail: {
+              source,
+              page: trackingContext.path,
+              deviceType: trackingContext.deviceType,
+            },
+          })
+        );
+      }
       setEmail('');
       if (showRole) setRoleLabel('Fan');
     } catch (submitError) {

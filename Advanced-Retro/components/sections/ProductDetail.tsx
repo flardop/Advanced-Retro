@@ -1513,6 +1513,27 @@ export default function ProductDetail({
             </div>
           </div>
 
+          <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+            <div className="rounded-xl border border-line bg-[rgba(9,17,28,0.56)] px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.12em] text-primary">Envío</p>
+              <p className="mt-1 text-textMuted">Preparación desde España y actualización de seguimiento cuando aplique.</p>
+            </div>
+            <Link
+              href="/terminos"
+              className="rounded-xl border border-line bg-[rgba(9,17,28,0.56)] px-4 py-3 transition hover:border-primary/40 hover:text-text"
+            >
+              <p className="text-xs uppercase tracking-[0.12em] text-primary">Devoluciones</p>
+              <p className="mt-1 text-textMuted">Ventana general de 14 días cuando corresponda. Ver condiciones completas.</p>
+            </Link>
+            <Link
+              href="/contacto"
+              className="rounded-xl border border-line bg-[rgba(9,17,28,0.56)] px-4 py-3 transition hover:border-primary/40 hover:text-text"
+            >
+              <p className="text-xs uppercase tracking-[0.12em] text-primary">Compatibilidad y estado</p>
+              <p className="mt-1 text-textMuted">Si tienes dudas antes de comprar, te respondemos por soporte.</p>
+            </Link>
+          </div>
+
           <div className="mt-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
             <button
               type="button"

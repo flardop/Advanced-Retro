@@ -4,27 +4,20 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { Bebas_Neue, DM_Sans, Space_Mono } from 'next/font/google';
+import RetrovilleAudienceProof from '@/components/retroville/RetrovilleAudienceProof';
 import RetrovilleCountdown from '@/components/retroville/RetrovilleCountdown';
+import RetrovilleProductionDesk from '@/components/retroville/RetrovilleProductionDesk';
 import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
+import {
+  RETROVILLE_NEWSLETTER_NAME,
+  shouldShowRetrovilleSignupCount,
+} from '@/app/retroville/shared';
+import {
+  retrovilleBodyFont as bodyFont,
+  retrovilleMobileDisplayFont as displayFont,
+  retrovilleMonoFont as monoFont,
+} from '@/lib/retroville/fonts';
 import styles from './retroville-experience.module.css';
-
-const displayFont = Bebas_Neue({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-display',
-});
-
-const monoFont = Space_Mono({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-mono',
-});
-
-const bodyFont = DM_Sans({
-  subsets: ['latin'],
-  variable: '--font-body',
-});
 
 const titleLetters = ['R', 'E', 'T', 'R', 'O', 'V', 'I', 'L', 'L', 'E'] as const;
 const marqueeItems = [
@@ -180,7 +173,7 @@ const worldbuildingItems = [
     text: 'Donde el hardware va a morir lentamente. Consolas medio encendidas, cables que ya no conectan a nada, letreros de neón que parpadean mensajes de juegos que ya no existen. El lugar más honesto de Retroville.',
     reference: 'Concept art de calles, señalética y restos urbanos del distrito.',
     reverse: false,
-    image: '/images/retroville/retroville-urban-props-concept.png',
+    image: '/images/retroville/retroville-urban-props-concept.webp',
     imageAlt: 'Concept art de The Neon Boneyard',
     imagePosition: 'center center',
   },
@@ -211,7 +204,7 @@ const transitSections = [
   {
     title: 'RETROVILLE METRO POD',
     text: 'Movilidad compacta para una ciudad rara: cápsulas, trenes y sistemas que parecen diseñados dentro de una consola.',
-    image: '/images/retroville/retroville-metro-pod-concept.png',
+    image: '/images/retroville/retroville-metro-pod-concept.webp',
     alt: 'Concept art del metro pod de Retroville',
   },
   {
@@ -238,7 +231,7 @@ const ecosystemCards = [
   {
     title: 'COMERCIO Y CALLE',
     text: 'Kioscos, bares, props urbanos y objetos cotidianos que hacen que cada rincón parezca habitable.',
-    image: '/images/retroville/retroville-urban-props-concept.png',
+    image: '/images/retroville/retroville-urban-props-concept.webp',
     alt: 'Concept art de props y comercio urbano en Retroville',
   },
   {
@@ -289,11 +282,6 @@ const retrovilleSocials = [
     ariaLabel: 'Abrir Discord de Retroville',
   },
   {
-    label: 'Reddit',
-    href: 'https://www.reddit.com/user/Flardop/',
-    ariaLabel: 'Abrir Reddit de Retroville',
-  },
-  {
     label: 'Facebook',
     href: 'https://www.facebook.com/profile.php?id=61590571767017',
     ariaLabel: 'Abrir Facebook de Retroville',
@@ -307,6 +295,47 @@ const retrovilleSocials = [
     label: 'Kickstarter',
     href: 'https://www.kickstarter.com/profile/1318310768',
     ariaLabel: 'Abrir Kickstarter de Retroville',
+  },
+] as const;
+
+const productLine = 'Retroville es una serie animada original ambientada en una ciudad construida con hardware abandonado.';
+const launchEventCopy =
+  'El 10 de noviembre de 2026 llega la primera señal publica de Retroville: activamos el primer reveal, abrimos el siguiente drop y avisamos primero a quienes ya reciben La Señal.';
+const waitlistBenefits = [
+  'Aviso prioritario el dia del primer reveal publico.',
+  'Una señal quincenal con avances, materiales y drops del proyecto.',
+  'Acceso anticipado a nuevos archivos y contenido exclusivo del desarrollo.',
+] as const;
+const landingCharacterTeasers = [
+  {
+    name: 'NOX',
+    district: 'Console Core',
+    text: 'El protagonista cansado que mantiene el nucleo vivo mientras la ciudad le devuelve sarcasmo.',
+  },
+  {
+    name: 'LUNA',
+    district: 'Top Slot',
+    text: 'Encanto toxico, control social y la clase de presencia que convierte cualquier escena en problema.',
+  },
+  {
+    name: 'BUTTON CREW',
+    district: 'Power Plaza',
+    text: 'Pandilla de botones, ruido colectivo y caos vecinal listo para sitcom adulta.',
+  },
+] as const;
+
+const landingDepthCards = [
+  {
+    label: '14+ personajes',
+    text: 'Reparto principal, vecinos, facciones y figurantes con identidad propia.',
+  },
+  {
+    label: 'Masterplan de ciudad',
+    text: 'Distritos, movilidad, barrios y un mapa que ya se siente habitable.',
+  },
+  {
+    label: 'Sketchbook vivo',
+    text: 'Tableros de traduccion visual y archivo que sigue creciendo.',
   },
 ] as const;
 
@@ -379,6 +408,7 @@ export default function RetrovilleExperience({
 
   const repeatedMarqueeItems = [...marqueeItems, ...marqueeItems];
   const waitlistGoal = 5000;
+  const showAudienceCount = shouldShowRetrovilleSignupCount(waitlistCount);
   const waitlistPct = waitlistCount > 0 ? clamp(waitlistCount / waitlistGoal, 0, 1) : 0;
 
   const scrollToWaitlist = () => {
@@ -409,8 +439,8 @@ export default function RetrovilleExperience({
         <div className="relative z-10 mx-auto mt-10 grid max-w-[1440px] items-center gap-10 lg:grid-cols-[minmax(0,0.28fr)_minmax(0,0.44fr)_minmax(0,0.28fr)] lg:gap-6 xl:gap-10">
           <div className={`${styles.heroCharacter} hidden lg:block`}>
             <Image
-              src="/images/retroville/nox-push.png"
-              alt=""
+              src="/images/retroville/nox-push.webp"
+              alt="Silueta de NOX empujando el núcleo de Retroville"
               fill
               sizes="28vw"
               className={`${styles.heroWash} ${styles.heroWashImage}`}
@@ -419,7 +449,7 @@ export default function RetrovilleExperience({
             />
             <div className={`${styles.heroAura} ${styles.heroAuraLeft}`} />
             <Image
-              src="/images/retroville/nox-push.png"
+              src="/images/retroville/nox-push.webp"
               alt="NOX empujando el núcleo de Retroville"
               fill
               priority
@@ -436,7 +466,7 @@ export default function RetrovilleExperience({
             </div>
             <div className="mx-auto mt-6 w-full max-w-[270px] sm:max-w-[320px]">
               <Image
-                src="/images/retroville/retroville-logo.png"
+                src="/images/retroville/retroville-logo.webp"
                 alt="Logo de Retroville"
                 width={1536}
                 height={1023}
@@ -476,8 +506,14 @@ export default function RetrovilleExperience({
             <p className="mx-auto mt-6 max-w-[18ch] text-[clamp(2rem,4vw,3.1rem)] font-semibold leading-[1.02] text-white">
               Every forgotten game ends up somewhere.
             </p>
+            <p className="mx-auto mt-5 max-w-[42rem] text-base font-semibold leading-8 text-white sm:text-lg">
+              {productLine}
+            </p>
             <p className="mx-auto mt-6 max-w-[42rem] text-base leading-8 text-[var(--rv-text-muted)] sm:text-lg">
-              Una ciudad de neón, hardware abandonado y personajes que se niegan a apagarse. Retroville no quiere parecer un teaser más. Quiere sentirse como un universo que ya existía antes de que entraras.
+              Una ciudad de neon, hardware abandonado y personajes que se niegan a apagarse. Retroville no quiere parecer un teaser mas. Quiere sentirse como un universo que ya existia antes de que entraras.
+            </p>
+            <p className="mx-auto mt-4 max-w-[42rem] text-sm leading-7 text-[var(--rv-gold)] sm:text-base">
+              NOX lo resumiria peor, pero mas claro: &quot;Aqui hasta los cartuchos muertos siguen pagando alquiler.&quot;
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <button
@@ -488,12 +524,6 @@ export default function RetrovilleExperience({
                 Entrar en Retroville
                 <ArrowRight className="h-4 w-4" />
               </button>
-              <Link
-                href="/retroville/presentaciones"
-                className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:border-[var(--rv-cyan)]/30 hover:bg-white/[0.08]"
-              >
-                Ver 5 tratamientos
-              </Link>
               <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-text-dim)]">Lanzamiento previsto · {launchLabel}</p>
             </div>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
@@ -514,8 +544,8 @@ export default function RetrovilleExperience({
 
           <div className={`${styles.heroCharacter} hidden lg:block`}>
             <Image
-              src="/images/retroville/button-crew-push.png"
-              alt=""
+              src="/images/retroville/button-crew-push.webp"
+              alt="Silueta del Button Crew empujando el núcleo de Retroville"
               fill
               sizes="30vw"
               className={`${styles.heroWash} ${styles.heroWashImage}`}
@@ -524,7 +554,7 @@ export default function RetrovilleExperience({
             />
             <div className={`${styles.heroAura} ${styles.heroAuraRight}`} />
             <Image
-              src="/images/retroville/button-crew-push.png"
+              src="/images/retroville/button-crew-push.webp"
               alt="Button Crew empujando hacia el centro del universo Retroville"
               fill
               priority
@@ -539,7 +569,7 @@ export default function RetrovilleExperience({
         <div className="relative z-10 mt-12 grid gap-4 lg:hidden">
           <div className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-[rgba(7,10,20,0.72)] shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
             <Image
-              src="/images/retroville/retroville-central-plaza-concept.png"
+              src="/images/retroville/retroville-central-plaza-concept.webp"
               alt="Concept art de la plaza central de Retroville"
               width={1600}
               height={1200}
@@ -552,11 +582,11 @@ export default function RetrovilleExperience({
               <p className={`${displayFont.className} mt-2 text-2xl uppercase text-white`}>La ciudad ya existe</p>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="relative overflow-hidden rounded-[1.7rem] border border-white/8 bg-[rgba(7,10,20,0.72)]">
-              <Image
-                src="/images/retroville/luna-nox-lounge.png"
-                alt="Luna y NOX en un interior de Retroville"
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="relative overflow-hidden rounded-[1.7rem] border border-white/8 bg-[rgba(7,10,20,0.72)]">
+                <Image
+                src="/images/retroville/retroville-cast-presentation.webp"
+                alt="NOX, Luna y Button Crew presentando el reparto central de Retroville"
                 width={1400}
                 height={900}
                 sizes="(max-width: 640px) 100vw, 50vw"
@@ -565,13 +595,13 @@ export default function RetrovilleExperience({
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.08),transparent_30%,rgba(4,4,10,0.82))]" />
               <div className="absolute inset-x-0 bottom-0 p-4">
                 <p className="text-[10px] uppercase tracking-[0.24em] text-pink-200/84">Personajes</p>
-                <p className={`${displayFont.className} mt-2 text-xl uppercase text-white`}>Tensión social</p>
+                <p className={`${displayFont.className} mt-2 text-xl uppercase text-white`}>Reparto central</p>
               </div>
             </div>
             <div className="relative overflow-hidden rounded-[1.7rem] border border-white/8 bg-[rgba(7,10,20,0.72)]">
               <Image
-                src="/images/retroville/retroville-nightclub-concept.png"
-                alt="Concept art del nightlife de Retroville"
+                src="/images/retroville/process/masterplan-overview-board.png"
+                alt="Masterplan general del universo Retroville"
                 width={1400}
                 height={900}
                 sizes="(max-width: 640px) 100vw, 50vw"
@@ -579,8 +609,8 @@ export default function RetrovilleExperience({
               />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.08),transparent_30%,rgba(4,4,10,0.82))]" />
               <div className="absolute inset-x-0 bottom-0 p-4">
-                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Lugares</p>
-                <p className={`${displayFont.className} mt-2 text-xl uppercase text-white`}>Noche y ruido</p>
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Sistema</p>
+                <p className={`${displayFont.className} mt-2 text-xl uppercase text-white`}>Mapa y proceso</p>
               </div>
             </div>
           </div>
@@ -604,6 +634,88 @@ export default function RetrovilleExperience({
                 {item}
               </span>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[var(--rv-bg-section-alt)] px-6 py-20 sm:px-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-green)]">Que hay ya dentro</p>
+            <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,8vw,5.2rem)] uppercase text-white`}>UN UNIVERSO YA PRESENTABLE</h2>
+            <p className="mx-auto mt-5 max-w-[46rem] text-base leading-8 text-[var(--rv-text-muted)] sm:text-lg">
+              Antes del manifiesto, esto es lo importante: Retroville ya tiene reparto, mapa de ciudad y un archivo de proceso vivo que demuestra que el proyecto esta en marcha.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {landingDepthCards.map((card) => (
+              <article
+                key={card.label}
+                className="rounded-[1.6rem] border border-white/8 bg-[rgba(11,14,24,0.94)] p-5 shadow-[0_18px_44px_rgba(0,0,0,0.2)]"
+              >
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-green)]">Estado actual</p>
+                <h3 className={`${displayFont.className} mt-3 text-[2rem] uppercase leading-[0.95] text-white`}>{card.label}</h3>
+                <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)]">{card.text}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-12">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-cyan)]">Teaser de reparto</p>
+                <h3 className={`${displayFont.className} mt-3 text-[2.6rem] uppercase leading-[0.95] text-white`}>TRES PERSONAJES PARA ENTRAR</h3>
+              </div>
+              <Link
+                href="/retroville/personajes"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/86 transition hover:border-[var(--rv-green)]/30 hover:bg-white/[0.08] hover:text-white"
+              >
+                Ver reparto completo
+              </Link>
+            </div>
+
+            <div className="mt-6 grid gap-4">
+              {landingCharacterTeasers.map((character) => (
+                <article key={character.name} className="rounded-[1.6rem] border border-white/8 bg-[rgba(11,14,24,0.94)] p-5">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">{character.district}</p>
+                  <h4 className={`${displayFont.className} mt-3 text-[2.1rem] uppercase leading-[0.95] text-white`}>{character.name}</h4>
+                  <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)]">{character.text}</p>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/retroville/personajes"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[var(--rv-green)] px-6 py-3 text-sm font-bold text-black transition hover:brightness-110"
+              >
+                Abrir personajes
+              </Link>
+              <Link
+                href="/retroville/sketches"
+                className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:border-[var(--rv-cyan)]/30 hover:bg-white/[0.08]"
+              >
+                Abrir sketchbook
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[var(--rv-bg-deep)] px-6 py-20 sm:px-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-cyan)]">Production desk</p>
+            <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,8vw,5.2rem)] uppercase text-white`}>
+              BIBLIA Y DOSSIERS
+            </h2>
+            <p className="mx-auto mt-5 max-w-[44rem] text-base leading-8 text-[var(--rv-text-muted)] sm:text-lg">
+              El universo ya puede enseñar materiales tecnicos. Lo que esta listo se descarga ya. Lo que aun sigue en desarrollo aparece marcado como incoming.
+            </p>
+          </div>
+          <div className="mt-12">
+            <RetrovilleProductionDesk mode="mobile" />
           </div>
         </div>
       </section>
@@ -655,7 +767,7 @@ export default function RetrovilleExperience({
                 <div className="relative h-[340px] sm:h-[420px]">
                   <Image
                     src={character.image}
-                    alt={character.name}
+                    alt={`Render de ${character.name}, personaje principal de Retroville vinculado al distrito ${character.origin}`}
                     fill
                     sizes="100vw"
                     className={character.imageClassName}
@@ -712,7 +824,13 @@ export default function RetrovilleExperience({
               >
                 <div className="relative h-[360px] overflow-hidden bg-[radial-gradient(circle_at_50%_36%,rgba(138,215,255,0.18),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0))] sm:h-[430px]">
                   <div className="absolute inset-x-[18%] bottom-4 h-16 rounded-full bg-black/45 blur-2xl" />
-                  <Image src={resident.image} alt={resident.name} fill sizes="100vw" className="object-contain object-bottom p-5" />
+                  <Image
+                    src={resident.image}
+                    alt={`Render de ${resident.name}, personaje secundario de Retroville con rol ${resident.role}`}
+                    fill
+                    sizes="100vw"
+                    className="object-contain object-bottom p-5"
+                  />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.02),transparent_58%,rgba(4,4,10,0.82))]" />
                 </div>
                 <div className="px-5 pb-5 pt-4">
@@ -872,6 +990,7 @@ export default function RetrovilleExperience({
           <p className="text-[11px] uppercase tracking-[0.25em] text-[var(--rv-green)]">Cuenta atrás</p>
           <p className={`${displayFont.className} mt-4 text-[clamp(3rem,7vw,5.2rem)] uppercase text-white`}>10 de noviembre de 2026</p>
           <p className="mt-4 text-lg text-[var(--rv-text-muted)]">Ventana objetivo del lanzamiento de Retroville.</p>
+          <p className="mx-auto mt-4 max-w-[42rem] text-sm leading-7 text-white/74 sm:text-base">{launchEventCopy}</p>
           <div className="mt-14">
             <RetrovilleCountdown targetIso={launchIso} />
           </div>
@@ -881,30 +1000,47 @@ export default function RetrovilleExperience({
       <section id="retroville-waitlist" ref={waitlistReveal.ref} className="bg-[linear-gradient(180deg,var(--rv-bg-deep),var(--rv-bg-surface))] px-6 py-24 sm:px-8 lg:px-10">
         <div className={`${styles.waitlistPanel} ${waitlistReveal.visible ? styles.revealVisible : styles.reveal} mx-auto max-w-[980px] px-6 py-10 sm:px-10 sm:py-12`}>
           <div className="mx-auto max-w-[700px] text-center">
-            <p className="text-[11px] uppercase tracking-[0.25em] text-[var(--rv-green)]">Waitlist</p>
-            <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,7vw,5.2rem)] uppercase leading-[0.92] text-white`}>Entra antes que el resto.</h2>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-[var(--rv-green)]">Newsletter</p>
+            <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,7vw,5.2rem)] uppercase leading-[0.92] text-white`}>La Señal de Retroville</h2>
             <p className="mt-5 text-base leading-8 text-[var(--rv-text-muted)] sm:text-lg">
-              Primer drop. Primer personaje jugable. Primera señal de Retroville.
+              No es un formulario generico: es la newsletter oficial para recibir el primer reveal, los drops siguientes y un resumen quincenal del desarrollo del universo.
             </p>
-            {waitlistCount > 0 ? (
+            {showAudienceCount ? (
               <div className="mt-8 rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4 text-left">
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--rv-text-muted)]">
-                  <span>{waitlistCount.toLocaleString('es-ES')} registros</span>
+                  <span>{waitlistCount.toLocaleString('es-ES')} personas ya reciben la senal</span>
                   <span>Objetivo {waitlistGoal.toLocaleString('es-ES')}</span>
                 </div>
-                <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
+              <div className="mt-3 h-3 overflow-hidden rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-[linear-gradient(135deg,var(--rv-green),var(--rv-cyan),var(--rv-purple))]"
                     style={{ width: `${Math.round(waitlistPct * 100)}%` }}
                   />
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <div className="mt-8 rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4 text-left">
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-text-dim)]">Señal actual</p>
+                <p className={`${displayFont.className} mt-3 text-[2rem] uppercase leading-[0.92] text-white`}>Sé de los primeros</p>
+                <p className="mt-2 text-sm leading-7 text-[var(--rv-text-muted)]">La newsletter acaba de abrirse y todavia puedes entrar en la primera tanda.</p>
+              </div>
+            )}
+            <RetrovilleAudienceProof waitlistCount={waitlistCount} />
+            <div className="mt-8 rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-5 text-left">
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Si te apuntas, recibes</p>
+              <div className="mt-3 grid gap-2">
+                {waitlistBenefits.map((benefit) => (
+                  <p key={benefit} className="text-sm leading-7 text-white/78">
+                    {benefit}
+                  </p>
+                ))}
+              </div>
+            </div>
             <div className="mt-10">
               <RetrovilleWaitlistForm
                 darkMode
-                buttonLabel="QUIERO SER EL PRIMERO"
-                successMessage="Perfecto. Ya formas parte de la primera señal de Retroville."
+                buttonLabel={`QUIERO RECIBIR ${RETROVILLE_NEWSLETTER_NAME.toUpperCase()}`}
+                successMessage={`Perfecto. Ya formas parte de ${RETROVILLE_NEWSLETTER_NAME} y recibiras el primer aviso.`}
               />
             </div>
             <div className="mt-12 border-t border-white/8 pt-6 text-sm text-[var(--rv-text-dim)]">
@@ -927,6 +1063,18 @@ export default function RetrovilleExperience({
                   className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 text-[11px] uppercase tracking-[0.2em] text-white/82 transition hover:border-[var(--rv-green)]/30 hover:bg-white/[0.08] hover:text-white"
                 >
                   Legal
+                </Link>
+                <Link
+                  href="/retroville/press"
+                  className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 text-[11px] uppercase tracking-[0.2em] text-white/82 transition hover:border-[var(--rv-green)]/30 hover:bg-white/[0.08] hover:text-white"
+                >
+                  Press
+                </Link>
+                <Link
+                  href="/retroville/faq"
+                  className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 text-[11px] uppercase tracking-[0.2em] text-white/82 transition hover:border-[var(--rv-green)]/30 hover:bg-white/[0.08] hover:text-white"
+                >
+                  FAQ
                 </Link>
               </div>
               <Link href="/" className="mt-3 inline-flex text-white transition hover:text-[var(--rv-green)]">

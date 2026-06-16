@@ -1,45 +1,76 @@
 import type { Metadata } from 'next';
-import RetrovillePitchLab from '@/components/retroville/RetrovillePitchLab';
+import { headers } from 'next/headers';
+import RetrovilleExperience from '@/components/retroville/RetrovilleExperience';
 import StructuredData from '@/components/StructuredData';
-import { buildPageMetadata } from '@/lib/seo';
+import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
 import { absoluteUrl } from '@/lib/siteConfig';
+import { buildRetrovilleSeriesJsonLd, getRetrovilleState } from '@/app/retroville/shared';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Retroville Pitch Lab | 5 tratamientos creativos',
+  title: 'Presentaciones de Retroville | Pitch oficial y reveal del universo',
   description:
-    'Cinco presentaciones alternativas de Retroville con enfoque de pitch de estudio: serie, personajes, worldbuilding y estilo visual sin tocar la experiencia principal.',
+    'Accede a la presentación oficial de Retroville: pitch actual, personajes, worldbuilding, newsletter y materiales base del universo original de AdvancedRetro.',
   path: '/retroville/presentaciones',
+  category: 'entertainment',
+  inheritBaseKeywords: false,
   keywords: [
-    'retroville pitch lab',
-    'retroville presentaciones',
+    'presentaciones retroville',
+    'pitch retroville',
+    'retroville netflix',
     'retroville serie animada',
-    'retroville personajes',
-    'retroville worldbuilding',
-    'retroville bible',
+    'reveal retroville',
+    'universo retroville',
+    'advancedretro pitch',
   ],
-  image: '/images/retroville/retroville-cast-presentation.png',
+  image: '/images/retroville/retroville-street.png',
 });
 
-export default function RetrovillePresentacionesPage() {
-  const presentationSchema = {
+export default async function RetrovillePresentacionesPage() {
+  const { launchIso, launchLabel, waitlistCount } = await getRetrovilleState();
+  const userAgent = (await headers()).get('user-agent') || '';
+  const initialMobileExperience = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+
+  const pageSchema = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Retroville Pitch Lab',
+    name: 'Presentaciones de Retroville',
     url: absoluteUrl('/retroville/presentaciones'),
     description:
-      'Laboratorio de cinco tratamientos creativos para presentar el universo Retroville con distintos enfoques de pitch de estudio.',
-    image: absoluteUrl('/images/retroville/retroville-cast-presentation.png'),
-    isPartOf: {
-      '@type': 'CreativeWorkSeries',
-      name: 'Retroville',
-      url: absoluteUrl('/retroville'),
-    },
+      'Presentación oficial de Retroville con pitch, countdown, newsletter, personajes y worldbuilding del proyecto.',
+    image: absoluteUrl('/images/retroville/retroville-street.png'),
+    about: [
+      { '@type': 'Thing', name: 'Pitch deck de serie original' },
+      { '@type': 'Thing', name: 'Retroville' },
+      { '@type': 'Thing', name: 'Universo narrativo gaming' },
+    ],
   };
+  const retrovilleSeriesSchema = buildRetrovilleSeriesJsonLd({
+    path: '/retroville/presentaciones',
+    description:
+      'Presentación oficial del universo Retroville con tono de serie, personajes, ciudad, newsletter y materiales activos de desarrollo.',
+    image: '/images/retroville/retroville-street.png',
+    name: 'Presentación oficial de Retroville',
+  });
+  const breadcrumbs = buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/' },
+    { name: 'Retroville', path: '/retroville' },
+    { name: 'Presentaciones', path: '/retroville/presentaciones' },
+  ]);
 
   return (
     <>
-      <StructuredData id="retroville-pitch-lab-schema" data={presentationSchema} />
-      <RetrovillePitchLab />
+      <StructuredData
+        id="retroville-presentaciones-schema"
+        data={[pageSchema, retrovilleSeriesSchema, breadcrumbs]}
+      />
+      <RetrovilleExperience
+        launchIso={launchIso}
+        launchLabel={launchLabel}
+        waitlistCount={waitlistCount}
+        initialMobileExperience={initialMobileExperience}
+      />
     </>
   );
 }

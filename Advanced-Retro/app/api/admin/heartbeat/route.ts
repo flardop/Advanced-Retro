@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { NextRequest } from 'next/server';
 import { adminJson } from '@/lib/admin/api';
+import { resolveGeoFromRequest } from '@/lib/admin/geo';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { supabaseService } from '@/lib/supabase/service';
 import { serverLogError } from '@/lib/admin/serverErrorLogger';
@@ -41,6 +42,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServerClient();
     const { data: authData } = await supabase.auth.getUser();
+    const geo = resolveGeoFromRequest(request, payload);
 
     await supabaseService.from('user_sessions').upsert(
       {
@@ -51,8 +53,8 @@ export async function POST(request: NextRequest) {
         browser: readPayloadString(payload, 'browser') || null,
         os: readPayloadString(payload, 'os') || null,
         ip_hash: hashIp(getRequestIp(request)),
-        country: readPayloadString(payload, 'country') || null,
-        city: readPayloadString(payload, 'city') || null,
+        country: geo.country,
+        city: geo.city,
         last_heartbeat: new Date().toISOString(),
       },
       { onConflict: 'session_id' }

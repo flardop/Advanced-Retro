@@ -1,7 +1,9 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-
-const PERSISTENT_SESSION_MAX_AGE = 60 * 60 * 24 * 365 * 5;
+import {
+  PERSISTENT_SESSION_MAX_AGE,
+  SUPABASE_AUTH_STORAGE_KEY,
+} from '@/lib/supabase/config';
 
 export function getSupabaseServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,6 +20,7 @@ export function getSupabaseServerClient() {
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookieOptions: {
+      name: SUPABASE_AUTH_STORAGE_KEY,
       path: '/',
       sameSite: 'lax',
       maxAge: PERSISTENT_SESSION_MAX_AGE,

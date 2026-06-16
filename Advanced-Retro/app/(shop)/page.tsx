@@ -6,6 +6,7 @@ import Benefits from '@/components/sections/Benefits';
 import RetroStory from '@/components/sections/RetroStory';
 import FinalCTA from '@/components/sections/FinalCTA';
 import HomeNarrative from '@/components/sections/HomeNarrative';
+import StoreIdentitySplit from '@/components/sections/StoreIdentitySplit';
 import { redirect } from 'next/navigation';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
 import { getPublicCatalogProducts } from '@/lib/publicCatalog';
@@ -95,6 +96,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeLinksSchema) }}
       />
       <Hero />
+      <StoreIdentitySplit />
       <FeaturedProducts initialProducts={initialFeaturedProducts} />
       <Collections />
       <Benefits />

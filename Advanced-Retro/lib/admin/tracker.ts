@@ -6,7 +6,7 @@ import { TRACKING_HEARTBEAT_MS } from '@/lib/admin/constants';
 
 const STORAGE_KEY = 'advancedretro:admin-tracker-session';
 
-function getSessionId() {
+export function getTrackerSessionId() {
   if (typeof window === 'undefined') return '';
   const existing = window.sessionStorage.getItem(STORAGE_KEY);
   if (existing) return existing;
@@ -15,14 +15,14 @@ function getSessionId() {
   return next;
 }
 
-function detectDeviceType(userAgent: string): 'mobile' | 'desktop' | 'tablet' {
+export function detectDeviceType(userAgent: string): 'mobile' | 'desktop' | 'tablet' {
   const ua = userAgent.toLowerCase();
   if (/ipad|tablet/.test(ua)) return 'tablet';
   if (/mobi|iphone|android/.test(ua)) return 'mobile';
   return 'desktop';
 }
 
-function detectBrowser(userAgent: string) {
+export function detectBrowser(userAgent: string) {
   const ua = userAgent.toLowerCase();
   if (ua.includes('edg/')) return 'Edge';
   if (ua.includes('chrome/')) return 'Chrome';
@@ -31,7 +31,7 @@ function detectBrowser(userAgent: string) {
   return 'Unknown';
 }
 
-function detectOs(userAgent: string) {
+export function detectOs(userAgent: string) {
   const ua = userAgent.toLowerCase();
   if (ua.includes('windows')) return 'Windows';
   if (ua.includes('mac os')) return 'macOS';
@@ -42,7 +42,32 @@ function detectOs(userAgent: string) {
 }
 
 function isTrackedPath(pathname: string) {
-  return !pathname.startsWith('/admin') && pathname !== '/retroville' && pathname !== '/creador-de-tiendas';
+  return !pathname.startsWith('/admin') && pathname !== '/creador-de-tiendas';
+}
+
+export function getTrackerClientContext() {
+  if (typeof window === 'undefined') {
+    return {
+      sessionId: '',
+      path: '/',
+      pageTitle: '',
+      referrer: null as string | null,
+      deviceType: 'desktop' as const,
+      browser: 'Unknown',
+      os: 'Unknown',
+    };
+  }
+
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  return {
+    sessionId: getTrackerSessionId(),
+    path: `${window.location.pathname}${window.location.search || ''}` || '/',
+    pageTitle: document.title,
+    referrer: document.referrer || null,
+    deviceType: detectDeviceType(userAgent),
+    browser: detectBrowser(userAgent),
+    os: detectOs(userAgent),
+  };
 }
 
 export function useAdvancedAdminTracker() {
@@ -51,7 +76,7 @@ export function useAdvancedAdminTracker() {
   const viewIdRef = useRef<string | null>(null);
   const lastPathRef = useRef<string>('');
   const lastSeenAtRef = useRef<number>(Date.now());
-  const sessionId = useMemo(() => getSessionId(), []);
+  const sessionId = useMemo(() => getTrackerSessionId(), []);
 
   useEffect(() => {
     if (!pathname || !isTrackedPath(pathname)) return;

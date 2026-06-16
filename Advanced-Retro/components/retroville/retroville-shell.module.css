@@ -1,0 +1,150 @@
+.shell {
+  position: relative;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.shell[data-cursor='on'],
+.shell[data-cursor='on'] a,
+.shell[data-cursor='on'] button,
+.shell[data-cursor='on'] summary {
+  cursor: none;
+}
+
+.shell[data-cursor='on'] input,
+.shell[data-cursor='on'] textarea,
+.shell[data-cursor='on'] select {
+  cursor: text;
+}
+
+.progressTrack {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 120;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.progressFill {
+  height: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, #00ff88 0%, #7b2fff 52%, #ffd25d 100%);
+  box-shadow: 0 0 24px rgba(0, 255, 136, 0.35);
+  transition: transform 120ms linear;
+}
+
+.content {
+  position: relative;
+  transition:
+    opacity 260ms ease,
+    transform 260ms ease,
+    filter 260ms ease;
+}
+
+.contentTransition {
+  opacity: 0.98;
+  transform: translateY(6px);
+  filter: saturate(0.98);
+}
+
+.cursorGlow,
+.cursorChip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 125;
+  will-change: transform;
+}
+
+.cursorGlow {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(0, 255, 136, 0.24) 0%, rgba(0, 255, 136, 0.08) 55%, transparent 72%);
+  filter: blur(2px);
+}
+
+.cursorChip {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, rgba(16, 20, 34, 0.98) 0%, rgba(7, 9, 16, 0.98) 100%);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 136, 0.14),
+    0 6px 18px rgba(0, 0, 0, 0.28);
+}
+
+.cursorChip::before,
+.cursorChip::after {
+  content: '';
+  position: absolute;
+  background: #00ff88;
+  opacity: 0.78;
+}
+
+.cursorChip::before {
+  inset: 3px 5px;
+  border-radius: 999px;
+}
+
+.cursorChip::after {
+  width: 4px;
+  height: 4px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 18px;
+  z-index: 130;
+  width: min(92vw, 360px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 8, 15, 0.92);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+  padding: 16px 18px;
+  color: white;
+  backdrop-filter: blur(14px);
+}
+
+.toastEyebrow {
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: #00ff88;
+}
+
+.toastTitle {
+  margin-top: 8px;
+  font-size: 1.2rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+.toastBody {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+@media (max-width: 767px) {
+  .progressTrack {
+    height: 2px;
+  }
+
+  .toast {
+    right: 12px;
+    bottom: 12px;
+    padding: 14px 15px;
+  }
+}

@@ -36,10 +36,22 @@ function NavbarContent() {
       label: 'Tienda',
       items: [
         { href: '/tienda', label: 'Catálogo completo', description: 'La tienda oficial de AdvancedRetro.' },
+        { href: '/tienda/game-boy', label: 'Game Boy', description: 'Juegos, cajas y componentes para Game Boy.' },
+        { href: '/tienda/game-boy-advance', label: 'Game Boy Advance', description: 'Selección GBA con foco en compra rápida.' },
+        { href: '/tienda/super-nintendo', label: 'Super Nintendo', description: 'Landing SEO y catálogo dedicado para SNES.' },
+        { href: '/tienda/gamecube', label: 'GameCube', description: 'Catálogo GameCube con hardware y juegos.' },
+        { href: '/tienda?category=platform:consolas', label: 'Consolas retro', description: 'Hardware completo y piezas de colección.' },
+      ],
+    },
+    {
+      key: 'servicios',
+      label: 'Servicios',
+      items: [
         { href: '/mystery-boxes', label: 'Mystery Boxes', description: 'Drops y cajas sorpresa del ecosistema.' },
         { href: '/subastas', label: 'Subastas', description: 'Lotes verificados y pujas en directo.' },
-        { href: '/ruleta', label: 'Ruleta', description: 'Tickets y premios ligados a la capa mystery.' },
         { href: '/servicio-compra', label: 'Encargos', description: 'Búsqueda asistida de piezas concretas.' },
+        { href: '/ruleta', label: 'Ruleta', description: 'Tickets y premios ligados a la capa mystery.' },
+        { href: '/memberships', label: 'Membresías', description: 'Ventajas y acceso preferente a drops.' },
       ],
     },
     {
@@ -48,36 +60,33 @@ function NavbarContent() {
       items: [
         { href: '/retroville', label: 'Retroville', description: 'El universo narrativo original de AdvancedRetro.' },
         { href: '/blog', label: 'Blog', description: 'Guías, criterio de compra y cultura retro.' },
-      ],
-    },
-    {
-      key: 'creadores',
-      label: 'Creadores',
-      items: [
-        { href: '/memberships', label: 'Membresías', description: 'Niveles, ventajas y acceso preferente.' },
-        { href: '/crear-tienda', label: 'Crear mi tienda', description: 'Lanza tu tienda dentro del ecosistema.' },
         { href: '/tiendas', label: 'Tiendas de la comunidad', description: 'Directorio de tiendas creadas por miembros.' },
+        { href: '/crear-tienda', label: 'Crear mi tienda', description: 'Lanza tu tienda dentro del ecosistema.' },
       ],
     },
   ], []);
 
   const directLinks = useMemo<NavLeaf[]>(() => [
     { href: '/comunidad', label: t('nav.community', 'Comunidad') },
-    { href: '/finanzas', label: 'Finanzas' },
-    { href: '/creator', label: 'Creador' },
+    { href: '/about', label: 'Quiénes somos' },
+    { href: '/contacto', label: 'Contacto' },
   ], [t]);
 
   const mobileLinks = useMemo<NavLeaf[]>(
     () => [
       { href: '/tienda', label: 'Tienda' },
+      { href: '/tienda/game-boy', label: 'Game Boy' },
+      { href: '/tienda/game-boy-advance', label: 'Game Boy Advance' },
+      { href: '/tienda/super-nintendo', label: 'Super Nintendo' },
+      { href: '/tienda/gamecube', label: 'GameCube' },
       { href: '/mystery-boxes', label: 'Mystery Boxes' },
       { href: '/subastas', label: 'Subastas' },
+      { href: '/servicio-compra', label: 'Encargos' },
       { href: '/ruleta', label: 'Ruleta' },
       { href: '/comunidad', label: 'Comunidad' },
+      { href: '/about', label: 'Quiénes somos' },
       { href: '/blog', label: 'Blog' },
       { href: '/retroville', label: 'Retroville' },
-      { href: '/finanzas', label: 'Finanzas' },
-      { href: '/creator', label: 'Creador' },
       { href: '/contacto', label: 'Contacto' },
     ],
     []
@@ -265,15 +274,18 @@ function NavbarContent() {
                 </nav>
 
                 <div className="flex items-center gap-2 sm:gap-3 xl:justify-self-end">
-                  <Link href="/carrito" className="chip hover:border-primary/50 hover:text-text">
+                  <Link href="/carrito" className="order-2 xl:order-1 chip hover:border-primary/50 hover:text-text">
                     {locale === 'en' ? 'Cart' : t('nav.cart', 'Carrito')}
                   </Link>
-                  <Link href={user ? '/perfil' : '/login'} className="button-secondary hidden sm:inline-flex">
+                  <Link
+                    href={user ? '/perfil' : '/login'}
+                    className="button-secondary order-1 hidden sm:inline-flex xl:order-2"
+                  >
                     {user ? t('nav.profile', 'Mi perfil') : t('nav.login', 'Entrar')}
                   </Link>
                   <button
                     type="button"
-                    className={`xl:hidden chip min-w-[96px] justify-center ${mobileOpen ? 'border-primary/60 bg-white/5 text-text' : ''}`}
+                    className={`order-3 xl:hidden chip min-w-[96px] justify-center ${mobileOpen ? 'border-primary/60 bg-white/5 text-text' : ''}`}
                     onClick={() => setMobileOpen((value) => !value)}
                     aria-expanded={mobileOpen}
                     aria-label="Abrir menú"

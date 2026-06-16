@@ -7,7 +7,7 @@ import { getProductImageUrl } from '@/lib/imageUrl';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getProductHref, getProductRouteSegment, parseProductRouteParam } from '@/lib/productUrl';
 import { sampleProducts } from '@/lib/sampleData';
-import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata, buildProductSeoDescription } from '@/lib/seo';
+import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata, buildProductSeoDescription, buildProductSeoTitle } from '@/lib/seo';
 import { getProductReviewsSql } from '@/lib/productSocialSql';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { isRedirectError } from 'next/dist/client/components/redirect';
@@ -283,7 +283,13 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       });
     }
 
-    const title = `${String(product.name || '').trim()} | Comprar producto retro`;
+    const title = buildProductSeoTitle({
+      name: String(product.name || ''),
+      platform: String((product as any)?.platform || ''),
+      category: String((product as any)?.category || ''),
+      status: String((product as any)?.status || ''),
+      edition: String((product as any)?.edition || ''),
+    });
     const description = buildProductSeoDescription({
       name: String(product.name || ''),
       shortDescription:
@@ -307,6 +313,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
         String(product?.name || '').trim(),
         String(product?.platform || '').trim(),
         String(product?.category || '').trim(),
+        `comprar ${String(product?.name || '').trim()}`.trim(),
         'precio videojuego retro',
       ].filter(Boolean),
       type: 'article',

@@ -12,11 +12,11 @@ const heroDisplay = Bebas_Neue({
 });
 
 const quickLinks = [
-  { label: 'Game Boy', href: '/tienda?category=platform:game-boy' },
-  { label: 'Game Boy Color', href: '/tienda?category=platform:game-boy-color' },
-  { label: 'Game Boy Advance', href: '/tienda?category=platform:game-boy-advance' },
-  { label: 'Super Nintendo', href: '/tienda?category=platform:super-nintendo' },
-  { label: 'GameCube', href: '/tienda?category=platform:gamecube' },
+  { label: 'Game Boy', href: '/tienda/game-boy' },
+  { label: 'Game Boy Color', href: '/tienda/game-boy-color' },
+  { label: 'Game Boy Advance', href: '/tienda/game-boy-advance' },
+  { label: 'Super Nintendo', href: '/tienda/super-nintendo' },
+  { label: 'GameCube', href: '/tienda/gamecube' },
 ];
 
 const heroBoxes = [
@@ -65,25 +65,31 @@ export default function Hero() {
             badge: 'The most exclusive retro store',
             title: 'ADVANCEDRETRO',
             subtitle:
-              'Collectibles, consoles and retro video games with curated stock, sharp presentation and zero filler.',
+              'Online store from Spain for retro games, consoles and collection components. Retroville lives separately as the original universe of the project.',
             primaryCta: 'Explore store',
             secondaryCta: 'View Mystery Boxes',
             capsule: 'Exclusive drops',
             shelfTitle: 'Curated mystery stack',
             shelfBody:
               'Three tiers, three different moods. Click any box to jump into the mystery flow.',
+            trust: ['Real photos', 'State visible', 'Shipping from Spain', 'Human support'],
+            universeLead: 'Looking for the narrative side?',
+            universeCta: 'Explore Retroville separately',
           }
         : {
             badge: 'La tienda retro más exclusiva',
             title: 'ADVANCEDRETRO',
             subtitle:
-              'Coleccionables, consolas y videojuegos retro. Calidad garantizada, stock curado y una experiencia de compra sin ruido.',
+              'Tienda online desde España para comprar juegos retro, consolas y componentes de colección. Retroville vive aparte como universo original del proyecto.',
             primaryCta: 'Explorar tienda',
             secondaryCta: 'Ver Mystery Boxes',
             capsule: 'Drops exclusivos',
             shelfTitle: 'Stack Mystery curado',
             shelfBody:
               'Tres niveles, tres perfiles de drop. Pulsa cualquier caja para entrar al flujo mystery.',
+            trust: ['Fotos reales', 'Estado visible', 'Envío desde España', 'Soporte humano'],
+            universeLead: '¿Buscas la parte narrativa?',
+            universeCta: 'Explorar Retroville aparte',
           },
     [locale]
   );
@@ -137,6 +143,21 @@ export default function Hero() {
                   </Link>
                   <Link href="/mystery-boxes" className="button-secondary w-full min-w-0 text-center sm:w-auto">
                     {copy.secondaryCta}
+                  </Link>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2 text-[11px] sm:text-xs">
+                  {copy.trust.map((item) => (
+                    <span key={item} className="chip border-primary/35 bg-primary/10 text-primary">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="mt-4 flex flex-col gap-2 text-sm text-slate-300 sm:flex-row sm:flex-wrap sm:items-center">
+                  <span>{copy.universeLead}</span>
+                  <Link href="/retroville" className="text-primary underline-offset-4 hover:underline">
+                    {copy.universeCta}
                   </Link>
                 </div>
 

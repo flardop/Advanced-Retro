@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { NextRequest } from 'next/server';
 import { adminJson } from '@/lib/admin/api';
+import { resolveGeoFromRequest } from '@/lib/admin/geo';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { supabaseService } from '@/lib/supabase/service';
 import { serverLogError } from '@/lib/admin/serverErrorLogger';
@@ -58,8 +59,7 @@ export async function POST(request: NextRequest) {
     const deviceType = readPayloadString(payload, 'deviceType', 'device_type') || null;
     const browser = readPayloadString(payload, 'browser') || null;
     const os = readPayloadString(payload, 'os') || null;
-    const country = readPayloadString(payload, 'country') || null;
-    const city = readPayloadString(payload, 'city') || null;
+    const geo = resolveGeoFromRequest(request, payload);
     const durationSeconds = Math.max(0, Math.round(readPayloadNumber(payload, 'durationSeconds', 'duration_seconds')));
     const viewId = readPayloadString(payload, 'viewId', 'view_id') || null;
 
@@ -79,8 +79,8 @@ export async function POST(request: NextRequest) {
         device_type: deviceType,
         browser,
         os,
-        country,
-        city,
+        country: geo.country,
+        city: geo.city,
         duration_seconds: durationSeconds,
       };
 
@@ -100,8 +100,8 @@ export async function POST(request: NextRequest) {
             browser,
             os,
             ip_hash: ipHash,
-            country,
-            city,
+            country: geo.country,
+            city: geo.city,
             last_heartbeat: new Date().toISOString(),
           },
           { onConflict: 'session_id' }
@@ -121,8 +121,8 @@ export async function POST(request: NextRequest) {
           browser,
           os,
           ip_hash: ipHash,
-          country,
-          city,
+          country: geo.country,
+          city: geo.city,
           last_heartbeat: new Date().toISOString(),
         },
         { onConflict: 'session_id' }

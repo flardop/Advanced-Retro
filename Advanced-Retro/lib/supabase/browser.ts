@@ -2,9 +2,12 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  PERSISTENT_SESSION_MAX_AGE,
+  SUPABASE_AUTH_STORAGE_KEY,
+} from '@/lib/supabase/config';
 
 let browserClient: SupabaseClient | null = null;
-const PERSISTENT_SESSION_MAX_AGE = 60 * 60 * 24 * 365 * 5;
 
 export function getSupabaseBrowserClient(): SupabaseClient | null {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -24,9 +27,10 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
         autoRefreshToken: true,
         detectSessionInUrl: true,
         flowType: 'pkce',
-        storageKey: 'advancedretro-auth',
+        storageKey: SUPABASE_AUTH_STORAGE_KEY,
       },
       cookieOptions: {
+        name: SUPABASE_AUTH_STORAGE_KEY,
         path: '/',
         sameSite: 'lax',
         maxAge: PERSISTENT_SESSION_MAX_AGE,

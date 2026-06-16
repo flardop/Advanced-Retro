@@ -17,6 +17,7 @@ import {
   Users,
   Wifi,
   AlertTriangle,
+  Map,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -54,6 +55,10 @@ const sections: SidebarSection[] = [
       { href: '/admin/users', label: 'Users', icon: Users },
       { href: '/admin/messages', label: 'Messages', icon: MessageSquare },
     ],
+  },
+  {
+    label: 'RETROVILLE',
+    items: [{ href: '/admin/retroville', label: 'Retroville HQ', icon: Map }],
   },
   {
     label: 'COMMUNICATIONS',

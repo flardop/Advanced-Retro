@@ -123,6 +123,17 @@ export type RetrovilleWaitlistRecord = {
   id: string;
   email: string;
   created_at: string;
+  role_label: string | null;
+  source: string | null;
+};
+
+export type AnalyticsEventRecord = {
+  id: string;
+  event_name: string;
+  path: string | null;
+  session_id: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: string;
 };
 
 export type StoreCreatorLeadRecord = {
@@ -252,6 +263,45 @@ export type AnalyticsSnapshot = {
   heatmap: Array<{ day: string; hour: number; views: number }>;
   newVsReturning: ChartPoint[];
   activeHours: ChartPoint[];
+};
+
+export type RetrovilleAnalyticsSnapshot = {
+  summary: {
+    totalPageViews: number;
+    uniqueSessions: number;
+    avgSessionDuration: number;
+    waitlistTotal: number;
+    waitlistInRange: number;
+    waitlistLast30Days: number;
+    waitlistConversionRate: number;
+    newsletterSignupsInRange: number;
+    newsletterConversionRate: number;
+    trafficShare: number;
+    launchDate: string | null;
+  };
+  pageViewsOverTime: ChartPoint[];
+  topPages: Array<{
+    url: string;
+    page_title: string | null;
+    views: number;
+    uniqueSessions: number;
+    avgDuration: number;
+  }>;
+  trafficSources: ChartPoint[];
+  geography: Array<{ country: string; city: string; sessions: number; percentage: number }>;
+  deviceBreakdown: ChartPoint[];
+  browserBreakdown: ChartPoint[];
+  waitlistSources: ChartPoint[];
+  waitlistRoles: ChartPoint[];
+  newsletterSignupPages: ChartPoint[];
+  newsletterSignupDevices: ChartPoint[];
+  recentWaitlist: Array<{
+    id: string;
+    email_masked: string;
+    created_at: string;
+    source: string | null;
+    role_label: string | null;
+  }>;
 };
 
 export type DataTableColumn<T> = {

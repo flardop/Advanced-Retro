@@ -3,33 +3,36 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react';
 import { Anton, DM_Sans, Space_Mono } from 'next/font/google';
+import StructuredData from '@/components/StructuredData';
+import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
+import { buildRetrovilleSeriesJsonLd as buildRetrovilleSeriesJsonLdPage } from '@/app/retroville/shared';
 
 const displayFont = Anton({ subsets: ['latin'], weight: '400' });
 const bodyFont = DM_Sans({ subsets: ['latin'] });
 const monoFont = Space_Mono({ subsets: ['latin'], weight: ['400', '700'] });
 
-export const metadata: Metadata = {
-  title: 'Aviso legal de Retroville | AdvancedRetro.es',
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Aviso legal de Retroville | Derechos, uso y licencias',
   description:
-    'Aviso legal de Retroville: titularidad, propiedad intelectual, uso permitido, prohibiciones, licencias y contacto para permisos.',
-  alternates: {
-    canonical: 'https://advancedretro.es/retroville/legal',
-  },
-  openGraph: {
-    title: 'Aviso legal de Retroville',
-    description: 'Protección legal del universo, personajes, arte y materiales de Retroville.',
-    url: 'https://advancedretro.es/retroville/legal',
-    siteName: 'AdvancedRetro.es',
-    locale: 'es_ES',
-    type: 'website',
-  },
-};
+    'Aviso legal de Retroville: titularidad, propiedad intelectual, usos permitidos, prohibiciones, licencias y contacto para permisos del universo y personajes.',
+  path: '/retroville/legal',
+  category: 'entertainment',
+  inheritBaseKeywords: false,
+  keywords: [
+    'retroville legal',
+    'retroville propiedad intelectual',
+    'retroville licencias',
+    'retroville derechos',
+    'retroville personajes protegidos',
+  ],
+  image: '/images/retroville/retroville-logo.png',
+});
 
 const protectedAssets = [
   'Personajes, nombres, personalidades, diseños y expresiones.',
   'Ilustraciones, renders, bocetos, hojas de estilo, modelos y concept art.',
   'Logotipos, signos visuales, paletas, textos, frases, historia, lore y world building.',
-  'Material promocional, piezas publicadas en web, redes sociales, presentaciones y archivos internos.',
+  'Material promocional, piezas publicadas en web, redes sociales y archivos internos.',
 ];
 
 const forbiddenUses = [
@@ -41,7 +44,22 @@ const forbiddenUses = [
 ];
 
 export default function RetrovilleLegalPage() {
+  const retrovilleSeriesSchema = buildRetrovilleSeriesJsonLdPage({
+    path: '/retroville/legal',
+    description:
+      'Información legal de Retroville sobre derechos, licencias, propiedad intelectual y usos permitidos del universo original.',
+    image: '/images/retroville/retroville-logo.png',
+    name: 'Aviso legal de Retroville',
+  });
+  const breadcrumbs = buildBreadcrumbJsonLd([
+    { name: 'Inicio', path: '/' },
+    { name: 'Retroville', path: '/retroville' },
+    { name: 'Legal', path: '/retroville/legal' },
+  ]);
+
   return (
+    <>
+    <StructuredData id="retroville-legal-schema" data={[retrovilleSeriesSchema, breadcrumbs]} />
     <main className={`${bodyFont.className} min-h-screen bg-[#04040a] text-white`}>
       <section className="relative overflow-hidden px-6 py-8 sm:px-10 lg:px-14">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(255,201,64,0.16),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(255,60,32,0.12),transparent_28%),linear-gradient(180deg,#070712,#04040a)]" />
@@ -56,8 +74,8 @@ export default function RetrovilleLegalPage() {
               <ArrowLeft className="h-4 w-4" /> Volver a Retroville
             </Link>
             <Image
-              src="/images/retroville/retroville-logo.png"
-              alt="Retroville"
+              src="/images/retroville/retroville-logo.webp"
+              alt="Logo de Retroville"
               width={220}
               height={120}
               className="h-16 w-auto object-contain"
@@ -151,5 +169,6 @@ export default function RetrovilleLegalPage() {
         </div>
       </section>
     </main>
+    </>
   );
 }

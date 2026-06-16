@@ -40,6 +40,26 @@ function clampText(value: string, max: number): string {
   return `${text.slice(0, Math.max(0, max - 1)).trimEnd()}…`;
 }
 
+function escapeRegex(value: string): string {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function stripBrandFromTitle(value: string): string {
+  let output = cleanText(value);
+  const brandAliases = [SEO_BRAND_NAME, SEO_BRAND_NAME.replace(/\.es$/i, ''), 'Advanced Retro'];
+
+  for (const alias of brandAliases) {
+    const escaped = escapeRegex(alias);
+    output = output
+      .replace(new RegExp(`^${escaped}\\s*[|·:—-]\\s*`, 'i'), '')
+      .replace(new RegExp(`\\s*[|·:—-]\\s*${escaped}$`, 'i'), '')
+      .replace(new RegExp(`^${escaped}$`, 'i'), '')
+      .trim();
+  }
+
+  return cleanText(output);
+}
+
 function normalizeSeoTokens(value: string): string {
   return cleanText(value)
     .normalize('NFD')
@@ -93,6 +113,8 @@ type BuildPageMetadataInput = {
   image?: string;
   noIndex?: boolean;
   type?: 'website' | 'article';
+  category?: string;
+  inheritBaseKeywords?: boolean;
 };
 
 export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
@@ -100,13 +122,17 @@ export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
   const canonicalPath = input.path.startsWith('/') ? input.path : `/${input.path}`;
   const noIndex = Boolean(input.noIndex);
   const type = input.type || 'website';
-  const title = clampText(input.title, TITLE_MAX);
+  const title = clampText(stripBrandFromTitle(input.title), TITLE_MAX);
   const description = clampText(input.description, DESCRIPTION_MAX);
-  const keywords = uniqueKeywords([...SEO_BASE_KEYWORDS, ...(input.keywords || [])]);
+  const keywords = uniqueKeywords([
+    ...(input.inheritBaseKeywords === false ? [] : SEO_BASE_KEYWORDS),
+    ...(input.keywords || []),
+  ]);
 
   return {
     title,
     description,
+    category: input.category,
     alternates: {
       canonical: canonicalPath,
       languages: {
@@ -303,4 +329,70 @@ export function buildProductSeoDescription(input: {
   if (stock <= 0) parts.push('Sin stock temporal');
 
   return clampText(parts.join(' · '), DESCRIPTION_MAX);
+}
+
+function humanizeSeoLabel(value: string): string {
+  const source = cleanText(value)
+    .replace(/[-_]+/g, ' ')
+    .toLowerCase();
+
+  if (!source) return '';
+  if (source === 'sin especificar' || source === 'sin estado' || source === 'desconocido' || source === 'unknown') return '';
+  if (source === 'game boy' || source === 'gameboy') return 'Game Boy';
+  if (source === 'game boy color' || source === 'gameboy color' || source === 'gbc') return 'Game Boy Color';
+  if (source === 'game boy advance' || source === 'gameboy advance' || source === 'gba') return 'Game Boy Advance';
+  if (source === 'super nintendo' || source === 'snes') return 'Super Nintendo';
+  if (source === 'gamecube' || source === 'game cube') return 'GameCube';
+  if (source === 'accessories' || source === 'accesorios') return 'Accesorios';
+  if (source === 'consolas retro' || source === 'consolas') return 'Consola retro';
+  if (source === 'new' || source === 'nuevo') return 'Nuevo';
+  if (source === 'used' || source === 'usado') return 'Buen estado';
+  if (source === 'refurbished' || source === 'restored' || source === 'restaurado') return 'Restaurado';
+  if (source === 'special' || source === 'especial') return 'Edición especial';
+  if (source.includes('manual')) return 'Manual';
+  if (source.includes('insert')) return 'Insert';
+  if (source.includes('protector')) return source.includes('caja') ? 'Protector de caja' : 'Protector';
+  if (source.includes('caja')) return 'Caja';
+
+  return source
+    .split(' ')
+    .filter(Boolean)
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(' ');
+}
+
+export function buildProductSeoTitle(input: {
+  name: string;
+  platform?: string;
+  category?: string;
+  status?: string;
+  edition?: string;
+}) {
+  const name = cleanText(input.name);
+  const normalizedName = normalizeSeoTokens(name);
+  const parts: string[] = [];
+
+  if (name) parts.push(name);
+
+  const platformLabel = humanizeSeoLabel(input.platform || '');
+  if (platformLabel && !normalizedName.includes(normalizeSeoTokens(platformLabel))) {
+    parts.push(platformLabel);
+  }
+
+  const categoryLabel = humanizeSeoLabel(input.category || '');
+  if (categoryLabel && !normalizedName.includes(normalizeSeoTokens(categoryLabel))) {
+    parts.push(categoryLabel);
+  }
+
+  const editionLabel = humanizeSeoLabel(input.edition || '');
+  if (editionLabel && !normalizedName.includes(normalizeSeoTokens(editionLabel))) {
+    parts.push(editionLabel);
+  }
+
+  const statusLabel = humanizeSeoLabel(input.status || '');
+  if (statusLabel && !normalizedName.includes(normalizeSeoTokens(statusLabel))) {
+    parts.push(statusLabel);
+  }
+
+  return clampText(parts.join(' · '), TITLE_MAX);
 }

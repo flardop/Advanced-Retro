@@ -33,9 +33,9 @@ export default function CommunityFeed() {
           <div className="grid gap-8 lg:grid-cols-[1.15fr,0.85fr] lg:items-center">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-primary">Comunidad AdvancedRetro</p>
-              <h2 className="title-display mt-2 text-3xl sm:text-4xl lg:text-5xl">
+              <h1 className="title-display mt-2 text-3xl sm:text-4xl lg:text-5xl">
                 Contenido, soporte y cultura retro
-              </h2>
+              </h1>
               <p className="mt-3 max-w-3xl text-textMuted">
                 La comunidad queda enfocada en publicaciones, blog, soporte, torneos y novedades del ecosistema.
                 Los productos de usuarios ya no se muestran ni se pueden publicar desde aquí.

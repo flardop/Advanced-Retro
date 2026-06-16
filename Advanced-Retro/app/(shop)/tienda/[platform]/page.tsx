@@ -39,8 +39,12 @@ export async function generateMetadata({ params }: PlatformPageProps): Promise<M
     });
   }
 
+  const metadataTitle = config.title.toLowerCase().startsWith(config.label.toLowerCase())
+    ? config.title
+    : `${config.label}: ${config.title}`;
+
   return buildPageMetadata({
-    title: `${config.label}: ${config.title}`,
+    title: metadataTitle,
     description: config.description,
     path: `/tienda/${config.slug}`,
     keywords: config.keywords,

@@ -15,31 +15,31 @@ const COLLECTIONS: CollectionCard[] = [
   {
     title: 'Game Boy',
     subtitle: 'Clásicos originales y edición coleccionista',
-    href: '/tienda?category=platform:game-boy',
+    href: '/tienda/game-boy',
     cover: '/images/products/console-gb-dmg.jpg',
   },
   {
     title: 'Game Boy Color',
     subtitle: 'Catálogo dedicado para GBC',
-    href: '/tienda?category=platform:game-boy-color',
+    href: '/tienda/game-boy-color',
     cover: '/images/products/console-gbc.jpg',
   },
   {
     title: 'Game Boy Advance',
     subtitle: 'Juegos y variantes de GBA',
-    href: '/tienda?category=platform:game-boy-advance',
+    href: '/tienda/game-boy-advance',
     cover: '/images/products/console-gba.jpg',
   },
   {
     title: 'Super Nintendo',
     subtitle: 'Selección SNES para coleccionismo',
-    href: '/tienda?category=platform:super-nintendo',
+    href: '/tienda/super-nintendo',
     cover: '/images/products/console-snes-pal.jpg',
   },
   {
     title: 'GameCube',
     subtitle: 'Catálogo GameCube en expansión',
-    href: '/tienda?category=platform:gamecube',
+    href: '/tienda/gamecube',
     cover: '/images/products/console-gamecube.jpg',
   },
   {

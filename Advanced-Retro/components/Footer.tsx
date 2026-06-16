@@ -12,11 +12,11 @@ export default function Footer() {
       title: t('footer.store', 'Tienda'),
       links: [
         { href: '/tienda', label: t('footer.catalog', 'Catálogo completo') },
-        { href: '/tienda?category=platform:game-boy', label: 'Game Boy' },
-        { href: '/tienda?category=platform:game-boy-color', label: 'Game Boy Color' },
-        { href: '/tienda?category=platform:game-boy-advance', label: 'Game Boy Advance' },
-        { href: '/tienda?category=platform:super-nintendo', label: 'Super Nintendo' },
-        { href: '/tienda?category=platform:gamecube', label: 'GameCube' },
+        { href: '/tienda/game-boy', label: 'Game Boy' },
+        { href: '/tienda/game-boy-color', label: 'Game Boy Color' },
+        { href: '/tienda/game-boy-advance', label: 'Game Boy Advance' },
+        { href: '/tienda/super-nintendo', label: 'Super Nintendo' },
+        { href: '/tienda/gamecube', label: 'GameCube' },
         { href: '/tienda?category=platform:consolas', label: 'Consolas' },
       ],
     },
@@ -33,6 +33,7 @@ export default function Footer() {
     {
       title: t('footer.legal', 'Legal'),
       links: [
+        { href: '/about', label: 'Quiénes somos' },
         { href: '/terminos', label: t('footer.terms', 'Términos') },
         { href: '/privacidad', label: t('footer.privacy', 'Privacidad') },
         { href: '/cookies', label: t('footer.cookies', 'Cookies') },

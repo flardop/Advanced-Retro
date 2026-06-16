@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
-import { Boxes, DollarSign, PackageCheck, ShoppingCart, Users, Wifi } from 'lucide-react';
+import Link from 'next/link';
+import { Boxes, DollarSign, Map, PackageCheck, ShoppingCart, Users, Wifi } from 'lucide-react';
 import StatCard from '@/components/admin/StatCard';
 import { AreaChart, BarChart, DonutChart } from '@/components/admin/ui/Charts';
 import { AdminPageHeader } from '@/components/admin/ui/AdminPageHeader';
@@ -21,6 +22,23 @@ export default async function AdminDashboardPage({
         title="Dashboard"
         description="Visión global del negocio, actividad en directo y salud operativa del storefront."
         breadcrumbs={[{ label: 'Admin' }, { label: 'Dashboard' }]}
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/admin/retroville"
+              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-3 text-sm font-semibold text-[var(--admin-text)]"
+            >
+              <Map className="h-4 w-4" /> Retroville HQ
+            </Link>
+            <Link
+              href="/retroville"
+              target="_blank"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[var(--admin-primary)] px-4 py-3 text-sm font-semibold text-white"
+            >
+              <Map className="h-4 w-4" /> Ver Retroville
+            </Link>
+          </div>
+        }
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">

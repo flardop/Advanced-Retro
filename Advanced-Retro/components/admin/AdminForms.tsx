@@ -980,10 +980,30 @@ export function EmailComposer({ templates, scheduled }: { templates: EmailTempla
   );
 }
 
-export function SettingsManager({ settings }: { settings: AdminSettingRecord[] }) {
+function toDateTimeLocalValue(value: string | undefined) {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+  const pad = (input: number) => String(input).padStart(2, '0');
+  return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}T${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`;
+}
+
+function fromDateTimeLocalValue(value: string) {
+  if (!value) return '';
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString();
+}
+
+export function SettingsManager({
+  settings,
+  initialTab = 'general',
+}: {
+  settings: AdminSettingRecord[];
+  initialTab?: 'general' | 'integrations' | 'notifications' | 'retroville' | 'account' | 'danger';
+}) {
   const router = useRouter();
   const initial = useMemo(() => Object.fromEntries(settings.map((setting) => [setting.key, setting.value || ''])), [settings]);
-  const [tab, setTab] = useState<'general' | 'integrations' | 'notifications' | 'account' | 'danger'>('general');
+  const [tab, setTab] = useState<'general' | 'integrations' | 'notifications' | 'retroville' | 'account' | 'danger'>(initialTab);
   const [values, setValues] = useState<Record<string, string>>(initial);
   const [confirmAnalytics, setConfirmAnalytics] = useState('');
   const [accountLoading, setAccountLoading] = useState(false);
@@ -1091,6 +1111,7 @@ export function SettingsManager({ settings }: { settings: AdminSettingRecord[] }
           ['general', 'General'],
           ['integrations', 'Integrations'],
           ['notifications', 'Notifications'],
+          ['retroville', 'Retroville'],
           ['account', 'Admin Account'],
           ['danger', 'Danger Zone'],
         ].map(([key, label]) => (
@@ -1132,6 +1153,53 @@ export function SettingsManager({ settings }: { settings: AdminSettingRecord[] }
           ))}
           <Field label="Low stock threshold"><Input value={values.low_stock_threshold || '3'} onChange={(e) => updateValue('low_stock_threshold', e.target.value)} /></Field>
           <button type="button" onClick={() => void save(['notify_new_order', 'notify_new_user', 'notify_critical_error', 'notify_low_stock', 'notify_new_message', 'low_stock_threshold'])} className="rounded-2xl bg-[var(--admin-primary)] px-5 py-3 text-sm font-semibold text-white md:col-span-2">Guardar notificaciones</button>
+        </section>
+      ) : null}
+
+      {tab === 'retroville' ? (
+        <section className="space-y-5 rounded-3xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              label="Launch date de Retroville"
+              hint="Fecha usada por la cuenta atrás pública y por el panel interno de Retroville."
+            >
+              <Input
+                type="datetime-local"
+                value={toDateTimeLocalValue(values.retroville_launch_date || '')}
+                onChange={(event) => updateValue('retroville_launch_date', fromDateTimeLocalValue(event.target.value))}
+              />
+            </Field>
+            <div className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)] p-4 text-sm text-[var(--admin-text-muted)]">
+              <p className="font-semibold text-[var(--admin-text)]">Centro de control Retroville</p>
+              <p className="mt-2">
+                Desde aquí ajustas la fecha de lanzamiento y puedes saltar al panel dedicado con tráfico, países,
+                ciudades, páginas top y comportamiento de la waitlist.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => void save(['retroville_launch_date'])}
+              className="rounded-2xl bg-[var(--admin-primary)] px-5 py-3 text-sm font-semibold text-white"
+            >
+              Guardar Retroville
+            </button>
+            <Link
+              href="/admin/retroville"
+              className="rounded-2xl border border-[var(--admin-border)] px-5 py-3 text-sm font-semibold text-[var(--admin-text)]"
+            >
+              Abrir panel Retroville
+            </Link>
+            <Link
+              href="/retroville"
+              target="_blank"
+              className="rounded-2xl border border-[var(--admin-border)] px-5 py-3 text-sm font-semibold text-[var(--admin-text)]"
+            >
+              Ver landing publica
+            </Link>
+          </div>
         </section>
       ) : null}
 
