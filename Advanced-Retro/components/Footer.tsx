@@ -34,6 +34,7 @@ export default function Footer() {
       title: t('footer.legal', 'Legal'),
       links: [
         { href: '/about', label: 'Quiénes somos' },
+        { href: '/creator', label: 'Founder' },
         { href: '/terminos', label: t('footer.terms', 'Términos') },
         { href: '/privacidad', label: t('footer.privacy', 'Privacidad') },
         { href: '/cookies', label: t('footer.cookies', 'Cookies') },

@@ -2,19 +2,22 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Download, ExternalLink, FileText, ImageIcon } from 'lucide-react';
+import RetrovillePrivateDocumentButton from '@/components/retroville/RetrovillePrivateDocumentButton';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd, buildPageMetadata } from '@/lib/seo';
-import { buildRetrovilleSeriesJsonLd } from '@/app/retroville/shared';
+import { buildRetrovilleSeriesJsonLd, getRetrovilleState } from '@/app/retroville/shared';
 import {
   retrovilleBodyFont as bodyFont,
   retrovilleDisplayFont as displayFont,
   retrovilleMonoFont as monoFont,
 } from '@/lib/retroville/fonts';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = buildPageMetadata({
   title: 'Press kit de Retroville | Logos, renders y dossier oficial',
   description:
-    'Descarga el press kit oficial de Retroville con logotipo, renders de personajes, biblia base y descripciones oficiales del proyecto para prensa, creadores y medios.',
+    'Accede al press kit oficial de Retroville con logotipo, renders de personajes y solicitud privada de la biblia base para prensa, creadores y medios.',
   path: '/retroville/press',
   category: 'entertainment',
   inheritBaseKeywords: false,
@@ -47,26 +50,44 @@ const copyBlocks = [
   },
 ] as const;
 
+type PressAssetCard =
+  | {
+      title: string;
+      meta: string;
+      icon: typeof ImageIcon;
+      href: string;
+      requestOnly?: false;
+    }
+  | {
+      title: string;
+      meta: string;
+      icon: typeof FileText;
+      requestOnly: true;
+      href?: never;
+    };
+
 const assetCards = [
   {
     title: 'Logotipo PNG',
     href: '/images/retroville/retroville-logo.png',
     meta: 'PNG · fondo transparente',
     icon: ImageIcon,
+    requestOnly: false,
   },
   {
     title: 'Logotipo SVG',
     href: '/downloads/retroville/retroville-logo.svg',
     meta: 'SVG · vector descargable',
     icon: ImageIcon,
+    requestOnly: false,
   },
   {
-    title: 'Biblia base',
-    href: '/downloads/retroville/retroville-biblia-serie-v0.pdf',
-    meta: 'PDF · documento de vision general',
+    title: 'Biblia privada',
+    requestOnly: true,
+    meta: 'PDF privado · solicitud por email',
     icon: FileText,
   },
-] as const;
+] as const satisfies readonly PressAssetCard[];
 
 const renderCards = [
   {
@@ -89,21 +110,25 @@ const renderCards = [
   },
 ] as const;
 
-const factSheet = [
-  ['Formato', 'Serie animada original'],
-  ['Tono', 'Comedia negra · sci-fi retro · barrio'],
-  ['Estado', 'En desarrollo y presentacion activa'],
-  ['Ventana publica', '10 de noviembre de 2026'],
-  ['Universo', '14 personajes principales + ciudad en expansion'],
-  ['Creador', 'AdvancedRetro'],
-] as const;
+function buildFactSheet(launchLabel: string) {
+  return [
+    ['Formato', 'Serie animada original'],
+    ['Tono', 'Comedia negra · sci-fi retro · barrio'],
+    ['Estado', 'En desarrollo y presentacion activa'],
+    ['Ventana publica', launchLabel],
+    ['Universo', '14 personajes principales + ciudad en expansion'],
+    ['Creador', 'AdvancedRetro'],
+  ] as const;
+}
 
-export default function RetrovillePressPage() {
+export default async function RetrovillePressPage() {
+  const { launchLabel } = await getRetrovilleState();
+  const factSheet = buildFactSheet(launchLabel);
   const pageSchema = buildCollectionPageJsonLd({
     name: 'Press kit de Retroville',
     path: '/retroville/press',
     description:
-      'Centro oficial de prensa de Retroville con descargas de logo, renders, biblia base y copy reutilizable para medios.',
+      'Centro oficial de prensa de Retroville con descargas de logo, renders y solicitud privada de la biblia de serie.',
     image: '/images/retroville/retroville-cast-presentation.png',
     about: ['Press kit Retroville', 'Material oficial de prensa', 'Serie animada original'],
   });
@@ -153,28 +178,40 @@ export default function RetrovillePressPage() {
                 PRESS KIT DE RETROVILLE
               </h1>
               <p className="mt-5 max-w-[58ch] text-base leading-8 text-white/74 sm:text-lg">
-                Todo lo necesario para hablar bien del proyecto desde fuera: logotipo, renders principales, biblia base y texto oficial reutilizable para medios, creadores y plataformas.
+                Todo lo necesario para hablar bien del proyecto desde fuera: logotipo, renders principales, solicitud privada de la biblia y texto oficial reutilizable para medios, creadores y plataformas.
               </p>
               <div className="mt-8 grid gap-3 sm:grid-cols-3">
                 {assetCards.map((asset) => {
                   const Icon = asset.icon;
                   return (
-                    <a
+                    <div
                       key={asset.title}
-                      href={asset.href}
-                      download
-                      target="_blank"
-                      rel="noreferrer"
                       className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4 transition hover:border-[#8ad7ff]/30 hover:bg-white/[0.08]"
                     >
                       <Icon className="h-5 w-5 text-[#8ad7ff]" />
                       <p className="mt-3 text-sm font-semibold uppercase tracking-[0.08em] text-white">{asset.title}</p>
                       <p className="mt-2 text-xs text-white/56">{asset.meta}</p>
-                      <span className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[#8ad7ff]">
-                        Descargar
-                        <Download className="h-4 w-4" />
-                      </span>
-                    </a>
+                      <div className="mt-4">
+                        {asset.requestOnly ? (
+                          <RetrovillePrivateDocumentButton
+                            documentTitle="Biblia de serie · Vision general"
+                            buttonLabel="Solicitar por email"
+                            className="inline-flex min-h-[40px] items-center gap-2 text-xs uppercase tracking-[0.18em] text-[#8ad7ff]"
+                          />
+                        ) : (
+                          <a
+                            href={asset.href}
+                            download
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex min-h-[40px] items-center gap-2 text-xs uppercase tracking-[0.18em] text-[#8ad7ff]"
+                          >
+                            Descargar
+                            <Download className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
               </div>

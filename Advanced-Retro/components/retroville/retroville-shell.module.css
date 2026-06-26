@@ -29,8 +29,8 @@
 .progressFill {
   height: 100%;
   transform-origin: left center;
-  background: linear-gradient(90deg, #00ff88 0%, #7b2fff 52%, #ffd25d 100%);
-  box-shadow: 0 0 24px rgba(0, 255, 136, 0.35);
+  background: linear-gradient(90deg, #c0392b 0%, #e8a020 100%);
+  box-shadow: 0 0 24px rgba(192, 57, 43, 0.35);
   transition: transform 120ms linear;
 }
 
@@ -62,7 +62,7 @@
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(0, 255, 136, 0.24) 0%, rgba(0, 255, 136, 0.08) 55%, transparent 72%);
+  background: radial-gradient(circle, rgba(192, 57, 43, 0.24) 0%, rgba(192, 57, 43, 0.08) 55%, transparent 72%);
   filter: blur(2px);
 }
 
@@ -75,7 +75,7 @@
     radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 42%),
     linear-gradient(180deg, rgba(16, 20, 34, 0.98) 0%, rgba(7, 9, 16, 0.98) 100%);
   box-shadow:
-    0 0 0 1px rgba(0, 255, 136, 0.14),
+    0 0 0 1px rgba(192, 57, 43, 0.18),
     0 6px 18px rgba(0, 0, 0, 0.28);
 }
 
@@ -83,7 +83,7 @@
 .cursorChip::after {
   content: '';
   position: absolute;
-  background: #00ff88;
+  background: #c0392b;
   opacity: 0.78;
 }
 
@@ -98,7 +98,7 @@
   right: -3px;
   bottom: -3px;
   border-radius: 999px;
-  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+  box-shadow: 0 0 10px rgba(192, 57, 43, 0.4);
 }
 
 .toast {
@@ -120,7 +120,7 @@
   font-size: 10px;
   letter-spacing: 0.26em;
   text-transform: uppercase;
-  color: #00ff88;
+  color: #e8a020;
 }
 
 .toastTitle {

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { DEFAULT_LOCALE, normalizeLocale, translate, type LocaleCode } from '@/lib/i18n';
 
 const STORAGE_KEY = 'advanced-retro-locale';
@@ -20,6 +21,7 @@ const LocaleContext = createContext<LocaleContextValue>({
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<LocaleCode>(DEFAULT_LOCALE);
+  const pathname = usePathname() || '/';
 
   const detectNavigatorLocale = (): LocaleCode => {
     if (typeof window === 'undefined') return DEFAULT_LOCALE;
@@ -53,8 +55,11 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    document.documentElement.lang = locale;
-  }, [locale]);
+    document.documentElement.lang =
+      pathname.startsWith('/retroville') || pathname.startsWith('/dev-retroville')
+        ? 'es'
+        : locale;
+  }, [locale, pathname]);
 
   const setLocale = (next: LocaleCode) => {
     const normalized = normalizeLocale(next);

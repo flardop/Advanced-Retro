@@ -18,10 +18,17 @@ dist/
 
 # Debug / IDE
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 .DS_Store
 .idea
 .vscode
 *.log
+.eslintcache
+*.tmp
+*.temp
+*.bak
 
 # Vercel
 .vercel
@@ -36,4 +43,11 @@ server/
 
 # Local tooling artifacts
 .playwright-cli/
-Advanced-Retro/output/
+Advanced-Retro/.playwright-cli/
+Advanced-Retro/.venv-imaging/
+Advanced-Retro/docs/reports/
+Advanced-Retro/Imagenes/Organizadas/
+Advanced-Retro/Imagenes_local_backup/
+Advanced-Retro/tmp/
+Advanced-Retro/automation/make-gaming-news/video-worker/output/*
+!Advanced-Retro/automation/make-gaming-news/video-worker/output/.gitkeep

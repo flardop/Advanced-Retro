@@ -671,6 +671,12 @@
   gap: 20px;
 }
 
+.districtSpotlightGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
 .districtCard,
 .signalCard {
   position: relative;
@@ -683,6 +689,7 @@
 
 .districtTitle,
 .signalTitle,
+.districtSpotlightTitle,
 .galleryTitle {
   margin: 0 0 12px;
   font-size: 2rem;
@@ -690,6 +697,27 @@
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: #fff;
+}
+
+.districtSpotlightCard {
+  position: relative;
+  z-index: 1;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 16, 28, 0.72);
+  padding: 18px;
+}
+
+.districtSpotlightTitle {
+  margin: 10px 0 0;
+  font-size: 1.34rem;
+}
+
+.districtSpotlightBody {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--rv-text-muted);
 }
 
 .worldVisual {
@@ -823,6 +851,212 @@
   transform: translateY(-1px);
   border-color: rgba(138, 215, 255, 0.58);
   background: rgba(138, 215, 255, 0.18);
+}
+
+.sketchShowcase {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 20px;
+  min-height: 0;
+}
+
+.sketchEquationBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr) 54px minmax(0, 1.2fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.sketchOutcomeCard {
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 28px;
+  border: 1px solid rgba(0, 255, 136, 0.18);
+  background:
+    radial-gradient(circle at 16% 24%, rgba(0, 255, 136, 0.12), transparent 26%),
+    rgba(8, 12, 20, 0.92);
+  color: #fff;
+  padding: 20px;
+}
+
+.sketchOutcomeCard span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 136, 0.78);
+}
+
+.sketchOutcomeCard strong {
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.sketchShowcaseGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.92fr) minmax(240px, 0.78fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  min-height: 0;
+}
+
+.sketchFeatureCard,
+.sketchProcessCard {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 18% 16%, rgba(138, 215, 255, 0.08), transparent 26%),
+    rgba(8, 11, 20, 0.9);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+}
+
+.sketchFeaturePrimary {
+  grid-row: 1 / span 2;
+}
+
+.sketchFeatureSecondary {
+  min-height: 0;
+}
+
+.sketchFeatureImageWrap {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.12), transparent 26%),
+    #efe7db;
+}
+
+.sketchFeatureImage {
+  object-fit: contain;
+  object-position: center;
+  padding: 14px;
+}
+
+.sketchFeatureMeta {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 16px;
+  display: flex;
+  justify-content: flex-start;
+  pointer-events: none;
+}
+
+.sketchFeatureMeta span {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(5, 7, 12, 0.78);
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.sketchProcessCard {
+  grid-row: 1 / span 2;
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sketchProcessTitle {
+  margin: 10px 0 0;
+  font-size: clamp(2rem, 2.3vw, 2.6rem);
+  line-height: 0.94;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.sketchProcessBody {
+  margin-top: 14px;
+  font-size: 0.98rem;
+  line-height: 1.75;
+  color: var(--rv-text-muted);
+}
+
+.castShowcase {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, 0.88fr);
+  gap: 22px;
+  align-items: stretch;
+  min-height: 0;
+}
+
+.castShowcaseRail {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 16px;
+}
+
+.castShowcaseIntro {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 20px;
+}
+
+.castShowcaseIntroBody {
+  margin-top: 12px;
+  font-size: 0.96rem;
+  line-height: 1.7;
+  color: var(--rv-text-muted);
+}
+
+.castTeaserGrid {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+}
+
+.castTeaserCard {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 16% 18%, rgba(0, 255, 136, 0.08), transparent 28%),
+    rgba(255, 255, 255, 0.03);
+  padding: 18px 18px 20px;
+}
+
+.castTeaserDistrict {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--rv-green);
+}
+
+.castTeaserTitle {
+  margin: 10px 0 0;
+  font-size: 1.85rem;
+  line-height: 0.92;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.castTeaserBody {
+  margin-top: 10px;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--rv-text-muted);
 }
 
 .sketchPreviewBoard {
@@ -1029,7 +1263,155 @@
 }
 
 .signalGrid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.signalsLayout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(520px, 1.06fr) minmax(360px, 0.94fr);
+  gap: 22px;
+  align-items: stretch;
+}
+
+.communityDock {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+  min-width: 0;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at 18% 14%, rgba(138, 215, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(123, 47, 255, 0.14), transparent 28%),
+    rgba(10, 14, 24, 0.84);
+  padding: 22px;
+}
+
+.communityDockHeader {
+  min-width: 0;
+}
+
+.communityDockTitle {
+  margin: 10px 0 0;
+  font-size: 2rem;
+  line-height: 0.94;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.communityDockBody,
+.communityChannelBody,
+.resourceLinkBody {
+  color: var(--rv-text-muted);
+}
+
+.communityDockBody {
+  margin-top: 12px;
+  font-size: 0.94rem;
+  line-height: 1.7;
+}
+
+.communityChannelGrid,
+.resourceLinkGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.communityChannelGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+
+.resourceLinkGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.communityChannelCard,
+.resourceLinkCard {
+  text-decoration: none;
+}
+
+.communityChannelCard {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.communityChannelCard:hover,
+.resourceLinkCard:hover {
+  transform: translateY(-1px);
+  border-color: rgba(138, 215, 255, 0.26);
+}
+
+.communityChannelCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.communityChannelMeta,
+.resourceLinkEyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.communityChannelMeta {
+  color: rgba(138, 215, 255, 0.84);
+}
+
+.communityChannelTitle {
+  margin: 8px 0 0;
+  font-size: 1.12rem;
+  line-height: 1;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.communityChannelBody {
+  margin-top: 8px;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.resourceLinkCard {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 14px;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.resourceLinkCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.resourceLinkEyebrow {
+  color: rgba(255, 201, 64, 0.86);
+}
+
+.resourceLinkTitle {
+  margin: 7px 0 0;
+  font-size: 1rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.resourceLinkBody {
+  margin-top: 7px;
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
 .galleryLayout {
@@ -1259,6 +1641,7 @@
     padding-inline: 28px;
   }
 
+  .castShowcase,
   .galleryLayout {
     grid-template-columns: 1fr;
     gap: 28px;
@@ -1277,6 +1660,30 @@
 
   .slideTitle {
     font-size: clamp(3rem, 4.4vw, 4.8rem);
+  }
+
+  .sketchShowcaseGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+
+  .sketchFeaturePrimary {
+    grid-column: 1 / span 2;
+    grid-row: auto;
+    min-height: 320px;
+  }
+
+  .sketchProcessCard {
+    grid-column: 1 / span 2;
+    grid-row: auto;
+  }
+
+  .castTeaserGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .signalsLayout {
+    grid-template-columns: minmax(420px, 1fr) minmax(320px, 0.92fr);
   }
 
   .manifestoLine {
@@ -1342,6 +1749,11 @@
 @media (max-height: 860px) {
   .slideInner {
     height: min(82vh, 760px);
+  }
+
+  .castTeaserBody,
+  .sketchProcessBody {
+    line-height: 1.55;
   }
 
   .archiveHeroImageWrap {

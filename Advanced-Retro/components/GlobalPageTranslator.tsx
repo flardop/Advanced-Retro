@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { useLocale } from '@/components/LocaleProvider';
 
 const STORAGE_KEY = 'advanced-retro-global-translations-v1';
@@ -52,6 +53,7 @@ function cacheKey(locale: string, source: string) {
 
 export default function GlobalPageTranslator() {
   const { locale } = useLocale();
+  const pathname = usePathname() || '/';
   const textRecords = useRef(new WeakMap<Text, AppliedRecord>());
   const attributeRecords = useRef(new WeakMap<Element, Map<AttributeName, AppliedRecord>>());
 
@@ -131,7 +133,7 @@ export default function GlobalPageTranslator() {
       });
     });
 
-    if (locale === 'es') {
+    if (locale === 'es' || pathname.startsWith('/retroville') || pathname.startsWith('/dev-retroville')) {
       targets.forEach((target) => target.restore());
       return;
     }
@@ -167,7 +169,7 @@ export default function GlobalPageTranslator() {
     } catch {
       // Keep the source language if the external translation service is unavailable.
     }
-  }, [locale]);
+  }, [locale, pathname]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;

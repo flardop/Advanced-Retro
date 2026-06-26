@@ -319,6 +319,10 @@ comment on table public.admin_settings is 'Configuración operativa editable des
 create table if not exists public.retroville_waitlist (
   id uuid primary key default gen_random_uuid(),
   email text not null unique,
+  display_name text,
+  signup_intent text,
+  event_slug text,
+  event_title text,
   created_at timestamptz not null default now()
 );
 
@@ -333,6 +337,26 @@ create table if not exists public.store_creator_leads (
 
 create index if not exists idx_retroville_waitlist_created_at on public.retroville_waitlist(created_at desc);
 create index if not exists idx_store_creator_leads_created_at on public.store_creator_leads(created_at desc);
+
+alter table if exists public.retroville_waitlist
+  add column if not exists display_name text,
+  add column if not exists role_label text,
+  add column if not exists source text not null default 'public',
+  add column if not exists signup_intent text,
+  add column if not exists event_slug text,
+  add column if not exists event_title text;
+
+update public.retroville_waitlist
+set
+  display_name = nullif(trim(coalesce(display_name, '')), ''),
+  role_label = nullif(trim(coalesce(role_label, '')), ''),
+  source = coalesce(nullif(trim(coalesce(source, '')), ''), 'public'),
+  signup_intent = nullif(trim(coalesce(signup_intent, '')), ''),
+  event_slug = nullif(trim(coalesce(event_slug, '')), ''),
+  event_title = nullif(trim(coalesce(event_title, '')), '')
+where true;
+
+create index if not exists idx_retroville_waitlist_source on public.retroville_waitlist(source, created_at desc);
 
 -- -----------------------------------------------------------------------------
 -- ADMIN META TABLES (extra, additive)

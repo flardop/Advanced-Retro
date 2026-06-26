@@ -19,10 +19,17 @@ dist/
 
 # Debug / IDE
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 .DS_Store
 .idea
 .vscode
 *.log
+.eslintcache
+*.tmp
+*.temp
+*.bak
 
 # Vercel
 .vercel
@@ -39,3 +46,5 @@ docs/reports/
 docs/demo-users-generated.md
 .playwright-cli/
 tmp/
+automation/make-gaming-news/video-worker/output/*
+!automation/make-gaming-news/video-worker/output/.gitkeep

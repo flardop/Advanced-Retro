@@ -9,7 +9,11 @@ import RetrovilleCountdown from '@/components/retroville/RetrovilleCountdown';
 import RetrovilleProductionDesk from '@/components/retroville/RetrovilleProductionDesk';
 import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
 import {
+  RETROVILLE_DISCOVERY_LINKS,
   RETROVILLE_NEWSLETTER_NAME,
+  RETROVILLE_SOCIAL_CHANNELS,
+  buildRetrovilleWaitlistBenefits,
+  buildRetrovilleLaunchCopy,
   shouldShowRetrovilleSignupCount,
 } from '@/app/retroville/shared';
 import {
@@ -260,52 +264,7 @@ const drops = [
   },
 ] as const;
 
-const retrovilleSocials = [
-  {
-    label: 'Instagram',
-    href: 'https://www.instagram.com/retroville_show/',
-    ariaLabel: 'Abrir Instagram de Retroville',
-  },
-  {
-    label: 'YouTube',
-    href: 'https://www.youtube.com/@RetroVille-y9v',
-    ariaLabel: 'Abrir YouTube de Retroville',
-  },
-  {
-    label: 'X',
-    href: 'https://x.com/Retr0ViIIe',
-    ariaLabel: 'Abrir X de Retroville',
-  },
-  {
-    label: 'Discord',
-    href: 'https://discord.gg/EyRRQJWW5D',
-    ariaLabel: 'Abrir Discord de Retroville',
-  },
-  {
-    label: 'Facebook',
-    href: 'https://www.facebook.com/profile.php?id=61590571767017',
-    ariaLabel: 'Abrir Facebook de Retroville',
-  },
-  {
-    label: 'Threads',
-    href: 'https://www.threads.com/@retroville_show?hl=es',
-    ariaLabel: 'Abrir Threads de Retroville',
-  },
-  {
-    label: 'Kickstarter',
-    href: 'https://www.kickstarter.com/profile/1318310768',
-    ariaLabel: 'Abrir Kickstarter de Retroville',
-  },
-] as const;
-
 const productLine = 'Retroville es una serie animada original ambientada en una ciudad construida con hardware abandonado.';
-const launchEventCopy =
-  'El 10 de noviembre de 2026 llega la primera señal publica de Retroville: activamos el primer reveal, abrimos el siguiente drop y avisamos primero a quienes ya reciben La Señal.';
-const waitlistBenefits = [
-  'Aviso prioritario el dia del primer reveal publico.',
-  'Una señal quincenal con avances, materiales y drops del proyecto.',
-  'Acceso anticipado a nuevos archivos y contenido exclusivo del desarrollo.',
-] as const;
 const landingCharacterTeasers = [
   {
     name: 'NOX',
@@ -410,6 +369,8 @@ export default function RetrovilleExperience({
   const waitlistGoal = 5000;
   const showAudienceCount = shouldShowRetrovilleSignupCount(waitlistCount);
   const waitlistPct = waitlistCount > 0 ? clamp(waitlistCount / waitlistGoal, 0, 1) : 0;
+  const launchEventCopy = buildRetrovilleLaunchCopy(launchLabel);
+  const waitlistBenefits = buildRetrovilleWaitlistBenefits(launchLabel);
 
   const scrollToWaitlist = () => {
     document.getElementById('retroville-waitlist')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -527,7 +488,7 @@ export default function RetrovilleExperience({
               <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-text-dim)]">Lanzamiento previsto · {launchLabel}</p>
             </div>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              {retrovilleSocials.map((social) => (
+              {RETROVILLE_SOCIAL_CHANNELS.map((social) => (
                 <a
                   key={social.label}
                   href={social.href}
@@ -711,7 +672,7 @@ export default function RetrovilleExperience({
               BIBLIA Y DOSSIERS
             </h2>
             <p className="mx-auto mt-5 max-w-[44rem] text-base leading-8 text-[var(--rv-text-muted)] sm:text-lg">
-              El universo ya puede enseñar materiales tecnicos. Lo que esta listo se descarga ya. Lo que aun sigue en desarrollo aparece marcado como incoming.
+              El universo ya puede enseñar materiales tecnicos. Lo que esta listo ya puede solicitarse o consultarse, y lo que sigue en desarrollo aparece marcado como incoming.
             </p>
           </div>
           <div className="mt-12">
@@ -981,6 +942,51 @@ export default function RetrovilleExperience({
         </div>
       </section>
 
+      <section className="bg-[var(--rv-bg-section-alt)] px-6 py-20 sm:px-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-[var(--rv-cyan)]">Canales oficiales</p>
+            <h2 className={`${displayFont.className} mt-4 text-[clamp(3rem,8vw,5.2rem)] uppercase text-white`}>
+              DONDE SE SIGUE RETROVILLE
+            </h2>
+            <p className="mx-auto mt-5 max-w-[44rem] text-base leading-8 text-[var(--rv-text-muted)] sm:text-lg">
+              Ya no hace falta que todo viva amontonado en una sola landing. Cada red cumple una función distinta: unas sirven para drops visuales, otras para vídeo, otras para comunidad y otras para sostener el proyecto cuando toque escalarlo.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-4 sm:grid-cols-2">
+            {RETROVILLE_SOCIAL_CHANNELS.map((channel) => (
+              <a
+                key={channel.label}
+                href={channel.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={channel.ariaLabel}
+                className="rounded-[1.5rem] border border-white/8 bg-[rgba(11,14,24,0.94)] p-5 text-left shadow-[0_18px_44px_rgba(0,0,0,0.2)] transition hover:border-[var(--rv-cyan)]/26 hover:bg-[rgba(11,14,24,1)]"
+              >
+                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-cyan)]">{channel.eyebrow}</p>
+                <h3 className={`${displayFont.className} mt-3 text-[2rem] uppercase leading-[0.95] text-white`}>{channel.label}</h3>
+                <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)]">{channel.description}</p>
+              </a>
+            ))}
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            {RETROVILLE_DISCOVERY_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="rounded-[1.35rem] border border-white/8 bg-white/[0.03] p-4 text-left transition hover:border-[var(--rv-green)]/28 hover:bg-white/[0.06]"
+              >
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-gold)]">{link.eyebrow}</p>
+                <h3 className="mt-2 text-base font-semibold uppercase tracking-[0.08em] text-white">{link.label}</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--rv-text-muted)]">{link.description}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section ref={countdownReveal.ref} className="relative overflow-hidden px-6 py-24 text-center sm:px-8 lg:px-10">
         <div className="absolute inset-0 bg-[linear-gradient(180deg,var(--rv-bg-deep),var(--rv-bg-surface))]" />
         <div className="absolute inset-0 flex items-center justify-center overflow-hidden text-[clamp(5rem,16vw,13rem)] font-black uppercase tracking-[0.06em] text-white/[0.02] [font-family:var(--font-display)]">
@@ -988,7 +994,7 @@ export default function RetrovilleExperience({
         </div>
         <div className={`relative mx-auto max-w-[1200px] ${countdownReveal.visible ? styles.revealVisible : styles.reveal}`}>
           <p className="text-[11px] uppercase tracking-[0.25em] text-[var(--rv-green)]">Cuenta atrás</p>
-          <p className={`${displayFont.className} mt-4 text-[clamp(3rem,7vw,5.2rem)] uppercase text-white`}>10 de noviembre de 2026</p>
+          <p className={`${displayFont.className} mt-4 text-[clamp(3rem,7vw,5.2rem)] uppercase text-white`}>{launchLabel}</p>
           <p className="mt-4 text-lg text-[var(--rv-text-muted)]">Ventana objetivo del lanzamiento de Retroville.</p>
           <p className="mx-auto mt-4 max-w-[42rem] text-sm leading-7 text-white/74 sm:text-base">{launchEventCopy}</p>
           <div className="mt-14">
@@ -1025,7 +1031,7 @@ export default function RetrovilleExperience({
                 <p className="mt-2 text-sm leading-7 text-[var(--rv-text-muted)]">La newsletter acaba de abrirse y todavia puedes entrar en la primera tanda.</p>
               </div>
             )}
-            <RetrovilleAudienceProof waitlistCount={waitlistCount} />
+            <RetrovilleAudienceProof waitlistCount={waitlistCount} launchIso={launchIso} launchLabel={launchLabel} />
             <div className="mt-8 rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-5 text-left">
               <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Si te apuntas, recibes</p>
               <div className="mt-3 grid gap-2">
@@ -1046,7 +1052,7 @@ export default function RetrovilleExperience({
             <div className="mt-12 border-t border-white/8 pt-6 text-sm text-[var(--rv-text-dim)]">
               <p>© AdvancedRetro · Retroville está en desarrollo.</p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-                {retrovilleSocials.map((social) => (
+                {RETROVILLE_SOCIAL_CHANNELS.map((social) => (
                   <a
                     key={social.label}
                     href={social.href}
@@ -1058,17 +1064,20 @@ export default function RetrovilleExperience({
                     {social.label}
                   </a>
                 ))}
+                {RETROVILLE_DISCOVERY_LINKS.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 text-[11px] uppercase tracking-[0.2em] text-white/82 transition hover:border-[var(--rv-green)]/30 hover:bg-white/[0.08] hover:text-white"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
                 <Link
                   href="/retroville/legal"
                   className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 text-[11px] uppercase tracking-[0.2em] text-white/82 transition hover:border-[var(--rv-green)]/30 hover:bg-white/[0.08] hover:text-white"
                 >
                   Legal
-                </Link>
-                <Link
-                  href="/retroville/press"
-                  className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 text-[11px] uppercase tracking-[0.2em] text-white/82 transition hover:border-[var(--rv-green)]/30 hover:bg-white/[0.08] hover:text-white"
-                >
-                  Press
                 </Link>
                 <Link
                   href="/retroville/faq"

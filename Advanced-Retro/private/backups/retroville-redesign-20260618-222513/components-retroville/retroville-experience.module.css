@@ -1,0 +1,634 @@
+.page {
+  background:
+    radial-gradient(circle at top, rgba(155, 92, 255, 0.12), transparent 26%),
+    linear-gradient(180deg, var(--rv-bg-deep) 0%, #060611 100%);
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.heroNoise {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 24%, rgba(0, 212, 255, 0.14), transparent 20%),
+    radial-gradient(circle at 76% 20%, rgba(155, 92, 255, 0.18), transparent 22%),
+    radial-gradient(circle at 50% 86%, rgba(255, 201, 64, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 18%),
+    linear-gradient(180deg, rgba(4, 4, 10, 0.64), rgba(4, 4, 10, 0.92));
+}
+
+.heroNoise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.9));
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.08) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  background-size: 100% 4px;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.titleWord {
+  display: inline-flex;
+  gap: 0.02em;
+  flex-wrap: nowrap;
+  filter: drop-shadow(0 0 28px rgba(155, 92, 255, 0.22));
+}
+
+.titleLetter {
+  display: inline-block;
+  transition: transform 160ms linear, opacity 160ms linear, filter 160ms linear;
+  text-shadow:
+    0 0 18px rgba(255, 255, 255, 0.12),
+    0 0 34px rgba(155, 92, 255, 0.18),
+    0 0 40px rgba(0, 212, 255, 0.1);
+  animation: letter-rise 700ms cubic-bezier(0.18, 0.9, 0.2, 1) both;
+}
+
+.titleLetterZoom {
+  position: relative;
+  z-index: 2;
+  transform-origin: center center;
+}
+
+.titleLetterZoom::before,
+.titleLetterZoom::after {
+  content: attr(data-letter);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.44;
+}
+
+.titleLetterZoom::before {
+  transform: translate(2px, -1px);
+  color: rgba(0, 255, 136, 0.54);
+}
+
+.titleLetterZoom::after {
+  transform: translate(-2px, 1px);
+  color: rgba(155, 92, 255, 0.6);
+}
+
+@keyframes letter-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.heroCharacter {
+  position: relative;
+  isolation: isolate;
+  min-height: 420px;
+}
+
+.heroWash {
+  position: absolute;
+  inset: 0;
+  filter: blur(54px) saturate(1.18);
+  opacity: 0.64;
+  transform: scale(1.16);
+}
+
+.heroWashImage {
+  object-fit: cover;
+  transform: scale(1.12);
+}
+
+.heroAura {
+  position: absolute;
+  inset: 8% 10% 14% 10%;
+  border-radius: 999px;
+  filter: blur(80px);
+  z-index: 1;
+}
+
+.heroAuraLeft {
+  background: radial-gradient(circle at 58% 48%, rgba(0, 212, 255, 0.26), transparent 60%);
+}
+
+.heroAuraRight {
+  background:
+    radial-gradient(circle at 32% 48%, rgba(255, 201, 64, 0.16), transparent 44%),
+    radial-gradient(circle at 48% 36%, rgba(155, 92, 255, 0.26), transparent 62%);
+}
+
+.heroImage {
+  position: relative;
+  z-index: 2;
+  object-fit: cover;
+}
+
+.heroImageLeft {
+  object-position: left center;
+  mask-image:
+    linear-gradient(90deg, black 0%, black 62%, transparent 98%),
+    linear-gradient(180deg, transparent 0%, black 10%, black 88%, transparent 100%);
+}
+
+.heroImageRight {
+  object-position: right center;
+  mask-image:
+    linear-gradient(90deg, transparent 2%, black 38%, black 100%),
+    linear-gradient(180deg, transparent 0%, black 10%, black 88%, transparent 100%);
+}
+
+.heroFadeLeft,
+.heroFadeRight {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.heroFadeLeft {
+  background:
+    linear-gradient(90deg, rgba(4, 4, 10, 0.1), transparent 18%, transparent 64%, rgba(4, 4, 10, 0.98) 100%),
+    linear-gradient(180deg, rgba(4, 4, 10, 0.98), transparent 12%, transparent 90%, rgba(4, 4, 10, 0.98));
+}
+
+.heroFadeRight {
+  background:
+    linear-gradient(90deg, rgba(4, 4, 10, 0.98) 0%, transparent 34%, transparent 84%, rgba(4, 4, 10, 0.08) 100%),
+    linear-gradient(180deg, rgba(4, 4, 10, 0.98), transparent 12%, transparent 90%, rgba(4, 4, 10, 0.98));
+}
+
+.heroPortal {
+  position: absolute;
+  inset: 20% 32% 16% 32%;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.18), transparent 18%),
+    radial-gradient(circle, rgba(155, 92, 255, 0.24), transparent 42%),
+    radial-gradient(circle, rgba(0, 212, 255, 0.1), transparent 56%);
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.marqueeSection {
+  background: var(--rv-bg-surface);
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.marqueeSection::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--rv-scanline);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.marqueeRow {
+  display: flex;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 14px 0;
+}
+
+.marqueeTrack {
+  display: flex;
+  width: max-content;
+  animation: marquee-left 30s linear infinite;
+}
+
+.marqueeTrackSlow {
+  animation-duration: 45s;
+  animation-direction: reverse;
+}
+
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marqueeTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rv-green);
+  white-space: nowrap;
+  margin: 0 8px;
+}
+
+.marqueeTagAlt {
+  border-color: rgba(155, 92, 255, 0.3);
+  color: var(--rv-purple);
+}
+
+.manifestLine {
+  opacity: 0;
+  transform: translateX(64px);
+  transition:
+    transform 800ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    opacity 800ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.manifestLineVisible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.characterSection {
+  background: var(--rv-bg-surface);
+  padding: 80px 0;
+}
+
+.characterTabs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 60px;
+  flex-wrap: wrap;
+  padding: 0 24px;
+}
+
+.characterTab {
+  min-height: 44px;
+  padding: 10px 24px;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: var(--rv-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.characterTabActive {
+  background: rgba(155, 92, 255, 0.15);
+  border-color: var(--rv-purple);
+  color: var(--rv-purple);
+}
+
+.characterCard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 40px;
+  align-items: center;
+}
+
+.characterImageWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.characterCircle {
+  --character-accent: rgba(155, 92, 255, 0.18);
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 34%, var(--character-accent), transparent 62%), rgba(255, 255, 255, 0.02);
+  border: 2px solid color-mix(in srgb, var(--character-accent) 70%, rgba(255, 255, 255, 0.16));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.characterCircle::before {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--character-accent) 70%, white 8%), transparent 66%);
+  filter: blur(34px);
+}
+
+.characterCircleArt {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  filter: drop-shadow(0 0 30px rgba(155, 92, 255, 0.32));
+}
+
+.characterCircleBackdrop {
+  position: absolute;
+  inset: -8%;
+  object-fit: cover;
+  filter: blur(44px) saturate(1.18);
+  opacity: 0.52;
+  transform: scale(1.16);
+}
+
+.characterCircleFade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 4, 10, 0.12), transparent 14%, transparent 88%, rgba(4, 4, 10, 0.78)),
+    linear-gradient(90deg, rgba(4, 4, 10, 0.06), transparent 10%, transparent 90%, rgba(4, 4, 10, 0.06));
+}
+
+.characterInfoName {
+  font-size: clamp(40px, 6vw, 72px);
+  font-weight: 900;
+  color: var(--rv-text);
+  margin: 0 0 4px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.characterInfoSubtitle {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 32px;
+}
+
+.characterStats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 24px;
+  margin-bottom: 28px;
+}
+
+.characterStatLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rv-gold);
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+}
+
+.characterStatValue {
+  font-size: 13px;
+  color: var(--rv-text);
+}
+
+.characterDescription {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--rv-text-muted);
+  max-width: 500px;
+}
+
+.worldbuildingSection {
+  padding: 80px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.worldbuildingItem {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+  padding: 60px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.worldbuildingItem:last-child {
+  border-bottom: none;
+}
+
+.worldbuildingItemReverse {
+  direction: rtl;
+}
+
+.worldbuildingItemReverse > * {
+  direction: ltr;
+}
+
+.worldbuildingTitle {
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 800;
+  color: var(--rv-gold);
+  margin-bottom: 20px;
+  letter-spacing: 0.02em;
+}
+
+.worldbuildingText {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--rv-text-muted);
+  max-width: 480px;
+}
+
+.worldbuildingReferences {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--rv-text-dim);
+  font-style: italic;
+}
+
+.worldbuildingImage {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(16, 16, 30, 0.96), rgba(8, 8, 16, 0.96));
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
+.worldbuildingConceptImage {
+  object-fit: cover;
+  filter: saturate(0.96) contrast(1.02);
+}
+
+.worldbuildingImage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(4, 4, 10, 0.04), transparent 26%, transparent 72%, rgba(4, 4, 10, 0.72)),
+    radial-gradient(circle at 18% 18%, rgba(0, 212, 255, 0.08), transparent 24%),
+    radial-gradient(circle at 82% 22%, rgba(155, 92, 255, 0.12), transparent 28%);
+  pointer-events: none;
+}
+
+.worldbuildingPlaceholder {
+  color: var(--rv-text-dim);
+  font-size: 13px;
+  text-align: center;
+  padding: 40px;
+  border: 2px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dropsSection {
+  padding: 80px 40px;
+  background: var(--rv-bg-surface);
+}
+
+.dropsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dropCard {
+  background: var(--rv-bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 32px;
+  transition: border-color 300ms, transform 300ms;
+}
+
+.dropCard:hover {
+  border-color: rgba(0, 255, 136, 0.2);
+  transform: translateY(-4px);
+}
+
+.dropBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 100px;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--rv-green);
+  margin-bottom: 20px;
+}
+
+.dropTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--rv-gold);
+  margin-bottom: 14px;
+  letter-spacing: 0.03em;
+}
+
+.dropText {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--rv-text-muted);
+}
+
+.waitlistPanel {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(12, 12, 22, 0.96), rgba(6, 6, 12, 0.96));
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.3);
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 700ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    transform 700ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.revealVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 1024px) {
+  .characterCard,
+  .worldbuildingItem {
+    gap: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .titleWord {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .heroCharacter {
+    min-height: 240px;
+  }
+
+  .characterCard {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    padding: 0 24px;
+  }
+
+  .characterCircle {
+    width: 260px;
+    height: 260px;
+    margin: 0 auto;
+  }
+
+  .worldbuildingItem {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    direction: ltr !important;
+  }
+
+  .worldbuildingSection,
+  .dropsSection {
+    padding: 60px 24px;
+  }
+
+  .dropsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titleLetter,
+  .marqueeTrack,
+  .manifestLine,
+  .dropCard,
+  .reveal,
+  .revealVisible {
+    animation: none;
+    transition: none;
+    transform: none;
+    opacity: 1;
+  }
+}

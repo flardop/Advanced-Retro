@@ -122,9 +122,13 @@ export type AdminSettingRecord = {
 export type RetrovilleWaitlistRecord = {
   id: string;
   email: string;
+  display_name: string | null;
   created_at: string;
   role_label: string | null;
   source: string | null;
+  signup_intent: 'newsletter' | 'event' | null;
+  event_slug: string | null;
+  event_title: string | null;
 };
 
 export type AnalyticsEventRecord = {

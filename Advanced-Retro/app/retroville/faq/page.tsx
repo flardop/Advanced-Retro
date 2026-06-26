@@ -3,12 +3,14 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata } from '@/lib/seo';
-import { buildRetrovilleSeriesJsonLd } from '@/app/retroville/shared';
+import { buildRetrovilleSeriesJsonLd, getRetrovilleState } from '@/app/retroville/shared';
 import {
   retrovilleBodyFont as bodyFont,
   retrovilleDisplayFont as displayFont,
   retrovilleMonoFont as monoFont,
 } from '@/lib/retroville/fonts';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'FAQ de Retroville | Qué es, cuándo sale y cómo seguirlo',
@@ -28,40 +30,43 @@ export const metadata: Metadata = buildPageMetadata({
   image: '/images/retroville/retroville-street.png',
 });
 
-const faqs = [
-  {
-    question: '¿Qué es Retroville?',
-    answer:
-      'Retroville es una serie animada original ambientada en una ciudad construida con hardware abandonado. Mezcla humor oscuro, vida de barrio y worldbuilding inspirado en la cultura del videojuego.',
-  },
-  {
-    question: '¿Cuándo sale Retroville?',
-    answer:
-      'La primera gran señal pública del proyecto está fijada para el 10 de noviembre de 2026. Esa fecha marca el primer reveal oficial del universo.',
-  },
-  {
-    question: '¿Dónde puedo seguir el proyecto?',
-    answer:
-      'Puedes seguir Retroville desde la landing principal, la newsletter La Señal de Retroville, las redes oficiales y las subpáginas de personajes, sketchbook y press kit.',
-  },
-  {
-    question: '¿En qué plataforma se verá?',
-    answer:
-      'Todavía no hay una plataforma anunciada. Ahora mismo Retroville está en fase de presentación, desarrollo de universo y preparación de materiales de serie.',
-  },
-  {
-    question: '¿Quién está haciendo Retroville?',
-    answer:
-      'Retroville está siendo desarrollado por AdvancedRetro como una propiedad original con personajes, masterplan urbano, materiales visuales y documentación técnica en crecimiento.',
-  },
-  {
-    question: '¿Qué recibo si me apunto a La Señal de Retroville?',
-    answer:
-      'Recibirás el aviso prioritario del primer reveal público, una señal quincenal con avances y acceso temprano a nuevos drops, materiales y archivos del desarrollo.',
-  },
-] as const;
+function buildFaqs(launchLabel: string) {
+  return [
+    {
+      question: '¿Qué es Retroville?',
+      answer:
+        'Retroville es una serie animada original ambientada en una ciudad construida con hardware abandonado. Mezcla humor oscuro, vida de barrio y worldbuilding inspirado en la cultura del videojuego.',
+    },
+    {
+      question: '¿Cuándo sale Retroville?',
+      answer: `La primera gran señal pública del proyecto está fijada actualmente para el ${launchLabel}. Esa fecha marca el primer reveal oficial del universo.`,
+    },
+    {
+      question: '¿Dónde puedo seguir el proyecto?',
+      answer:
+        'Puedes seguir Retroville desde la landing principal, la newsletter La Señal de Retroville, las redes oficiales y las subpáginas de personajes, sketchbook y press kit.',
+    },
+    {
+      question: '¿En qué plataforma se verá?',
+      answer:
+        'Todavía no hay una plataforma anunciada. Ahora mismo Retroville está en fase de presentación, desarrollo de universo y preparación de materiales de serie.',
+    },
+    {
+      question: '¿Quién está haciendo Retroville?',
+      answer:
+        'Retroville está siendo desarrollado por AdvancedRetro como una propiedad original con personajes, masterplan urbano, materiales visuales y documentación técnica en crecimiento.',
+    },
+    {
+      question: '¿Qué recibo si me apunto a La Señal de Retroville?',
+      answer:
+        'Recibirás el aviso prioritario del primer reveal público, una señal quincenal con avances y acceso temprano a nuevos drops, materiales y archivos del desarrollo.',
+    },
+  ] as const;
+}
 
-export default function RetrovilleFaqPage() {
+export default async function RetrovilleFaqPage() {
+  const { launchLabel } = await getRetrovilleState();
+  const faqs = buildFaqs(launchLabel);
   const retrovilleSeriesSchema = buildRetrovilleSeriesJsonLd({
     path: '/retroville/faq',
     description:

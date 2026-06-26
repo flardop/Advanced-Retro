@@ -10,11 +10,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/retroville/icon?size=16', sizes: '16x16', type: 'image/png' },
-      { url: '/retroville/icon?size=32', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.png', sizes: '64x64', type: 'image/png' },
     ],
-    shortcut: '/retroville/icon?size=32',
-    apple: [{ url: '/retroville/apple-icon', sizes: '180x180', type: 'image/png' }],
+    shortcut: '/favicon.png',
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
 };
 

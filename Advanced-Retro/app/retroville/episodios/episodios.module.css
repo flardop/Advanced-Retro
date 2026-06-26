@@ -1,0 +1,419 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(196, 58, 47, 0.16), transparent 24%),
+    radial-gradient(circle at 85% 18%, rgba(212, 154, 67, 0.12), transparent 20%),
+    linear-gradient(180deg, #050505 0%, #0b0b0b 52%, #040404 100%);
+  color: #f5efe6;
+  font-family: var(--font-body), sans-serif;
+}
+
+.shell {
+  width: min(100%, 88rem);
+  margin: 0 auto;
+  padding: 0 clamp(1.1rem, 2vw, 2rem) 5rem;
+}
+
+.hero {
+  padding: 1.25rem 0 2rem;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.backLink,
+.heroLinks a,
+.inlineLink,
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  min-height: 2.9rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-radius: 999px;
+  padding: 0 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.backLink,
+.heroLinks a,
+.inlineLink {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(245, 239, 230, 0.88);
+}
+
+.backLink:hover,
+.heroLinks a:hover,
+.inlineLink:hover {
+  border-color: rgba(196, 58, 47, 0.42);
+  background: rgba(196, 58, 47, 0.08);
+}
+
+.heroLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 1.2rem;
+  align-items: end;
+  margin-top: 2rem;
+}
+
+.eyebrow,
+.sectionEyebrow,
+.episodeCode,
+.cardTag,
+.accessEyebrow,
+.incomingEyebrow {
+  margin: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.eyebrow,
+.sectionEyebrow,
+.episodeCode,
+.accessEyebrow,
+.incomingEyebrow {
+  color: #d49a43;
+}
+
+.title,
+.sectionTitle,
+.episodeTitle,
+.accessTitle,
+.incomingTitle {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 0.9;
+}
+
+.title {
+  font-size: clamp(3.2rem, 7vw, 6.8rem);
+}
+
+.heroPanel,
+.lockedCard,
+.accessPanel,
+.incomingCard,
+.requestCard {
+  border-radius: 1.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.heroPanel {
+  padding: 1.35rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+    rgba(8, 8, 10, 0.94);
+}
+
+.heroLead,
+.sectionLead,
+.lockedBody,
+.accessBody,
+.incomingBody,
+.requestBody {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.84;
+  color: rgba(245, 239, 230, 0.74);
+}
+
+.heroStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 154, 67, 0.24);
+  background: rgba(212, 154, 67, 0.08);
+  padding: 0.7rem 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(245, 239, 230, 0.9);
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.primaryAction,
+.secondaryAction {
+  border: 1px solid rgba(212, 154, 67, 0.24);
+  color: #090909;
+  background: linear-gradient(135deg, #f2c970 0%, #d49a43 100%);
+  box-shadow: 0 18px 40px rgba(212, 154, 67, 0.16);
+}
+
+.primaryAction:hover,
+.secondaryAction:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #f4d481 0%, #dda452 100%);
+}
+
+.privateStage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.timelineSection,
+.accessPanel {
+  min-height: 100%;
+}
+
+.timelineSection {
+  border-radius: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(7, 7, 8, 0.95);
+  padding: 1.2rem;
+}
+
+.sectionLead {
+  margin-top: 0.9rem;
+  max-width: 46rem;
+}
+
+.timelineRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.15rem;
+}
+
+.timelineRail span,
+.highlightGrid span {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.48rem 0.8rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(245, 239, 230, 0.82);
+}
+
+.lockedGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.lockedCard {
+  padding: 1.15rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    rgba(12, 12, 12, 0.92);
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.cardTag {
+  color: rgba(245, 239, 230, 0.46);
+}
+
+.episodeTitle {
+  margin-top: 0.85rem;
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+}
+
+.redactedStack {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.redactedStack span {
+  display: block;
+  height: 0.78rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(245, 239, 230, 0.12), rgba(245, 239, 230, 0.03)),
+    rgba(255, 255, 255, 0.04);
+}
+
+.redactedStack span:nth-child(1) {
+  width: 88%;
+}
+
+.redactedStack span:nth-child(2) {
+  width: 96%;
+}
+
+.redactedStack span:nth-child(3) {
+  width: 72%;
+}
+
+.lockedBody {
+  margin-top: 0.95rem;
+}
+
+.accessPanel {
+  padding: 1.35rem;
+  background:
+    radial-gradient(circle at top, rgba(212, 154, 67, 0.1), transparent 36%),
+    linear-gradient(180deg, rgba(18, 16, 11, 0.98), rgba(10, 9, 8, 0.98));
+}
+
+.accessTitle {
+  margin-top: 0.75rem;
+  font-size: clamp(2.1rem, 5vw, 3.6rem);
+}
+
+.accessBody {
+  margin-top: 0.9rem;
+}
+
+.infoList {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.2rem;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.85rem 0.9rem;
+  color: rgba(245, 239, 230, 0.82);
+}
+
+.infoRow span {
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.requestCard {
+  margin-top: 1.2rem;
+  padding: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+    rgba(0, 0, 0, 0.22);
+}
+
+.requestHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(245, 239, 230, 0.88);
+}
+
+.requestBody {
+  margin-top: 0.8rem;
+}
+
+.secondaryAction {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.incomingSection {
+  margin-top: 1rem;
+}
+
+.incomingCard {
+  padding: 1.35rem;
+  border-color: rgba(212, 154, 67, 0.3);
+  background:
+    linear-gradient(180deg, rgba(212, 154, 67, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(11, 9, 7, 0.94);
+}
+
+.incomingTitle {
+  margin-top: 0.8rem;
+  font-size: clamp(2.05rem, 4.6vw, 3.8rem);
+}
+
+.incomingBody {
+  margin-top: 0.8rem;
+  max-width: 48rem;
+}
+
+.highlightGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 1040px) {
+  .heroGrid,
+  .privateStage,
+  .lockedGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .nav {
+    align-items: stretch;
+  }
+
+  .heroLinks,
+  .heroActions {
+    width: 100%;
+  }
+
+  .backLink,
+  .heroLinks a,
+  .inlineLink,
+  .primaryAction,
+  .secondaryAction,
+  .heroStatus {
+    width: 100%;
+  }
+
+  .timelineSection,
+  .accessPanel,
+  .incomingCard,
+  .heroPanel,
+  .lockedCard {
+    border-radius: 1.5rem;
+  }
+}

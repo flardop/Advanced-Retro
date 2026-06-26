@@ -144,6 +144,94 @@ const curatedSections = [
       },
     ],
   },
+  {
+    title: 'Escenas Y Arquitectura',
+    phase: 'Fase activa · espacios ya publicables',
+    intro:
+      'Aquí ya no hablamos solo de boards de proceso. Estas piezas enseñan cómo se ve Retroville cuando el mundo baja a calle, barrio, interiores y atmósfera reconocible.',
+    items: [
+      {
+        title: 'Street frame',
+        tag: 'Barrio',
+        image: '/images/retroville/retroville-street.png',
+        text: 'Una de las imágenes más directas para vender la serie: señal, fachada, profundidad y tono de barrio ya cerrados.',
+      },
+      {
+        title: 'School district',
+        tag: 'Vida civil',
+        image: '/images/retroville/retroville-school-concept.png',
+        text: 'El colegio como pieza de ciudad real, útil tanto para humor cotidiano como para la parte más inquietante de la historia.',
+      },
+      {
+        title: 'Top Slot club',
+        tag: 'Noche',
+        image: '/images/retroville/retroville-club-concept.png',
+        text: 'La lectura más elegante y social del universo: luces, fachada y promesa de caos bonito dentro de la noche.',
+      },
+      {
+        title: 'Civic Hall',
+        tag: 'Institución',
+        image: '/images/retroville/retroville-civic-hall-concept.png',
+        text: 'Una arquitectura institucional con suficiente personalidad para que la autoridad de Retroville se reconozca al instante.',
+      },
+      {
+        title: 'Chaos office',
+        tag: 'Interior',
+        image: '/images/retroville/retroville-chaos-office.png',
+        text: 'Los interiores también tienen identidad: mesas, pantallas, densidad y una comedia visual que sigue respirando mundo.',
+      },
+      {
+        title: 'Bit Grave concept',
+        tag: 'Amenaza',
+        image: '/images/retroville/retroville-bit-grave-concept.png',
+        text: 'Una pieza más suelta y atmosférica para vender el reverso oscuro de la ciudad sin perder la firma visual.',
+      },
+    ],
+  },
+  {
+    title: 'Movilidad, Props Y Criaturas',
+    phase: 'Fase activa · sistemas urbanos',
+    intro:
+      'Cuando los vehículos, los props y las criaturas ya tienen propuesta visual, el mundo deja de depender solo del cast. Aquí se ve sistema, circulación y vida alrededor.',
+    items: [
+      {
+        title: 'Vehicle lineup',
+        tag: 'Movilidad',
+        image: '/images/retroville/retroville-vehicle-lineup-concept.png',
+        text: 'Una familia de transporte completa para que la ciudad no parezca sostenida por una única silueta o prop repetido.',
+      },
+      {
+        title: 'Metro-Pod concept',
+        tag: 'Transit',
+        image: '/images/retroville/retroville-metro-pod-concept.png',
+        text: 'La cápsula de transporte como icono reconocible: simple, clara y muy útil para repetir en el lenguaje del universo.',
+      },
+      {
+        title: 'Taxi pod',
+        tag: 'Servicio',
+        image: '/images/retroville/retroville-taxi-pod-concept.png',
+        text: 'Un sistema de movilidad cotidiana que ayuda a vender clases sociales, trayectos y ritmo urbano dentro de la serie.',
+      },
+      {
+        title: 'Zapperbike',
+        tag: 'Velocidad',
+        image: '/images/retroville/retroville-zapperbike-concept.png',
+        text: 'Una pieza más agresiva y veloz para persecuciones, llegadas fuertes y lectura joven del espacio urbano.',
+      },
+      {
+        title: 'Gripper car',
+        tag: 'Utilidad',
+        image: '/images/retroville/retroville-gripper-car-concept.png',
+        text: 'Vehículo de trabajo y de barrio que amplía el tono industrial sin romper la coherencia formal de la ciudad.',
+      },
+      {
+        title: 'Creatures study',
+        tag: 'Fauna',
+        image: '/images/retroville/retroville-creatures-concept.png',
+        text: 'Incluso la fauna ayuda a vender el lugar: formas raras, comportamiento propio y más capas para el ecosistema de Retroville.',
+      },
+    ],
+  },
 ] as const;
 
 export default function RetrovilleSketchesPage() {

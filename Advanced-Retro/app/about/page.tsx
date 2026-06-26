@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import BreadcrumbsNav from '@/components/BreadcrumbsNav';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata } from '@/lib/seo';
@@ -125,6 +126,46 @@ export default function AboutPage() {
                   <Link href="/retroville" className="button-secondary w-full text-center">
                     Ver Retroville
                   </Link>
+                  <Link href="/creator" className="button-secondary w-full text-center">
+                    Ver founder / CV
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 grid gap-5 lg:grid-cols-[0.95fr,1.05fr]">
+              <div className="overflow-hidden rounded-2xl border border-line bg-[rgba(10,18,30,0.58)]">
+                <div className="relative aspect-[4/5] overflow-hidden">
+                  <Image
+                    src="/images/creator/joel-color.jpg"
+                    alt="Joel Rivera Rodriguez, founder de AdvancedRetro"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 32vw"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-line bg-[rgba(10,18,30,0.58)] p-5 sm:p-6">
+                <p className="text-xs uppercase tracking-[0.14em] text-primary">Founder</p>
+                <h2 className="mt-3 text-2xl font-semibold text-text">Joel Rivera Rodriguez</h2>
+                <p className="mt-4 text-sm leading-relaxed text-textMuted">
+                  El apartado completo del founder y CV sigue existiendo dentro de AdvancedRetro. Ahí está reunida toda tu información personal y profesional: portfolio, recorrido, capacidades, historia y proyectos.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {['UX/UI Design', 'Web Development', 'Next.js', 'Storytelling', 'Retroville', 'AdvancedRetro'].map((item) => (
+                    <span key={item} className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-textMuted">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href="/creator" className="button-primary">
+                    Entrar al founder / CV
+                  </Link>
+                  <a href="mailto:flardop44@gmail.com" className="button-secondary">
+                    Contactar por correo
+                  </a>
                 </div>
               </div>
             </div>

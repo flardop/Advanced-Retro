@@ -5,6 +5,13 @@ import Script from 'next/script';
 import { usePathname } from 'next/navigation';
 import { Analytics } from '@vercel/analytics/react';
 import TrackerBootstrap from '@/components/TrackerBootstrap';
+import {
+  COOKIE_CONSENT_CHANGED_EVENT,
+  COOKIE_CONSENT_STORAGE_KEY,
+  createDefaultConsent,
+  normalizeConsent,
+  type CookieConsentState,
+} from '@/lib/cookieConsent';
 import styles from './retroville-shell.module.css';
 
 declare global {
@@ -12,6 +19,7 @@ declare global {
     plausible?: (eventName: string, options?: { props?: Record<string, unknown> }) => void;
     gtag?: (...args: unknown[]) => void;
     retrovilleSignal?: () => void;
+    retrovilleTrack?: (eventName: string, props?: Record<string, unknown>) => void;
   }
 }
 
@@ -32,6 +40,17 @@ function getErrorFingerprint(message: string, pathname: string, source: string) 
   return `${source}:${pathname}:${message}`.slice(0, 320);
 }
 
+function readConsent(): CookieConsentState {
+  if (typeof window === 'undefined') return createDefaultConsent();
+  const raw = window.localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY);
+  if (!raw) return createDefaultConsent();
+  try {
+    return normalizeConsent(JSON.parse(raw));
+  } catch {
+    return createDefaultConsent();
+  }
+}
+
 export default function RetrovilleShellClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '/retroville';
   const plausibleDomain = (process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || '').trim();
@@ -49,6 +68,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   const [cursorEnabled, setCursorEnabled] = useState(false);
   const [easterEggVisible, setEasterEggVisible] = useState(false);
   const [easterEggSource, setEasterEggSource] = useState<'konami' | 'console'>('konami');
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
 
   useEffect(() => {
     const syncProgress = () => {
@@ -75,6 +95,45 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   }, [pathname]);
 
   useEffect(() => {
+    const initial = readConsent();
+    setAnalyticsEnabled(Boolean(initial.analytics));
+
+    const onChanged = (event: Event) => {
+      const custom = event as CustomEvent<CookieConsentState>;
+      if (custom.detail) {
+        setAnalyticsEnabled(Boolean(custom.detail.analytics));
+        return;
+      }
+      const current = readConsent();
+      setAnalyticsEnabled(Boolean(current.analytics));
+    };
+
+    window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, onChanged);
+  }, []);
+
+  useEffect(() => {
+    window.retrovilleTrack = (eventName, props = {}) => {
+      if (!analyticsEnabled) return;
+      window.gtag?.('event', eventName, {
+        event_category: 'retroville',
+        ...props,
+      });
+      window.plausible?.(eventName, {
+        props: {
+          zone: 'retroville',
+          ...props,
+        },
+      });
+    };
+
+    return () => {
+      delete window.retrovilleTrack;
+    };
+  }, [analyticsEnabled]);
+
+  useEffect(() => {
+    if (!analyticsEnabled) return;
     if (analyticsPathRef.current === pathname) return;
     analyticsPathRef.current = pathname;
 
@@ -91,7 +150,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
         zone: 'retroville',
       },
     });
-  }, [pathname]);
+  }, [analyticsEnabled, pathname]);
 
   useEffect(() => {
     const media = window.matchMedia('(pointer: fine) and (hover: hover)');
@@ -231,7 +290,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
         <TrackerBootstrap />
       </Suspense>
 
-      {plausibleDomain ? (
+      {analyticsEnabled && plausibleDomain ? (
         <Script
           src={plausibleScriptUrl}
           strategy="afterInteractive"
@@ -239,7 +298,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
         />
       ) : null}
 
-      {gaMeasurementId ? (
+      {analyticsEnabled && gaMeasurementId ? (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
@@ -276,7 +335,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
         </div>
       ) : null}
 
-      <Analytics />
+      {analyticsEnabled ? <Analytics /> : null}
     </div>
   );
 }

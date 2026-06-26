@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowUpRight, Clock3, Download, FileStack, LockKeyhole } from 'lucide-react';
+import { ArrowUpRight, Clock3, FileStack, LockKeyhole } from 'lucide-react';
+import RetrovillePrivateDocumentButton from '@/components/retroville/RetrovillePrivateDocumentButton';
 
 type RetrovilleProductionDeskProps = {
   mode?: 'desktop' | 'mobile';
@@ -9,22 +10,20 @@ type RetrovilleProductionDeskProps = {
 
 type ProductionDocument = {
   title: string;
-  status: 'available' | 'incoming';
+  status: 'private' | 'incoming';
   description: string;
   meta: string;
-  href?: string;
   cta: string;
 };
 
 const productionDocuments: readonly ProductionDocument[] = [
   {
     title: 'Biblia de serie · Vision general',
-    status: 'available',
+    status: 'private',
     description:
-      'Documento base de Retroville con la premisa, el tono y el marco actual de la temporada 1. Es la pieza de trabajo mas avanzada disponible ahora mismo.',
-    meta: 'PDF · 10 paginas · 18+ · comedia negra · 10 episodios T1',
-    href: '/downloads/retroville/retroville-biblia-serie-v0.pdf',
-    cta: 'Descargar PDF',
+      'Documento base de Retroville con la premisa, el tono y el marco actual de la temporada 1. Ahora se comparte solo por solicitud directa al correo del proyecto.',
+    meta: 'PDF privado · solicitud por email · 10 paginas · 18+',
+    cta: 'Solicitar acceso',
   },
   {
     title: 'Season 1 playbook',
@@ -49,8 +48,8 @@ const episodePackets = Array.from({ length: 10 }, (_, index) => {
 });
 
 function statusChip(status: ProductionDocument['status']) {
-  if (status === 'available') {
-    return 'border-[var(--rv-green)]/25 bg-[var(--rv-green)]/10 text-[var(--rv-green)]';
+  if (status === 'private') {
+    return 'border-[#ffc940]/25 bg-[#ffc940]/10 text-[#ffc940]';
   }
 
   return 'border-white/10 bg-white/[0.04] text-white/58';
@@ -70,7 +69,7 @@ export default function RetrovilleProductionDesk({
             MATERIAL TECNICO Y BIBLIAS
           </h3>
           <p className="mt-4 max-w-[48ch] text-sm leading-7 text-white/72 sm:text-base">
-            Aqui se iran abriendo los documentos de trabajo del universo. Lo que ya este listo se puede descargar. Lo que siga en mesa de montaje aparece bloqueado como incoming.
+            Aqui se iran abriendo los documentos de trabajo del universo. Algunos materiales se podran descargar y otros quedaran en acceso privado por solicitud directa. Lo que siga en mesa de montaje aparece bloqueado como incoming.
           </p>
         </div>
 
@@ -84,7 +83,7 @@ export default function RetrovilleProductionDesk({
                 <span
                   className={`inline-flex min-h-[32px] items-center rounded-full border px-3 text-[10px] font-semibold uppercase tracking-[0.22em] ${statusChip(document.status)}`}
                 >
-                  {document.status === 'available' ? 'Disponible' : 'Incoming'}
+                  {document.status === 'private' ? 'Privado' : 'Incoming'}
                 </span>
                 <span className="text-[10px] uppercase tracking-[0.22em] text-white/42">{document.meta}</span>
               </div>
@@ -93,17 +92,12 @@ export default function RetrovilleProductionDesk({
               </h4>
               <p className="mt-3 text-sm leading-7 text-white/72">{document.description}</p>
               <div className="mt-5 flex flex-wrap gap-3">
-                {document.href ? (
-                  <a
-                    href={document.href}
-                    download
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-[46px] items-center gap-2 rounded-full bg-[var(--rv-green)] px-5 py-3 text-sm font-bold text-black transition hover:brightness-110"
-                  >
-                    <Download className="h-4 w-4" />
-                    {document.cta}
-                  </a>
+                {document.status === 'private' ? (
+                  <RetrovillePrivateDocumentButton
+                    documentTitle={document.title}
+                    buttonLabel={document.cta}
+                    className="inline-flex min-h-[46px] items-center gap-2 rounded-full bg-[#ffc940] px-5 py-3 text-sm font-bold text-black transition hover:brightness-110"
+                  />
                 ) : (
                   <button
                     type="button"
@@ -126,7 +120,7 @@ export default function RetrovilleProductionDesk({
             <div>
               <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-gold)]">Nota de release</p>
               <p className="mt-2 text-sm leading-7 text-white/72">
-                Cada archivo nuevo se publicara aqui cuando tenga suficiente nivel de presentacion. Mientras tanto, el sketchbook y el reparto completo siguen siendo la mejor forma de seguir el avance del proyecto.
+                Cada archivo nuevo se publicara aqui cuando tenga suficiente nivel de presentacion. La biblia principal queda en solicitud privada y, mientras tanto, el sketchbook y el reparto completo siguen siendo la mejor forma de seguir el avance del proyecto.
               </p>
             </div>
           </div>
