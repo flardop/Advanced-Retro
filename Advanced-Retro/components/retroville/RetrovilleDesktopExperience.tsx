@@ -820,15 +820,7 @@ export default function RetrovilleDesktopExperience({
 
         <section className={`${styles.heroLayer} ${activeStep > 0 ? styles.heroLayerHidden : ''} ${portalTransition ? styles.heroLayerOpening : ''}`}>
           <div className={styles.heroBackground}>
-            <Image
-              src="/images/retroville/retroville-hero-portal-bg.webp"
-              alt="Vista del portal central de Retroville con el universo emergiendo al fondo"
-              fill
-              priority
-              sizes="100vw"
-              className={styles.heroBackdropImage}
-              aria-hidden
-            />
+            <div className={styles.heroBackdropGradient} aria-hidden="true" />
             <div className={styles.heroBackdropTint} />
             <div className={styles.heroPortalGlow} />
           </div>

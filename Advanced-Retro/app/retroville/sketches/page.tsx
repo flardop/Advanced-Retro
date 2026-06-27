@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
 import { buildRetrovilleSeriesJsonLd } from '@/app/retroville/shared';
+import { retrovilleGuideSlides } from '@/app/retroville/content';
 import {
   retrovilleBodyFont as bodyFont,
   retrovilleDisplayFont as displayFont,
@@ -234,6 +235,54 @@ const curatedSections = [
   },
 ] as const;
 
+const characterGuideNotes: Record<string, string> = {
+  'NOX styleguide': 'Hoja final para fijar silueta, actitud y materiales del protagonista sin ruido extra en el home.',
+  'LUNA styleguide': 'La guía de Luna ya deja cerrada su presencia y el contraste visual que necesita frente a NOX.',
+  'BUTTON CREW guide': 'El trío funciona como familia visual completa: color, pose y lectura grupal ya presentables.',
+  'Cast anatomy': 'La anatomy sheet asegura consistencia de proporciones antes de entrar en escenas y producción real.',
+  'Nora v2': 'Iteración de desarrollo que ayuda a consolidar el tono civil y observador de una de las vecinas clave.',
+  'Joy & Grump': 'Sheet del dúo más ácido del barrio, útil para enseñar humor y construcción de pareja cómica.',
+};
+
+const supportingCharacterSheets = [
+  {
+    title: 'Patrol Chief v2',
+    tag: 'Orden público',
+    image: '/images/retroville/dev-characters/patrol-chief-v2-sheet.png',
+    text: 'Figura de autoridad para sostener la parte más vigilada y tensa de la ciudad sin romper el tono caricaturesco.',
+  },
+  {
+    title: 'Public Crew v2',
+    tag: 'Ruido civil',
+    image: '/images/retroville/dev-characters/public-crew-v2-sheet.png',
+    text: 'Ciudadanos, extras y energía social para que las calles tengan conversación, masa y pequeños conflictos visibles.',
+  },
+  {
+    title: 'City Hall worker',
+    tag: 'Burocracia',
+    image: '/images/retroville/dev-characters/city-hall-worker-sheet.png',
+    text: 'La capa administrativa también necesita cara propia: gestos, uniforme y actitud de sistema cansado.',
+  },
+  {
+    title: 'Nona early sheet',
+    tag: 'Colegio',
+    image: '/images/retroville/dev-characters/nona-girl-sheet.png',
+    text: 'Material temprano que deja ver la evolución previa de una de las figuras más inquietantes del colegio.',
+  },
+  {
+    title: 'Tomo v2',
+    tag: 'Kids',
+    image: '/images/retroville/dev-characters/tomo-v2-sheet.png',
+    text: 'Revisión que refuerza la lectura traviesa del personaje y su papel como motor de energía callejera.',
+  },
+  {
+    title: 'Pipo v2',
+    tag: 'Caos pequeño',
+    image: '/images/retroville/dev-characters/pipo-v2-sheet.png',
+    text: 'Más precisión para ese perfil de mascota insoportable con ego sobredimensionado y presencia cómica inmediata.',
+  },
+] as const;
+
 export default function RetrovilleSketchesPage() {
   const pageSchema = buildCollectionPageJsonLd({
     name: 'Sketchbook de Retroville',
@@ -301,6 +350,10 @@ export default function RetrovilleSketchesPage() {
               El archivo sigue vivo y se actualiza a medida que cerramos barrios, props, transporte y nuevas
               traducciones visuales del mundo.
             </p>
+            <p className={styles.heroText}>
+              Aquí también aterriza ahora el material de proceso de personajes que se ha quitado del pitch principal
+              para que el home venda la serie y este archivo enseñe cómo se construye.
+            </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/retroville/personajes" className={styles.footerCta}>
                 Ver reparto <ArrowRight className="h-4 w-4" />
@@ -327,6 +380,78 @@ export default function RetrovilleSketchesPage() {
           </div>
         </section>
       </header>
+
+      <section className={styles.groupSection}>
+        <div className={styles.groupHeader}>
+          <p className={styles.eyebrow}>Moved from pitch home</p>
+          <h2 className={`${displayFont.className} ${styles.groupTitle}`}>GUIAS Y SHEETS DE PERSONAJE</h2>
+          <div className="mt-4 inline-flex items-center rounded-full border border-[#ffbf52]/20 bg-[#ffbf52]/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-[#ffbf52]">
+            Archivo de proceso · cast y desarrollo
+          </div>
+          <p>
+            Todo el material de proceso que ya no compite dentro del home vive ahora aquí: styleguides finales,
+            anatomy sheets y hojas de desarrollo para enseñar método, no saturar la portada.
+          </p>
+        </div>
+
+        <div className={styles.grid}>
+          {retrovilleGuideSlides.slice(0, 6).map((item) => (
+            <article key={item.title} id={toSketchAnchor(item.title)} className={styles.card}>
+              <div className={styles.imageWrap}>
+                <Image
+                  src={item.image}
+                  alt={item.alt}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 33vw"
+                  className={styles.cardImage}
+                  loading="lazy"
+                />
+              </div>
+              <div className={styles.cardCopy}>
+                <span className={styles.cardTag}>{item.meta}</span>
+                <h3 className={`${displayFont.className} ${styles.cardTitle}`}>{item.title}</h3>
+                <p>{characterGuideNotes[item.title]}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={styles.groupSection}>
+        <div className={styles.groupHeader}>
+          <p className={styles.eyebrow}>Supporting cast process</p>
+          <h2 className={`${displayFont.className} ${styles.groupTitle}`}>APOYO VISUAL DEL BARRIO</h2>
+          <div className="mt-4 inline-flex items-center rounded-full border border-[#8ad7ff]/20 bg-[#8ad7ff]/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-[#8ad7ff]">
+            Desarrollo civil y secundario
+          </div>
+          <p>
+            Secundarios, autoridad, kids y ruido civil. Este bloque conserva el material que ayuda a que Retroville
+            parezca población real sin mezclarlo con la página de venta principal.
+          </p>
+        </div>
+
+        <div className={styles.grid}>
+          {supportingCharacterSheets.map((item) => (
+            <article key={item.title} id={toSketchAnchor(item.title)} className={styles.card}>
+              <div className={styles.imageWrap}>
+                <Image
+                  src={item.image}
+                  alt={`Hoja de proceso de ${item.title} en Retroville`}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 33vw"
+                  className={styles.cardImage}
+                  loading="lazy"
+                />
+              </div>
+              <div className={styles.cardCopy}>
+                <span className={styles.cardTag}>{item.tag}</span>
+                <h3 className={`${displayFont.className} ${styles.cardTitle}`}>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       {curatedSections.map((group) => (
         <section key={group.title} className={styles.groupSection}>

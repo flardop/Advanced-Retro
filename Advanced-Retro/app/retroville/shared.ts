@@ -6,6 +6,7 @@ export const RETROVILLE_NEWSLETTER_NAME = 'La Señal de Retroville';
 export const RETROVILLE_SIGNUP_COUNT_THRESHOLD = 25;
 export const RETROVILLE_GOOGLE_SITE_VERIFICATION =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'googlebffb5f7b5e8a2336';
+export const RETROVILLE_PITCH_EMAIL = 'flardop44@gmail.com';
 
 export type RetrovilleSocialChannel = {
   label: string;
@@ -21,6 +22,18 @@ export type RetrovilleDiscoveryLink = {
   eyebrow: string;
   description: string;
 };
+
+export function buildRetrovillePitchMailto({
+  subject,
+  body,
+}: {
+  subject: string;
+  body?: string;
+}) {
+  const params = new URLSearchParams({ subject });
+  if (body) params.set('body', body);
+  return `mailto:${RETROVILLE_PITCH_EMAIL}?${params.toString()}`;
+}
 
 export const RETROVILLE_SOCIAL_CHANNELS = [
   {
@@ -50,13 +63,6 @@ export const RETROVILLE_SOCIAL_CHANNELS = [
     ariaLabel: 'Abrir Discord de Retroville',
     eyebrow: 'Comunidad activa',
     description: 'El canal para entrar dentro, hablar, seguir eventos y reaccionar en tiempo real.',
-  },
-  {
-    label: 'Reddit',
-    href: 'https://www.reddit.com/user/Flardop/',
-    ariaLabel: 'Abrir Reddit de Retroville',
-    eyebrow: 'Posts largos',
-    description: 'Espacio para lore, builds más extensas y conversaciones menos inmediatas.',
   },
   {
     label: 'Facebook',

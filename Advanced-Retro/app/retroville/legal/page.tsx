@@ -5,7 +5,10 @@ import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react';
 import { Anton, DM_Sans, Space_Mono } from 'next/font/google';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
-import { buildRetrovilleSeriesJsonLd as buildRetrovilleSeriesJsonLdPage } from '@/app/retroville/shared';
+import {
+  buildRetrovillePitchMailto,
+  buildRetrovilleSeriesJsonLd as buildRetrovilleSeriesJsonLdPage,
+} from '@/app/retroville/shared';
 
 const displayFont = Anton({ subsets: ['latin'], weight: '400' });
 const bodyFont = DM_Sans({ subsets: ['latin'] });
@@ -156,7 +159,10 @@ export default function RetrovilleLegalPage() {
               Para colaboraciones, prensa, licencias, uso editorial, eventos, distribución, merchandising o acuerdos comerciales, solicita autorización previa por escrito.
             </p>
             <a
-              href="mailto:flardop44@gmail.com?subject=Permiso%20o%20licencia%20Retroville"
+              href={buildRetrovillePitchMailto({
+                subject: 'Permiso o licencia Retroville',
+                body: 'Hola equipo de AdvancedRetro,\n\nQuiero solicitar permiso o más información sobre licencias de Retroville.\n\nGracias.',
+              })}
               className="mt-6 inline-flex min-h-[48px] items-center gap-3 rounded-full bg-[#ffc940] px-6 font-black text-[#160f08] transition hover:scale-[1.02]"
             >
               <Mail className="h-4 w-4" /> Solicitar permiso

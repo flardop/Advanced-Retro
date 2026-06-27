@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import StructuredData from '@/components/StructuredData';
 import RetrovillePrivateDocumentButton from '@/components/retroville/RetrovillePrivateDocumentButton';
-import { buildRetrovilleSeriesJsonLd } from '@/app/retroville/shared';
+import { buildRetrovilleSeriesJsonLd, RETROVILLE_PITCH_EMAIL } from '@/app/retroville/shared';
 import {
   buildBreadcrumbJsonLd,
   buildCollectionPageJsonLd,
@@ -184,7 +184,7 @@ export default function RetrovilleEpisodesPage() {
               <div className={styles.requestCard}>
                 <div className={styles.requestHeader}>
                   <Mail className="h-4 w-4" />
-                  <span>Solicitud a flardop44@gmail.com</span>
+                  <span>Solicitud a {RETROVILLE_PITCH_EMAIL}</span>
                 </div>
                 <p className={styles.requestBody}>
                   El acceso sirve para presentar la temporada con orden, proteger la narrativa y decidir a quién se le

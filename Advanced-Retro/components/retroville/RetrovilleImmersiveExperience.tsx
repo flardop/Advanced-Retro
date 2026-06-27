@@ -167,114 +167,6 @@ const conceptCards = [
   },
 ] as const;
 
-const guideCards = [
-  {
-    title: 'Cast overview',
-    meta: 'Guia visual',
-    image: '/images/retroville/retroville-cast-presentation.webp',
-  },
-  {
-    title: 'Nox styleguide',
-    meta: 'Personaje',
-    image: '/images/retroville/nox-styleguide.png',
-  },
-  {
-    title: 'Luna styleguide',
-    meta: 'Personaje',
-    image: '/images/retroville/luna-styleguide.png',
-  },
-  {
-    title: 'Button Crew guide',
-    meta: 'Personaje',
-    image: '/images/retroville/button-crew-styleguide.webp',
-  },
-  {
-    title: 'Character anatomy',
-    meta: 'Archivo',
-    image: '/images/retroville/characters/character-anatomy-sheet.webp',
-  },
-  {
-    title: 'Button Crew sheet',
-    meta: 'Dev sheet',
-    image: '/images/retroville/characters/button-crew-sheet.webp',
-  },
-  {
-    title: 'Nora sheet',
-    meta: 'Dev sheet',
-    image: '/images/retroville/dev-characters/nora-v2-sheet.png',
-  },
-  {
-    title: 'Joy & Grump',
-    meta: 'Dev sheet',
-    image: '/images/retroville/dev-characters/joy-grump-sheet.png',
-  },
-  {
-    title: 'Mayor Tube',
-    meta: 'Dev sheet',
-    image: '/images/retroville/dev-characters/mayor-tube-sheet.png',
-  },
-  {
-    title: 'Mayor Tube v2',
-    meta: 'Revision',
-    image: '/images/retroville/dev-characters/mayor-tube-v2-sheet.png',
-  },
-  {
-    title: 'Nano sheet',
-    meta: 'Dev sheet',
-    image: '/images/retroville/dev-characters/nano-sheet.png',
-  },
-  {
-    title: 'Pipo sheet',
-    meta: 'Dev sheet',
-    image: '/images/retroville/dev-characters/pipo-sheet.png',
-  },
-  {
-    title: 'Tomo sheet',
-    meta: 'Dev sheet',
-    image: '/images/retroville/dev-characters/tomo-sheet.png',
-  },
-  {
-    title: 'Public Crew',
-    meta: 'Dev sheet',
-    image: '/images/retroville/dev-characters/public-crew-sheet.png',
-  },
-  {
-    title: 'Patrol Chief',
-    meta: 'Dev sheet',
-    image: '/images/retroville/dev-characters/patrol-chief-sheet.png',
-  },
-  {
-    title: 'CRUX sheet',
-    meta: 'Dev sheet',
-    image: '/images/retroville/dev-characters/crux-sheet.png',
-  },
-  {
-    title: 'Masterplan',
-    meta: 'Ciudad',
-    image: '/images/retroville/process/masterplan-overview-board.webp',
-  },
-  {
-    title: 'Cinema district',
-    meta: 'Distrito',
-    image: '/images/retroville/process/cinema-mall-district-board.webp',
-  },
-  {
-    title: 'Transit board',
-    meta: 'Movilidad',
-    image: '/images/retroville/process/metro-pod-translation-board.webp',
-  },
-  {
-    title: 'Urban props',
-    meta: 'Props',
-    image: '/images/retroville/retroville-urban-props-concept.webp',
-  },
-  {
-    title: 'Nox house',
-    meta: 'Interior',
-    image: '/images/retroville/retroville-nox-house-concept.png',
-  },
-] as const;
-
 const visualDevelopmentCards = [
   {
     title: 'Cast presentation',
@@ -582,16 +474,12 @@ function buildIcsFile(launchIso: string, eventUrl: string) {
 function trackCalendarAction(channel: 'google' | 'ics') {
   if (typeof window === 'undefined') return;
   const analyticsWindow = window as Window & {
-    gtag?: (...args: unknown[]) => void;
-    plausible?: (eventName: string, options?: { props?: Record<string, unknown> }) => void;
+    retrovilleTrack?: (eventName: string, props?: Record<string, unknown>) => void;
   };
 
-  analyticsWindow.gtag?.('event', 'retroville_event_calendar_save', {
-    event_category: 'retroville',
-    event_label: channel,
-  });
-  analyticsWindow.plausible?.('Retroville event calendar save', {
-    props: { channel },
+  analyticsWindow.retrovilleTrack?.('retroville_event_calendar_save', {
+    channel,
+    location: 'immersive_experience',
   });
 }
 
@@ -752,7 +640,7 @@ export default function RetrovilleImmersiveExperience({
       scrollTrigger: {
         trigger: stageRef.current,
         start: 'top top',
-        end: isMobile ? '+=220%' : '+=360%',
+        end: isMobile ? '+=135%' : '+=360%',
         scrub: 1.1,
       },
     });
@@ -971,7 +859,7 @@ export default function RetrovilleImmersiveExperience({
           <div className={styles.sectionHeader}>
             <div>
               <p className={styles.eyebrow}>Cast</p>
-              <h3 className={styles.blockTitle}>Personajes principales arriba, guias visuales reales debajo.</h3>
+              <h3 className={styles.blockTitle}>Personajes principales y residentes que sostienen la ciudad.</h3>
             </div>
             <Link href="/retroville/personajes" className={styles.inlineLink}>
               Abrir reparto completo
@@ -1011,20 +899,6 @@ export default function RetrovilleImmersiveExperience({
                   <p className={styles.cardMeta}>{resident.district}</p>
                   <h4 className={styles.residentName}>{resident.name}</h4>
                   <p className={styles.cardBody}>{resident.body}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className={styles.guideRail} aria-label="Guias visuales de Retroville">
-            {guideCards.map((card) => (
-              <article key={card.title} className={styles.guideCard}>
-                <div className={styles.guideImageWrap}>
-                  <Image src={card.image} alt={card.title} fill sizes="320px" className={styles.guideImage} />
-                </div>
-                <div className={styles.guideCopy}>
-                  <p className={styles.cardMeta}>{card.meta}</p>
-                  <h4 className={styles.guideTitle}>{card.title}</h4>
                 </div>
               </article>
             ))}

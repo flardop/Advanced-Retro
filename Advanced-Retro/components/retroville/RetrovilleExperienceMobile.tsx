@@ -380,7 +380,10 @@ export default function RetrovilleExperience({
     <main
       className={`${displayFont.variable} ${monoFont.variable} ${bodyFont.variable} ${styles.page} bg-[var(--rv-bg-deep)] text-[var(--rv-text)] [font-family:var(--font-body)]`}
     >
-      <section ref={heroRef} className={`${styles.hero} min-h-[100svh] px-5 pb-16 pt-24 sm:px-8 lg:px-10`}>
+      <section
+        ref={heroRef}
+        className={`${styles.hero} min-h-[72svh] px-5 pb-10 pt-20 sm:min-h-[88svh] sm:px-8 sm:pb-14 sm:pt-24 lg:min-h-[100svh] lg:px-10 lg:pb-16`}
+      >
         <div className={styles.heroNoise} />
         <div className={styles.scanlines} />
         <div className="absolute inset-y-0 left-[-18%] w-[54%] bg-[radial-gradient(circle_at_20%_48%,rgba(0,212,255,0.22),transparent_58%)] blur-[120px]" />
@@ -399,15 +402,7 @@ export default function RetrovilleExperience({
 
         <div className="relative z-10 mx-auto mt-10 grid max-w-[1440px] items-center gap-10 lg:grid-cols-[minmax(0,0.28fr)_minmax(0,0.44fr)_minmax(0,0.28fr)] lg:gap-6 xl:gap-10">
           <div className={`${styles.heroCharacter} hidden lg:block`}>
-            <Image
-              src="/images/retroville/nox-push.webp"
-              alt="Silueta de NOX empujando el núcleo de Retroville"
-              fill
-              sizes="28vw"
-              className={`${styles.heroWash} ${styles.heroWashImage}`}
-              style={{ objectPosition: 'left center' }}
-              aria-hidden
-            />
+            <div className={`${styles.heroWash} ${styles.heroWashBackdrop} ${styles.heroWashBackdropLeft}`} aria-hidden />
             <div className={`${styles.heroAura} ${styles.heroAuraLeft}`} />
             <Image
               src="/images/retroville/nox-push.webp"
@@ -504,15 +499,7 @@ export default function RetrovilleExperience({
           </div>
 
           <div className={`${styles.heroCharacter} hidden lg:block`}>
-            <Image
-              src="/images/retroville/button-crew-push.webp"
-              alt="Silueta del Button Crew empujando el núcleo de Retroville"
-              fill
-              sizes="30vw"
-              className={`${styles.heroWash} ${styles.heroWashImage}`}
-              style={{ objectPosition: 'right center' }}
-              aria-hidden
-            />
+            <div className={`${styles.heroWash} ${styles.heroWashBackdrop} ${styles.heroWashBackdropRight}`} aria-hidden />
             <div className={`${styles.heroAura} ${styles.heroAuraRight}`} />
             <Image
               src="/images/retroville/button-crew-push.webp"
@@ -560,18 +547,26 @@ export default function RetrovilleExperience({
               </div>
             </div>
             <div className="relative overflow-hidden rounded-[1.7rem] border border-white/8 bg-[rgba(7,10,20,0.72)]">
-              <Image
-                src="/images/retroville/process/masterplan-overview-board.png"
-                alt="Masterplan general del universo Retroville"
-                width={1400}
-                height={900}
-                sizes="(max-width: 640px) 100vw, 50vw"
-                className="h-auto w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,10,0.08),transparent_30%,rgba(4,4,10,0.82))]" />
-              <div className="absolute inset-x-0 bottom-0 p-4">
-                <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Sistema</p>
-                <p className={`${displayFont.className} mt-2 text-xl uppercase text-white`}>Mapa y proceso</p>
+              <div className="relative min-h-[15rem] overflow-hidden bg-[linear-gradient(160deg,rgba(7,10,20,0.92),rgba(13,18,34,0.96)_54%,rgba(24,10,34,0.92))]">
+                <div className="absolute inset-[-12%] bg-[radial-gradient(circle_at_18%_24%,rgba(0,212,255,0.16),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(155,92,255,0.18),transparent_30%),radial-gradient(circle_at_50%_78%,rgba(255,191,82,0.1),transparent_26%)] blur-[32px]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%,rgba(4,4,10,0.88))]" />
+                <div className="relative flex h-full min-h-[15rem] flex-col justify-between p-4">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex min-h-[30px] items-center rounded-full border border-white/10 bg-white/[0.05] px-3 text-[10px] uppercase tracking-[0.22em] text-[var(--rv-cyan)]">
+                      Señal interna
+                    </span>
+                    <span className="inline-flex min-h-[30px] items-center rounded-full border border-white/10 bg-white/[0.05] px-3 text-[10px] uppercase tracking-[0.22em] text-white/64">
+                      Sin sketch visible
+                    </span>
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Sistema</p>
+                    <p className={`${displayFont.className} mt-2 text-xl uppercase text-white`}>Mapa sin lavado blanco</p>
+                    <p className="mt-3 max-w-[20rem] text-sm leading-6 text-white/72">
+                      Si aparece esta capa al bajar, ahora entra con atmósfera oscura y brillo de señal, no con sketch lavado.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

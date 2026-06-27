@@ -118,6 +118,75 @@ function humanizeWaitlistSource(source: string | null | undefined) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function readMetaString(meta: Record<string, unknown> | null | undefined, key: string) {
+  const value = meta?.[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : '';
+}
+
+function isRetrovillePath(path: string | null | undefined) {
+  const normalized = normalizeTrackedPath(path);
+  return normalized === '/retroville' || normalized.startsWith('/retroville/');
+}
+
+function isRetrovilleEvent(row: AnalyticsEventRecord) {
+  const path = normalizeTrackedPath(row.path || readMetaString(row.meta, 'path') || '/retroville');
+  return String(row.event_name || '').startsWith('retroville_') || isRetrovillePath(path);
+}
+
+function humanizeRetrovilleEventName(eventName: string | null | undefined) {
+  const normalized = String(eventName || '').trim().toLowerCase();
+  switch (normalized) {
+    case 'retroville_newsletter_signup':
+      return 'Alta newsletter';
+    case 'retroville_event_signup':
+      return 'Registro en evento';
+    case 'retroville_event_calendar_save':
+      return 'Evento guardado';
+    case 'retroville_buyer_cta_click':
+      return 'CTA de comprador';
+    case 'retroville_intro_enter':
+      return 'Entrada al universo';
+    case 'retroville_private_document_open':
+      return 'Documento privado · Popup abierto';
+    case 'retroville_private_document_mail_click':
+      return 'Documento privado · Click en email';
+    case 'retroville_private_document_email_copy':
+      return 'Documento privado · Correo copiado';
+    default:
+      return normalized
+        .replace(/^retroville_/, '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase()) || 'Evento';
+  }
+}
+
+function buildRetrovilleBuyerLabel(meta: Record<string, unknown> | null | undefined) {
+  const location = readMetaString(meta, 'location');
+  const action = readMetaString(meta, 'action');
+  const label = [location, action].filter(Boolean).join(' · ');
+  return label || 'CTA sin detalle';
+}
+
+function describeRetrovilleEvent(row: AnalyticsEventRecord) {
+  const base = humanizeRetrovilleEventName(row.event_name);
+  const source = humanizeWaitlistSource(readMetaString(row.meta, 'source'));
+  const channel = readMetaString(row.meta, 'channel');
+  const documentTitle = readMetaString(row.meta, 'document_title');
+  const buyerLabel = buildRetrovilleBuyerLabel(row.meta);
+
+  if (row.event_name === 'retroville_buyer_cta_click') return buyerLabel;
+  if (row.event_name === 'retroville_event_calendar_save') {
+    return channel ? `${base} · ${channel}` : base;
+  }
+  if (row.event_name === 'retroville_newsletter_signup' || row.event_name === 'retroville_event_signup') {
+    return source ? `${base} · ${source}` : base;
+  }
+  if (String(row.event_name || '').startsWith('retroville_private_document_')) {
+    return documentTitle ? `${base} · ${documentTitle}` : base;
+  }
+  return base;
+}
+
 function normalizeTrackedPath(url: string | null | undefined) {
   const raw = String(url || '/').trim();
   if (!raw) return '/';
@@ -496,17 +565,67 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
     return date ? isWithinInterval(date, { start: from, end: to }) : false;
   });
 
-  const retrovilleRows = rowsInRange.filter((row) => {
-    const path = normalizeTrackedPath(row.url);
-    return path === '/retroville' || path.startsWith('/retroville/');
+  const retrovilleAllRows = rows.filter((row) => isRetrovillePath(row.url));
+  const retrovilleRows = rowsInRange.filter((row) => isRetrovillePath(row.url));
+  const retrovilleEventsInRange = analyticsEvents.filter((row) => {
+    if (!isRetrovilleEvent(row)) return false;
+    const date = safeDate(row.created_at);
+    return date ? isWithinInterval(date, { start: from, end: to }) : false;
   });
 
-  const uniqueSessions = new Set(retrovilleRows.map((row) => row.session_id).filter(Boolean)).size;
-  const totalDuration = retrovilleRows.reduce((sum, row) => sum + toNumber(row.duration_seconds), 0);
+  const sortedRetrovilleAllRows = retrovilleAllRows
+    .slice()
+    .sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
+  const sortedRetrovilleRows = retrovilleRows
+    .slice()
+    .sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
 
-  const topPagesMap = new Map<string, { url: string; page_title: string | null; views: number; sessions: Set<string>; totalDuration: number }>();
-  for (const row of retrovilleRows) {
+  const visitorFirstSeen = new Map<string, Date>();
+  for (const row of sortedRetrovilleAllRows) {
+    const visitDate = safeDate(row.timestamp);
+    const visitorKey = row.ip_hash || row.session_id || null;
+    if (!visitorKey || !visitDate) continue;
+    const current = visitorFirstSeen.get(visitorKey);
+    if (!current || visitDate < current) {
+      visitorFirstSeen.set(visitorKey, visitDate);
+    }
+  }
+
+  const topPagesMap = new Map<
+    string,
+    {
+      url: string;
+      page_title: string | null;
+      views: number;
+      sessions: Set<string>;
+      totalDuration: number;
+    }
+  >();
+  const sessionMap = new Map<
+    string,
+    {
+      session_id: string;
+      visitor_key: string | null;
+      started_at: string;
+      last_seen_at: string;
+      country: string;
+      city: string;
+      source: string;
+      device_type: string;
+      browser: string;
+      os: string;
+      first_page: string;
+      last_page: string;
+      page_views: number;
+      unique_pages: Set<string>;
+      total_duration: number;
+    }
+  >();
+
+  for (const row of sortedRetrovilleRows) {
     const path = normalizeTrackedPath(row.url);
+    const sessionKey = row.session_id?.trim() || `view:${row.id}`;
+    const visitDate = safeDate(row.timestamp);
     const current = topPagesMap.get(path) || {
       url: path,
       page_title: row.page_title || null,
@@ -516,10 +635,86 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
     };
     current.views += 1;
     if (!current.page_title && row.page_title) current.page_title = row.page_title;
-    if (row.session_id) current.sessions.add(row.session_id);
+    current.sessions.add(sessionKey);
     current.totalDuration += toNumber(row.duration_seconds);
     topPagesMap.set(path, current);
+
+    const session = sessionMap.get(sessionKey) || {
+      session_id: row.session_id?.trim() || sessionKey,
+      visitor_key: row.ip_hash || row.session_id || null,
+      started_at: row.timestamp,
+      last_seen_at: row.timestamp,
+      country: row.country || 'Desconocido',
+      city: row.city || '—',
+      source: classifyTrafficSource(row.referrer),
+      device_type: row.device_type || 'Desconocido',
+      browser: row.browser || 'Desconocido',
+      os: row.os || 'Desconocido',
+      first_page: path,
+      last_page: path,
+      page_views: 0,
+      unique_pages: new Set<string>(),
+      total_duration: 0,
+    };
+
+    if (visitDate) {
+      const startedAt = safeDate(session.started_at);
+      const lastSeenAt = safeDate(session.last_seen_at);
+
+      if (!startedAt || visitDate < startedAt) {
+        session.started_at = row.timestamp;
+        session.first_page = path;
+        session.source = classifyTrafficSource(row.referrer);
+      }
+
+      if (!lastSeenAt || visitDate >= lastSeenAt) {
+        session.last_seen_at = row.timestamp;
+        session.last_page = path;
+      }
+    }
+
+    if ((session.country === 'Desconocido' || !session.country) && row.country) session.country = row.country;
+    if ((session.city === '—' || !session.city) && row.city) session.city = row.city;
+    if ((session.device_type === 'Desconocido' || !session.device_type) && row.device_type) session.device_type = row.device_type;
+    if ((session.browser === 'Desconocido' || !session.browser) && row.browser) session.browser = row.browser;
+    if ((session.os === 'Desconocido' || !session.os) && row.os) session.os = row.os;
+
+    session.page_views += 1;
+    session.unique_pages.add(path);
+    session.total_duration += toNumber(row.duration_seconds);
+    sessionMap.set(sessionKey, session);
   }
+
+  const sessionJourneys = Array.from(sessionMap.values())
+    .map((session) => {
+      const firstSeen = session.visitor_key ? visitorFirstSeen.get(session.visitor_key) : null;
+      const sessionStart = safeDate(session.started_at);
+      const isReturning = Boolean(firstSeen && sessionStart && firstSeen.getTime() < sessionStart.getTime());
+
+      return {
+        session_id: session.session_id,
+        started_at: session.started_at,
+        last_seen_at: session.last_seen_at,
+        country: session.country || 'Desconocido',
+        city: session.city || '—',
+        source: session.source || 'Direct',
+        device_type: session.device_type || 'Desconocido',
+        browser: session.browser || 'Desconocido',
+        os: session.os || 'Desconocido',
+        first_page: session.first_page,
+        last_page: session.last_page,
+        page_views: session.page_views,
+        unique_pages: session.unique_pages.size,
+        total_duration: session.total_duration,
+        is_returning: isReturning,
+      };
+    })
+    .sort((a, b) => String(b.last_seen_at).localeCompare(String(a.last_seen_at)));
+
+  const sessionLookup = new Map(sessionJourneys.map((session) => [session.session_id, session]));
+  const uniqueSessions = sessionJourneys.length;
+  const totalDuration = sessionJourneys.reduce((sum, session) => sum + session.total_duration, 0);
+  const returningSessions = sessionJourneys.filter((session) => session.is_returning).length;
 
   const topPages = Array.from(topPagesMap.values())
     .map((item) => ({
@@ -532,15 +727,27 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
     .sort((a, b) => b.views - a.views)
     .slice(0, 25);
 
-  const geographyMap = new Map<string, { country: string; city: string; sessions: Set<string> }>();
-  for (const row of retrovilleRows) {
-    const key = `${row.country || 'Desconocido'}|${row.city || '—'}`;
+  const engagementPages = Array.from(topPagesMap.values())
+    .map((item) => ({
+      url: item.url,
+      page_title: item.page_title,
+      views: item.views,
+      uniqueSessions: item.sessions.size,
+      totalDuration: item.totalDuration,
+      avgDuration: item.views > 0 ? item.totalDuration / item.views : 0,
+    }))
+    .sort((a, b) => b.totalDuration - a.totalDuration || b.avgDuration - a.avgDuration)
+    .slice(0, 12);
+
+  const geographyMap = new Map<string, { country: string; city: string; sessions: number }>();
+  for (const session of sessionJourneys) {
+    const key = `${session.country || 'Desconocido'}|${session.city || '—'}`;
     const current = geographyMap.get(key) || {
-      country: row.country || 'Desconocido',
-      city: row.city || '—',
-      sessions: new Set<string>(),
+      country: session.country || 'Desconocido',
+      city: session.city || '—',
+      sessions: 0,
     };
-    if (row.session_id) current.sessions.add(row.session_id);
+    current.sessions += 1;
     geographyMap.set(key, current);
   }
 
@@ -548,11 +755,20 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
     .map((entry) => ({
       country: entry.country,
       city: entry.city,
-      sessions: entry.sessions.size,
-      percentage: uniqueSessions > 0 ? (entry.sessions.size / uniqueSessions) * 100 : 0,
+      sessions: entry.sessions,
+      percentage: uniqueSessions > 0 ? (entry.sessions / uniqueSessions) * 100 : 0,
     }))
     .sort((a, b) => b.sessions - a.sessions)
     .slice(0, 20);
+
+  const topCountries = groupCounts(sessionJourneys.map((session) => session.country)).slice(0, 10);
+  const topCities = groupCounts(
+    sessionJourneys.map((session) =>
+      session.city && session.city !== '—' ? `${session.city} · ${session.country}` : session.country
+    )
+  ).slice(0, 10);
+  const entryPages = groupCounts(sessionJourneys.map((session) => session.first_page)).slice(0, 10);
+  const exitPages = groupCounts(sessionJourneys.map((session) => session.last_page)).slice(0, 10);
 
   const waitlistInRange = waitlist.filter((row) => {
     const date = safeDate(row.created_at);
@@ -567,6 +783,12 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
     const date = safeDate(row.created_at);
     return date ? isWithinInterval(date, { start: from, end: to }) : false;
   });
+  const eventSignupEventsInRange = retrovilleEventsInRange.filter((row) => row.event_name === 'retroville_event_signup');
+  const buyerCtaEventsInRange = retrovilleEventsInRange.filter((row) => row.event_name === 'retroville_buyer_cta_click');
+  const calendarSaveEventsInRange = retrovilleEventsInRange.filter((row) => row.event_name === 'retroville_event_calendar_save');
+  const privateDocumentEventsInRange = retrovilleEventsInRange.filter((row) =>
+    String(row.event_name || '').startsWith('retroville_private_document_')
+  );
   const newsletterSignupPages = groupCounts(
     newsletterEventsInRange.map((row) => normalizeTrackedPath(row.path || String(row.meta?.path || '/retroville')))
   );
@@ -576,6 +798,16 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
       return typeof device === 'string' ? device : 'Desconocido';
     })
   );
+  const eventBreakdown = groupCounts(retrovilleEventsInRange.map((row) => humanizeRetrovilleEventName(row.event_name))).slice(0, 12);
+  const buyerIntentBreakdown = groupCounts(
+    buyerCtaEventsInRange.map((row) => buildRetrovilleBuyerLabel(row.meta))
+  ).slice(0, 10);
+  const calendarSaveChannels = groupCounts(
+    calendarSaveEventsInRange.map((row) => readMetaString(row.meta, 'channel') || 'Sin canal')
+  ).slice(0, 8);
+  const privateDocumentActions = groupCounts(
+    privateDocumentEventsInRange.map((row) => humanizeRetrovilleEventName(row.event_name).replace('Documento privado · ', ''))
+  ).slice(0, 8);
 
   const settingsMap = new Map(settings.map((setting) => [setting.key, setting.value]));
   const launchDate = settingsMap.get(RETROVILLE_SETTING_KEY) || addMonths(now(), DEFAULT_RETROVILLE_MONTHS_AHEAD).toISOString();
@@ -584,14 +816,24 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
     summary: {
       totalPageViews: retrovilleRows.length,
       uniqueSessions,
-      avgSessionDuration: retrovilleRows.length > 0 ? totalDuration / retrovilleRows.length : 0,
+      avgSessionDuration: uniqueSessions > 0 ? totalDuration / uniqueSessions : 0,
+      avgPagesPerSession: uniqueSessions > 0 ? retrovilleRows.length / uniqueSessions : 0,
       waitlistTotal: waitlist.length,
       waitlistInRange: waitlistInRange.length,
       waitlistLast30Days: waitlistLast30Days.length,
       waitlistConversionRate: uniqueSessions > 0 ? (waitlistInRange.length / uniqueSessions) * 100 : 0,
       newsletterSignupsInRange: newsletterEventsInRange.length,
       newsletterConversionRate: uniqueSessions > 0 ? (newsletterEventsInRange.length / uniqueSessions) * 100 : 0,
+      eventSignupsInRange: eventSignupEventsInRange.length,
+      eventConversionRate: uniqueSessions > 0 ? (eventSignupEventsInRange.length / uniqueSessions) * 100 : 0,
+      buyerCtaClicksInRange: buyerCtaEventsInRange.length,
+      calendarSavesInRange: calendarSaveEventsInRange.length,
+      privateDocumentInteractionsInRange: privateDocumentEventsInRange.length,
       trafficShare: rowsInRange.length > 0 ? (retrovilleRows.length / rowsInRange.length) * 100 : 0,
+      countriesReached: new Set(sessionJourneys.map((session) => session.country)).size,
+      citiesReached: new Set(sessionJourneys.map((session) => `${session.country}|${session.city}`)).size,
+      returningSessions,
+      returningRate: uniqueSessions > 0 ? (returningSessions / uniqueSessions) * 100 : 0,
       launchDate,
     },
     pageViewsOverTime: toChartSeriesByDay(
@@ -601,14 +843,43 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
       Math.max(1, Math.ceil((to.getTime() - from.getTime()) / 86_400_000) + 1)
     ),
     topPages,
-    trafficSources: groupCounts(retrovilleRows.map((row) => classifyTrafficSource(row.referrer))),
+    engagementPages,
+    trafficSources: groupCounts(sessionJourneys.map((session) => session.source)).slice(0, 10),
     geography,
-    deviceBreakdown: groupCounts(retrovilleRows.map((row) => row.device_type)),
-    browserBreakdown: groupCounts(retrovilleRows.map((row) => row.browser)),
-    waitlistSources: groupCounts(waitlist.map((row) => humanizeWaitlistSource(row.source))),
-    waitlistRoles: groupCounts(waitlist.map((row) => row.role_label || 'Sin etiqueta')),
+    deviceBreakdown: groupCounts(sessionJourneys.map((session) => session.device_type)).slice(0, 6),
+    browserBreakdown: groupCounts(sessionJourneys.map((session) => session.browser)).slice(0, 8),
+    osBreakdown: groupCounts(sessionJourneys.map((session) => session.os)).slice(0, 8),
+    topCountries,
+    topCities,
+    entryPages,
+    exitPages,
+    eventBreakdown,
+    buyerIntentBreakdown,
+    calendarSaveChannels,
+    privateDocumentActions,
+    waitlistSources: groupCounts(waitlistInRange.map((row) => humanizeWaitlistSource(row.source))).slice(0, 10),
+    waitlistRoles: groupCounts(waitlistInRange.map((row) => row.role_label || 'Sin etiqueta')).slice(0, 10),
     newsletterSignupPages,
     newsletterSignupDevices,
+    sessionJourneys: sessionJourneys.slice(0, 25),
+    recentEvents: retrovilleEventsInRange
+      .slice()
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+      .slice(0, 25)
+      .map((row) => {
+        const session = row.session_id ? sessionLookup.get(row.session_id) || null : null;
+        return {
+          id: row.id,
+          event_name: row.event_name,
+          label: describeRetrovilleEvent(row),
+          path: normalizeTrackedPath(row.path || readMetaString(row.meta, 'path') || '/retroville'),
+          created_at: row.created_at,
+          session_id: row.session_id || null,
+          country: readMetaString(row.meta, 'country') || session?.country || 'Desconocido',
+          city: readMetaString(row.meta, 'city') || session?.city || '—',
+          source: session?.source || classifyTrafficSource(readMetaString(row.meta, 'referrer')),
+        };
+      }),
     recentWaitlist: waitlist
       .slice()
       .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))

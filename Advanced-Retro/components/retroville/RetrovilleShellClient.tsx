@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Analytics } from '@vercel/analytics/react';
 import TrackerBootstrap from '@/components/TrackerBootstrap';
 import {
@@ -12,13 +12,13 @@ import {
   normalizeConsent,
   type CookieConsentState,
 } from '@/lib/cookieConsent';
+import { getTrackerClientContext } from '@/lib/admin/tracker';
 import styles from './retroville-shell.module.css';
 
 declare global {
   interface Window {
     plausible?: (eventName: string, options?: { props?: Record<string, unknown> }) => void;
     gtag?: (...args: unknown[]) => void;
-    retrovilleSignal?: () => void;
     retrovilleTrack?: (eventName: string, props?: Record<string, unknown>) => void;
   }
 }
@@ -51,23 +51,31 @@ function readConsent(): CookieConsentState {
   }
 }
 
+function buildInternalRetrovilleHref(url: URL) {
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 export default function RetrovilleShellClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '/retroville';
+  const router = useRouter();
   const plausibleDomain = (process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || '').trim();
   const plausibleScriptUrl =
     (process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT_URL || '').trim() || 'https://plausible.io/js/script.js';
   const gaMeasurementId = (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '').trim();
   const lastPathRef = useRef(pathname);
   const analyticsPathRef = useRef(pathname);
+  const reportedErrorsRef = useRef<Set<string>>(new Set());
+  const pointerRef = useRef({ x: -100, y: -100 });
+  const currentPointerRef = useRef({ x: -100, y: -100 });
+  const animationFrameRef = useRef<number | null>(null);
+  const navigationTimerRef = useRef<number | null>(null);
+  const clearTransitionTimerRef = useRef<number | null>(null);
   const cursorRef = useRef<HTMLDivElement | null>(null);
   const glowRef = useRef<HTMLDivElement | null>(null);
-  const reportedErrorsRef = useRef<Set<string>>(new Set());
-  const animationFrameRef = useRef<number | null>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [routePulse, setRoutePulse] = useState(false);
   const [cursorEnabled, setCursorEnabled] = useState(false);
+  const [routeTransition, setRouteTransition] = useState<'idle' | 'cover' | 'reveal'>('reveal');
   const [easterEggVisible, setEasterEggVisible] = useState(false);
-  const [easterEggSource, setEasterEggSource] = useState<'konami' | 'console'>('konami');
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
 
   useEffect(() => {
@@ -87,14 +95,6 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   }, [pathname]);
 
   useEffect(() => {
-    if (lastPathRef.current === pathname) return;
-    lastPathRef.current = pathname;
-    setRoutePulse(true);
-    const timer = window.setTimeout(() => setRoutePulse(false), 260);
-    return () => window.clearTimeout(timer);
-  }, [pathname]);
-
-  useEffect(() => {
     const initial = readConsent();
     setAnalyticsEnabled(Boolean(initial.analytics));
 
@@ -104,8 +104,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
         setAnalyticsEnabled(Boolean(custom.detail.analytics));
         return;
       }
-      const current = readConsent();
-      setAnalyticsEnabled(Boolean(current.analytics));
+      setAnalyticsEnabled(Boolean(readConsent().analytics));
     };
 
     window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, onChanged);
@@ -114,14 +113,36 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
 
   useEffect(() => {
     window.retrovilleTrack = (eventName, props = {}) => {
+      const trackingContext = getTrackerClientContext();
+
+      void fetch('/api/retroville/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          event_name: eventName,
+          path: trackingContext.path,
+          page_title: trackingContext.pageTitle,
+          session_id: trackingContext.sessionId,
+          referrer: trackingContext.referrer,
+          device_type: trackingContext.deviceType,
+          browser: trackingContext.browser,
+          os: trackingContext.os,
+          meta: props,
+        }),
+      }).catch(() => null);
+
       if (!analyticsEnabled) return;
+
       window.gtag?.('event', eventName, {
         event_category: 'retroville',
+        page_path: trackingContext.path,
         ...props,
       });
       window.plausible?.(eventName, {
         props: {
           zone: 'retroville',
+          page: trackingContext.path,
           ...props,
         },
       });
@@ -167,24 +188,31 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
     }
 
     const handleMouseMove = (event: MouseEvent) => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = window.requestAnimationFrame(() => {
-        const x = event.clientX;
-        const y = event.clientY;
-        if (cursorRef.current) {
-          cursorRef.current.style.transform = `translate3d(${x - 7}px, ${y - 7}px, 0)`;
-        }
-        if (glowRef.current) {
-          glowRef.current.style.transform = `translate3d(${x - 14}px, ${y - 14}px, 0)`;
-        }
-      });
+      pointerRef.current = { x: event.clientX, y: event.clientY };
     };
 
     const handleMouseLeave = () => {
-      if (cursorRef.current) cursorRef.current.style.transform = 'translate3d(-100px, -100px, 0)';
-      if (glowRef.current) glowRef.current.style.transform = 'translate3d(-100px, -100px, 0)';
+      pointerRef.current = { x: -100, y: -100 };
     };
 
+    const render = () => {
+      currentPointerRef.current = {
+        x: currentPointerRef.current.x + (pointerRef.current.x - currentPointerRef.current.x) * 0.1,
+        y: currentPointerRef.current.y + (pointerRef.current.y - currentPointerRef.current.y) * 0.1,
+      };
+
+      const { x, y } = currentPointerRef.current;
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate3d(${x - 4}px, ${y - 4}px, 0)`;
+      }
+      if (glowRef.current) {
+        glowRef.current.style.transform = `translate3d(${x - 12}px, ${y - 12}px, 0)`;
+      }
+
+      animationFrameRef.current = window.requestAnimationFrame(render);
+    };
+
+    animationFrameRef.current = window.requestAnimationFrame(render);
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseleave', handleMouseLeave);
     return () => {
@@ -195,12 +223,63 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   }, [cursorEnabled]);
 
   useEffect(() => {
-    const unlock = (source: 'konami' | 'console') => {
-      setEasterEggSource(source);
-      setEasterEggVisible(true);
-      window.setTimeout(() => setEasterEggVisible(false), 4200);
+    const clearTransitionLater = () => {
+      if (clearTransitionTimerRef.current) window.clearTimeout(clearTransitionTimerRef.current);
+      clearTransitionTimerRef.current = window.setTimeout(() => setRouteTransition('idle'), 200);
     };
 
+    if (lastPathRef.current === pathname) {
+      clearTransitionLater();
+      return () => {
+        if (clearTransitionTimerRef.current) window.clearTimeout(clearTransitionTimerRef.current);
+      };
+    }
+
+    lastPathRef.current = pathname;
+    setRouteTransition('reveal');
+    clearTransitionLater();
+    return () => {
+      if (clearTransitionTimerRef.current) window.clearTimeout(clearTransitionTimerRef.current);
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    const onClickCapture = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest('a[href]');
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (anchor.target && anchor.target !== '_self') return;
+      if (anchor.hasAttribute('download')) return;
+
+      const destination = new URL(anchor.href, window.location.href);
+      const current = new URL(window.location.href);
+
+      if (destination.origin !== current.origin) return;
+      if (!destination.pathname.startsWith('/retroville')) return;
+
+      const sameDocument = destination.pathname === current.pathname && destination.search === current.search;
+      if (sameDocument) return;
+
+      event.preventDefault();
+      if (navigationTimerRef.current) window.clearTimeout(navigationTimerRef.current);
+      setRouteTransition('cover');
+      navigationTimerRef.current = window.setTimeout(() => {
+        router.push(buildInternalRetrovilleHref(destination));
+      }, 180);
+    };
+
+    document.addEventListener('click', onClickCapture, true);
+    return () => {
+      document.removeEventListener('click', onClickCapture, true);
+      if (navigationTimerRef.current) window.clearTimeout(navigationTimerRef.current);
+    };
+  }, [router]);
+
+  useEffect(() => {
     let pointer = 0;
     const onKeyDown = (event: KeyboardEvent) => {
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
@@ -208,22 +287,16 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
         pointer += 1;
         if (pointer === KONAMI.length) {
           pointer = 0;
-          unlock('konami');
+          setEasterEggVisible(true);
+          window.setTimeout(() => setEasterEggVisible(false), 4200);
         }
         return;
       }
       pointer = key === KONAMI[0] ? 1 : 0;
     };
 
-    window.retrovilleSignal = () => unlock('console');
     window.addEventListener('keydown', onKeyDown);
-    // Intentional discoverable command for the community.
-    console.info('Retroville debug command available: window.retrovilleSignal()');
-
-    return () => {
-      delete window.retrovilleSignal;
-      window.removeEventListener('keydown', onKeyDown);
-    };
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   useEffect(() => {
@@ -285,7 +358,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   }, [pathname]);
 
   return (
-    <div className={`${styles.shell} retroville-shell-initial`} data-cursor={cursorEnabled ? 'on' : 'off'}>
+    <div className={styles.shell} data-cursor={cursorEnabled ? 'on' : 'off'}>
       <Suspense fallback={null}>
         <TrackerBootstrap />
       </Suspense>
@@ -314,12 +387,22 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
         <div className={styles.progressFill} style={{ transform: `scaleX(${scrollProgress})` }} />
       </div>
 
-      <div className={`${styles.content} ${routePulse ? styles.contentTransition : ''}`}>{children}</div>
+      <div className={styles.content}>{children}</div>
+      <div
+        className={`${styles.routeVeil} ${
+          routeTransition === 'cover'
+            ? styles.routeVeilCover
+            : routeTransition === 'reveal'
+              ? styles.routeVeilReveal
+              : ''
+        }`}
+        aria-hidden="true"
+      />
 
       {cursorEnabled ? (
         <>
           <div ref={glowRef} className={styles.cursorGlow} aria-hidden="true" />
-          <div ref={cursorRef} className={styles.cursorChip} aria-hidden="true" />
+          <div ref={cursorRef} className={styles.cursorDot} aria-hidden="true" />
         </>
       ) : null}
 
@@ -328,9 +411,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
           <p className={styles.toastEyebrow}>Signal unlocked</p>
           <p className={styles.toastTitle}>RETROVILLE // GLITCH DETECTED</p>
           <p className={styles.toastBody}>
-            {easterEggSource === 'konami'
-              ? 'Has encontrado la combinación oculta. La ciudad recuerda a quien insiste en mirar más allá del menú.'
-              : 'Has llamado a la señal desde la consola. Eso suele ser una mala idea, pero queda bien.'}
+            Has encontrado la combinación oculta. La ciudad recuerda a quien insiste en mirar más allá del menú.
           </p>
         </div>
       ) : null}

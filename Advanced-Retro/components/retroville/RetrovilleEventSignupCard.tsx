@@ -6,7 +6,7 @@ import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistFo
 
 const FALLBACK_EVENT_URL = 'https://advancedretro.es/retroville';
 const EVENT_TITLE = 'Primer reveal público de Retroville';
-const EVENT_LOCATION = 'Online · AdvancedRetro';
+const EVENT_LOCATION = 'Online · Retroville';
 
 function parseEventDate(launchIso: string) {
   const parsed = new Date(launchIso);
@@ -56,7 +56,7 @@ function buildIcsFile(launchIso: string, eventUrl: string) {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//AdvancedRetro//Retroville//ES',
+    'PRODID:-//Retroville//Launch//ES',
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
     `UID:retroville-first-reveal-${start}@advancedretro.es`,
@@ -75,14 +75,9 @@ function buildIcsFile(launchIso: string, eventUrl: string) {
 
 function trackCalendarAction(channel: 'google' | 'ics') {
   if (typeof window === 'undefined') return;
-
-  window.gtag?.('event', 'retroville_event_calendar_save', {
-    event_category: 'retroville',
-    event_label: channel,
-  });
-
-  window.plausible?.('Retroville event calendar save', {
-    props: { channel },
+  window.retrovilleTrack?.('retroville_event_calendar_save', {
+    channel,
+    location: 'community_event_card',
   });
 }
 

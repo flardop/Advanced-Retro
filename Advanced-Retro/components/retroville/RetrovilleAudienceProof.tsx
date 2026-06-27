@@ -76,8 +76,8 @@ export default function RetrovilleAudienceProof({
           <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-green)]">Pulso de comunidad</p>
           <p className="mt-2 text-sm leading-7 text-[var(--rv-text-muted)]">
             {showAudienceCount
-              ? `${waitlistCount.toLocaleString('es-ES')} personas ya siguen ${RETROVILLE_NEWSLETTER_NAME}. Este es el tipo de comunidad que mejor conecta con Retroville: personajes fuertes, lore, barrio, drops y ganas de estar en el primer reveal.`
-              : `Aunque ${RETROVILLE_NEWSLETTER_NAME} acaba de arrancar, Retroville ya está pensado para atraer a una mezcla muy clara: fans del worldbuilding, personajes potentes, estética de serie, humor raro y eventos con identidad.`}
+              ? `${waitlistCount.toLocaleString('es-ES')} personas ya siguen ${RETROVILLE_NEWSLETTER_NAME}. Los avatares que ves aquí no salen de ninguna base real: son perfiles tipo creados para representar la comunidad que mejor encaja con Retroville.`
+              : `Aunque ${RETROVILLE_NEWSLETTER_NAME} acaba de arrancar, Retroville ya tiene una audiencia muy clara. Los perfiles que ves aquí son avatares creados para el proyecto, no usuarios heredados de otra web.`}
           </p>
         </div>
       </div>

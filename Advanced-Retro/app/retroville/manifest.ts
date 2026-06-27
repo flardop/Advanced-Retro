@@ -12,17 +12,17 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#06070d',
     icons: [
       {
-        src: '/icons/app/icon-192.png',
+        src: '/icons/retroville/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
       },
       {
-        src: '/icons/app/icon-512.png',
+        src: '/icons/retroville/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
       },
       {
-        src: '/apple-touch-icon.png',
+        src: '/icons/retroville/apple-touch-icon.png',
         sizes: '180x180',
         type: 'image/png',
       },

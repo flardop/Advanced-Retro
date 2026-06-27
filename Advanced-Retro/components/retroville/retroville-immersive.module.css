@@ -1041,7 +1041,7 @@
 
 @media (max-width: 767px) {
   .stage {
-    min-height: 300vh;
+    min-height: 185vh;
   }
 
   .overlayTop,

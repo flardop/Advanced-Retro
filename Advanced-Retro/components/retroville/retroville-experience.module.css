@@ -110,14 +110,32 @@
 .heroWash {
   position: absolute;
   inset: 0;
-  filter: blur(54px) saturate(1.18);
-  opacity: 0.64;
-  transform: scale(1.16);
+  filter: blur(68px) saturate(0.9);
+  opacity: 0.52;
+  transform: scale(1.18);
 }
 
 .heroWashImage {
   object-fit: cover;
   transform: scale(1.12);
+}
+
+.heroWashBackdrop {
+  transform: scale(1.08);
+}
+
+.heroWashBackdropLeft {
+  background:
+    radial-gradient(circle at 26% 46%, rgba(0, 212, 255, 0.26), transparent 30%),
+    radial-gradient(circle at 54% 52%, rgba(72, 102, 214, 0.22), transparent 34%),
+    linear-gradient(135deg, rgba(6, 10, 22, 0.28), rgba(7, 10, 20, 0.02));
+}
+
+.heroWashBackdropRight {
+  background:
+    radial-gradient(circle at 74% 44%, rgba(155, 92, 255, 0.26), transparent 30%),
+    radial-gradient(circle at 46% 54%, rgba(255, 191, 82, 0.16), transparent 28%),
+    linear-gradient(225deg, rgba(6, 10, 22, 0.28), rgba(7, 10, 20, 0.02));
 }
 
 .heroAura {

@@ -4,14 +4,14 @@ import RetrovilleStudioEntry from '@/components/retroville/RetrovilleStudioEntry
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata } from '@/lib/seo';
 import { absoluteUrl } from '@/lib/siteConfig';
-import { buildRetrovilleSeriesJsonLd, getRetrovilleState } from '@/app/retroville/shared';
+import { buildRetrovilleSeriesJsonLd, getRetrovilleState, RETROVILLE_PITCH_EMAIL } from '@/app/retroville/shared';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Retroville | Serie animada original y material de pitch',
   description:
-    'Retroville es una serie animada original de AdvancedRetro con cast, worldbuilding, T1, press kit y biblia privada para buyers, partners y medios.',
+    'Retroville es una serie animada original con cast, worldbuilding, T1, press kit y biblia privada para buyers, partners y medios.',
   path: '/retroville',
   category: 'entertainment',
   inheritBaseKeywords: false,
@@ -55,7 +55,6 @@ export default async function RetrovillePage() {
     about: [
       { '@type': 'Thing', name: 'World building retro' },
       { '@type': 'Thing', name: 'Universo narrativo gaming' },
-      { '@type': 'Thing', name: 'AdvancedRetro' },
     ],
   };
   const retrovilleSeriesSchema = {
@@ -80,17 +79,17 @@ export default async function RetrovillePage() {
     {
       question: '¿Qué es Retroville?',
       answer:
-        'Retroville es una serie animada original de AdvancedRetro ambientada en una ciudad construida con hardware abandonado, humor negro y worldbuilding propio.',
+        'Retroville es una serie animada original ambientada en una ciudad construida con hardware abandonado, humor negro y worldbuilding propio.',
     },
     {
       question: '¿Qué materiales se pueden consultar desde la página?',
       answer:
-        'La página pública reúne cast, episodios, sketchbook, press kit y acceso al reveal. La biblia general se mantiene privada bajo solicitud.',
+        'La página pública resume el universo, los protagonistas, tres episodios de entrada, tres distritos y el acceso al press kit, mientras que el material de proceso y la biblia quedan ordenados en sus secciones correspondientes.',
     },
     {
       question: '¿Cómo se solicita la biblia de la serie?',
       answer:
-        'La biblia se solicita desde el popup de acceso privado o escribiendo a flardop44@gmail.com para recibir el documento de forma directa.',
+        `La biblia se solicita desde el popup de acceso privado o escribiendo a ${RETROVILLE_PITCH_EMAIL} para recibir el documento de forma directa.`,
     },
   ]);
 

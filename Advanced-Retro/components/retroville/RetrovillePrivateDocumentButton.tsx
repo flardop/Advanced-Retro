@@ -2,15 +2,15 @@
 
 import { Mail, Copy, Check, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { buildRetrovillePitchMailto, RETROVILLE_PITCH_EMAIL } from '@/app/retroville/shared';
 
-const REQUEST_EMAIL = 'flardop44@gmail.com';
+const REQUEST_EMAIL = RETROVILLE_PITCH_EMAIL;
 
 function buildMailtoHref(documentTitle: string) {
-  const params = new URLSearchParams({
+  return buildRetrovillePitchMailto({
     subject: `Solicitud de acceso · ${documentTitle}`,
-    body: `Hola Joel,\n\nMe gustaría solicitar acceso a "${documentTitle}".\n\nGracias.`,
+    body: `Hola equipo de Retroville,\n\nMe gustaría solicitar acceso a "${documentTitle}".\n\nGracias.`,
   });
-  return `mailto:${REQUEST_EMAIL}?${params.toString()}`;
 }
 
 function trackPrivateDocumentAction(action: string, documentTitle: string) {

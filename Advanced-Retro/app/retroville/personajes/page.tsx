@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import StructuredData from '@/components/StructuredData';
 import {
-  retrovilleGuideSlides,
   retrovilleIncomingCharacters,
   retrovilleMainCharacters,
   retrovilleSecondaryCharacters,
@@ -72,51 +71,6 @@ function CharacterVisual({
     />
   );
 }
-
-const supportingSheets = [
-  {
-    title: 'Patrol Chief v2',
-    meta: 'Orden público',
-    image: '/images/retroville/dev-characters/patrol-chief-v2-sheet.png',
-    alt: 'Hoja de desarrollo de Patrol Chief en Retroville',
-    body: 'Una figura de autoridad pensada para sostener la parte más vigilada y tensa de la ciudad sin romper el tono caricaturesco.',
-  },
-  {
-    title: 'Public Crew v2',
-    meta: 'Ruido civil',
-    image: '/images/retroville/dev-characters/public-crew-v2-sheet.png',
-    alt: 'Hoja de desarrollo del Public Crew en Retroville',
-    body: 'Ciudadanos, extras y energía social para que las calles tengan conversación, masa y pequeños conflictos visibles.',
-  },
-  {
-    title: 'City Hall worker',
-    meta: 'Burocracia',
-    image: '/images/retroville/dev-characters/city-hall-worker-sheet.png',
-    alt: 'Hoja de desarrollo de un trabajador del ayuntamiento de Retroville',
-    body: 'La capa administrativa también necesita cara propia: gestos, uniforme y actitud de sistema cansado.',
-  },
-  {
-    title: 'Nona early sheet',
-    meta: 'Colegio',
-    image: '/images/retroville/dev-characters/nona-girl-sheet.png',
-    alt: 'Hoja temprana de Nona para Retroville',
-    body: 'Material de desarrollo que deja ver la evolución previa de una de las figuras más inquietantes del colegio.',
-  },
-  {
-    title: 'Tomo v2',
-    meta: 'Kids',
-    image: '/images/retroville/dev-characters/tomo-v2-sheet.png',
-    alt: 'Hoja de desarrollo revisada de Tomo en Retroville',
-    body: 'Una revisión que refuerza la lectura traviesa del personaje y su papel como motor de energía callejera.',
-  },
-  {
-    title: 'Pipo v2',
-    meta: 'Caos pequeño',
-    image: '/images/retroville/dev-characters/pipo-v2-sheet.png',
-    alt: 'Hoja de desarrollo revisada de Pipo en Retroville',
-    body: 'Más precisión para ese perfil de mascota insoportable con ego sobredimensionado y presencia cómica inmediata.',
-  },
-] as const;
 
 export default function RetrovilleCharactersPage() {
   const allCharacters = [
@@ -333,75 +287,26 @@ export default function RetrovilleCharactersPage() {
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <div>
-                <p className={styles.sectionEyebrow}>Guías visuales</p>
+                <p className={styles.sectionEyebrow}>Archivo separado</p>
                 <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
-                  MURO CURADO DE
+                  EL MATERIAL DE PROCESO
                   <br />
-                  STYLEGUIDES Y SHEETS
+                  VIVE EN SKETCHES
                 </h2>
               </div>
               <p className={styles.sectionLead}>
-                Aquí quedan visibles las guías finales y las hojas de desarrollo que ya existen, sin carruseles vacíos ni
-                huecos raros. Todo el material entra limpio y con mejor lectura.
+                Las guías visuales, anatomy sheets y hojas de desarrollo ya no compiten dentro del cast. Se han movido al
+                sketchbook para separar mejor venta del universo y archivo de proceso.
               </p>
             </div>
 
-            <div className={styles.guideRail}>
-              {retrovilleGuideSlides.map((slide) => (
-                <article key={slide.title} className={styles.guideCard}>
-                  <div className={styles.guideVisual}>
-                    <Image
-                      src={slide.image}
-                      alt={slide.alt}
-                      fill
-                      sizes="(max-width: 720px) 70vw, 24rem"
-                      className={styles.guideImage}
-                    />
-                  </div>
-                  <div className={styles.guideCopy}>
-                    <p className={styles.characterMeta}>{slide.meta}</p>
-                    <h3 className={styles.guideTitle}>{slide.title}</h3>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <div>
-                <p className={styles.sectionEyebrow}>Apoyo visual</p>
-                <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
-                  MÁS ROSTROS,
-                  <br />
-                  MÁS CIUDAD
-                </h2>
-              </div>
-              <p className={styles.sectionLead}>
-                Además del cast principal, ya hay material suficiente para enseñar cómo se construye la población, la
-                autoridad y la vida civil que hacen que Retroville respire como serie.
-              </p>
-            </div>
-
-            <div className={styles.supportGrid}>
-              {supportingSheets.map((sheet) => (
-                <article key={sheet.title} className={styles.supportCard}>
-                  <div className={styles.supportVisual}>
-                    <Image
-                      src={sheet.image}
-                      alt={sheet.alt}
-                      fill
-                      sizes="(max-width: 900px) 100vw, 33vw"
-                      className={styles.guideImage}
-                    />
-                  </div>
-                  <div className={styles.supportCopy}>
-                    <p className={styles.characterMeta}>{sheet.meta}</p>
-                    <h3 className={styles.supportTitle}>{sheet.title}</h3>
-                    <p className={styles.characterBody}>{sheet.body}</p>
-                  </div>
-                </article>
-              ))}
+            <div className={styles.heroLinks}>
+              <Link href="/retroville/sketches" className={styles.inlineLink}>
+                Ver sketchbook completo <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link href="/retroville/press" className={styles.inlineLink}>
+                Abrir press kit <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </section>
         </div>
