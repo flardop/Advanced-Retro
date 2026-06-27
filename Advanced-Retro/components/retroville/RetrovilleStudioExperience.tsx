@@ -235,35 +235,35 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
 
       <div className={styles.shell}>
         <section ref={cinematicRef} className={styles.cinematicSection} aria-label="Entrada cinematográfica de Retroville">
+          <header className={styles.topbar}>
+            <div className={styles.topbarBrand}>
+              <div>
+                <p className={styles.topbarEyebrow}>Serie animada original</p>
+                <p className={styles.topbarTitle}>Retroville</p>
+              </div>
+              <p className={styles.topbarMeta}>Creada por AdvancedRetro</p>
+            </div>
+
+            <nav className={styles.topbarNav} aria-label="Secciones principales de Retroville">
+              <a href="#universe">Visión</a>
+              <a href="#cast">Cast</a>
+              <a href="#episodes">Temporada</a>
+              <a href="#world">Ciudad</a>
+              <a href="#buyer-brief">Acceso</a>
+              <a href="#community">Comunidad</a>
+            </nav>
+
+            <div className={styles.topbarActions}>
+              <Link href="/retroville/press" className={styles.secondaryButton}>
+                Press kit
+              </Link>
+              <a href="#community" className={styles.primaryButton}>
+                Guardar reveal
+              </a>
+            </div>
+          </header>
+
           <div className={styles.cinematicFrame}>
-            <header className={styles.topbar}>
-              <div className={styles.topbarBrand}>
-                <div>
-                  <p className={styles.topbarEyebrow}>Serie animada original</p>
-                  <p className={styles.topbarTitle}>Retroville</p>
-                </div>
-                <p className={styles.topbarMeta}>Creada por AdvancedRetro</p>
-              </div>
-
-              <nav className={styles.topbarNav} aria-label="Secciones principales de Retroville">
-                <a href="#universe">Visión</a>
-                <a href="#cast">Cast</a>
-                <a href="#episodes">Temporada</a>
-                <a href="#world">Ciudad</a>
-                <a href="#buyer-brief">Acceso</a>
-                <a href="#community">Comunidad</a>
-              </nav>
-
-              <div className={styles.topbarActions}>
-                <Link href="/retroville/press" className={styles.secondaryButton}>
-                  Press kit
-                </Link>
-                <a href="#community" className={styles.primaryButton}>
-                  Guardar reveal
-                </a>
-              </div>
-            </header>
-
             <video
               ref={videoRef}
               className={styles.cinematicVideo}

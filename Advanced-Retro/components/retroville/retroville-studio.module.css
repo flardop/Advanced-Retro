@@ -152,16 +152,13 @@
 }
 
 .topbar {
-  position: absolute;
-  top: clamp(0.9rem, 2vw, 1.4rem);
-  left: clamp(0.9rem, 2vw, 1.4rem);
-  right: clamp(0.9rem, 2vw, 1.4rem);
-  z-index: 3;
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 0.95rem;
   align-items: center;
-  padding: 0.9rem 1rem;
+  padding: 1rem 1.1rem;
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background:
@@ -311,6 +308,8 @@
 }
 
 .cinematicSection {
+  display: grid;
+  gap: clamp(0.75rem, 1.8vw, 1.15rem);
   padding-top: clamp(0.85rem, 2vw, 1.4rem);
 }
 
@@ -726,6 +725,7 @@
 @media (max-width: 1140px) {
   .topbar {
     grid-template-columns: minmax(0, 1fr);
+    padding: 1rem;
   }
 
   .topbarNav,
@@ -764,6 +764,10 @@
 }
 
 @media (max-width: 720px) {
+  .cinematicSection {
+    gap: 0.7rem;
+  }
+
   .cinematicFrame {
     min-height: 18rem;
     border-radius: 1.35rem;
