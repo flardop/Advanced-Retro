@@ -30,9 +30,15 @@ export function buildRetrovillePitchMailto({
   subject: string;
   body?: string;
 }) {
-  const params = new URLSearchParams({ subject });
-  if (body) params.set('body', body);
-  return `mailto:${RETROVILLE_PITCH_EMAIL}?${params.toString()}`;
+  const normalizedBody = body?.replace(/\r?\n/g, '\r\n');
+  const query = [
+    `subject=${encodeURIComponent(subject)}`,
+    normalizedBody ? `body=${encodeURIComponent(normalizedBody)}` : null,
+  ]
+    .filter(Boolean)
+    .join('&');
+
+  return `mailto:${RETROVILLE_PITCH_EMAIL}${query ? `?${query}` : ''}`;
 }
 
 export function buildRetrovilleAccessRequestBody(documentTitle: string) {

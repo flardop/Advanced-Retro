@@ -212,8 +212,8 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
 
       const rect = section.getBoundingClientRect();
       const viewportHeight = window.innerHeight || 1;
-      const totalDistance = Math.max(rect.height + viewportHeight * 0.35, viewportHeight);
-      const nextProgress = clampUnit((viewportHeight * 0.22 - rect.top) / totalDistance);
+      const totalDistance = Math.max(rect.height + viewportHeight * 0.28, viewportHeight);
+      const nextProgress = clampUnit((viewportHeight * 0.28 - rect.top) / totalDistance);
 
       setCinematicProgress((current) => (Math.abs(current - nextProgress) > 0.002 ? nextProgress : current));
     };
@@ -276,15 +276,15 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
     setMobileNavOpen(false);
   }
 
-  const videoScale = 1.09 - cinematicProgress * 0.08;
-  const videoTranslateY = 24 - cinematicProgress * 44;
-  const videoBlur = Math.max(0.6, 1.7 - cinematicProgress * 0.9);
-  const videoSaturation = 0.96 + cinematicProgress * 0.05;
-  const videoContrast = 1.02 + cinematicProgress * 0.03;
-  const videoBrightness = 0.82 + cinematicProgress * 0.06;
-  const copyTranslateY = 12 - cinematicProgress * 10;
-  const copyOpacity = 0.92 + cinematicProgress * 0.08;
-  const cinematicStep = cinematicProgress < 0.33 ? 0 : cinematicProgress < 0.7 ? 1 : 2;
+  const videoScale = 1.14 - cinematicProgress * 0.14;
+  const videoTranslateY = 34 - cinematicProgress * 72;
+  const videoBlur = Math.max(0.4, 1.15 - cinematicProgress * 0.55);
+  const videoSaturation = 0.95 + cinematicProgress * 0.06;
+  const videoContrast = 1.01 + cinematicProgress * 0.04;
+  const videoBrightness = 0.8 + cinematicProgress * 0.08;
+  const copyTranslateY = 18 - cinematicProgress * 22;
+  const copyOpacity = 0.88 + cinematicProgress * 0.12;
+  const cinematicStep = cinematicProgress < 0.28 ? 0 : cinematicProgress < 0.62 ? 1 : 2;
 
   return (
     <main
