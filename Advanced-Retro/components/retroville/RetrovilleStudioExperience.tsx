@@ -320,12 +320,11 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                   alt="Logo pequeño de Retroville"
                   width={160}
                   height={107}
-                  sizes="64px"
+                  sizes="84px"
                   className={styles.topbarBrandLogo}
                 />
                 <div className={styles.topbarBrandText}>
                   <p className={styles.topbarEyebrow}>Serie animada original</p>
-                  <p className={styles.topbarTitle}>Retroville</p>
                   <p className={styles.topbarMeta}>Creada por AdvancedRetro</p>
                 </div>
               </div>

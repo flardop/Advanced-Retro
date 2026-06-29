@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import StructuredData from '@/components/StructuredData';
+import RetrovilleEpisodeVaultSlider from '@/components/retroville/RetrovilleEpisodeVaultSlider';
 import RetrovillePrivateDocumentButton from '@/components/retroville/RetrovillePrivateDocumentButton';
 import { buildRetrovilleSeriesJsonLd, RETROVILLE_PITCH_EMAIL } from '@/app/retroville/shared';
 import {
@@ -137,31 +138,7 @@ export default function RetrovilleEpisodesPage() {
                 </p>
               </div>
 
-              <div className={styles.timelineRail} aria-hidden="true">
-                {lockedEpisodeSlots.map((slot) => (
-                  <span key={slot}>{slot}</span>
-                ))}
-              </div>
-
-              <div className={styles.lockedGrid}>
-                {lockedEpisodeSlots.map((slot) => (
-                  <article key={slot} className={styles.lockedCard}>
-                    <div className={styles.cardHeader}>
-                      <p className={styles.episodeCode}>EP {slot}</p>
-                      <p className={styles.cardTag}>Reservado</p>
-                    </div>
-                    <h3 className={`${displayFont.className} ${styles.episodeTitle}`}>Contenido privado</h3>
-                    <div className={styles.redactedStack} aria-hidden="true">
-                      <span />
-                      <span />
-                      <span />
-                    </div>
-                    <p className={styles.lockedBody}>
-                      El titulo, la sinopsis y los personajes implicados se entregan solo dentro del dossier editorial.
-                    </p>
-                  </article>
-                ))}
-              </div>
+              <RetrovilleEpisodeVaultSlider slots={lockedEpisodeSlots} />
             </div>
 
             <aside className={styles.accessPanel}>

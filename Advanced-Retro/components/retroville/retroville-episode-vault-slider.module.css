@@ -1,0 +1,234 @@
+.shell {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.counter {
+  display: grid;
+  gap: 0.24rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(245, 247, 255, 0.54);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.45rem, 2vw, 1.95rem);
+  line-height: 0.96;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+
+.controls {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.controlButton,
+.slotButton {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(245, 247, 255, 0.82);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.controlButton {
+  min-width: 2.9rem;
+  min-height: 2.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controlButton:hover,
+.slotButton:hover,
+.activeSlot,
+.controlButton:focus-visible,
+.slotButton:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(138, 215, 255, 0.3);
+  background: rgba(138, 215, 255, 0.12);
+  color: #ffffff;
+}
+
+.slotRail {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(138, 215, 255, 0.26) transparent;
+}
+
+.slotRail::-webkit-scrollbar {
+  height: 0.45rem;
+}
+
+.slotRail::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(138, 215, 255, 0.22);
+}
+
+.slotButton {
+  min-width: 3.4rem;
+  min-height: 3rem;
+  padding: 0 0.95rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+}
+
+.card {
+  display: grid;
+  gap: 1rem;
+  border-radius: 1.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(8, 11, 20, 0.9);
+  padding: 1.15rem;
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.code,
+.tag {
+  margin: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.code {
+  color: #ffbf52;
+}
+
+.tag {
+  color: rgba(245, 247, 255, 0.5);
+}
+
+.cardBody {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.iconWrap {
+  width: 3.3rem;
+  height: 3.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 191, 82, 0.92);
+  flex-shrink: 0;
+}
+
+.cardCopy {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.episodeTitle {
+  margin: 0;
+  font-size: clamp(1.9rem, 3vw, 2.7rem);
+  line-height: 0.94;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+}
+
+.redactedStack {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.redactedStack span {
+  display: block;
+  height: 0.78rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(245, 247, 255, 0.12), rgba(245, 247, 255, 0.03)),
+    rgba(255, 255, 255, 0.04);
+}
+
+.redactedStack span:nth-child(1) {
+  width: 86%;
+}
+
+.redactedStack span:nth-child(2) {
+  width: 96%;
+}
+
+.redactedStack span:nth-child(3) {
+  width: 74%;
+}
+
+.body {
+  margin: 0;
+  max-width: 42rem;
+  font-size: 0.98rem;
+  line-height: 1.76;
+  color: rgba(229, 234, 255, 0.72);
+}
+
+@media (max-width: 720px) {
+  .header {
+    align-items: stretch;
+  }
+
+  .controls {
+    justify-content: flex-end;
+  }
+
+  .card {
+    border-radius: 1.45rem;
+  }
+
+  .cardBody {
+    grid-template-columns: 1fr;
+  }
+
+  .iconWrap {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .episodeTitle {
+    font-size: clamp(1.55rem, 8.5vw, 2.2rem);
+  }
+}
