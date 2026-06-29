@@ -141,13 +141,6 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (window.sessionStorage.getItem('retroville-intro-seen') === '1') {
-      setIntroDismissed(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
 
     const handleResize = () => {
       if (window.innerWidth > 900) setMobileNavOpen(false);
@@ -263,7 +256,6 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
   function handleIntroEnter() {
     if (introLeaving || introDismissed) return;
     if (typeof window !== 'undefined') {
-      window.sessionStorage.setItem('retroville-intro-seen', '1');
       window.retrovilleTrack?.('retroville_intro_enter', {
         location: 'intro_gate',
       });
@@ -323,11 +315,19 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
           <header className={styles.topbar}>
             <div className={styles.topbarPrimary}>
               <div className={styles.topbarBrand}>
-                <div>
+                <Image
+                  src="/images/retroville/retroville-logo.webp"
+                  alt="Logo pequeño de Retroville"
+                  width={160}
+                  height={107}
+                  sizes="64px"
+                  className={styles.topbarBrandLogo}
+                />
+                <div className={styles.topbarBrandText}>
                   <p className={styles.topbarEyebrow}>Serie animada original</p>
                   <p className={styles.topbarTitle}>Retroville</p>
+                  <p className={styles.topbarMeta}>Creada por AdvancedRetro</p>
                 </div>
-                <p className={styles.topbarMeta}>Creada por AdvancedRetro</p>
               </div>
 
               <button
