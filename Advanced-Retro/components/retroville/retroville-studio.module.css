@@ -185,8 +185,23 @@
 }
 
 .topbarBrand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.topbarBrandLogo {
+  width: clamp(2.9rem, 5vw, 3.9rem);
+  height: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 0.45rem 1rem rgba(0, 0, 0, 0.22));
+}
+
+.topbarBrandText {
+  min-width: 0;
   display: grid;
-  gap: 0.28rem;
+  gap: 0.14rem;
 }
 
 .topbarPanel {
@@ -886,7 +901,11 @@
   }
 
   .topbarBrand {
-    gap: 0.18rem;
+    gap: 0.65rem;
+  }
+
+  .topbarBrandLogo {
+    width: 3.1rem;
   }
 
   .topbarMeta {
@@ -997,9 +1016,12 @@
   }
 
   .cinematicFrame {
-    min-height: 20rem;
+    display: flex;
+    align-items: flex-end;
+    min-height: 28rem;
     border-radius: 1.35rem;
     margin-top: 0;
+    padding: 0.85rem;
   }
 
   .presentationSection,
@@ -1021,6 +1043,10 @@
   .topbar {
     padding: 0.85rem;
     border-radius: 1.25rem;
+  }
+
+  .topbarBrandLogo {
+    width: 2.75rem;
   }
 
   .topbarNav {
@@ -1056,31 +1082,38 @@
   }
 
   .cinematicCopy {
-    left: 0.85rem;
-    right: 0.85rem;
-    bottom: 0.85rem;
-    gap: 0.45rem;
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    gap: 0.38rem;
     max-width: none;
-    padding: 1rem 1rem 1.05rem;
+    margin-top: auto;
+    padding: 0.95rem 0.95rem 1rem;
     border-radius: 1.2rem;
-    background: linear-gradient(180deg, rgba(4, 6, 12, 0.2), rgba(4, 6, 12, 0.8));
+    background: linear-gradient(180deg, rgba(4, 6, 12, 0.14), rgba(4, 6, 12, 0.82));
     backdrop-filter: blur(12px);
+  }
+
+  .cinematicEyebrow {
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
   }
 
   .cinematicTitle {
     max-width: none;
-    font-size: clamp(2rem, 10.5vw, 3rem);
-    line-height: 0.98;
+    font-size: clamp(1.85rem, 9vw, 2.7rem);
+    line-height: 0.96;
   }
 
   .cinematicBody {
-    font-size: 0.92rem;
-    line-height: 1.62;
+    font-size: 0.88rem;
+    line-height: 1.5;
     max-width: none;
   }
 
-  .cinematicActions,
-  .cinematicTimeline {
+  .cinematicActions {
     flex-direction: column;
     align-items: stretch;
   }
@@ -1089,6 +1122,21 @@
   .cinematicGhostButton,
   .cinematicTimelineStep {
     width: 100%;
+  }
+
+  .cinematicTimeline {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+    align-items: stretch;
+  }
+
+  .cinematicTimelineStep {
+    min-height: 2rem;
+    padding: 0.45rem 0.35rem;
+    font-size: 0.54rem;
+    letter-spacing: 0.12em;
+    text-align: center;
   }
 
   .section {
@@ -1122,6 +1170,25 @@
     padding-bottom: 3.5rem;
   }
 
+  .topbarBrand {
+    gap: 0.58rem;
+  }
+
+  .topbarBrandLogo {
+    width: 2.45rem;
+  }
+
+  .cinematicFrame {
+    min-height: 30rem;
+    padding: 0.78rem;
+  }
+
+  .cinematicCopy {
+    gap: 0.35rem;
+    padding: 0.88rem 0.82rem 0.92rem;
+    border-radius: 1.05rem;
+  }
+
   .introContent {
     padding: 1.25rem;
   }
@@ -1136,6 +1203,19 @@
 
   .sectionTitle {
     font-size: clamp(2rem, 11vw, 3rem);
+  }
+
+  .cinematicTitle {
+    font-size: clamp(1.7rem, 8.6vw, 2.3rem);
+  }
+
+  .cinematicBody {
+    font-size: 0.84rem;
+    line-height: 1.46;
+  }
+
+  .cinematicTimeline {
+    grid-template-columns: 1fr;
   }
 
   .presentationPills {
