@@ -68,11 +68,12 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   const pointerRef = useRef({ x: -100, y: -100 });
   const currentPointerRef = useRef({ x: -100, y: -100 });
   const animationFrameRef = useRef<number | null>(null);
+  const progressFrameRef = useRef<number | null>(null);
   const navigationTimerRef = useRef<number | null>(null);
   const clearTransitionTimerRef = useRef<number | null>(null);
   const cursorRef = useRef<HTMLDivElement | null>(null);
   const glowRef = useRef<HTMLDivElement | null>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const progressFillRef = useRef<HTMLDivElement | null>(null);
   const [cursorEnabled, setCursorEnabled] = useState(false);
   const [routeTransition, setRouteTransition] = useState<'idle' | 'cover' | 'reveal'>('reveal');
   const [easterEggVisible, setEasterEggVisible] = useState(false);
@@ -80,17 +81,30 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
 
   useEffect(() => {
     const syncProgress = () => {
+      progressFrameRef.current = null;
       const root = document.documentElement;
       const maxScroll = Math.max(0, root.scrollHeight - window.innerHeight);
-      setScrollProgress(maxScroll > 0 ? Math.min(1, window.scrollY / maxScroll) : 0);
+      const nextProgress = maxScroll > 0 ? Math.min(1, window.scrollY / maxScroll) : 0;
+
+      if (progressFillRef.current) {
+        progressFillRef.current.style.transform = `scaleX(${nextProgress})`;
+      }
+    };
+
+    const requestSync = () => {
+      if (progressFrameRef.current !== null) return;
+      progressFrameRef.current = window.requestAnimationFrame(syncProgress);
     };
 
     syncProgress();
-    window.addEventListener('scroll', syncProgress, { passive: true });
-    window.addEventListener('resize', syncProgress);
+    window.addEventListener('scroll', requestSync, { passive: true });
+    window.addEventListener('resize', requestSync);
     return () => {
-      window.removeEventListener('scroll', syncProgress);
-      window.removeEventListener('resize', syncProgress);
+      if (progressFrameRef.current !== null) {
+        window.cancelAnimationFrame(progressFrameRef.current);
+      }
+      window.removeEventListener('scroll', requestSync);
+      window.removeEventListener('resize', requestSync);
     };
   }, [pathname]);
 
@@ -187,38 +201,40 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
       return;
     }
 
-    const handleMouseMove = (event: MouseEvent) => {
+    const handlePointerMove = (event: PointerEvent) => {
       pointerRef.current = { x: event.clientX, y: event.clientY };
     };
 
-    const handleMouseLeave = () => {
+    const handlePointerLeave = () => {
       pointerRef.current = { x: -100, y: -100 };
+      currentPointerRef.current = { x: -100, y: -100 };
     };
 
     const render = () => {
+      const { x: targetX, y: targetY } = pointerRef.current;
+
       currentPointerRef.current = {
-        x: currentPointerRef.current.x + (pointerRef.current.x - currentPointerRef.current.x) * 0.1,
-        y: currentPointerRef.current.y + (pointerRef.current.y - currentPointerRef.current.y) * 0.1,
+        x: currentPointerRef.current.x + (targetX - currentPointerRef.current.x) * 0.18,
+        y: currentPointerRef.current.y + (targetY - currentPointerRef.current.y) * 0.18,
       };
 
-      const { x, y } = currentPointerRef.current;
       if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate3d(${x - 4}px, ${y - 4}px, 0)`;
+        cursorRef.current.style.transform = `translate3d(${targetX - 4}px, ${targetY - 4}px, 0)`;
       }
       if (glowRef.current) {
-        glowRef.current.style.transform = `translate3d(${x - 12}px, ${y - 12}px, 0)`;
+        glowRef.current.style.transform = `translate3d(${currentPointerRef.current.x - 12}px, ${currentPointerRef.current.y - 12}px, 0)`;
       }
 
       animationFrameRef.current = window.requestAnimationFrame(render);
     };
 
     animationFrameRef.current = window.requestAnimationFrame(render);
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('mouseleave', handleMouseLeave);
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerleave', handlePointerLeave);
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerleave', handlePointerLeave);
     };
   }, [cursorEnabled]);
 
@@ -384,7 +400,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
       ) : null}
 
       <div className={styles.progressTrack} aria-hidden="true">
-        <div className={styles.progressFill} style={{ transform: `scaleX(${scrollProgress})` }} />
+        <div ref={progressFillRef} className={styles.progressFill} />
       </div>
 
       <div className={styles.content}>{children}</div>

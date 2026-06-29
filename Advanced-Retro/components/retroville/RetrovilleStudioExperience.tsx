@@ -117,13 +117,13 @@ function clampUnit(value: number) {
 export default function RetrovilleStudioExperience(props: RetrovilleStudioExperienceProps) {
   const { launchIso, launchLabel, waitlistCount } = props;
   const cinematicRef = useRef<HTMLElement | null>(null);
+  const cinematicTimelineRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [introLeaving, setIntroLeaving] = useState(false);
   const [introDismissed, setIntroDismissed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoActive, setVideoActive] = useState(false);
-  const [cinematicProgress, setCinematicProgress] = useState(0);
   const launchCopy = buildRetrovilleLaunchCopy(launchLabel);
   const contactMailto = buildRetrovillePitchMailto({
     subject: 'Retroville · Pitch y materiales',
@@ -207,8 +207,20 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
       const viewportHeight = window.innerHeight || 1;
       const totalDistance = Math.max(rect.height + viewportHeight * 0.28, viewportHeight);
       const nextProgress = clampUnit((viewportHeight * 0.28 - rect.top) / totalDistance);
+      const nextStep = nextProgress < 0.28 ? '0' : nextProgress < 0.62 ? '1' : '2';
 
-      setCinematicProgress((current) => (Math.abs(current - nextProgress) > 0.002 ? nextProgress : current));
+      section.style.setProperty('--rv-cinematic-video-scale', `${1.14 - nextProgress * 0.14}`);
+      section.style.setProperty('--rv-cinematic-video-translate', `${34 - nextProgress * 72}px`);
+      section.style.setProperty('--rv-cinematic-video-blur', `${Math.max(0.45, 1.05 - nextProgress * 0.42)}px`);
+      section.style.setProperty('--rv-cinematic-video-saturation', `${0.97 + nextProgress * 0.05}`);
+      section.style.setProperty('--rv-cinematic-video-contrast', `${1.01 + nextProgress * 0.04}`);
+      section.style.setProperty('--rv-cinematic-video-brightness', `${0.83 + nextProgress * 0.07}`);
+      section.style.setProperty('--rv-cinematic-copy-translate', `${18 - nextProgress * 22}px`);
+      section.style.setProperty('--rv-cinematic-copy-opacity', `${0.9 + nextProgress * 0.1}`);
+
+      if (cinematicTimelineRef.current && cinematicTimelineRef.current.dataset.step !== nextStep) {
+        cinematicTimelineRef.current.dataset.step = nextStep;
+      }
     };
 
     const requestUpdate = () => {
@@ -267,16 +279,6 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
   function closeMobileNav() {
     setMobileNavOpen(false);
   }
-
-  const videoScale = 1.14 - cinematicProgress * 0.14;
-  const videoTranslateY = 34 - cinematicProgress * 72;
-  const videoBlur = Math.max(0.4, 1.15 - cinematicProgress * 0.55);
-  const videoSaturation = 0.95 + cinematicProgress * 0.06;
-  const videoContrast = 1.01 + cinematicProgress * 0.04;
-  const videoBrightness = 0.8 + cinematicProgress * 0.08;
-  const copyTranslateY = 18 - cinematicProgress * 22;
-  const copyOpacity = 0.88 + cinematicProgress * 0.12;
-  const cinematicStep = cinematicProgress < 0.28 ? 0 : cinematicProgress < 0.62 ? 1 : 2;
 
   return (
     <main
@@ -374,23 +376,13 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               preload="none"
               poster="/videos/retroville/retroville-city-approach-poster.jpg"
               aria-label="Aproximación cinematográfica a la ciudad de Retroville"
-              style={{
-                transform: `scale(${videoScale}) translate3d(0, ${videoTranslateY}px, 0)`,
-                filter: `blur(${videoBlur}px) saturate(${videoSaturation}) contrast(${videoContrast}) brightness(${videoBrightness})`,
-              }}
             >
               {videoReady ? (
                 <source src="/videos/retroville/retroville-city-approach.mp4" type="video/mp4" />
               ) : null}
             </video>
             <div className={styles.cinematicShade} aria-hidden="true" />
-            <div
-              className={styles.cinematicCopy}
-              style={{
-                transform: `translate3d(0, ${copyTranslateY}px, 0)`,
-                opacity: copyOpacity,
-              }}
-            >
+            <div className={styles.cinematicCopy}>
               <p className={styles.cinematicEyebrow}>Ciudad viva</p>
               <p className={`${displayFont.className} ${styles.cinematicTitle}`}>
                 La entrada al universo empieza aquí.
@@ -411,12 +403,14 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                   Abrir press kit
                 </Link>
               </div>
-              <div className={styles.cinematicTimeline} aria-label="Progreso de entrada a la ciudad">
+              <div
+                ref={cinematicTimelineRef}
+                className={styles.cinematicTimeline}
+                data-step="0"
+                aria-label="Progreso de entrada a la ciudad"
+              >
                 {['Skyline', 'Descenso', 'Street level'].map((label, index) => (
-                  <span
-                    key={label}
-                    className={`${styles.cinematicTimelineStep} ${cinematicStep >= index ? styles.cinematicTimelineStepActive : ''}`}
-                  >
+                  <span key={label} className={styles.cinematicTimelineStep}>
                     {String(index + 1).padStart(2, '0')} {label}
                   </span>
                 ))}
