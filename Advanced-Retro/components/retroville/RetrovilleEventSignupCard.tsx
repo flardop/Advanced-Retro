@@ -131,13 +131,13 @@ export default function RetrovilleEventSignupCard({
             Si quieres estar cuando Retroville lance su primera señal pública, déjanos tu nombre y tu email. Después puedes guardarlo en tu calendario con un clic.
           </p>
 
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <a
               href={googleCalendarHref}
               target="_blank"
               rel="noreferrer"
               onClick={() => trackCalendarAction('google')}
-              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-full border border-[rgba(196,58,47,0.34)] bg-[rgba(196,58,47,0.12)] px-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:border-[rgba(196,58,47,0.54)] hover:bg-[rgba(196,58,47,0.2)]"
+              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-full border border-[rgba(196,58,47,0.34)] bg-[rgba(196,58,47,0.12)] px-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:border-[rgba(196,58,47,0.54)] hover:bg-[rgba(196,58,47,0.2)]"
             >
               <CalendarDays className="h-4 w-4" />
               Guardar en Google Calendar
@@ -145,7 +145,7 @@ export default function RetrovilleEventSignupCard({
             <button
               type="button"
               onClick={handleDownloadIcs}
-              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/84 transition hover:border-white/22 hover:bg-white/[0.1] hover:text-white"
+              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.05] px-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/84 transition hover:border-white/22 hover:bg-white/[0.1] hover:text-white"
             >
               <Download className="h-4 w-4" />
               Descargar .ics
@@ -166,6 +166,7 @@ export default function RetrovilleEventSignupCard({
             <RetrovilleWaitlistForm
               darkMode
               showName
+              showRole
               intent="event"
               source="community-pulse-event"
               eventSlug="retroville-first-public-reveal"

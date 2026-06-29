@@ -84,7 +84,7 @@ export default async function RetrovilleFaqPage() {
   return (
     <>
       <StructuredData id="retroville-faq-schema" data={[retrovilleSeriesSchema, faqSchema, breadcrumbs]} />
-      <main className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} min-h-screen bg-[#06070d] text-[#f7f5ef]`}>
+      <main className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} min-h-screen bg-[radial-gradient(circle_at_14%_10%,rgba(138,215,255,0.14),transparent_24%),radial-gradient(circle_at_84%_12%,rgba(155,92,255,0.12),transparent_26%),linear-gradient(180deg,#03040b_0%,#050712_56%,#03040a_100%)] text-[#f7f5ef]`}>
         <div className="mx-auto max-w-5xl px-6 py-12 sm:px-8 lg:px-10">
           <nav className="mb-12 flex flex-wrap items-center justify-between gap-4" aria-label="Navegación FAQ Retroville">
             <Link
@@ -124,7 +124,7 @@ export default async function RetrovilleFaqPage() {
           </section>
 
           <footer className="mt-10 flex flex-wrap gap-3">
-            <Link href="/retroville/press" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#00ff88] px-5 text-[11px] font-bold uppercase tracking-[0.18em] text-black transition hover:brightness-110">
+            <Link href="/retroville/press" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-[rgba(255,191,82,0.26)] bg-[linear-gradient(135deg,rgba(255,191,82,0.22),rgba(192,57,43,0.2))] px-5 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition hover:border-[rgba(255,191,82,0.5)] hover:bg-[linear-gradient(135deg,rgba(255,191,82,0.3),rgba(192,57,43,0.28))]">
               Abrir press kit
               <ArrowRight className="h-4 w-4" />
             </Link>

@@ -808,6 +808,11 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
   const privateDocumentActions = groupCounts(
     privateDocumentEventsInRange.map((row) => humanizeRetrovilleEventName(row.event_name).replace('Documento privado · ', ''))
   ).slice(0, 8);
+  const waitlistIntentBreakdown = groupCounts(
+    waitlistInRange.map((row) =>
+      row.signup_intent === 'event' ? 'Reveal público' : row.signup_intent === 'newsletter' ? 'Newsletter' : 'Sin clasificar'
+    )
+  ).slice(0, 6);
 
   const settingsMap = new Map(settings.map((setting) => [setting.key, setting.value]));
   const launchDate = settingsMap.get(RETROVILLE_SETTING_KEY) || addMonths(now(), DEFAULT_RETROVILLE_MONTHS_AHEAD).toISOString();
@@ -857,6 +862,7 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
     buyerIntentBreakdown,
     calendarSaveChannels,
     privateDocumentActions,
+    waitlistIntentBreakdown,
     waitlistSources: groupCounts(waitlistInRange.map((row) => humanizeWaitlistSource(row.source))).slice(0, 10),
     waitlistRoles: groupCounts(waitlistInRange.map((row) => row.role_label || 'Sin etiqueta')).slice(0, 10),
     newsletterSignupPages,
@@ -886,11 +892,32 @@ export async function getRetrovilleAnalyticsSnapshot(input?: { from?: string; to
       .slice(0, 20)
       .map((row) => ({
         id: row.id,
+        email: row.email,
         email_masked: maskEmailAddress(row.email),
+        display_name: row.display_name || null,
         created_at: row.created_at,
         source: humanizeWaitlistSource(row.source),
         role_label: row.role_label || 'Sin etiqueta',
+        signup_intent: row.signup_intent || null,
+        event_title: row.event_title || null,
       })),
+    recentPrivateDocumentInteractions: privateDocumentEventsInRange
+      .slice()
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+      .slice(0, 20)
+      .map((row) => {
+        const session = row.session_id ? sessionLookup.get(row.session_id) || null : null;
+        return {
+          id: row.id,
+          action: humanizeRetrovilleEventName(row.event_name).replace('Documento privado · ', ''),
+          document_title: readMetaString(row.meta, 'document_title') || 'Documento privado',
+          path: normalizeTrackedPath(row.path || readMetaString(row.meta, 'path') || '/retroville'),
+          created_at: row.created_at,
+          country: readMetaString(row.meta, 'country') || session?.country || 'Desconocido',
+          city: readMetaString(row.meta, 'city') || session?.city || '—',
+          source: session?.source || classifyTrafficSource(readMetaString(row.meta, 'referrer')),
+        };
+      }),
   };
 }
 

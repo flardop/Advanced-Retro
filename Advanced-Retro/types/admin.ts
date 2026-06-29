@@ -322,6 +322,7 @@ export type RetrovilleAnalyticsSnapshot = {
   buyerIntentBreakdown: ChartPoint[];
   calendarSaveChannels: ChartPoint[];
   privateDocumentActions: ChartPoint[];
+  waitlistIntentBreakdown: ChartPoint[];
   waitlistSources: ChartPoint[];
   waitlistRoles: ChartPoint[];
   newsletterSignupPages: ChartPoint[];
@@ -356,10 +357,24 @@ export type RetrovilleAnalyticsSnapshot = {
   }>;
   recentWaitlist: Array<{
     id: string;
+    email: string;
     email_masked: string;
+    display_name: string | null;
     created_at: string;
     source: string | null;
     role_label: string | null;
+    signup_intent: 'newsletter' | 'event' | null;
+    event_title: string | null;
+  }>;
+  recentPrivateDocumentInteractions: Array<{
+    id: string;
+    action: string;
+    document_title: string;
+    path: string;
+    created_at: string;
+    country: string;
+    city: string;
+    source: string;
   }>;
 };
 

@@ -35,6 +35,19 @@ export function buildRetrovillePitchMailto({
   return `mailto:${RETROVILLE_PITCH_EMAIL}?${params.toString()}`;
 }
 
+export function buildRetrovilleAccessRequestBody(documentTitle: string) {
+  return [
+    'Hola equipo de Retroville,',
+    '',
+    'Mi nombre es [escribe aquí tu nombre].',
+    'Soy [cuéntanos quién eres, tu estudio, medio o proyecto].',
+    `Me gustaría solicitar acceso a "${documentTitle}".`,
+    'La necesito porque [explica brevemente por qué la quieres y cómo la vas a usar].',
+    '',
+    'Gracias.',
+  ].join('\n');
+}
+
 export const RETROVILLE_SOCIAL_CHANNELS = [
   {
     label: 'Instagram',

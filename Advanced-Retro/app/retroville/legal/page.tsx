@@ -2,17 +2,17 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react';
-import { Anton, DM_Sans, Space_Mono } from 'next/font/google';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
 import {
   buildRetrovillePitchMailto,
   buildRetrovilleSeriesJsonLd as buildRetrovilleSeriesJsonLdPage,
 } from '@/app/retroville/shared';
-
-const displayFont = Anton({ subsets: ['latin'], weight: '400' });
-const bodyFont = DM_Sans({ subsets: ['latin'] });
-const monoFont = Space_Mono({ subsets: ['latin'], weight: ['400', '700'] });
+import {
+  retrovilleBodyFont as bodyFont,
+  retrovilleDisplayFont as displayFont,
+  retrovilleMonoFont as monoFont,
+} from '@/lib/retroville/fonts';
 
 export const metadata: Metadata = buildPageMetadata({
   title: 'Aviso legal de Retroville | Derechos, uso y licencias',
@@ -63,7 +63,7 @@ export default function RetrovilleLegalPage() {
   return (
     <>
     <StructuredData id="retroville-legal-schema" data={[retrovilleSeriesSchema, breadcrumbs]} />
-    <main className={`${bodyFont.className} min-h-screen bg-[#04040a] text-white`}>
+    <main className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} min-h-screen bg-[radial-gradient(circle_at_14%_10%,rgba(138,215,255,0.14),transparent_24%),radial-gradient(circle_at_84%_12%,rgba(155,92,255,0.12),transparent_26%),linear-gradient(180deg,#03040b_0%,#050712_56%,#03040a_100%)] text-white`}>
       <section className="relative overflow-hidden px-6 py-8 sm:px-10 lg:px-14">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(255,201,64,0.16),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(255,60,32,0.12),transparent_28%),linear-gradient(180deg,#070712,#04040a)]" />
         <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.18)_1px,transparent_1px)] [background-size:34px_34px]" />
@@ -161,9 +161,18 @@ export default function RetrovilleLegalPage() {
             <a
               href={buildRetrovillePitchMailto({
                 subject: 'Permiso o licencia Retroville',
-                body: 'Hola equipo de AdvancedRetro,\n\nQuiero solicitar permiso o más información sobre licencias de Retroville.\n\nGracias.',
+                body: [
+                  'Hola equipo de Retroville,',
+                  '',
+                  'Mi nombre es [escribe aquí tu nombre].',
+                  'Soy [cuéntanos quién eres, tu estudio, medio o proyecto].',
+                  'Quiero solicitar permiso o más información sobre licencias de Retroville.',
+                  'Lo necesito para [explica brevemente el uso, colaboración o motivo].',
+                  '',
+                  'Gracias.',
+                ].join('\n'),
               })}
-              className="mt-6 inline-flex min-h-[48px] items-center gap-3 rounded-full bg-[#ffc940] px-6 font-black text-[#160f08] transition hover:scale-[1.02]"
+              className="mt-6 inline-flex min-h-[48px] items-center gap-3 rounded-full border border-[rgba(255,191,82,0.26)] bg-[linear-gradient(135deg,rgba(255,191,82,0.22),rgba(192,57,43,0.2))] px-6 font-black text-white transition hover:scale-[1.02] hover:border-[rgba(255,191,82,0.5)] hover:bg-[linear-gradient(135deg,rgba(255,191,82,0.3),rgba(192,57,43,0.28))]"
             >
               <Mail className="h-4 w-4" /> Solicitar permiso
             </a>

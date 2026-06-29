@@ -5,7 +5,6 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
 import { buildRetrovilleSeriesJsonLd } from '@/app/retroville/shared';
-import { retrovilleGuideSlides } from '@/app/retroville/content';
 import {
   retrovilleBodyFont as bodyFont,
   retrovilleDisplayFont as displayFont,
@@ -16,7 +15,7 @@ import styles from './sketches.module.css';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Sketchbook de Retroville | Proceso vivo, mapas y concept art',
   description:
-    'Archivo visual vivo de Retroville con referencias, tableros de traduccion, mapas de ciudad, edificios y concept art del universo original de AdvancedRetro.',
+    'Archivo visual vivo de Retroville con sketches a lapiz, tableros de traduccion, mapas de ciudad y hojas de proceso del universo original de AdvancedRetro.',
   path: '/retroville/sketches',
   category: 'entertainment',
   inheritBaseKeywords: false,
@@ -145,141 +144,23 @@ const curatedSections = [
       },
     ],
   },
-  {
-    title: 'Escenas Y Arquitectura',
-    phase: 'Fase activa · espacios ya publicables',
-    intro:
-      'Aquí ya no hablamos solo de boards de proceso. Estas piezas enseñan cómo se ve Retroville cuando el mundo baja a calle, barrio, interiores y atmósfera reconocible.',
-    items: [
-      {
-        title: 'Street frame',
-        tag: 'Barrio',
-        image: '/images/retroville/retroville-street.png',
-        text: 'Una de las imágenes más directas para vender la serie: señal, fachada, profundidad y tono de barrio ya cerrados.',
-      },
-      {
-        title: 'School district',
-        tag: 'Vida civil',
-        image: '/images/retroville/retroville-school-concept.png',
-        text: 'El colegio como pieza de ciudad real, útil tanto para humor cotidiano como para la parte más inquietante de la historia.',
-      },
-      {
-        title: 'Top Slot club',
-        tag: 'Noche',
-        image: '/images/retroville/retroville-club-concept.png',
-        text: 'La lectura más elegante y social del universo: luces, fachada y promesa de caos bonito dentro de la noche.',
-      },
-      {
-        title: 'Civic Hall',
-        tag: 'Institución',
-        image: '/images/retroville/retroville-civic-hall-concept.png',
-        text: 'Una arquitectura institucional con suficiente personalidad para que la autoridad de Retroville se reconozca al instante.',
-      },
-      {
-        title: 'Chaos office',
-        tag: 'Interior',
-        image: '/images/retroville/retroville-chaos-office.png',
-        text: 'Los interiores también tienen identidad: mesas, pantallas, densidad y una comedia visual que sigue respirando mundo.',
-      },
-      {
-        title: 'Bit Grave concept',
-        tag: 'Amenaza',
-        image: '/images/retroville/retroville-bit-grave-concept.png',
-        text: 'Una pieza más suelta y atmosférica para vender el reverso oscuro de la ciudad sin perder la firma visual.',
-      },
-    ],
-  },
-  {
-    title: 'Movilidad, Props Y Criaturas',
-    phase: 'Fase activa · sistemas urbanos',
-    intro:
-      'Cuando los vehículos, los props y las criaturas ya tienen propuesta visual, el mundo deja de depender solo del cast. Aquí se ve sistema, circulación y vida alrededor.',
-    items: [
-      {
-        title: 'Vehicle lineup',
-        tag: 'Movilidad',
-        image: '/images/retroville/retroville-vehicle-lineup-concept.png',
-        text: 'Una familia de transporte completa para que la ciudad no parezca sostenida por una única silueta o prop repetido.',
-      },
-      {
-        title: 'Metro-Pod concept',
-        tag: 'Transit',
-        image: '/images/retroville/retroville-metro-pod-concept.png',
-        text: 'La cápsula de transporte como icono reconocible: simple, clara y muy útil para repetir en el lenguaje del universo.',
-      },
-      {
-        title: 'Taxi pod',
-        tag: 'Servicio',
-        image: '/images/retroville/retroville-taxi-pod-concept.png',
-        text: 'Un sistema de movilidad cotidiana que ayuda a vender clases sociales, trayectos y ritmo urbano dentro de la serie.',
-      },
-      {
-        title: 'Zapperbike',
-        tag: 'Velocidad',
-        image: '/images/retroville/retroville-zapperbike-concept.png',
-        text: 'Una pieza más agresiva y veloz para persecuciones, llegadas fuertes y lectura joven del espacio urbano.',
-      },
-      {
-        title: 'Gripper car',
-        tag: 'Utilidad',
-        image: '/images/retroville/retroville-gripper-car-concept.png',
-        text: 'Vehículo de trabajo y de barrio que amplía el tono industrial sin romper la coherencia formal de la ciudad.',
-      },
-      {
-        title: 'Creatures study',
-        tag: 'Fauna',
-        image: '/images/retroville/retroville-creatures-concept.png',
-        text: 'Incluso la fauna ayuda a vender el lugar: formas raras, comportamiento propio y más capas para el ecosistema de Retroville.',
-      },
-    ],
-  },
 ] as const;
 
-const characterGuideNotes: Record<string, string> = {
-  'NOX styleguide': 'Hoja final para fijar silueta, actitud y materiales del protagonista sin ruido extra en el home.',
-  'LUNA styleguide': 'La guía de Luna ya deja cerrada su presencia y el contraste visual que necesita frente a NOX.',
-  'BUTTON CREW guide': 'El trío funciona como familia visual completa: color, pose y lectura grupal ya presentables.',
-  'Cast anatomy': 'La anatomy sheet asegura consistencia de proporciones antes de entrar en escenas y producción real.',
-  'Nora v2': 'Iteración de desarrollo que ayuda a consolidar el tono civil y observador de una de las vecinas clave.',
-  'Joy & Grump': 'Sheet del dúo más ácido del barrio, útil para enseñar humor y construcción de pareja cómica.',
-};
-
-const supportingCharacterSheets = [
+const featuredSketches = [
   {
-    title: 'Patrol Chief v2',
-    tag: 'Orden público',
-    image: '/images/retroville/dev-characters/patrol-chief-v2-sheet.png',
-    text: 'Figura de autoridad para sostener la parte más vigilada y tensa de la ciudad sin romper el tono caricaturesco.',
+    title: 'Hotel Retroville',
+    tag: 'Traducción visual',
+    image: '/images/retroville/process/hotel-translation-board.webp',
   },
   {
-    title: 'Public Crew v2',
-    tag: 'Ruido civil',
-    image: '/images/retroville/dev-characters/public-crew-v2-sheet.png',
-    text: 'Ciudadanos, extras y energía social para que las calles tengan conversación, masa y pequeños conflictos visibles.',
+    title: 'Masterplan Overview',
+    tag: 'Mapa general',
+    image: '/images/retroville/process/masterplan-overview-board.webp',
   },
   {
-    title: 'City Hall worker',
-    tag: 'Burocracia',
-    image: '/images/retroville/dev-characters/city-hall-worker-sheet.png',
-    text: 'La capa administrativa también necesita cara propia: gestos, uniforme y actitud de sistema cansado.',
-  },
-  {
-    title: 'Nona early sheet',
-    tag: 'Colegio',
-    image: '/images/retroville/dev-characters/nona-girl-sheet.png',
-    text: 'Material temprano que deja ver la evolución previa de una de las figuras más inquietantes del colegio.',
-  },
-  {
-    title: 'Tomo v2',
-    tag: 'Kids',
-    image: '/images/retroville/dev-characters/tomo-v2-sheet.png',
-    text: 'Revisión que refuerza la lectura traviesa del personaje y su papel como motor de energía callejera.',
-  },
-  {
-    title: 'Pipo v2',
-    tag: 'Caos pequeño',
-    image: '/images/retroville/dev-characters/pipo-v2-sheet.png',
-    text: 'Más precisión para ese perfil de mascota insoportable con ego sobredimensionado y presencia cómica inmediata.',
+    title: 'Metro-Pod',
+    tag: 'Sistema urbano',
+    image: '/images/retroville/process/metro-pod-translation-board.webp',
   },
 ] as const;
 
@@ -288,9 +169,9 @@ export default function RetrovilleSketchesPage() {
     name: 'Sketchbook de Retroville',
     path: '/retroville/sketches',
     description:
-      'Archivo visual de Retroville con referencias reales, traducción a arquitectura, sistemas jugables y mapas de distrito.',
+      'Archivo visual de Retroville dedicado a sketches a lápiz, tableros de traducción, mapas de distrito y hojas de proceso del universo.',
     image: '/images/retroville/process/masterplan-overview-board.png',
-    about: ['Worldbuilding Retroville', 'Concept art', 'Mapas de ciudad', 'Arquitectura retro'],
+    about: ['Worldbuilding Retroville', 'Sketches a lápiz', 'Mapas de ciudad', 'Proceso visual'],
   });
   const sketchListSchema = buildItemListJsonLd(
     curatedSections.flatMap((group) =>
@@ -311,7 +192,7 @@ export default function RetrovilleSketchesPage() {
   const retrovilleSeriesSchema = buildRetrovilleSeriesJsonLd({
     path: '/retroville/sketches',
     description:
-      'Archivo oficial del proceso de Retroville con tableros de traducción visual, mapas, arquitectura y sistemas del universo.',
+      'Archivo oficial del proceso de Retroville con sketches a lápiz, tableros de traducción visual y mapas del universo.',
     image: '/images/retroville/process/hotel-translation-board.png',
     name: 'Sketchbook de Retroville',
   });
@@ -333,130 +214,69 @@ export default function RetrovilleSketchesPage() {
 
         <section className={styles.heroGrid}>
           <div className={styles.heroCopy}>
-            <p className={styles.eyebrow}>Retroville development archive</p>
-            <h1 className={`${displayFont.className} ${styles.heroTitle}`}>SKETCHBOOK CURADO</h1>
+            <p className={styles.eyebrow}>Retroville sketch archive</p>
+            <h1 className={`${displayFont.className} ${styles.heroTitle}`}>SKETCHBOOK VIVO</h1>
             <div className="mt-5 inline-flex items-center rounded-full border border-[#8ad7ff]/20 bg-[#8ad7ff]/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-[#8ad7ff]">
-              Archivo en actualizacion · Junio 2026
+              Solo proceso · sketches y mapas · Junio 2026
             </div>
             <p className={styles.heroText}>
-              Esta página ya no junta sketches al azar. Ahora el archivo enseña el proceso real: referencia,
-              traducción visual, decisión de lenguaje y sitio que ocupa cada idea dentro del mundo.
+              Este apartado queda dedicado solo a imágenes de proceso: boards de traducción, mapas, distritos y
+              hojas con lenguaje de lápiz para que se vea cómo nace Retroville antes de su versión final.
             </p>
             <p className={styles.heroText}>
-              La intención es que se vea de dónde sale cada edificio, cómo se interpreta la inspiración y qué parte
-              del universo Retroville está construyendo cada hoja.
+              Aquí ya no entran biblias visuales, styleguides finales ni material demasiado cerrado. La idea es que
+              el sketchbook se sienta como un archivo de ideas vivas, no como un escaparate mezclado.
             </p>
             <p className={styles.heroText}>
-              El archivo sigue vivo y se actualiza a medida que cerramos barrios, props, transporte y nuevas
-              traducciones visuales del mundo.
+              Cada bloque enseña una fase distinta del mundo: de la referencia real a la arquitectura, de la
+              movilidad al mapa general de la ciudad.
             </p>
-            <p className={styles.heroText}>
-              Aquí también aterriza ahora el material de proceso de personajes que se ha quitado del pitch principal
-              para que el home venda la serie y este archivo enseñe cómo se construye.
-            </p>
+            <div className={styles.sectionPills}>
+              {curatedSections.map((group) => (
+                <Link key={group.title} href={`#${toSketchAnchor(group.title)}`} className={styles.sectionPill}>
+                  <span>{group.title}</span>
+                  <strong>{group.items.length}</strong>
+                </Link>
+              ))}
+            </div>
             <div className="mt-6 flex flex-wrap gap-3">
+              <Link href="/retroville" className={styles.footerCta}>
+                Volver al home <ArrowRight className="h-4 w-4" />
+              </Link>
               <Link href="/retroville/personajes" className={styles.footerCta}>
                 Ver reparto <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/retroville/presentaciones" className={styles.footerCta}>
-                Ver presentación <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link href="/retroville/press" className={styles.footerCta}>
-                Press kit <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
 
-          <div className={styles.heroBoard}>
-            <Image
-              src="/images/retroville/process/hotel-translation-board.webp"
-              alt="Tablero de traducción visual del hotel de Retroville"
-              fill
-              sizes="(max-width: 1500px) 100vw, 54vw"
-              className={styles.heroBoardImage}
-              priority
-            />
-            <div className={styles.heroBoardNote}>Referencia real a traduccion a edificio con identidad.</div>
+          <div className={styles.heroMosaic}>
+            {featuredSketches.map((item, index) => (
+              <article
+                key={item.title}
+                className={`${styles.heroMosaicCard} ${index === 0 ? styles.heroMosaicMain : ''}`}
+              >
+                <Image
+                  src={item.image}
+                  alt={`Sketch de proceso de ${item.title} en Retroville`}
+                  fill
+                  sizes={index === 0 ? '(max-width: 1500px) 100vw, 36vw' : '(max-width: 1500px) 100vw, 18vw'}
+                  className={styles.heroMosaicImage}
+                  priority={index === 0}
+                />
+                <div className={styles.heroMosaicMeta}>
+                  <span>{item.tag}</span>
+                  <strong>{item.title}</strong>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
       </header>
 
-      <section className={styles.groupSection}>
-        <div className={styles.groupHeader}>
-          <p className={styles.eyebrow}>Moved from pitch home</p>
-          <h2 className={`${displayFont.className} ${styles.groupTitle}`}>GUIAS Y SHEETS DE PERSONAJE</h2>
-          <div className="mt-4 inline-flex items-center rounded-full border border-[#ffbf52]/20 bg-[#ffbf52]/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-[#ffbf52]">
-            Archivo de proceso · cast y desarrollo
-          </div>
-          <p>
-            Todo el material de proceso que ya no compite dentro del home vive ahora aquí: styleguides finales,
-            anatomy sheets y hojas de desarrollo para enseñar método, no saturar la portada.
-          </p>
-        </div>
-
-        <div className={styles.grid}>
-          {retrovilleGuideSlides.slice(0, 6).map((item) => (
-            <article key={item.title} id={toSketchAnchor(item.title)} className={styles.card}>
-              <div className={styles.imageWrap}>
-                <Image
-                  src={item.image}
-                  alt={item.alt}
-                  fill
-                  sizes="(max-width: 900px) 100vw, 33vw"
-                  className={styles.cardImage}
-                  loading="lazy"
-                />
-              </div>
-              <div className={styles.cardCopy}>
-                <span className={styles.cardTag}>{item.meta}</span>
-                <h3 className={`${displayFont.className} ${styles.cardTitle}`}>{item.title}</h3>
-                <p>{characterGuideNotes[item.title]}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.groupSection}>
-        <div className={styles.groupHeader}>
-          <p className={styles.eyebrow}>Supporting cast process</p>
-          <h2 className={`${displayFont.className} ${styles.groupTitle}`}>APOYO VISUAL DEL BARRIO</h2>
-          <div className="mt-4 inline-flex items-center rounded-full border border-[#8ad7ff]/20 bg-[#8ad7ff]/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-[#8ad7ff]">
-            Desarrollo civil y secundario
-          </div>
-          <p>
-            Secundarios, autoridad, kids y ruido civil. Este bloque conserva el material que ayuda a que Retroville
-            parezca población real sin mezclarlo con la página de venta principal.
-          </p>
-        </div>
-
-        <div className={styles.grid}>
-          {supportingCharacterSheets.map((item) => (
-            <article key={item.title} id={toSketchAnchor(item.title)} className={styles.card}>
-              <div className={styles.imageWrap}>
-                <Image
-                  src={item.image}
-                  alt={`Hoja de proceso de ${item.title} en Retroville`}
-                  fill
-                  sizes="(max-width: 900px) 100vw, 33vw"
-                  className={styles.cardImage}
-                  loading="lazy"
-                />
-              </div>
-              <div className={styles.cardCopy}>
-                <span className={styles.cardTag}>{item.tag}</span>
-                <h3 className={`${displayFont.className} ${styles.cardTitle}`}>{item.title}</h3>
-                <p>{item.text}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
       {curatedSections.map((group) => (
-        <section key={group.title} className={styles.groupSection}>
+        <section key={group.title} id={toSketchAnchor(group.title)} className={styles.groupSection}>
           <div className={styles.groupHeader}>
-            <p className={styles.eyebrow}>Curated selection</p>
+            <p className={styles.eyebrow}>Curated sketch selection</p>
             <h2 className={`${displayFont.className} ${styles.groupTitle}`}>{group.title}</h2>
             <div className="mt-4 inline-flex items-center rounded-full border border-[#ffbf52]/20 bg-[#ffbf52]/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-[#ffbf52]">
               {group.phase}
@@ -474,26 +294,22 @@ export default function RetrovilleSketchesPage() {
                     fill
                     sizes="(max-width: 900px) 100vw, 33vw"
                     className={styles.cardImage}
-                    loading="lazy"
-                  />
-                </div>
-                <div className={styles.cardCopy}>
-                  <span className={styles.cardTag}>{item.tag}</span>
-                  <h3 className={`${displayFont.className} ${styles.cardTitle}`}>{item.title}</h3>
-                  <p>{item.text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+                  loading="lazy"
+                />
+              </div>
+              <div className={styles.cardCopy}>
+                <span className={styles.cardTag}>{item.tag}</span>
+                <h3 className={`${displayFont.className} ${styles.cardTitle}`}>{item.title}</h3>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
       ))}
 
       <footer className={styles.footer}>
-        <p>El archivo seguirá creciendo con más tableros, props, transporte, fauna y revisiones de distrito.</p>
+        <p>El archivo seguirá creciendo con más sketches, mapas y tableros de traducción del universo Retroville.</p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/retroville/presentaciones" className={styles.footerCta}>
-            Ver presentación oficial <ArrowRight className="h-4 w-4" />
-          </Link>
           <Link href="/retroville/personajes" className={styles.footerCta}>
             Ver personajes <ArrowRight className="h-4 w-4" />
           </Link>

@@ -410,11 +410,12 @@ export default async function AdminRetrovillePage({
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
+        <DonutChart data={snapshot.waitlistIntentBreakdown} title="Qué tipo de registro están dejando" />
         <BarChart data={snapshot.waitlistSources} title="Origen de registros a la newsletter" horizontal />
-        <DonutChart data={snapshot.waitlistRoles} title="Perfiles declarados en el registro" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-3">
+        <DonutChart data={snapshot.waitlistRoles} title="Perfiles declarados en el registro" />
         <BarChart data={snapshot.newsletterSignupPages} title="Páginas que mejor convierten" horizontal />
         <DonutChart data={snapshot.newsletterSignupDevices} title="Dispositivos que convierten a la newsletter" />
       </div>
@@ -515,23 +516,77 @@ export default async function AdminRetrovillePage({
         </section>
 
         <section className="rounded-3xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-6">
-          <h3 className="text-lg font-semibold text-[var(--admin-text)]">Últimos registros en La Señal de Retroville</h3>
+          <div>
+            <h3 className="text-lg font-semibold text-[var(--admin-text)]">Registros accionables de Retroville</h3>
+            <p className="mt-2 text-xs leading-6 text-[var(--admin-text-muted)]">
+              Aquí ves quién se ha apuntado, desde dónde ha entrado y si buscaba newsletter general o el reveal. Los accesos privados se siguen concediendo manualmente por correo, pero esta tabla ya te deja la cola real de audiencia.
+            </p>
+          </div>
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="text-left text-[var(--admin-text-muted)]">
                 <tr>
+                  <th className="pb-3">Nombre</th>
                   <th className="pb-3">Email</th>
+                  <th className="pb-3">Tipo</th>
                   <th className="pb-3">Perfil</th>
                   <th className="pb-3">Fuente</th>
+                  <th className="pb-3">Evento</th>
                   <th className="pb-3">Fecha</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--admin-border)]">
                 {snapshot.recentWaitlist.map((row) => (
                   <tr key={row.id}>
-                    <td className="py-3 text-[var(--admin-text)]">{row.email_masked}</td>
+                    <td className="py-3 text-[var(--admin-text)]">{row.display_name || 'Sin nombre'}</td>
+                    <td className="py-3 text-[var(--admin-text)]">
+                      <div>
+                        <p>{row.email}</p>
+                        <p className="text-xs text-[var(--admin-text-muted)]">{row.email_masked}</p>
+                      </div>
+                    </td>
+                    <td className="py-3 text-[var(--admin-text-muted)]">
+                      {row.signup_intent === 'event' ? 'Reveal público' : row.signup_intent === 'newsletter' ? 'Newsletter' : 'Sin definir'}
+                    </td>
                     <td className="py-3 text-[var(--admin-text-muted)]">{row.role_label || 'Sin etiqueta'}</td>
                     <td className="py-3 text-[var(--admin-text-muted)]">{row.source || 'Web publica'}</td>
+                    <td className="py-3 text-[var(--admin-text-muted)]">{row.event_title || '—'}</td>
+                    <td className="py-3 text-[var(--admin-text)]">{toDateTimeLabel(row.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-6">
+          <h3 className="text-lg font-semibold text-[var(--admin-text)]">Interés reciente en documentos privados</h3>
+          <p className="mt-2 text-xs leading-6 text-[var(--admin-text-muted)]">
+            Estas señales te muestran qué material privado se está pidiendo más. La identidad completa llega por correo, pero aquí ya ves documento, ruta y geografía del interés.
+          </p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="text-left text-[var(--admin-text-muted)]">
+                <tr>
+                  <th className="pb-3">Acción</th>
+                  <th className="pb-3">Documento</th>
+                  <th className="pb-3">Ruta</th>
+                  <th className="pb-3">País</th>
+                  <th className="pb-3">Fuente</th>
+                  <th className="pb-3">Fecha</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--admin-border)]">
+                {snapshot.recentPrivateDocumentInteractions.map((row) => (
+                  <tr key={row.id}>
+                    <td className="py-3 text-[var(--admin-text)]">{row.action}</td>
+                    <td className="py-3 text-[var(--admin-text-muted)]">{row.document_title}</td>
+                    <td className="py-3 text-[var(--admin-text-muted)]">{row.path}</td>
+                    <td className="py-3 text-[var(--admin-text-muted)]">
+                      {row.country}
+                      <span className="block text-xs">{row.city}</span>
+                    </td>
+                    <td className="py-3 text-[var(--admin-text)]">{row.source}</td>
                     <td className="py-3 text-[var(--admin-text)]">{toDateTimeLabel(row.created_at)}</td>
                   </tr>
                 ))}

@@ -57,33 +57,113 @@
   max-width: 680px;
 }
 
-.heroBoard {
-  position: relative;
+.sectionPills {
+  margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sectionPill {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0 18px;
+  text-decoration: none;
+  color: rgba(246, 245, 236, 0.86);
+  background: rgba(7, 10, 18, 0.62);
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.sectionPill:hover {
+  transform: translateY(-1px);
+  border-color: rgba(138, 215, 255, 0.28);
+  background: rgba(10, 15, 26, 0.78);
+}
+
+.sectionPill span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sectionPill strong {
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(255, 191, 82, 0.16);
+  color: #ffbf52;
+  font-size: 0.9rem;
+}
+
+.heroMosaic {
   min-height: 640px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.heroMosaicCard {
+  position: relative;
   overflow: hidden;
-  border-radius: 54px;
+  border-radius: 38px;
   background: #f6f2e9;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
 }
 
-.heroBoardImage {
-  object-fit: contain;
-  padding: 22px;
-  filter: contrast(1.03);
+.heroMosaicCard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, transparent 55%, rgba(5, 7, 12, 0.78) 100%);
+  pointer-events: none;
 }
 
-.heroBoardNote {
+.heroMosaicMain {
+  grid-row: 1 / span 2;
+}
+
+.heroMosaicImage {
+  object-fit: contain;
+  padding: 18px;
+  filter: contrast(1.02) saturate(0.96);
+}
+
+.heroMosaicMeta {
   position: absolute;
-  top: 26px;
-  right: 26px;
-  max-width: 310px;
-  border-radius: 24px 24px 4px 24px;
-  background: #21134c;
-  color: #fff;
-  padding: 18px 22px;
-  font-size: 1.02rem;
-  font-weight: 800;
-  line-height: 1.35;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1;
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(7, 10, 18, 0.55), rgba(7, 10, 18, 0.88));
+  backdrop-filter: blur(10px);
+}
+
+.heroMosaicMeta span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #8ad7ff;
+}
+
+.heroMosaicMeta strong {
+  font-size: clamp(1.3rem, 2vw, 2.2rem);
+  line-height: 1;
+  text-transform: uppercase;
+  color: #f6f5ec;
 }
 
 .eyebrow,
@@ -222,35 +302,46 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
 }
 
 .card {
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 32px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(8, 11, 20, 0.72);
   box-shadow: 0 26px 70px rgba(0, 0, 0, 0.22);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(138, 215, 255, 0.24);
+  box-shadow: 0 32px 78px rgba(0, 0, 0, 0.28);
 }
 
 .imageWrap {
   position: relative;
-  aspect-ratio: 16 / 11;
+  aspect-ratio: 4 / 3;
   background: #f4f0e8;
 }
 
 .cardImage {
   object-fit: contain;
-  padding: 12px;
+  padding: 16px;
+  filter: contrast(1.01) saturate(0.95);
 }
 
 .cardCopy {
-  padding: 24px;
+  display: grid;
+  gap: 10px;
+  padding: 18px 22px 22px;
 }
 
 .cardTitle {
-  font-size: 2.3rem;
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
 }
 
 .footer {
@@ -264,6 +355,10 @@
     grid-template-columns: 1fr;
   }
 
+  .heroMosaic {
+    min-height: auto;
+  }
+
   .operator,
   .operatorAlt {
     transform: rotate(90deg);
@@ -271,7 +366,6 @@
 }
 
 @media (max-width: 1180px) {
-
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -293,9 +387,9 @@
     padding-top: 44px;
   }
 
-  .heroBoard {
-    min-height: 420px;
-    border-radius: 34px;
+  .sectionPill {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .heroTitle {
@@ -306,13 +400,17 @@
     font-size: clamp(2.1rem, 9.8vw, 3.15rem);
   }
 
-  .heroBoardNote {
-    top: 18px;
-    right: 16px;
-    left: 16px;
-    max-width: none;
-    padding: 14px 16px;
-    font-size: 0.88rem;
+  .heroMosaic {
+    grid-template-columns: 1fr;
+  }
+
+  .heroMosaicMain {
+    grid-row: auto;
+  }
+
+  .heroMosaicCard {
+    min-height: 280px;
+    border-radius: 28px;
   }
 
   .outputCard {

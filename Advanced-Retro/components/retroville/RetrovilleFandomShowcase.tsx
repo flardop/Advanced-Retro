@@ -214,12 +214,12 @@ export default function RetrovilleFandomShowcase() {
             })}
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <a
               href={channelHrefMap.Instagram}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[rgba(255,191,82,0.28)] bg-[linear-gradient(135deg,rgba(255,191,82,0.2),rgba(192,57,43,0.2))] px-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:border-[rgba(255,191,82,0.44)] hover:brightness-110"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[rgba(255,191,82,0.28)] bg-[linear-gradient(135deg,rgba(255,191,82,0.2),rgba(192,57,43,0.2))] px-5 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:border-[rgba(255,191,82,0.44)] hover:brightness-110"
             >
               Ver Instagram oficial
             </a>
@@ -227,7 +227,7 @@ export default function RetrovilleFandomShowcase() {
               href={channelHrefMap.Threads}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/10 bg-white/[0.05] px-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/82 transition hover:border-white/20 hover:text-white"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/10 bg-white/[0.05] px-5 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/82 transition hover:border-white/20 hover:text-white"
             >
               Abrir Threads
             </a>
@@ -235,7 +235,7 @@ export default function RetrovilleFandomShowcase() {
               href={channelHrefMap.Discord}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[rgba(138,215,255,0.2)] bg-[rgba(138,215,255,0.08)] px-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/84 transition hover:border-[rgba(138,215,255,0.36)] hover:bg-[rgba(138,215,255,0.12)] hover:text-white"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[rgba(138,215,255,0.2)] bg-[rgba(138,215,255,0.08)] px-5 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/84 transition hover:border-[rgba(138,215,255,0.36)] hover:bg-[rgba(138,215,255,0.12)] hover:text-white"
             >
               Entrar en Discord
             </a>
@@ -281,13 +281,7 @@ export default function RetrovilleFandomShowcase() {
                 sizes="(max-width: 1024px) 100vw, 58vw"
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,10,0.08),rgba(3,4,10,0.18)_40%,rgba(3,4,10,0.82)_100%)]" />
-              <div className="absolute inset-x-0 bottom-0 grid gap-2 p-5 sm:p-6">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">{activeMoment.eyebrow}</p>
-                <h4 className="max-w-[14ch] text-[clamp(2rem,4vw,3.5rem)] font-semibold uppercase leading-[0.92] tracking-[0.02em] text-white">
-                  {activeMoment.title}
-                </h4>
-              </div>
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,10,0.04),rgba(3,4,10,0.08)_52%,rgba(3,4,10,0.22)_100%)]" />
             </div>
           </div>
 
@@ -306,7 +300,13 @@ export default function RetrovilleFandomShowcase() {
                 NINGUNA SEÑAL
               </h4>
 
-              <p className="mt-4 text-sm leading-7 text-[var(--rv-text-muted)] sm:text-base">{activeMoment.caption}</p>
+              <div className="mt-4 rounded-[1.3rem] border border-white/8 bg-white/[0.04] p-4">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">{activeMoment.eyebrow}</p>
+                <h5 className="mt-3 text-[clamp(1.4rem,2.4vw,2rem)] font-semibold uppercase leading-[0.96] tracking-[0.02em] text-white">
+                  {activeMoment.title}
+                </h5>
+                <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)] sm:text-base">{activeMoment.caption}</p>
+              </div>
 
               <div className="mt-5 flex flex-wrap gap-2">
                 {activeMoment.hashtags.map((tag) => (
@@ -341,7 +341,7 @@ export default function RetrovilleFandomShowcase() {
                 href={activeMoment.href}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[rgba(138,215,255,0.22)] bg-[rgba(138,215,255,0.08)] px-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/84 transition hover:border-[rgba(138,215,255,0.36)] hover:bg-[rgba(138,215,255,0.14)] hover:text-white"
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-full border border-[rgba(138,215,255,0.22)] bg-[rgba(138,215,255,0.08)] px-5 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/84 transition hover:border-[rgba(138,215,255,0.36)] hover:bg-[rgba(138,215,255,0.14)] hover:text-white sm:w-auto"
               >
                 Ver canal en {activeMoment.platform}
               </a>

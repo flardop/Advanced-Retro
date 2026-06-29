@@ -2,14 +2,18 @@
 
 import { Mail, Copy, Check, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { buildRetrovillePitchMailto, RETROVILLE_PITCH_EMAIL } from '@/app/retroville/shared';
+import {
+  buildRetrovilleAccessRequestBody,
+  buildRetrovillePitchMailto,
+  RETROVILLE_PITCH_EMAIL,
+} from '@/app/retroville/shared';
 
 const REQUEST_EMAIL = RETROVILLE_PITCH_EMAIL;
 
 function buildMailtoHref(documentTitle: string) {
   return buildRetrovillePitchMailto({
     subject: `Solicitud de acceso · ${documentTitle}`,
-    body: `Hola equipo de Retroville,\n\nMe gustaría solicitar acceso a "${documentTitle}".\n\nGracias.`,
+    body: buildRetrovilleAccessRequestBody(documentTitle),
   });
 }
 
@@ -135,19 +139,26 @@ export default function RetrovillePrivateDocumentButton({
             <p id={descriptionId} className="mt-4 text-sm leading-7 text-white/74 sm:text-base">
               {descriptionLead} Si quieres recibir <strong className="text-white">{documentTitle}</strong>, escríbenos
               {' '}
-              a este correo y te lo enviamos de forma directa.
+              a este correo y te lo enviamos de forma directa. Al pulsar el botón se abrirá tu app de correo con un
+              mensaje ya preparado para que completes quién eres y por qué lo necesitas.
             </p>
 
             <div className="mt-5 rounded-[1.3rem] border border-white/10 bg-white/[0.04] p-4">
               <p className="text-[10px] uppercase tracking-[0.22em] text-[rgba(212,154,67,0.9)]">Correo de solicitud</p>
               <p className="mt-3 break-all text-lg font-semibold text-white">{REQUEST_EMAIL}</p>
+              <div className="mt-4 grid gap-2 text-sm leading-6 text-white/64">
+                <p>El correo preparado te pedirá tres datos para agilizar la respuesta:</p>
+                <p>1. Tu nombre.</p>
+                <p>2. Quién eres o desde qué proyecto escribes.</p>
+                <p>3. Por qué quieres acceder al material.</p>
+              </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <a
                 href={mailtoHref}
                 onClick={() => trackPrivateDocumentAction('mail_click', documentTitle)}
-                className="inline-flex min-h-[46px] items-center gap-2 rounded-full border border-[rgba(196,58,47,0.48)] bg-[rgba(196,58,47,0.16)] px-5 py-3 text-sm font-bold text-white transition hover:bg-[rgba(196,58,47,0.24)]"
+                className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full border border-[rgba(196,58,47,0.48)] bg-[rgba(196,58,47,0.16)] px-5 py-3 text-center text-sm font-bold text-white transition hover:bg-[rgba(196,58,47,0.24)]"
               >
                 <Mail className="h-4 w-4" />
                 {mailButtonLabel}
@@ -155,7 +166,7 @@ export default function RetrovillePrivateDocumentButton({
               <button
                 type="button"
                 onClick={handleCopyEmail}
-                className="inline-flex min-h-[46px] items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white/82 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+                className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-center text-sm font-semibold uppercase tracking-[0.16em] text-white/82 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 {copied ? 'Copiado' : 'Copiar correo'}

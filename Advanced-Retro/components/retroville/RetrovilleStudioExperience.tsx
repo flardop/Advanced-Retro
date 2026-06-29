@@ -8,7 +8,9 @@ import {
   ArrowRight,
   FileText,
   Mail,
+  Menu,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 import RetrovilleAudienceProof from '@/components/retroville/RetrovilleAudienceProof';
 import RetrovilleFandomShowcase from '@/components/retroville/RetrovilleFandomShowcase';
@@ -77,6 +79,15 @@ const footerLinks = [
   { label: 'Legal', href: '/retroville/legal' },
 ] as const;
 
+const topbarLinks = [
+  { label: 'Visión', href: '#universe' },
+  { label: 'Cast', href: '#cast' },
+  { label: 'Temporada', href: '#episodes' },
+  { label: 'Ciudad', href: '#world' },
+  { label: 'Acceso', href: '#buyer-brief' },
+  { label: 'Comunidad', href: '#community' },
+] as const;
+
 const retrovilleTheme = {
   '--rv-accent': '#8ad7ff',
   '--rv-accent-2': '#9b5cff',
@@ -99,18 +110,33 @@ function createRevealDelay(index: number) {
   return { '--reveal-delay': `${index * 70}ms` } as CSSProperties;
 }
 
+function clampUnit(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
 export default function RetrovilleStudioExperience(props: RetrovilleStudioExperienceProps) {
   const { launchIso, launchLabel, waitlistCount } = props;
   const cinematicRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [introLeaving, setIntroLeaving] = useState(false);
   const [introDismissed, setIntroDismissed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [videoActive, setVideoActive] = useState(false);
+  const [cinematicProgress, setCinematicProgress] = useState(0);
   const launchCopy = buildRetrovilleLaunchCopy(launchLabel);
   const contactMailto = buildRetrovillePitchMailto({
     subject: 'Retroville · Pitch y materiales',
-    body: 'Hola equipo de Retroville,\n\nMe interesa conocer más sobre Retroville y sus materiales de pitch.\n\nGracias.',
+    body: [
+      'Hola equipo de Retroville,',
+      '',
+      'Mi nombre es [escribe aquí tu nombre].',
+      'Soy [cuéntanos quién eres, tu estudio, medio o proyecto].',
+      'Me interesa conocer más sobre Retroville y recibir [pitch / press kit / biblia / materiales].',
+      'Lo necesito porque [explica brevemente por qué].',
+      '',
+      'Gracias.',
+    ].join('\n'),
   });
 
   useEffect(() => {
@@ -118,6 +144,17 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
     if (window.sessionStorage.getItem('retroville-intro-seen') === '1') {
       setIntroDismissed(true);
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => {
+      if (window.innerWidth > 900) setMobileNavOpen(false);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -164,6 +201,40 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
   }, [introDismissed]);
 
   useEffect(() => {
+    if (!introDismissed || typeof window === 'undefined') return;
+
+    let frame = 0;
+
+    const updateProgress = () => {
+      frame = 0;
+      const section = cinematicRef.current;
+      if (!section) return;
+
+      const rect = section.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || 1;
+      const totalDistance = Math.max(rect.height + viewportHeight * 0.35, viewportHeight);
+      const nextProgress = clampUnit((viewportHeight * 0.22 - rect.top) / totalDistance);
+
+      setCinematicProgress((current) => (Math.abs(current - nextProgress) > 0.002 ? nextProgress : current));
+    };
+
+    const requestUpdate = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(updateProgress);
+    };
+
+    updateProgress();
+    window.addEventListener('scroll', requestUpdate, { passive: true });
+    window.addEventListener('resize', requestUpdate);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', requestUpdate);
+      window.removeEventListener('resize', requestUpdate);
+    };
+  }, [introDismissed]);
+
+  useEffect(() => {
     const video = videoRef.current;
     if (!video || !videoReady) return;
 
@@ -201,6 +272,20 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
     window.setTimeout(() => setIntroDismissed(true), 420);
   }
 
+  function closeMobileNav() {
+    setMobileNavOpen(false);
+  }
+
+  const videoScale = 1.09 - cinematicProgress * 0.08;
+  const videoTranslateY = 24 - cinematicProgress * 44;
+  const videoBlur = Math.max(0.6, 1.7 - cinematicProgress * 0.9);
+  const videoSaturation = 0.96 + cinematicProgress * 0.05;
+  const videoContrast = 1.02 + cinematicProgress * 0.03;
+  const videoBrightness = 0.82 + cinematicProgress * 0.06;
+  const copyTranslateY = 12 - cinematicProgress * 10;
+  const copyOpacity = 0.92 + cinematicProgress * 0.08;
+  const cinematicStep = cinematicProgress < 0.33 ? 0 : cinematicProgress < 0.7 ? 1 : 2;
+
   return (
     <main
       className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} ${styles.page}`}
@@ -236,30 +321,47 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
       <div className={styles.shell}>
         <section ref={cinematicRef} className={styles.cinematicSection} aria-label="Entrada cinematográfica de Retroville">
           <header className={styles.topbar}>
-            <div className={styles.topbarBrand}>
-              <div>
-                <p className={styles.topbarEyebrow}>Serie animada original</p>
-                <p className={styles.topbarTitle}>Retroville</p>
+            <div className={styles.topbarPrimary}>
+              <div className={styles.topbarBrand}>
+                <div>
+                  <p className={styles.topbarEyebrow}>Serie animada original</p>
+                  <p className={styles.topbarTitle}>Retroville</p>
+                </div>
+                <p className={styles.topbarMeta}>Creada por AdvancedRetro</p>
               </div>
-              <p className={styles.topbarMeta}>Creada por AdvancedRetro</p>
+
+              <button
+                type="button"
+                className={styles.mobileMenuToggle}
+                aria-expanded={mobileNavOpen}
+                aria-controls="retroville-mobile-nav"
+                aria-label={mobileNavOpen ? 'Cerrar navegación de Retroville' : 'Abrir navegación de Retroville'}
+                onClick={() => setMobileNavOpen((current) => !current)}
+              >
+                {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </button>
             </div>
 
-            <nav className={styles.topbarNav} aria-label="Secciones principales de Retroville">
-              <a href="#universe">Visión</a>
-              <a href="#cast">Cast</a>
-              <a href="#episodes">Temporada</a>
-              <a href="#world">Ciudad</a>
-              <a href="#buyer-brief">Acceso</a>
-              <a href="#community">Comunidad</a>
-            </nav>
+            <div
+              id="retroville-mobile-nav"
+              className={`${styles.topbarPanel} ${mobileNavOpen ? styles.topbarPanelOpen : ''}`}
+            >
+              <nav className={styles.topbarNav} aria-label="Secciones principales de Retroville">
+                {topbarLinks.map((link) => (
+                  <a key={link.href} href={link.href} onClick={closeMobileNav}>
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
 
-            <div className={styles.topbarActions}>
-              <Link href="/retroville/press" className={styles.secondaryButton}>
-                Press kit
-              </Link>
-              <a href="#community" className={styles.primaryButton}>
-                Guardar reveal
-              </a>
+              <div className={styles.topbarActions}>
+                <Link href="/retroville/press" className={styles.secondaryButton} onClick={closeMobileNav}>
+                  Press kit
+                </Link>
+                <a href="#community" className={styles.primaryButton} onClick={closeMobileNav}>
+                  Registrarme al reveal
+                </a>
+              </div>
             </div>
           </header>
 
@@ -273,44 +375,80 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               preload="none"
               poster="/videos/retroville/retroville-city-approach-poster.jpg"
               aria-label="Aproximación cinematográfica a la ciudad de Retroville"
+              style={{
+                transform: `scale(${videoScale}) translate3d(0, ${videoTranslateY}px, 0)`,
+                filter: `blur(${videoBlur}px) saturate(${videoSaturation}) contrast(${videoContrast}) brightness(${videoBrightness})`,
+              }}
             >
               {videoReady ? (
                 <source src="/videos/retroville/retroville-city-approach.mp4" type="video/mp4" />
               ) : null}
             </video>
             <div className={styles.cinematicShade} aria-hidden="true" />
-            <div className={styles.cinematicCopy}>
+            <div
+              className={styles.cinematicCopy}
+              style={{
+                transform: `translate3d(0, ${copyTranslateY}px, 0)`,
+                opacity: copyOpacity,
+              }}
+            >
               <p className={styles.cinematicEyebrow}>Ciudad viva</p>
-              <p className={`${displayFont.className} ${styles.cinematicTitle}`}>La entrada al universo empieza aquí.</p>
+              <p className={`${displayFont.className} ${styles.cinematicTitle}`}>
+                La entrada al universo empieza aquí.
+              </p>
               <p className={styles.cinematicBody}>
                 La ciudad aparece primero. Después llegan el reparto, la temporada, el material comercial y la comunidad
                 que quieres activar alrededor de la serie.
               </p>
+              <div className={styles.cinematicActions}>
+                <a href="#community" className={styles.cinematicButton}>
+                  Registrarme al primer reveal
+                </a>
+                <Link
+                  href="/retroville/press"
+                  className={styles.cinematicGhostButton}
+                  onClick={() => trackStudioAction('open_press_kit', 'cinematic_hero')}
+                >
+                  Abrir press kit
+                </Link>
+              </div>
+              <div className={styles.cinematicTimeline} aria-label="Progreso de entrada a la ciudad">
+                {['Skyline', 'Descenso', 'Street level'].map((label, index) => (
+                  <span
+                    key={label}
+                    className={`${styles.cinematicTimelineStep} ${cinematicStep >= index ? styles.cinematicTimelineStepActive : ''}`}
+                  >
+                    {String(index + 1).padStart(2, '0')} {label}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
-        <section id="universe" className={`${styles.presentationSection} ${styles.revealItem}`} data-reveal>
+        <section id="universe" className={styles.presentationSection}>
           <div className={styles.presentationCopy}>
-            <p className={styles.sectionEyebrow}>Pitch claro</p>
-            <h1 className={`${displayFont.className} ${styles.presentationTitle}`}>
+            <p className={`${styles.sectionEyebrow} ${styles.revealItem}`} data-reveal>
+              Pitch claro
+            </p>
+            <h1 className={`${displayFont.className} ${styles.presentationTitle} ${styles.revealItem}`} data-reveal style={createRevealDelay(1)}>
               UNA IP CLARA EN
               <br />
               DIEZ SEGUNDOS
             </h1>
-            <p className={styles.presentationBody}>
+            <p className={`${styles.presentationBody} ${styles.revealItem}`} data-reveal style={createRevealDelay(2)}>
               Retroville es una serie de animación original ambientada en una ciudad donde el hardware olvidado sigue
               vivo. Humor negro, vida de barrio y un universo con protagonistas, distritos y temporada ya presentables
               para pitch.
             </p>
 
-            <div className={styles.presentationPills}>
+            <div className={`${styles.presentationPills} ${styles.revealItem}`} data-reveal style={createRevealDelay(3)}>
               <span>Humor negro</span>
               <span>Vida de barrio</span>
               <span>Pitch-ready IP</span>
             </div>
 
-            <div className={styles.presentationActions}>
+            <div className={`${styles.presentationActions} ${styles.revealItem}`} data-reveal style={createRevealDelay(4)}>
               <Link
                 href="/retroville/personajes"
                 className={styles.primaryButton}
@@ -330,8 +468,8 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
         </section>
 
         <section id="cast" className={styles.section}>
-          <div className={`${styles.sectionHeader} ${styles.revealItem}`} data-reveal>
-            <div>
+          <div className={styles.sectionHeader}>
+            <div className={styles.revealItem} data-reveal>
               <p className={styles.sectionEyebrow}>Tres protagonistas</p>
               <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
                 NOX, LUNA Y
@@ -339,7 +477,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                 BUTTON CREW
               </h2>
             </div>
-            <p className={styles.sectionLead}>
+            <p className={`${styles.sectionLead} ${styles.revealItem}`} data-reveal style={createRevealDelay(1)}>
               El home deja solo el núcleo del proyecto: tres renders claros, tres roles distintos y cero material de
               proceso compitiendo con la venta de la serie.
             </p>
@@ -387,8 +525,8 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
         </section>
 
         <section id="episodes" className={styles.section}>
-          <div className={`${styles.sectionHeader} ${styles.revealItem}`} data-reveal>
-            <div>
+          <div className={styles.sectionHeader}>
+            <div className={styles.revealItem} data-reveal>
               <p className={styles.sectionEyebrow}>Hook de temporada</p>
               <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
                 TRES EPISODIOS PARA
@@ -396,7 +534,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                 ENTRAR EN LA T1
               </h2>
             </div>
-            <p className={styles.sectionLead}>
+            <p className={`${styles.sectionLead} ${styles.revealItem}`} data-reveal style={createRevealDelay(1)}>
               Lo justo para entender la serie sin soltar la temporada entera en la portada.
             </p>
           </div>
@@ -436,8 +574,8 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
         </section>
 
         <section id="world" className={styles.section}>
-          <div className={`${styles.sectionHeader} ${styles.revealItem}`} data-reveal>
-            <div>
+          <div className={styles.sectionHeader}>
+            <div className={styles.revealItem} data-reveal>
               <p className={styles.sectionEyebrow}>Tres distritos</p>
               <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
                 LA CIUDAD TAMBIÉN
@@ -445,7 +583,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                 VENDE LA SERIE
               </h2>
             </div>
-            <p className={styles.sectionLead}>
+            <p className={`${styles.sectionLead} ${styles.revealItem}`} data-reveal style={createRevealDelay(1)}>
               RAM District, Power Plaza y Bit Grave bastan para enseñar barrio, escala y amenaza sin convertir la home
               en un archivo de proceso.
             </p>
@@ -491,8 +629,8 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
         </section>
 
         <section id="buyer-brief" className={styles.section}>
-          <div className={`${styles.sectionHeader} ${styles.revealItem}`} data-reveal>
-            <div>
+          <div className={styles.sectionHeader}>
+            <div className={styles.revealItem} data-reveal>
               <p className={styles.sectionEyebrow}>Buyer brief</p>
               <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
                 QUÉ EXISTE,
@@ -500,7 +638,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                 QUÉ SE PIDE Y A QUIÉN
               </h2>
             </div>
-            <p className={styles.sectionLead}>
+            <p className={`${styles.sectionLead} ${styles.revealItem}`} data-reveal style={createRevealDelay(1)}>
               {launchCopy} El siguiente paso ya no depende de adivinar qué material hay o a qué correo escribir.
             </p>
           </div>
@@ -552,8 +690,8 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
         </section>
 
         <section id="community" className={styles.section}>
-          <div className={`${styles.sectionHeader} ${styles.revealItem}`} data-reveal>
-            <div>
+          <div className={styles.sectionHeader}>
+            <div className={styles.revealItem} data-reveal>
               <p className={styles.sectionEyebrow}>Comunidad, fandom y reveal</p>
               <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
                 SEÑALES, FANDOM
@@ -561,9 +699,9 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                 Y SIGUIENTE DROP
               </h2>
             </div>
-            <p className={styles.sectionLead}>
+            <p className={`${styles.sectionLead} ${styles.revealItem}`} data-reveal style={createRevealDelay(1)}>
               La comunidad no debería limitarse a un formulario. Aquí dejamos visible el fandom que puede nacer del
-              proyecto, las publicaciones que le dan color fuera de la home y el acceso real al reveal del {launchLabel}.
+              proyecto, las publicaciones que le dan color fuera de la home y el registro real al reveal del {launchLabel}.
             </p>
           </div>
 
