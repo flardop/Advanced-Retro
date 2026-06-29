@@ -41,6 +41,7 @@ export default function RetrovillePrivateDocumentButton(props: RetrovillePrivate
 
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [launchingMail, setLaunchingMail] = useState(false);
   const dialogTitleId = useId();
   const dialogDescriptionId = useId();
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -76,6 +77,22 @@ export default function RetrovillePrivateDocumentButton(props: RetrovillePrivate
     return () => window.clearTimeout(timer);
   }, [copied]);
 
+  useEffect(() => {
+    if (open || !launchingMail) return;
+
+    const timer = window.setTimeout(() => {
+      const launchLink = document.createElement('a');
+      launchLink.href = mailtoHref;
+      launchLink.style.display = 'none';
+      document.body.appendChild(launchLink);
+      launchLink.click();
+      launchLink.remove();
+      setLaunchingMail(false);
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [launchingMail, mailtoHref, open]);
+
   async function handleCopyEmail() {
     try {
       await navigator.clipboard.writeText('flardop44@gmail.com');
@@ -87,8 +104,8 @@ export default function RetrovillePrivateDocumentButton(props: RetrovillePrivate
 
   function openMailApp() {
     trackPrivateDocumentAction('mail_click', documentTitle);
-    window.location.assign(mailtoHref);
     setOpen(false);
+    setLaunchingMail(true);
   }
 
   return (
@@ -106,7 +123,7 @@ export default function RetrovillePrivateDocumentButton(props: RetrovillePrivate
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-[140] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[140] flex items-start justify-center overflow-y-auto p-4 sm:items-center sm:p-6">
           <button
             type="button"
             aria-label="Cerrar solicitud privada"
@@ -119,63 +136,72 @@ export default function RetrovillePrivateDocumentButton(props: RetrovillePrivate
             aria-modal="true"
             aria-labelledby={dialogTitleId}
             aria-describedby={dialogDescriptionId}
-            className="relative z-[1] w-full max-w-xl overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,14,24,0.98),rgba(7,9,18,0.98))] p-6 shadow-[0_28px_90px_rgba(0,0,0,0.4)] sm:p-7"
+            className="relative z-[1] my-6 w-full max-w-[min(40rem,100%)] overflow-hidden rounded-[1.65rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,14,24,0.98),rgba(7,9,18,0.98))] shadow-[0_28px_90px_rgba(0,0,0,0.4)]"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.24em] text-[#8ad7ff]">{eyebrowLabel}</p>
-                <h3
-                  id={dialogTitleId}
-                  className="mt-3 text-[clamp(1.9rem,4vw,2.6rem)] font-black uppercase leading-[0.94] text-white [font-family:var(--font-display)]"
+            <div className="max-h-[min(86vh,46rem)] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-[#8ad7ff]">{eyebrowLabel}</p>
+                  <h3
+                    id={dialogTitleId}
+                    className="mt-3 text-[clamp(1.7rem,3.8vw,2.35rem)] font-black uppercase leading-[0.96] text-white [font-family:var(--font-display)]"
+                  >
+                    {dialogTitle}
+                  </h3>
+                </div>
+
+                <button
+                  ref={closeButtonRef}
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/72 transition hover:border-white/20 hover:text-white"
+                  aria-label="Cerrar popup"
                 >
-                  {dialogTitle}
-                </h3>
+                  <X className="h-4 w-4" />
+                </button>
               </div>
 
-              <button
-                ref={closeButtonRef}
-                type="button"
-                onClick={() => setOpen(false)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/72 transition hover:border-white/20 hover:text-white"
-                aria-label="Cerrar popup"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+              <p id={dialogDescriptionId} className="mt-4 text-sm leading-7 text-white/74 sm:text-base">
+                {descriptionLead} Desde aquí abrimos la app o plataforma de correo por defecto del usuario con el asunto
+                y el mensaje ya preparados para solicitar <strong className="text-white">{documentTitle}</strong>.
+              </p>
 
-            <p id={dialogDescriptionId} className="mt-4 text-sm leading-7 text-white/74 sm:text-base">
-              {descriptionLead} Desde aquí abrimos la app o plataforma de correo por defecto del usuario con el asunto y
-              el mensaje ya preparados para solicitar <strong className="text-white">{documentTitle}</strong>.
-            </p>
+              <div className="mt-5 rounded-[1.2rem] border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#ffc940]">Correo de solicitud</p>
+                <p className="mt-3 break-all text-lg font-semibold text-white">flardop44@gmail.com</p>
+              </div>
 
-            <div className="mt-5 rounded-[1.3rem] border border-white/10 bg-white/[0.04] p-4">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-[#ffc940]">Correo de solicitud</p>
-              <p className="mt-3 break-all text-lg font-semibold text-white">flardop44@gmail.com</p>
-            </div>
+              <div className="mt-5 rounded-[1.2rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-4">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#8ad7ff]">Texto que se abrirá preparado</p>
+                <pre className="mt-3 max-h-44 overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-white/72">
+                  {requestBody}
+                </pre>
+              </div>
 
-            <div className="mt-5 rounded-[1.3rem] border border-white/10 bg-[rgba(255,255,255,0.03)] p-4">
-              <p className="text-[10px] uppercase tracking-[0.22em] text-[#8ad7ff]">Texto que se abrirá preparado</p>
-              <pre className="mt-3 whitespace-pre-wrap text-sm leading-6 text-white/72">{requestBody}</pre>
-            </div>
+              <p className="mt-4 text-xs leading-6 text-white/52">
+                Si tu navegador o sistema tarda en abrir el correo, el popup se cerrará primero para que la web no se
+                quede bloqueada.
+              </p>
 
-            <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={openMailApp}
-                className="inline-flex min-h-[46px] items-center gap-2 rounded-full bg-[var(--rv-green,#57f0ae)] px-5 py-3 text-sm font-bold text-black transition hover:brightness-110"
-              >
-                <Mail className="h-4 w-4" />
-                {mailButtonLabel || 'Abrir correo predeterminado'}
-              </button>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={openMailApp}
+                  className="inline-flex min-h-[46px] items-center gap-2 rounded-full bg-[var(--rv-green,#57f0ae)] px-5 py-3 text-sm font-bold text-black transition hover:brightness-110"
+                >
+                  <Mail className="h-4 w-4" />
+                  {mailButtonLabel || 'Abrir correo predeterminado'}
+                </button>
 
-              <button
-                type="button"
-                onClick={handleCopyEmail}
-                className="inline-flex min-h-[46px] items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white/82 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? 'Copiado' : 'Copiar correo'}
-              </button>
+                <button
+                  type="button"
+                  onClick={handleCopyEmail}
+                  className="inline-flex min-h-[46px] items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-semibold uppercase tracking-[0.16em] text-white/82 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? 'Copiado' : 'Copiar correo'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
