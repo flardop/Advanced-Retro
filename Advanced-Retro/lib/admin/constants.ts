@@ -18,12 +18,12 @@ export const ADMIN_NOTIFICATION_KEYS = {
 
 export const DEFAULT_ADMIN_SETTINGS = [
   ['store_name', 'AdvancedRetro', 'Store display name'],
-  ['contact_email', 'flardop44@gmail.com', 'Main contact email'],
+  ['contact_email', 'pitch@advancedretro.es', 'Main contact email'],
   ['currency', 'EUR', 'Default currency'],
   ['timezone', 'Europe/Madrid', 'Default timezone'],
   ['ebay_api_key', '', 'eBay API key for price chart'],
   ['resend_api_key', '', 'Resend API key for emails'],
-  ['admin_alert_email', 'flardop44@gmail.com', 'Email to receive critical alerts'],
+  ['admin_alert_email', 'pitch@advancedretro.es', 'Email to receive critical alerts'],
   ['retroville_launch_date', '', 'Launch date for the Retroville countdown'],
   ['notify_new_order', 'true', 'Email admin when a new order arrives'],
   ['notify_new_user', 'true', 'Email admin when a new user signs up'],

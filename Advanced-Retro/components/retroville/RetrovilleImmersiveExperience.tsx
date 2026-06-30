@@ -20,6 +20,7 @@ import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistFo
 import {
   RETROVILLE_DISCOVERY_LINKS,
   RETROVILLE_NEWSLETTER_NAME,
+  RETROVILLE_PITCH_EMAIL,
   RETROVILLE_SOCIAL_CHANNELS,
   buildRetrovilleLaunchCopy,
   shouldShowRetrovilleSignupCount,
@@ -1105,7 +1106,7 @@ export default function RetrovilleImmersiveExperience({
             </div>
             <div className={styles.privateNotice}>
               <Mail className="h-4 w-4" />
-              <span>Solicitud privada a flardop44@gmail.com</span>
+              <span>Solicitud privada a {RETROVILLE_PITCH_EMAIL}</span>
             </div>
           </div>
 
@@ -1114,7 +1115,8 @@ export default function RetrovilleImmersiveExperience({
               <p className={styles.cardMeta}>Acceso privado</p>
               <h4 className={styles.cardTitle}>Biblia de serie · vision general</h4>
               <p className={styles.cardBody}>
-                La biblia principal no se descarga libremente. Se pide por popup y se canaliza al correo indicado para mantener el documento en circulacion controlada.
+                La biblia principal no se descarga libremente. Se solicita por correo y se canaliza al contacto
+                indicado para mantener el documento en circulacion controlada.
               </p>
               <RetrovillePrivateDocumentButton
                 documentTitle="Biblia de serie · Vision general"

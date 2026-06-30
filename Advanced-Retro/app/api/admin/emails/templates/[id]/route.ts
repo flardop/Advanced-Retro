@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const template = await getEmailTemplateById(params.id);
     if (!template) throw new Error('Template no encontrada');
     const settings = await getAdminSettingsMap();
-    const to = String(payload.testEmail || getSettingValue(settings, 'admin_alert_email', 'flardop44@gmail.com'));
+    const to = String(payload.testEmail || getSettingValue(settings, 'admin_alert_email', 'pitch@advancedretro.es'));
     await sendAdminEmail({
       to,
       subject: template.subject,

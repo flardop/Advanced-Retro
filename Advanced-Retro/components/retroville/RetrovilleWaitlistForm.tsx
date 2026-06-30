@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { RETROVILLE_NEWSLETTER_NAME } from '@/app/retroville/shared';
 import { getTrackerClientContext } from '@/lib/admin/tracker';
 
@@ -32,10 +32,11 @@ export default function RetrovilleWaitlistForm({
   const formId = useId();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
-  const [roleLabel, setRoleLabel] = useState('Fan');
+  const [roleLabel, setRoleLabel] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
 
   const fieldClass = darkMode
     ? 'border-white/10 bg-[rgba(8,11,20,0.8)] text-white placeholder:text-white/45'
@@ -63,10 +64,13 @@ export default function RetrovilleWaitlistForm({
       const trimmedEmail = email.trim();
 
       if (showName && trimmedName.length < 2) {
-        throw new Error('Necesitamos al menos un nombre corto para guardar tu registro');
+        throw new Error('Escribe al menos un nombre corto para guardar tu registro.');
       }
-      if (!trimmedEmail) {
-        throw new Error('Necesitamos un email valido para guardar tu registro');
+      if (!trimmedEmail || (emailInputRef.current && !emailInputRef.current.validity.valid)) {
+        throw new Error('Escribe un email válido para guardar tu registro.');
+      }
+      if (showRole && !roleLabel) {
+        throw new Error('Selecciona tu perfil antes de enviarnos el registro.');
       }
 
       const trackingContext = getTrackerClientContext();
@@ -125,7 +129,7 @@ export default function RetrovilleWaitlistForm({
       }
       if (showName) setDisplayName('');
       setEmail('');
-      if (showRole) setRoleLabel('Fan');
+      if (showRole) setRoleLabel('');
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'No se pudo guardar tu registro');
     } finally {
@@ -163,6 +167,7 @@ export default function RetrovilleWaitlistForm({
           </label>
           <input
             id={`${formId}-email`}
+            ref={emailInputRef}
             name="email"
             type="email"
             value={email}
@@ -185,10 +190,14 @@ export default function RetrovilleWaitlistForm({
               name="role_label"
               value={roleLabel}
               onChange={(event) => setRoleLabel(event.target.value)}
+              required
               disabled={loading}
               aria-label="Tu perfil"
               className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition ${fieldClass}`}
             >
+              <option value="" className="text-slate-900">
+                Selecciona tu perfil
+              </option>
               {['Desarrollador', 'Diseñador', 'Inversor', 'Fan'].map((item) => (
                 <option key={item} value={item} className="text-slate-900">
                   {item}

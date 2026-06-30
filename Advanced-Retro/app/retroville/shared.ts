@@ -6,7 +6,20 @@ export const RETROVILLE_NEWSLETTER_NAME = 'La Señal de Retroville';
 export const RETROVILLE_SIGNUP_COUNT_THRESHOLD = 25;
 export const RETROVILLE_GOOGLE_SITE_VERIFICATION =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'googlebffb5f7b5e8a2336';
-export const RETROVILLE_PITCH_EMAIL = 'flardop44@gmail.com';
+export const RETROVILLE_PITCH_EMAIL = 'pitch@advancedretro.es';
+
+export type RetrovilleAudienceBucket = {
+  label: string;
+  value: number;
+  share: number;
+};
+
+export type RetrovilleAudienceSummary = {
+  totalRegistrations: number;
+  newsletterRegistrations: number;
+  eventRegistrations: number;
+  roleBreakdown: RetrovilleAudienceBucket[];
+};
 
 export type RetrovilleSocialChannel = {
   label: string;
@@ -132,6 +145,12 @@ export const RETROVILLE_DISCOVERY_LINKS = [
     description: 'Versión presentable del proyecto para enseñar el universo de un vistazo.',
   },
   {
+    label: 'Comunidad',
+    href: '/retroville/comunidad',
+    eyebrow: 'Fandom',
+    description: 'Archivo social con publicaciones, hashtags y señales compartibles del proyecto.',
+  },
+  {
     label: 'Press',
     href: '/retroville/press',
     eyebrow: 'Material oficial',
@@ -158,18 +177,43 @@ function formatRetrovilleLaunchLabel(date: Date) {
   });
 }
 
+function buildAudienceBreakdown(values: Array<string | null | undefined>) {
+  const labels = values.map((value) => String(value || 'Sin etiqueta').trim() || 'Sin etiqueta');
+  const total = labels.length;
+  const map = new Map<string, number>();
+
+  labels.forEach((label) => {
+    map.set(label, (map.get(label) || 0) + 1);
+  });
+
+  return Array.from(map.entries())
+    .map(([label, value]) => ({
+      label,
+      value,
+      share: total > 0 ? value / total : 0,
+    }))
+    .sort((a, b) => b.value - a.value);
+}
+
 export function buildRetrovilleLaunchCopy(launchLabel: string) {
   return `El ${launchLabel} llega la primera señal publica de Retroville: activamos el primer reveal, abrimos el siguiente drop y avisamos primero a quienes ya reciben La Señal.`;
 }
 
 export async function getRetrovilleState() {
   const fallbackIso = RETROVILLE_FALLBACK_DATE.toISOString();
+  const emptyAudienceSummary: RetrovilleAudienceSummary = {
+    totalRegistrations: 0,
+    newsletterRegistrations: 0,
+    eventRegistrations: 0,
+    roleBreakdown: [],
+  };
 
   if (!supabaseService) {
     return {
       launchIso: fallbackIso,
       launchLabel: formatRetrovilleLaunchLabel(RETROVILLE_FALLBACK_DATE),
       waitlistCount: 0,
+      audienceSummary: emptyAudienceSummary,
     };
   }
 
@@ -179,16 +223,28 @@ export async function getRetrovilleState() {
       .select('value')
       .eq('key', 'retroville_launch_date')
       .maybeSingle(),
-    supabaseService.from('retroville_waitlist').select('id', { count: 'exact', head: true }),
+    supabaseService
+      .from('retroville_waitlist')
+      .select('role_label, signup_intent', { count: 'exact' })
+      .limit(5000),
   ]);
 
   const parsedDate = new Date(String(settingsRes.data?.value || fallbackIso));
   const launchDate = Number.isFinite(parsedDate.getTime()) ? parsedDate : RETROVILLE_FALLBACK_DATE;
+  const waitlistRows = waitlistRes.data || [];
+  const waitlistCount = Math.max(0, Number(waitlistRes.count || waitlistRows.length));
+  const audienceSummary: RetrovilleAudienceSummary = {
+    totalRegistrations: waitlistCount,
+    newsletterRegistrations: waitlistRows.filter((row) => row.signup_intent === 'newsletter').length,
+    eventRegistrations: waitlistRows.filter((row) => row.signup_intent === 'event').length,
+    roleBreakdown: buildAudienceBreakdown(waitlistRows.map((row) => row.role_label)).slice(0, 4),
+  };
 
   return {
     launchIso: launchDate.toISOString(),
     launchLabel: formatRetrovilleLaunchLabel(launchDate),
-    waitlistCount: Math.max(0, Number(waitlistRes.count || 0)),
+    waitlistCount,
+    audienceSummary,
   };
 }
 

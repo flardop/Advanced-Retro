@@ -1,113 +1,118 @@
-import Image from 'next/image';
 import RetrovilleEventSignupCard from '@/components/retroville/RetrovilleEventSignupCard';
-import {
-  RETROVILLE_NEWSLETTER_NAME,
-  shouldShowRetrovilleSignupCount,
-} from '@/app/retroville/shared';
+import { RETROVILLE_NEWSLETTER_NAME, type RetrovilleAudienceSummary } from '@/app/retroville/shared';
 
-type AudienceProfile = {
-  name: string;
-  role: string;
-  image: string;
-  accent: string;
+type AudienceMetric = {
+  label: string;
+  value: number;
+  helper: string;
 };
 
-const audienceProfiles: readonly AudienceProfile[] = [
-  {
-    name: 'Lucía',
-    role: 'Personajes potentes y estética con firma propia',
-    image: '/images/retroville/community-avatars/lucia-avatar.png',
-    accent: 'from-pink-500/25 via-fuchsia-500/15 to-transparent',
-  },
-  {
-    name: 'Rubén',
-    role: 'Lore, worldbuilding y barrios con identidad',
-    image: '/images/retroville/community-avatars/ruben-avatar.png',
-    accent: 'from-violet-500/25 via-indigo-500/15 to-transparent',
-  },
-  {
-    name: 'Mara',
-    role: 'Eventos, drops y comunidad que quiere estar dentro pronto',
-    image: '/images/retroville/community-avatars/mara-avatar.png',
-    accent: 'from-amber-500/25 via-orange-500/15 to-transparent',
-  },
-  {
-    name: 'Dani',
-    role: 'Coleccionismo, humor raro y cultura retro compartida',
-    image: '/images/retroville/community-avatars/dani-avatar.png',
-    accent: 'from-cyan-500/25 via-sky-500/15 to-transparent',
-  },
-] as const;
+function formatCount(value: number) {
+  return Math.max(0, Number(value || 0)).toLocaleString('es-ES');
+}
 
 export default function RetrovilleAudienceProof({
   waitlistCount,
   launchIso,
   launchLabel,
+  audienceSummary,
 }: {
   waitlistCount: number;
   launchIso: string;
   launchLabel: string;
+  audienceSummary?: RetrovilleAudienceSummary;
 }) {
-  const showAudienceCount = shouldShowRetrovilleSignupCount(waitlistCount);
+  const totalRegistrations = audienceSummary?.totalRegistrations || Math.max(0, Number(waitlistCount || 0));
+  const newsletterRegistrations = audienceSummary?.newsletterRegistrations || 0;
+  const eventRegistrations = audienceSummary?.eventRegistrations || 0;
+  const roleBreakdown = audienceSummary?.roleBreakdown || [];
+  const hasRegistrations = totalRegistrations > 0;
+
+  const metrics: readonly AudienceMetric[] = [
+    {
+      label: 'Registros reales',
+      value: totalRegistrations,
+      helper: 'Personas que ya han dejado su email dentro de Retroville.',
+    },
+    {
+      label: 'Reveal público',
+      value: eventRegistrations,
+      helper: `Solicitudes apuntadas al reveal del ${launchLabel}.`,
+    },
+    {
+      label: 'Newsletter',
+      value: newsletterRegistrations,
+      helper: `Altas guardadas dentro de ${RETROVILLE_NEWSLETTER_NAME}.`,
+    },
+  ] as const;
 
   return (
     <div className="mt-7 rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex -space-x-3">
-          {audienceProfiles.map((profile, index) => {
-            return (
-              <div
-                key={profile.name}
-                className="relative h-14 w-14 overflow-hidden rounded-full border border-white/14 bg-[rgba(8,11,20,0.94)] shadow-[0_14px_30px_rgba(0,0,0,0.28)]"
-                style={{ zIndex: audienceProfiles.length - index }}
-              >
-                <Image
-                  src={profile.image}
-                  alt={`Avatar de ${profile.name}, perfil tipo de audiencia de Retroville`}
-                  fill
-                  sizes="56px"
-                  className="object-cover"
-                />
-              </div>
-            );
-          })}
-        </div>
-        <div className="max-w-[34rem] text-left">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-green)]">Pulso de comunidad</p>
-          <p className="mt-2 text-sm leading-7 text-[var(--rv-text-muted)]">
-            {showAudienceCount
-              ? `${waitlistCount.toLocaleString('es-ES')} personas ya siguen ${RETROVILLE_NEWSLETTER_NAME}. Los avatares que ves aquí no salen de ninguna base real: son perfiles tipo creados para representar la comunidad que mejor encaja con Retroville.`
-              : `Aunque ${RETROVILLE_NEWSLETTER_NAME} acaba de arrancar, Retroville ya tiene una audiencia muy clara. Los perfiles que ves aquí son avatares creados para el proyecto, no usuarios heredados de otra web.`}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+        <div className="rounded-[1.3rem] border border-white/8 bg-[rgba(7,11,22,0.74)] p-4 sm:p-5">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-green)]">Interés real del registro</p>
+          <h3 className="mt-3 text-[clamp(1.6rem,3vw,2.4rem)] font-semibold uppercase leading-[0.96] text-white">
+            Lectura real del interés
+          </h3>
+          <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)] sm:text-base">
+            {hasRegistrations
+              ? `Este bloque resume el interés que ya entra por el formulario: cuánta gente se ha registrado, cuántas personas se apuntan al reveal y qué perfiles aparecen con más frecuencia en ${RETROVILLE_NEWSLETTER_NAME}.`
+              : `El registro ya está abierto. Cuando el volumen sea representativo, aquí verás una lectura real de la audiencia y de los perfiles que más conectan con Retroville.`}
           </p>
-        </div>
-      </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {audienceProfiles.map((profile) => {
-          return (
-            <article
-              key={profile.name}
-              className="relative overflow-hidden rounded-[1.25rem] border border-white/8 bg-[rgba(10,14,24,0.8)] p-4"
-            >
-              <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${profile.accent}`} />
-              <div className="relative flex items-center gap-3">
-                <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/10 bg-black/40">
-                  <Image
-                    src={profile.image}
-                    alt={`Avatar de ${profile.name}, ejemplo de comunidad que conecta con Retroville`}
-                    fill
-                    sizes="48px"
-                    className="object-cover"
-                  />
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {metrics.map((metric) => (
+              <article
+                key={metric.label}
+                className="rounded-[1.15rem] border border-white/8 bg-[rgba(10,14,24,0.8)] p-4"
+              >
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-gold)]">{metric.label}</p>
+                <p className="mt-3 text-[clamp(1.8rem,3vw,2.4rem)] font-semibold leading-none text-white">
+                  {formatCount(metric.value)}
+                </p>
+                <p className="mt-3 text-xs leading-6 text-[var(--rv-text-dim)]">{metric.helper}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[1.3rem] border border-white/8 bg-[rgba(10,14,24,0.8)] p-4 sm:p-5">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Perfiles que más conectan</p>
+          {roleBreakdown.length ? (
+            <div className="mt-4 grid gap-3">
+              {roleBreakdown.map((role) => (
+                <div key={role.label} className="rounded-[1rem] border border-white/8 bg-white/[0.03] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold uppercase tracking-[0.08em] text-white">{role.label}</p>
+                    <span className="text-xs text-[var(--rv-text-muted)]">
+                      {formatCount(role.value)} · {Math.round(role.share * 100)}%
+                    </span>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div
+                      className="h-full rounded-full bg-[linear-gradient(90deg,rgba(255,191,82,0.92),rgba(87,240,174,0.78))]"
+                      style={{ width: `${Math.max(12, Math.round(role.share * 100))}%` }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.08em] text-white">{profile.name}</p>
-                  <p className="text-xs text-[var(--rv-text-muted)]">{profile.role}</p>
-                </div>
-              </div>
-            </article>
-          );
-        })}
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm leading-7 text-[var(--rv-text-muted)]">
+              Cuando entren más respuestas, esta franja enseñará qué perfiles tiran más del proyecto entre
+              desarrolladores, diseñadores, inversores y fans.
+            </p>
+          )}
+
+          <div className="mt-5 rounded-[1rem] border border-[rgba(138,215,255,0.16)] bg-[rgba(138,215,255,0.06)] p-4">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-accent)]">Qué sí estamos leyendo</p>
+            <ul className="mt-3 grid gap-2 text-sm leading-7 text-[var(--rv-text-muted)]">
+              <li>Registros reales del reveal y de la newsletter.</li>
+              <li>Perfiles declarados por el usuario en el formulario.</li>
+              <li>Lectura propia de Retroville sin mezclar datos heredados de otras webs.</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       <RetrovilleEventSignupCard launchIso={launchIso} launchLabel={launchLabel} />

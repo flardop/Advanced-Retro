@@ -65,16 +65,10 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   const lastPathRef = useRef(pathname);
   const analyticsPathRef = useRef(pathname);
   const reportedErrorsRef = useRef<Set<string>>(new Set());
-  const pointerRef = useRef({ x: -100, y: -100 });
-  const currentPointerRef = useRef({ x: -100, y: -100 });
-  const animationFrameRef = useRef<number | null>(null);
   const progressFrameRef = useRef<number | null>(null);
   const navigationTimerRef = useRef<number | null>(null);
   const clearTransitionTimerRef = useRef<number | null>(null);
-  const cursorRef = useRef<HTMLDivElement | null>(null);
-  const glowRef = useRef<HTMLDivElement | null>(null);
   const progressFillRef = useRef<HTMLDivElement | null>(null);
-  const [cursorEnabled, setCursorEnabled] = useState(false);
   const [routeTransition, setRouteTransition] = useState<'idle' | 'cover' | 'reveal'>('reveal');
   const [easterEggVisible, setEasterEggVisible] = useState(false);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
@@ -186,57 +180,6 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
       },
     });
   }, [analyticsEnabled, pathname]);
-
-  useEffect(() => {
-    const media = window.matchMedia('(pointer: fine) and (hover: hover)');
-    const sync = () => setCursorEnabled(media.matches);
-    sync();
-    media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
-  }, []);
-
-  useEffect(() => {
-    if (!cursorEnabled) {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      return;
-    }
-
-    const handlePointerMove = (event: PointerEvent) => {
-      pointerRef.current = { x: event.clientX, y: event.clientY };
-    };
-
-    const handlePointerLeave = () => {
-      pointerRef.current = { x: -100, y: -100 };
-      currentPointerRef.current = { x: -100, y: -100 };
-    };
-
-    const render = () => {
-      const { x: targetX, y: targetY } = pointerRef.current;
-
-      currentPointerRef.current = {
-        x: currentPointerRef.current.x + (targetX - currentPointerRef.current.x) * 0.18,
-        y: currentPointerRef.current.y + (targetY - currentPointerRef.current.y) * 0.18,
-      };
-
-      if (cursorRef.current) {
-        cursorRef.current.style.transform = `translate3d(${targetX - 4}px, ${targetY - 4}px, 0)`;
-      }
-      if (glowRef.current) {
-        glowRef.current.style.transform = `translate3d(${currentPointerRef.current.x - 12}px, ${currentPointerRef.current.y - 12}px, 0)`;
-      }
-
-      animationFrameRef.current = window.requestAnimationFrame(render);
-    };
-
-    animationFrameRef.current = window.requestAnimationFrame(render);
-    window.addEventListener('pointermove', handlePointerMove, { passive: true });
-    window.addEventListener('pointerleave', handlePointerLeave);
-    return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerleave', handlePointerLeave);
-    };
-  }, [cursorEnabled]);
 
   useEffect(() => {
     const clearTransitionLater = () => {
@@ -374,7 +317,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   }, [pathname]);
 
   return (
-    <div className={styles.shell} data-cursor={cursorEnabled ? 'on' : 'off'}>
+    <div className={styles.shell}>
       <Suspense fallback={null}>
         <TrackerBootstrap />
       </Suspense>
@@ -414,13 +357,6 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
         }`}
         aria-hidden="true"
       />
-
-      {cursorEnabled ? (
-        <>
-          <div ref={glowRef} className={styles.cursorGlow} aria-hidden="true" />
-          <div ref={cursorRef} className={styles.cursorDot} aria-hidden="true" />
-        </>
-      ) : null}
 
       {easterEggVisible ? (
         <div className={styles.toast} role="status" aria-live="polite">

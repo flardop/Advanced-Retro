@@ -40,7 +40,7 @@ export const metadata: Metadata = buildPageMetadata({
 });
 
 export default async function RetrovillePage() {
-  const { launchIso, launchLabel, waitlistCount } = await getRetrovilleState();
+  const { launchIso, launchLabel, waitlistCount, audienceSummary } = await getRetrovilleState();
   const userAgent = (await headers()).get('user-agent') || '';
   const initialMobileExperience = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 
@@ -89,7 +89,7 @@ export default async function RetrovillePage() {
     {
       question: '¿Cómo se solicita la biblia de la serie?',
       answer:
-        `La biblia se solicita desde el popup de acceso privado o escribiendo a ${RETROVILLE_PITCH_EMAIL} para recibir el documento de forma directa.`,
+        `La biblia se solicita desde el botón de acceso privado, que abre el correo predeterminado del usuario con la solicitud preparada a ${RETROVILLE_PITCH_EMAIL}.`,
     },
   ]);
 
@@ -103,6 +103,7 @@ export default async function RetrovillePage() {
         launchIso={launchIso}
         launchLabel={launchLabel}
         waitlistCount={waitlistCount}
+        audienceSummary={audienceSummary}
         initialMobileExperience={initialMobileExperience}
       />
     </>

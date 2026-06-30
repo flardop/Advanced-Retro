@@ -1,8 +1,9 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Hash, Radio, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RETROVILLE_SOCIAL_CHANNELS } from '@/app/retroville/shared';
 
 type RetrovilleSocialMoment = {
@@ -19,6 +20,10 @@ type FandomPrompt = {
   title: string;
   body: string;
   icon: typeof Sparkles;
+};
+
+type RetrovilleFandomShowcaseProps = {
+  variant?: 'home' | 'full';
 };
 
 const channelHrefMap = RETROVILLE_SOCIAL_CHANNELS.reduce<Record<string, string>>((acc, channel) => {
@@ -44,7 +49,7 @@ const fandomPrompts: readonly FandomPrompt[] = [
     body: 'Las redes atraen; Discord y la newsletter convierten esa curiosidad en comunidad real y en seguimiento constante del proyecto.',
     icon: Radio,
   },
-];
+] as const;
 
 const posterHighlights = [
   {
@@ -140,20 +145,33 @@ function modIndex(index: number, length: number) {
   return (index + length) % length;
 }
 
-export default function RetrovilleFandomShowcase() {
+export default function RetrovilleFandomShowcase({
+  variant = 'home',
+}: RetrovilleFandomShowcaseProps) {
+  const isFullArchive = variant === 'full';
+  const activeMoments = useMemo(
+    () => (isFullArchive ? socialMoments : socialMoments.slice(0, 5)),
+    [isFullArchive]
+  );
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeMoment = socialMoments[activeIndex];
+  const activeMoment = activeMoments[activeIndex] ?? activeMoments[0];
 
   useEffect(() => {
+    setActiveIndex((current) => modIndex(current, activeMoments.length));
+  }, [activeMoments.length]);
+
+  useEffect(() => {
+    if (activeMoments.length < 2) return undefined;
+
     const timer = window.setInterval(() => {
-      setActiveIndex((current) => modIndex(current + 1, socialMoments.length));
+      setActiveIndex((current) => modIndex(current + 1, activeMoments.length));
     }, 5200);
 
     return () => window.clearInterval(timer);
-  }, []);
+  }, [activeMoments]);
 
   function stepCarousel(direction: -1 | 1) {
-    setActiveIndex((current) => modIndex(current + direction, socialMoments.length));
+    setActiveIndex((current) => modIndex(current + direction, activeMoments.length));
   }
 
   return (
@@ -178,9 +196,9 @@ export default function RetrovilleFandomShowcase() {
           </h3>
 
           <p className="mt-4 max-w-[42rem] text-sm leading-7 text-[var(--rv-text-muted)] sm:text-base">
-            Aquí es donde el proyecto deja de ser solo una home y empieza a parecer una IP con vida propia. Todo lo
-            que publiquemos en redes puede empujar comunidad, tono, personaje y recuerdo visual si lo ordenamos con
-            hashtags claros y piezas que sí den ganas de compartir.
+            {isFullArchive
+              ? 'Aquí vive el archivo completo de publicaciones, mood social y piezas que pueden empujar el universo fuera del pitch principal sin mezclarlo con materiales privados.'
+              : 'Aquí es donde el proyecto deja de ser solo una home y empieza a parecer una IP con vida propia. Todo lo que publiquemos en redes puede empujar comunidad, tono, personaje y recuerdo visual si lo ordenamos con hashtags claros y piezas que sí den ganas de compartir.'}
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
@@ -239,6 +257,14 @@ export default function RetrovilleFandomShowcase() {
             >
               Entrar en Discord
             </a>
+            {!isFullArchive ? (
+              <Link
+                href="/retroville/comunidad"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/10 bg-white/[0.05] px-5 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/82 transition hover:border-white/20 hover:text-white"
+              >
+                Ver todo el fandom
+              </Link>
+            ) : null}
           </div>
         </div>
 
@@ -280,6 +306,7 @@ export default function RetrovilleFandomShowcase() {
                 fill
                 sizes="(max-width: 1024px) 100vw, 58vw"
                 className="object-cover"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,4,10,0.04),rgba(3,4,10,0.08)_52%,rgba(3,4,10,0.22)_100%)]" />
             </div>
@@ -288,9 +315,11 @@ export default function RetrovilleFandomShowcase() {
           <div className="flex h-full flex-col justify-between p-5 sm:p-6">
             <div>
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-green)]">Mini slider social</p>
+                <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-green)]">
+                  {isFullArchive ? 'Archivo social completo' : 'Mini slider social'}
+                </p>
                 <span className="text-[11px] uppercase tracking-[0.22em] text-white/48">
-                  {String(activeIndex + 1).padStart(2, '0')} / {String(socialMoments.length).padStart(2, '0')}
+                  {String(activeIndex + 1).padStart(2, '0')} / {String(activeMoments.length).padStart(2, '0')}
                 </span>
               </div>
 
@@ -351,7 +380,7 @@ export default function RetrovilleFandomShowcase() {
 
         <div className="border-t border-white/8 p-4 sm:p-5">
           <div className="flex gap-3 overflow-x-auto pb-1">
-            {socialMoments.map((moment, index) => {
+            {activeMoments.map((moment, index) => {
               const isActive = activeIndex === index;
 
               return (
@@ -371,6 +400,7 @@ export default function RetrovilleFandomShowcase() {
                       src={moment.image}
                       alt={moment.title}
                       fill
+                      loading="lazy"
                       sizes="64px"
                       className="object-cover transition duration-300 group-hover:scale-[1.03]"
                     />
@@ -388,14 +418,71 @@ export default function RetrovilleFandomShowcase() {
         </div>
       </div>
 
-      <div className="rounded-[1.55rem] border border-white/10 bg-[rgba(7,11,22,0.74)] p-4 sm:p-5">
-        <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Cómo debería estar</p>
-        <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)] sm:text-base">
-          La home ya tiene el pitch base donde debe: entrada cinematográfica, núcleo de cast, tres episodios, tres
-          distritos y acceso privado claro. Lo que faltaba era esta capa de comunidad para que la IP no pareciera solo
-          dossier, sino también conversación, cultura visual y señales compartibles.
-        </p>
-      </div>
+      {isFullArchive ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {socialMoments.map((moment) => (
+            <article
+              key={moment.title}
+              className="overflow-hidden rounded-[1.55rem] border border-white/10 bg-[rgba(7,11,22,0.74)]"
+            >
+              <div className="relative aspect-[4/3]">
+                <Image
+                  src={moment.image}
+                  alt={moment.title}
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 1279px) 100vw, 30vw"
+                  className="object-cover"
+                />
+              </div>
+              <div className="grid gap-3 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-gold)]">{moment.eyebrow}</p>
+                  <span className="text-[10px] uppercase tracking-[0.18em] text-white/56">{moment.platform}</span>
+                </div>
+                <h4 className="text-[1.25rem] font-semibold uppercase leading-[0.98] tracking-[0.03em] text-white">
+                  {moment.title}
+                </h4>
+                <p className="text-sm leading-7 text-[var(--rv-text-muted)]">{moment.caption}</p>
+                <div className="flex flex-wrap gap-2">
+                  {moment.hashtags.map((tag) => (
+                    <span
+                      key={`${moment.title}-${tag}`}
+                      className="inline-flex min-h-[2rem] items-center rounded-full border border-white/10 bg-white/[0.05] px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/74"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <a
+                  href={moment.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-[42px] items-center justify-center rounded-full border border-white/10 bg-white/[0.04] px-4 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white/82 transition hover:border-white/20 hover:text-white"
+                >
+                  Ver publicación en {moment.platform}
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-[1.55rem] border border-white/10 bg-[rgba(7,11,22,0.74)] p-4 sm:p-5">
+          <p className="text-[11px] uppercase tracking-[0.24em] text-[var(--rv-gold)]">Archivo separado</p>
+          <p className="mt-3 max-w-[48rem] text-sm leading-7 text-[var(--rv-text-muted)] sm:text-base">
+            El home se queda con una selección corta para no saturar la venta principal. El resto del material social y
+            de fandom vive en una página aparte para que puedas enseñarlo sin que compita con el pitch central.
+          </p>
+          <div className="mt-4">
+            <Link
+              href="/retroville/comunidad"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[rgba(255,191,82,0.28)] bg-[linear-gradient(135deg,rgba(255,191,82,0.18),rgba(192,57,43,0.16))] px-5 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:border-[rgba(255,191,82,0.44)] hover:brightness-110"
+            >
+              Abrir archivo de comunidad
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

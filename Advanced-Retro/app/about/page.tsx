@@ -163,7 +163,7 @@ export default function AboutPage() {
                   <Link href="/creator" className="button-primary">
                     Entrar al founder / CV
                   </Link>
-                  <a href="mailto:flardop44@gmail.com" className="button-secondary">
+                  <a href="mailto:pitch@advancedretro.es" className="button-secondary">
                     Contactar por correo
                   </a>
                 </div>

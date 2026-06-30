@@ -330,12 +330,12 @@ export default function CreatorExperience() {
                 <ArrowDown className="h-4 w-4" />
               </a>
               <a
-                href="mailto:flardop44@gmail.com"
+                href="mailto:pitch@advancedretro.es"
                 data-cursor="interactive"
                 className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-6 py-3 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.08]"
               >
                 <Mail className="h-4 w-4" />
-                flardop44@gmail.com
+                pitch@advancedretro.es
               </a>
               <a
                 href="tel:+34690380559"
@@ -584,12 +584,12 @@ export default function CreatorExperience() {
 
               <div data-reveal className={`${styles.reveal} mt-8 grid gap-3 sm:grid-cols-2`}>
                 <a
-                  href="mailto:flardop44@gmail.com"
+                  href="mailto:pitch@advancedretro.es"
                   data-cursor="interactive"
                   className="rounded-[1.2rem] border border-white/10 bg-white/[0.04] px-4 py-4 transition hover:border-primary/40 hover:bg-white/[0.07]"
                 >
                   <p className="text-xs uppercase tracking-[0.24em] text-sky-200/70">Email</p>
-                  <p className="mt-2 text-lg font-semibold text-white">flardop44@gmail.com</p>
+                  <p className="mt-2 text-lg font-semibold text-white">pitch@advancedretro.es</p>
                 </a>
                 <a
                   href="tel:+34690380559"

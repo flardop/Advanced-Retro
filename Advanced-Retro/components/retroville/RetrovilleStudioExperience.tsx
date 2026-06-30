@@ -18,6 +18,7 @@ import RetrovillePrivateDocumentButton from '@/components/retroville/RetrovilleP
 import {
   RETROVILLE_PITCH_EMAIL,
   RETROVILLE_SOCIAL_CHANNELS,
+  type RetrovilleAudienceSummary,
   buildRetrovilleLaunchCopy,
   buildRetrovillePitchMailto,
 } from '@/app/retroville/shared';
@@ -52,18 +53,22 @@ const districtCards = [
 const buyerBriefCards = [
   {
     icon: FileText,
+    tone: 'public',
     eyebrow: 'Público',
     title: 'Press kit listo',
     body: 'Home, cast principal, tres episodios de entrada y worldbuilding suficiente para entender la IP sin pedir más contexto.',
   },
   {
     icon: ShieldCheck,
+    tone: 'private',
     eyebrow: 'Privado',
-    title: 'Biblia bajo solicitud',
-    body: 'La documentación sensible ya no queda expuesta en abierto: se pide por correo y se comparte de forma directa.',
+    badge: 'Acceso bajo solicitud',
+    title: 'Biblia privada',
+    body: 'La documentación más sensible se canaliza por solicitud directa para mantener el timing del pitch y la exclusividad del material.',
   },
   {
     icon: Mail,
+    tone: 'contact',
     eyebrow: 'Contacto',
     title: 'Siguiente paso claro',
     body: 'Buyers, partners y prensa encuentran un correo profesional y una ruta concreta para seguir la conversación.',
@@ -74,6 +79,7 @@ const footerLinks = [
   { label: 'Home', href: '/retroville' },
   { label: 'Personajes', href: '/retroville/personajes' },
   { label: 'Episodios', href: '/retroville/episodios' },
+  { label: 'Comunidad', href: '/retroville/comunidad' },
   { label: 'Presentación', href: '/retroville/presentaciones' },
   { label: 'Press', href: '/retroville/press' },
   { label: 'Legal', href: '/retroville/legal' },
@@ -103,6 +109,7 @@ type RetrovilleStudioExperienceProps = {
   launchIso: string;
   launchLabel: string;
   waitlistCount: number;
+  audienceSummary?: RetrovilleAudienceSummary;
   initialMobileExperience?: boolean;
 };
 
@@ -115,13 +122,14 @@ function clampUnit(value: number) {
 }
 
 export default function RetrovilleStudioExperience(props: RetrovilleStudioExperienceProps) {
-  const { launchIso, launchLabel, waitlistCount } = props;
+  const { launchIso, launchLabel, waitlistCount, audienceSummary, initialMobileExperience } = props;
   const cinematicRef = useRef<HTMLElement | null>(null);
   const cinematicTimelineRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [introLeaving, setIntroLeaving] = useState(false);
   const [introDismissed, setIntroDismissed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileViewport, setMobileViewport] = useState(Boolean(initialMobileExperience));
   const [videoReady, setVideoReady] = useState(false);
   const [videoActive, setVideoActive] = useState(false);
   const launchCopy = buildRetrovilleLaunchCopy(launchLabel);
@@ -143,9 +151,11 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
     if (typeof window === 'undefined') return;
 
     const handleResize = () => {
+      setMobileViewport(window.innerWidth <= 900);
       if (window.innerWidth > 900) setMobileNavOpen(false);
     };
 
+    handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -208,13 +218,15 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
       const totalDistance = Math.max(rect.height + viewportHeight * 0.28, viewportHeight);
       const nextProgress = clampUnit((viewportHeight * 0.28 - rect.top) / totalDistance);
       const nextStep = nextProgress < 0.28 ? '0' : nextProgress < 0.62 ? '1' : '2';
+      const baseBlur = mobileViewport ? 0.5 : 0.72;
+      const blurDepth = mobileViewport ? 0.2 : 0.28;
 
-      section.style.setProperty('--rv-cinematic-video-scale', `${1.14 - nextProgress * 0.14}`);
-      section.style.setProperty('--rv-cinematic-video-translate', `${34 - nextProgress * 72}px`);
-      section.style.setProperty('--rv-cinematic-video-blur', `${Math.max(0.45, 1.05 - nextProgress * 0.42)}px`);
-      section.style.setProperty('--rv-cinematic-video-saturation', `${0.97 + nextProgress * 0.05}`);
-      section.style.setProperty('--rv-cinematic-video-contrast', `${1.01 + nextProgress * 0.04}`);
-      section.style.setProperty('--rv-cinematic-video-brightness', `${0.83 + nextProgress * 0.07}`);
+      section.style.setProperty('--rv-cinematic-video-scale', `${1.12 - nextProgress * 0.11}`);
+      section.style.setProperty(
+        '--rv-cinematic-video-translate',
+        `${28 - nextProgress * (mobileViewport ? 38 : 54)}px`
+      );
+      section.style.setProperty('--rv-cinematic-video-blur', `${Math.max(0.24, baseBlur - nextProgress * blurDepth)}px`);
       section.style.setProperty('--rv-cinematic-copy-translate', `${18 - nextProgress * 22}px`);
       section.style.setProperty('--rv-cinematic-copy-opacity', `${0.9 + nextProgress * 0.1}`);
 
@@ -237,7 +249,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
       window.removeEventListener('scroll', requestUpdate);
       window.removeEventListener('resize', requestUpdate);
     };
-  }, [introDismissed]);
+  }, [introDismissed, mobileViewport]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -315,21 +327,17 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
       <div className={styles.shell}>
         <section ref={cinematicRef} className={styles.cinematicSection} aria-label="Entrada cinematográfica de Retroville">
           <header className={styles.topbar}>
-            <div className={styles.topbarPrimary}>
-              <div className={styles.topbarBrand}>
-                <Image
-                  src="/images/retroville/retroville-logo.webp"
-                  alt="Logo pequeño de Retroville"
-                  width={160}
-                  height={107}
-                  sizes="84px"
-                  className={styles.topbarBrandLogo}
-                />
-                <div className={styles.topbarBrandText}>
-                  <p className={styles.topbarEyebrow}>Serie animada original</p>
-                  <p className={styles.topbarMeta}>Creada por AdvancedRetro</p>
+              <div className={styles.topbarPrimary}>
+                <div className={styles.topbarBrand}>
+                  <Image
+                    src="/images/retroville/retroville-logo.webp"
+                    alt="Logo pequeño de Retroville"
+                    width={160}
+                    height={107}
+                    sizes="84px"
+                    className={styles.topbarBrandLogo}
+                  />
                 </div>
-              </div>
 
               <button
                 type="button"
@@ -492,7 +500,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                       fill
                       sizes="(max-width: 900px) 100vw, 32vw"
                       className={styles.characterImage}
-                      priority
+                      loading="lazy"
                     />
                   ) : null}
                 </div>
@@ -642,14 +650,17 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               return (
                 <article
                   key={card.title}
-                  className={`${styles.buyerBriefCard} ${styles.revealItem}`}
+                  className={`${styles.buyerBriefCard} ${card.tone === 'private' ? styles.buyerBriefCardPrivate : ''} ${styles.revealItem}`}
                   data-reveal
                   style={createRevealDelay(index)}
                 >
                   <div className={styles.buyerBriefIcon}>
                     <Icon className="h-4 w-4" />
                   </div>
-                  <p className={styles.buyerBriefEyebrow}>{card.eyebrow}</p>
+                  <div className={styles.buyerBriefHeaderRow}>
+                    <p className={styles.buyerBriefEyebrow}>{card.eyebrow}</p>
+                    {'badge' in card ? <span className={styles.buyerBriefBadge}>{card.badge}</span> : null}
+                  </div>
                   <h3 className={`${displayFont.className} ${styles.buyerBriefTitle}`}>{card.title}</h3>
                   <p className={styles.buyerBriefBody}>{card.body}</p>
                 </article>
@@ -669,7 +680,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
             <RetrovillePrivateDocumentButton
               documentTitle="Biblia de serie · Visión general"
               buttonLabel="Solicitar biblia"
-              className={styles.secondaryButton}
+              className={`${styles.primaryButton} ${styles.privateRequestButton}`}
             />
             <a
               href={contactMailto}
@@ -693,13 +704,13 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               </h2>
             </div>
             <p className={`${styles.sectionLead} ${styles.revealItem}`} data-reveal style={createRevealDelay(1)}>
-              La comunidad no debería limitarse a un formulario. Aquí dejamos visible el fandom que puede nacer del
-              proyecto, las publicaciones que le dan color fuera de la home y el registro real al reveal del {launchLabel}.
+              Aquí conviven el archivo social, las publicaciones que mejor enseñan el tono del proyecto y el registro
+              real al reveal del {launchLabel}, todo en una capa separada del pitch principal.
             </p>
           </div>
 
           <div className={styles.revealItem} data-reveal>
-            <RetrovilleFandomShowcase />
+            <RetrovilleFandomShowcase variant="home" />
           </div>
 
           <div className={styles.revealItem} data-reveal style={createRevealDelay(1)}>
@@ -707,6 +718,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               waitlistCount={waitlistCount}
               launchIso={launchIso}
               launchLabel={launchLabel}
+              audienceSummary={audienceSummary}
             />
           </div>
         </section>

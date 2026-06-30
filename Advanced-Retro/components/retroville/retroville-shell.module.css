@@ -4,26 +4,12 @@
   isolation: isolate;
 }
 
-.shell[data-cursor='on'],
-.shell[data-cursor='on'] a,
-.shell[data-cursor='on'] button,
-.shell[data-cursor='on'] summary {
-  cursor: none;
-}
-
-.shell[data-cursor='on'] input,
-.shell[data-cursor='on'] textarea,
-.shell[data-cursor='on'] select {
-  cursor: text;
-}
-
 .progressTrack {
   position: fixed;
   inset: 0 0 auto;
   z-index: 90;
   height: 3px;
   background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(10px);
 }
 
 .progressFill {
@@ -58,31 +44,6 @@
   transition: opacity 200ms ease;
 }
 
-.cursorGlow,
-.cursorDot {
-  position: fixed;
-  left: 0;
-  top: 0;
-  pointer-events: none;
-  z-index: 100;
-  will-change: transform;
-}
-
-.cursorGlow {
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(192, 57, 43, 0.28) 0%, rgba(192, 57, 43, 0.08) 60%, transparent 75%);
-}
-
-.cursorDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #c0392b;
-  box-shadow: 0 0 14px rgba(192, 57, 43, 0.46);
-}
-
 .toast {
   position: fixed;
   right: 16px;
@@ -95,7 +56,6 @@
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
   padding: 16px 18px;
   color: white;
-  backdrop-filter: blur(14px);
 }
 
 .toastEyebrow {

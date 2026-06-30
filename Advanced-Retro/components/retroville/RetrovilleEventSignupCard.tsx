@@ -168,7 +168,7 @@ export default function RetrovilleEventSignupCard({
               showName
               showRole
               intent="event"
-              source="community-pulse-event"
+              source="retroville-reveal-card"
               eventSlug="retroville-first-public-reveal"
               eventTitle={EVENT_TITLE}
               buttonLabel="Apuntarme al reveal"

@@ -29,7 +29,7 @@ export default function CreatorPage() {
       'Portfolio online de Joel Rivera Rodriguez: UX/UI & Web Designer, developer y creador de AdvancedRetro.es y Retroville.',
     image: absoluteUrl('/images/creator/joel-color.jpg'),
     url: absoluteUrl('/creator'),
-    email: 'mailto:flardop44@gmail.com',
+    email: 'mailto:pitch@advancedretro.es',
     telephone: '+34 690 380 559',
     sameAs: [
       'https://www.linkedin.com/in/joel-rivera-rodriguez-7140a6334/',

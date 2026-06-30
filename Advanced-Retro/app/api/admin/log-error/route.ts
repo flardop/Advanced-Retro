@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (severity === 'critical') {
       const settings = await getAdminSettingsMap();
       const shouldNotify = getBooleanSetting(settings, 'notify_critical_error', true);
-      const adminEmail = getSettingValue(settings, 'admin_alert_email', 'flardop44@gmail.com');
+      const adminEmail = getSettingValue(settings, 'admin_alert_email', 'pitch@advancedretro.es');
       if (shouldNotify && adminEmail) {
         await sendAdminEmail({
           to: adminEmail,

@@ -113,7 +113,7 @@ export function AdminLoginForm({ redirectedFrom }: { redirectedFrom?: string }) 
   return (
     <form onSubmit={submit} className="space-y-4">
       <Field label="Email">
-        <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="flardop44@gmail.com" required />
+        <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="pitch@advancedretro.es" required />
       </Field>
       <Field label="Contraseña">
         <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" required />

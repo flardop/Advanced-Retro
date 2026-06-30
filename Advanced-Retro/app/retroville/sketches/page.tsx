@@ -215,7 +215,11 @@ export default function RetrovilleSketchesPage() {
         <section className={styles.heroGrid}>
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>Retroville sketch archive</p>
-            <h1 className={`${displayFont.className} ${styles.heroTitle}`}>SKETCHBOOK VIVO</h1>
+            <h1 className={`${displayFont.className} ${styles.heroTitle}`}>
+              SKETCHBOOK
+              <br />
+              VIVO
+            </h1>
             <div className="mt-5 inline-flex items-center rounded-full border border-[#8ad7ff]/20 bg-[#8ad7ff]/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-[#8ad7ff]">
               Solo proceso · sketches y mapas · Junio 2026
             </div>
