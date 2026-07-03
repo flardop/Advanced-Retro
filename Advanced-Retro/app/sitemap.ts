@@ -13,6 +13,8 @@ const STATIC_ROUTES = [
   '/subastas',
   '/ruleta',
   '/retroville',
+  '/retroville/comunidad',
+  '/retroville/episodios',
   '/retroville/faq',
   '/retroville/legal',
   '/retroville/personajes',
