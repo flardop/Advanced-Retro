@@ -87,6 +87,11 @@ export type ErrorLogRecord = {
   severity: ErrorSeverity;
   extra_data: Record<string, unknown> | null;
   resolved: boolean;
+  status?: 'new' | 'reviewed' | 'resolved' | null;
+  occurrence_key?: string | null;
+  browser?: string | null;
+  device_type?: DeviceType | null;
+  user_agent?: string | null;
   created_at: string;
 };
 

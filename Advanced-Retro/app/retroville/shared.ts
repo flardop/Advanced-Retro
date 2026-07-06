@@ -6,7 +6,7 @@ export const RETROVILLE_NEWSLETTER_NAME = 'La Señal de Retroville';
 export const RETROVILLE_SIGNUP_COUNT_THRESHOLD = 25;
 export const RETROVILLE_GOOGLE_SITE_VERIFICATION =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'googlebffb5f7b5e8a2336';
-export const RETROVILLE_PITCH_EMAIL = 'pitch@advancedretro.es';
+export const RETROVILLE_PITCH_EMAIL = 'retr0ovllee@gmail.com';
 
 export type RetrovilleAudienceBucket = {
   label: string;

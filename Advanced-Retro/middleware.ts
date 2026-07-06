@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createMiddlewareSupabaseClient } from '@/lib/supabase/middleware';
+import {
+  RETROVILLE_ADMIN_COOKIE_NAME,
+  RETROVILLE_ADMIN_LOGIN_PATH,
+} from '@/lib/retroville-admin/constants';
 
 const isProduction =
   process.env.VERCEL_ENV === 'production' || process.env.ENFORCE_CANONICAL_HOST === 'true';
@@ -37,6 +41,10 @@ function applyNoIndexHeaderIfNeeded(response: NextResponse, request: NextRequest
 
 function isAdminRoute(pathname: string) {
   return pathname === '/admin' || pathname.startsWith('/admin/');
+}
+
+function isRetrovilleAdminRoute(pathname: string) {
+  return pathname === '/retroville/admin' || pathname.startsWith('/retroville/admin/');
 }
 
 function copyResponseState(source: NextResponse, target: NextResponse) {
@@ -126,6 +134,25 @@ async function handleAdminAccess(request: NextRequest, response: NextResponse) {
   return response;
 }
 
+async function handleRetrovilleAdminAccess(request: NextRequest, response: NextResponse) {
+  const pathname = request.nextUrl.pathname;
+  if (!isRetrovilleAdminRoute(pathname)) {
+    return null;
+  }
+
+  const isLoginRoute = pathname === RETROVILLE_ADMIN_LOGIN_PATH;
+  const sessionCookie = request.cookies.get(RETROVILLE_ADMIN_COOKIE_NAME)?.value;
+
+  if (!sessionCookie && !isLoginRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = RETROVILLE_ADMIN_LOGIN_PATH;
+    url.searchParams.set('redirectedFrom', pathname);
+    return redirectWithState(url, 307, response);
+  }
+
+  return response;
+}
+
 function handleCanonicalHost(request: NextRequest, baseResponse?: NextResponse) {
   if (!isProduction) {
     return applyNoIndexHeaderIfNeeded(baseResponse || NextResponse.next(), request);
@@ -159,13 +186,19 @@ function handleCanonicalHost(request: NextRequest, baseResponse?: NextResponse) 
 
 export async function middleware(request: NextRequest) {
   const sessionResponse = await refreshAuthSession(request);
-  const adminResponse = await handleAdminAccess(request, sessionResponse);
+  const retrovilleAdminResponse = await handleRetrovilleAdminAccess(request, sessionResponse);
+
+  if (retrovilleAdminResponse && retrovilleAdminResponse.headers.has('location')) {
+    return retrovilleAdminResponse;
+  }
+
+  const adminResponse = await handleAdminAccess(request, retrovilleAdminResponse || sessionResponse);
 
   if (adminResponse && adminResponse.headers.has('location')) {
     return adminResponse;
   }
 
-  return handleCanonicalHost(request, adminResponse || sessionResponse);
+  return handleCanonicalHost(request, adminResponse || retrovilleAdminResponse || sessionResponse);
 }
 
 export const config = {

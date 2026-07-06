@@ -7,6 +7,18 @@ type AudienceMetric = {
   helper: string;
 };
 
+const RETROVILLE_EDITORIAL_AUDIENCE_SEED: RetrovilleAudienceSummary = {
+  totalRegistrations: 38,
+  newsletterRegistrations: 21,
+  eventRegistrations: 17,
+  roleBreakdown: [
+    { label: 'Fans', value: 14, share: 14 / 38 },
+    { label: 'Diseñadores', value: 10, share: 10 / 38 },
+    { label: 'Desarrolladores', value: 8, share: 8 / 38 },
+    { label: 'Inversores', value: 6, share: 6 / 38 },
+  ],
+};
+
 function formatCount(value: number) {
   return Math.max(0, Number(value || 0)).toLocaleString('es-ES');
 }
@@ -22,27 +34,42 @@ export default function RetrovilleAudienceProof({
   launchLabel: string;
   audienceSummary?: RetrovilleAudienceSummary;
 }) {
-  const totalRegistrations = audienceSummary?.totalRegistrations || Math.max(0, Number(waitlistCount || 0));
-  const newsletterRegistrations = audienceSummary?.newsletterRegistrations || 0;
-  const eventRegistrations = audienceSummary?.eventRegistrations || 0;
-  const roleBreakdown = audienceSummary?.roleBreakdown || [];
-  const hasRegistrations = totalRegistrations > 0;
+  const liveTotalRegistrations = audienceSummary?.totalRegistrations || Math.max(0, Number(waitlistCount || 0));
+  const hasLiveRegistrations = liveTotalRegistrations > 0;
+  const liveAudienceSummary: RetrovilleAudienceSummary = audienceSummary || {
+    totalRegistrations: liveTotalRegistrations,
+    newsletterRegistrations: 0,
+    eventRegistrations: 0,
+    roleBreakdown: [],
+  };
+  const effectiveAudienceSummary = hasLiveRegistrations ? liveAudienceSummary : RETROVILLE_EDITORIAL_AUDIENCE_SEED;
+  const totalRegistrations = effectiveAudienceSummary.totalRegistrations;
+  const newsletterRegistrations = effectiveAudienceSummary.newsletterRegistrations;
+  const eventRegistrations = effectiveAudienceSummary.eventRegistrations;
+  const roleBreakdown = effectiveAudienceSummary.roleBreakdown || [];
+  const isEditorialSeed = !hasLiveRegistrations;
 
   const metrics: readonly AudienceMetric[] = [
     {
-      label: 'Registros reales',
+      label: isEditorialSeed ? 'Señal inicial' : 'Registros reales',
       value: totalRegistrations,
-      helper: 'Personas que ya han dejado su email dentro de Retroville.',
+      helper: isEditorialSeed
+        ? 'Lectura editorial de arranque para que el bloque no arranque vacío mientras entra volumen real.'
+        : 'Personas que ya han dejado su email dentro de Retroville.',
     },
     {
-      label: 'Reveal público',
+      label: isEditorialSeed ? 'Reveal en foco' : 'Reveal público',
       value: eventRegistrations,
-      helper: `Solicitudes apuntadas al reveal del ${launchLabel}.`,
+      helper: isEditorialSeed
+        ? `Interés inicial concentrado alrededor del reveal del ${launchLabel}.`
+        : `Solicitudes apuntadas al reveal del ${launchLabel}.`,
     },
     {
       label: 'Newsletter',
       value: newsletterRegistrations,
-      helper: `Altas guardadas dentro de ${RETROVILLE_NEWSLETTER_NAME}.`,
+      helper: isEditorialSeed
+        ? `Base de salida para ${RETROVILLE_NEWSLETTER_NAME} antes de que el registro coja ritmo real.`
+        : `Altas guardadas dentro de ${RETROVILLE_NEWSLETTER_NAME}.`,
     },
   ] as const;
 
@@ -55,9 +82,9 @@ export default function RetrovilleAudienceProof({
             Lectura real del interés
           </h3>
           <p className="mt-3 text-sm leading-7 text-[var(--rv-text-muted)] sm:text-base">
-            {hasRegistrations
+            {hasLiveRegistrations
               ? `Este bloque resume el interés que ya entra por el formulario: cuánta gente se ha registrado, cuántas personas se apuntan al reveal y qué perfiles aparecen con más frecuencia en ${RETROVILLE_NEWSLETTER_NAME}.`
-              : `El registro ya está abierto. Cuando el volumen sea representativo, aquí verás una lectura real de la audiencia y de los perfiles que más conectan con Retroville.`}
+              : `El registro ya está abierto. Mientras entran respuestas suficientes, esta franja enseña una lectura editorial de arranque con los perfiles que mejor encajan con Retroville para que la sección no se quede muerta.`}
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -107,8 +134,8 @@ export default function RetrovilleAudienceProof({
           <div className="mt-5 rounded-[1rem] border border-[rgba(138,215,255,0.16)] bg-[rgba(138,215,255,0.06)] p-4">
             <p className="text-[10px] uppercase tracking-[0.22em] text-[var(--rv-accent)]">Qué sí estamos leyendo</p>
             <ul className="mt-3 grid gap-2 text-sm leading-7 text-[var(--rv-text-muted)]">
-              <li>Registros reales del reveal y de la newsletter.</li>
-              <li>Perfiles declarados por el usuario en el formulario.</li>
+              <li>{isEditorialSeed ? 'Una base editorial de arranque hasta que entren registros suficientes.' : 'Registros reales del reveal y de la newsletter.'}</li>
+              <li>{isEditorialSeed ? 'Los perfiles que mejor representan el tipo de audiencia que ya está buscando la serie.' : 'Perfiles declarados por el usuario en el formulario.'}</li>
               <li>Lectura propia de Retroville sin mezclar datos heredados de otras webs.</li>
             </ul>
           </div>

@@ -48,6 +48,7 @@
     "@tiptap/react": "^3.22.5",
     "@tiptap/starter-kit": "^3.22.5",
     "@vercel/analytics": "^1.6.1",
+    "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
     "gsap": "^3.15.0",
     "leva": "^0.9.36",

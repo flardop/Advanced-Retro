@@ -24,9 +24,9 @@ import {
 import styles from './personajes.module.css';
 
 export const metadata: Metadata = buildPageMetadata({
-  title: 'Personajes de Retroville | Reparto principal, secundarios e incoming',
+  title: 'Personajes de Retroville | Reparto completo del universo',
   description:
-    'Reparto oficial de Retroville con protagonistas, secundarios y personajes incoming, cada uno con rol, base de inspiración y gancho narrativo.',
+    'Reparto oficial de Retroville presentado con el mismo peso visual para todo el cast: rol, base de inspiración y gancho narrativo de cada personaje.',
   path: '/retroville/personajes',
   category: 'entertainment',
   inheritBaseKeywords: false,
@@ -83,7 +83,7 @@ export default function RetrovilleCharactersPage() {
     name: 'Personajes de Retroville',
     path: '/retroville/personajes',
     description:
-      'Página oficial del reparto de Retroville con protagonistas, secundarios e incoming organizados con más aire y jerarquía.',
+      'Página oficial del reparto de Retroville con todo el cast presentado como universo principal y con la misma jerarquía visual.',
     image: '/images/retroville/retroville-cast-presentation.png',
     about: ['NOX', 'Luna', 'Button Crew', 'Retroville', 'Serie original'],
   });
@@ -107,7 +107,7 @@ export default function RetrovilleCharactersPage() {
   const retrovilleSeriesSchema = buildRetrovilleSeriesJsonLd({
     path: '/retroville/personajes',
     description:
-      'Página oficial del reparto de Retroville con protagonistas, secundarios e incoming, usando material ya desarrollado del universo.',
+      'Página oficial del reparto de Retroville con todo el cast presentado con tratamiento principal, usando material ya desarrollado del universo.',
     image: '/images/retroville/retroville-cast-presentation.png',
     name: 'Personajes de Retroville',
   });
@@ -140,14 +140,14 @@ export default function RetrovilleCharactersPage() {
                 <h1 className={`${displayFont.className} ${styles.title}`}>
                   PERSONAJES CON
                   <br />
-                  SU PROPIO AIRE
+                  PESO PRINCIPAL
                 </h1>
               </div>
 
               <div className={styles.heroPanel}>
                 <p className={styles.heroLead}>
-                  El núcleo, los secundarios y lo incoming ya no compiten en la misma fila. Cada personaje tiene nombre,
-                  rol, base de inspiración y un gancho corto que deja claro por qué existe en la serie.
+                  En esta vista todo el reparto entra con jerarquía de presentación principal. Cada personaje tiene
+                  nombre, rol, base de inspiración y un gancho corto que deja claro por qué existe dentro de la serie.
                 </p>
                 <div className={styles.heroActions}>
                   <Link href="/retroville/episodios" className={styles.inlineLink}>
@@ -162,116 +162,43 @@ export default function RetrovilleCharactersPage() {
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <div>
-                <p className={styles.sectionEyebrow}>Principales</p>
+                <p className={styles.sectionEyebrow}>Reparto completo</p>
                 <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
-                  NOX, LUNA Y
+                  TODA LA CIUDAD
                   <br />
-                  BUTTON CREW
+                  EN PRIMERA FILA
                 </h2>
               </div>
+              <p className={styles.sectionLead}>
+                Aquí ya no hay personajes empequeñecidos por categoría. Todos se enseñan como piezas importantes del
+                universo; si alguno sigue en desarrollo, se marca como incoming sin perder presencia.
+              </p>
             </div>
 
             <div className={styles.mainStack}>
-              {retrovilleMainCharacters.map((character, index) => (
+              {allCharacters.map((character, index) => (
                 <article
                   key={character.name}
                   id={toRetrovilleAnchor(character.name)}
                   className={`${styles.mainCard} ${index % 2 === 1 ? styles.mainCardReverse : ''}`}
                 >
                   <div className={styles.mainVisual}>
-                    <CharacterVisual name={character.name} image={character.image} priority={index === 0} />
+                    <CharacterVisual name={character.name} image={character.image} priority={index < 2} />
                   </div>
                   <div className={styles.mainCopy}>
-                    <p className={styles.characterMeta}>Base · {character.inspiration}</p>
+                    <div className={styles.characterMetaRow}>
+                      <p className={styles.characterMeta}>Base · {character.inspiration}</p>
+                      <span
+                        className={`${styles.characterStatusBadge} ${
+                          character.status === 'incoming' ? styles.characterStatusIncoming : styles.characterStatusFinal
+                        }`}
+                      >
+                        {character.status === 'incoming' ? 'Incoming' : 'Render final'}
+                      </span>
+                    </div>
                     <h3 className={`${displayFont.className} ${styles.characterName}`}>{character.name}</h3>
                     <p className={styles.characterRole}>{character.role}</p>
                     <p className={styles.characterDistrict}>Distrito · {character.district}</p>
-                    <p className={styles.characterBody}>{character.description}</p>
-                    <div className={styles.chipRow}>
-                      {character.chips.map((chip) => (
-                        <span key={chip}>{chip}</span>
-                      ))}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <div>
-                <p className={styles.sectionEyebrow}>Secundarios</p>
-                <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
-                  LA CIUDAD YA
-                  <br />
-                  TIENE SOCIEDAD
-                </h2>
-              </div>
-              <p className={styles.sectionLead}>
-                Vecinos, funcionarios, kids y ruido social. Aquí es donde Retroville deja de ser solo concepto y empieza
-                a parecer un reparto de serie.
-              </p>
-            </div>
-
-            <div className={styles.secondaryGrid}>
-              {retrovilleSecondaryCharacters.map((character) => (
-                <article
-                  key={character.name}
-                  id={toRetrovilleAnchor(character.name)}
-                  className={styles.secondaryCard}
-                >
-                  <div className={styles.secondaryVisual}>
-                    <CharacterVisual name={character.name} image={character.image} />
-                  </div>
-                  <div className={styles.secondaryCopy}>
-                    <p className={styles.characterMeta}>Base · {character.inspiration}</p>
-                    <h3 className={`${displayFont.className} ${styles.secondaryName}`}>{character.name}</h3>
-                    <p className={styles.characterRole}>{character.role}</p>
-                    <p className={styles.characterDistrict}>Distrito · {character.district}</p>
-                    <p className={styles.characterBody}>{character.description}</p>
-                    <div className={styles.chipRow}>
-                      {character.chips.map((chip) => (
-                        <span key={chip}>{chip}</span>
-                      ))}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <div>
-                <p className={styles.sectionEyebrow}>Incoming</p>
-                <h2 className={`${displayFont.className} ${styles.sectionTitle}`}>
-                  DESARROLLO ACTIVO,
-                  <br />
-                  NO HUECO VACÍO
-                </h2>
-              </div>
-              <p className={styles.sectionLead}>
-                Estos nombres entran marcados como incoming para que se vean como promesa real y no como ausencia. En el
-                caso de La Profesora, el render fiable todavía no está listo y por eso aparece sin imagen definitiva.
-              </p>
-            </div>
-
-            <div className={styles.incomingGrid}>
-              {retrovilleIncomingCharacters.map((character) => (
-                <article
-                  key={character.name}
-                  id={toRetrovilleAnchor(character.name)}
-                  className={styles.incomingCard}
-                >
-                  <div className={styles.incomingVisual}>
-                    <CharacterVisual name={character.name} image={character.image} />
-                  </div>
-                  <div className={styles.incomingCopy}>
-                    <p className={styles.incomingMeta}>Incoming · {character.inspiration}</p>
-                    <h3 className={`${displayFont.className} ${styles.secondaryName}`}>{character.name}</h3>
-                    <p className={styles.characterRole}>{character.role}</p>
-                    <p className={styles.characterDistrict}>Zona · {character.district}</p>
                     <p className={styles.characterBody}>{character.description}</p>
                     <div className={styles.chipRow}>
                       {character.chips.map((chip) => (

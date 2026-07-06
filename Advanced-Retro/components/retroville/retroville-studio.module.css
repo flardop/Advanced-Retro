@@ -155,7 +155,7 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 0.95rem 1rem;
   align-items: center;
   padding: 1rem 1.1rem;
@@ -171,7 +171,7 @@
   display: flex;
   min-width: 0;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 1rem;
 }
 
@@ -198,10 +198,11 @@
 }
 
 .topbarPanel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  min-width: 0;
   align-items: center;
-  gap: 0.95rem;
+  justify-content: space-between;
+  gap: clamp(0.85rem, 1.6vw, 1.5rem);
 }
 
 .topbarEyebrow,
@@ -252,6 +253,12 @@
   flex-wrap: wrap;
   gap: 0.65rem;
   align-items: center;
+}
+
+.topbarNav {
+  flex: 1 1 auto;
+  min-width: 0;
+  justify-content: center;
 }
 
 .mobileMenuToggle {
@@ -345,6 +352,7 @@
 }
 
 .topbarActions {
+  flex: 0 0 auto;
   justify-content: flex-end;
 }
 
@@ -927,19 +935,35 @@
   }
 }
 
-@media (max-width: 1140px) {
+@media (max-width: 1320px) {
   .topbar {
     grid-template-columns: 1fr;
     padding: 1rem;
   }
 
   .topbarPanel {
+    display: grid;
     grid-template-columns: 1fr;
   }
 
   .topbarNav,
   .topbarActions {
     justify-content: flex-start;
+  }
+}
+
+@media (max-width: 1140px) {
+  .topbarNav {
+    gap: 0.55rem;
+  }
+
+  .topbarNav a,
+  .secondaryButton,
+  .primaryButton {
+    min-height: 2.7rem;
+    padding-inline: 0.88rem;
+    font-size: 0.63rem;
+    letter-spacing: 0.16em;
   }
 
   .characterGrid,
@@ -984,6 +1008,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.55rem;
+    justify-content: stretch;
   }
 
   .topbarActions {
@@ -1098,6 +1123,10 @@
   .topbar {
     padding: 0.85rem;
     border-radius: 1.25rem;
+  }
+
+  .topbarPrimary {
+    justify-content: space-between;
   }
 
   .topbarBrandLogo {

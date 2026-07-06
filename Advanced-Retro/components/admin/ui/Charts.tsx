@@ -19,7 +19,14 @@ import {
 } from 'recharts';
 import type { ChartPoint } from '@/types/admin';
 
-const palette = ['#6c63ff', '#a78bfa', '#22c55e', '#f59e0b', '#ef4444', '#60a5fa'];
+const palette = [
+  'var(--admin-primary)',
+  'var(--admin-accent)',
+  'var(--admin-success)',
+  'var(--admin-warning)',
+  'var(--admin-error)',
+  '#60a5fa',
+];
 
 function ChartShell({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
@@ -51,15 +58,15 @@ export function AreaChart({ data, title, dataKey = 'value' }: { data: ChartPoint
         <ReAreaChart data={data}>
           <defs>
             <linearGradient id="adminAreaFill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#6c63ff" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#6c63ff" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="var(--admin-primary)" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="var(--admin-primary)" stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="rgba(148,163,184,0.1)" vertical={false} />
           <XAxis dataKey="label" stroke="#94a3b8" tickLine={false} axisLine={false} />
           <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} />
           <Tooltip content={<AdminTooltip />} />
-          <Area type="monotone" dataKey={dataKey} stroke="#6c63ff" fill="url(#adminAreaFill)" strokeWidth={2.5} />
+          <Area type="monotone" dataKey={dataKey} stroke="var(--admin-primary)" fill="url(#adminAreaFill)" strokeWidth={2.5} />
         </ReAreaChart>
       </ResponsiveContainer>
     </ChartShell>
@@ -95,7 +102,7 @@ export function LineChart({ data, title, dataKey = 'value' }: { data: ChartPoint
           <XAxis dataKey="label" stroke="#94a3b8" tickLine={false} axisLine={false} />
           <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} />
           <Tooltip content={<AdminTooltip />} />
-          <Line type="monotone" dataKey={dataKey} stroke="#a78bfa" strokeWidth={3} dot={false} />
+          <Line type="monotone" dataKey={dataKey} stroke="var(--admin-primary)" strokeWidth={3} dot={false} />
         </ReLineChart>
       </ResponsiveContainer>
     </ChartShell>
