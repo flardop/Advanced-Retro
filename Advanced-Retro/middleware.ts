@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { createMiddlewareSupabaseClient } from '@/lib/supabase/middleware';
 import {
   RETROVILLE_ADMIN_COOKIE_NAME,
+  RETROVILLE_ADMIN_HOME_PATH,
   RETROVILLE_ADMIN_LOGIN_PATH,
 } from '@/lib/retroville-admin/constants';
 
@@ -140,13 +141,19 @@ async function handleRetrovilleAdminAccess(request: NextRequest, response: NextR
     return null;
   }
 
-  const isLoginRoute = pathname === RETROVILLE_ADMIN_LOGIN_PATH;
+  const isAuthEntryRoute = pathname === RETROVILLE_ADMIN_HOME_PATH || pathname === RETROVILLE_ADMIN_LOGIN_PATH;
   const sessionCookie = request.cookies.get(RETROVILLE_ADMIN_COOKIE_NAME)?.value;
 
-  if (!sessionCookie && !isLoginRoute) {
+  if (!sessionCookie && !isAuthEntryRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = RETROVILLE_ADMIN_LOGIN_PATH;
+    url.pathname = RETROVILLE_ADMIN_HOME_PATH;
     url.searchParams.set('redirectedFrom', pathname);
+    return redirectWithState(url, 307, response);
+  }
+
+  if (pathname === RETROVILLE_ADMIN_LOGIN_PATH) {
+    const url = request.nextUrl.clone();
+    url.pathname = RETROVILLE_ADMIN_HOME_PATH;
     return redirectWithState(url, 307, response);
   }
 

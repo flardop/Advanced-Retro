@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseService } from '@/lib/supabase/service';
 import {
   RETROVILLE_ADMIN_COOKIE_NAME,
+  RETROVILLE_ADMIN_DASHBOARD_PATH,
   RETROVILLE_ADMIN_FAILED_ATTEMPTS_LIMIT,
   RETROVILLE_ADMIN_HOME_PATH,
   RETROVILLE_ADMIN_LOCKOUT_WINDOW_MINUTES,
@@ -247,7 +248,7 @@ export async function getRetrovilleAdminContextFromCookies() {
 export async function requireRetrovilleAdminPageSession() {
   const context = await getRetrovilleAdminContextFromCookies();
   if (!context) {
-    redirect(RETROVILLE_ADMIN_LOGIN_PATH);
+    redirect(RETROVILLE_ADMIN_HOME_PATH);
   }
   await touchRetrovilleAdminSession(context.session.id).catch(() => null);
   return context;
@@ -256,7 +257,7 @@ export async function requireRetrovilleAdminPageSession() {
 export async function redirectIfRetrovilleAdminSessionExists() {
   const context = await getRetrovilleAdminContextFromCookies();
   if (context) {
-    redirect(RETROVILLE_ADMIN_HOME_PATH);
+    redirect(RETROVILLE_ADMIN_DASHBOARD_PATH);
   }
 }
 

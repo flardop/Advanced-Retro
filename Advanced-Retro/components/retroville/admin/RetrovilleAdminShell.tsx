@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Radar,
   SearchCode,
   Settings2,
   Users,
@@ -20,13 +19,13 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import {
+  RETROVILLE_ADMIN_DASHBOARD_PATH,
   RETROVILLE_ADMIN_HOME_PATH,
-  RETROVILLE_ADMIN_LOGIN_PATH,
   RETROVILLE_ADMIN_NAV_ITEMS,
 } from '@/lib/retroville-admin/constants';
 
 const iconMap: Record<string, LucideIcon> = {
-  '/retroville/admin': LayoutDashboard,
+  '/retroville/admin/dashboard': LayoutDashboard,
   '/retroville/admin/usuarios': Users,
   '/retroville/admin/analiticas': BarChart3,
   '/retroville/admin/tiempo-real': Wifi,
@@ -72,14 +71,17 @@ export default function RetrovilleAdminShell({
   email: string;
   children: React.ReactNode;
 }) {
-  const pathname = usePathname() || RETROVILLE_ADMIN_HOME_PATH;
+  const pathname = usePathname() || RETROVILLE_ADMIN_DASHBOARD_PATH;
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   const activeHref = useMemo(() => {
     const sorted = [...RETROVILLE_ADMIN_NAV_ITEMS].sort((left, right) => right.href.length - left.href.length);
-    return sorted.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.href || RETROVILLE_ADMIN_HOME_PATH;
+    return (
+      sorted.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.href ||
+      RETROVILLE_ADMIN_DASHBOARD_PATH
+    );
   }, [pathname]);
 
   const handleLogout = () => {
@@ -95,7 +97,7 @@ export default function RetrovilleAdminShell({
           },
         });
       } finally {
-        router.replace(RETROVILLE_ADMIN_LOGIN_PATH);
+        router.replace(RETROVILLE_ADMIN_HOME_PATH);
         router.refresh();
         setLoggingOut(false);
       }
@@ -108,7 +110,7 @@ export default function RetrovilleAdminShell({
         <aside className="sticky top-0 hidden h-screen w-[304px] shrink-0 border-r border-[var(--admin-border)] bg-[#111111] lg:block">
           <div className="flex h-full flex-col">
             <div className="border-b border-[var(--admin-border)] px-6 py-6">
-              <Link href={RETROVILLE_ADMIN_HOME_PATH} className="flex items-center gap-4">
+              <Link href={RETROVILLE_ADMIN_DASHBOARD_PATH} className="flex items-center gap-4">
                 <div className="relative h-12 w-12 overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-black/40">
                   <Image
                     src="/images/retroville/retroville-logo.png"
@@ -152,7 +154,7 @@ export default function RetrovilleAdminShell({
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-30 border-b border-[var(--admin-border)] bg-[rgba(14,14,14,0.92)] backdrop-blur lg:hidden">
             <div className="flex items-center justify-between gap-3 px-4 py-4">
-              <Link href={RETROVILLE_ADMIN_HOME_PATH} className="flex min-w-0 items-center gap-3">
+              <Link href={RETROVILLE_ADMIN_DASHBOARD_PATH} className="flex min-w-0 items-center gap-3">
                 <div className="relative h-10 w-10 overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-black/40">
                   <Image
                     src="/images/retroville/retroville-logo.png"

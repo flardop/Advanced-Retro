@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { RETROVILLE_ADMIN_HOME_PATH } from '@/lib/retroville-admin/constants';
+import { RETROVILLE_ADMIN_DASHBOARD_PATH } from '@/lib/retroville-admin/constants';
 
 export default function RetrovilleAdminLoginForm({
   redirectedFrom,
@@ -39,7 +39,7 @@ export default function RetrovilleAdminLoginForm({
         return;
       }
 
-      router.replace(redirectedFrom || RETROVILLE_ADMIN_HOME_PATH);
+      router.replace(redirectedFrom || RETROVILLE_ADMIN_DASHBOARD_PATH);
       router.refresh();
     } catch (nextError) {
       setError(nextError instanceof Error ? nextError.message : 'No se pudo iniciar sesión');

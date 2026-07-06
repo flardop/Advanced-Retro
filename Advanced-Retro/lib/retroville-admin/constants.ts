@@ -4,9 +4,12 @@ export const RETROVILLE_ADMIN_LOCKOUT_WINDOW_MINUTES = 15;
 export const RETROVILLE_ADMIN_FAILED_ATTEMPTS_LIMIT = 5;
 export const RETROVILLE_ADMIN_DEFAULT_PAGE_SIZE = 25;
 export const RETROVILLE_ADMIN_REQUEST_TIMEOUT_MS = 10_000;
+export const RETROVILLE_ADMIN_HOME_PATH = '/retroville/admin';
+export const RETROVILLE_ADMIN_LOGIN_PATH = '/retroville/admin/login';
+export const RETROVILLE_ADMIN_DASHBOARD_PATH = '/retroville/admin/dashboard';
 
 export const RETROVILLE_ADMIN_NAV_ITEMS = [
-  { href: '/retroville/admin', label: 'Dashboard general' },
+  { href: RETROVILLE_ADMIN_DASHBOARD_PATH, label: 'Dashboard general' },
   { href: '/retroville/admin/usuarios', label: 'Usuarios y newsletter' },
   { href: '/retroville/admin/analiticas', label: 'Analíticas de páginas' },
   { href: '/retroville/admin/tiempo-real', label: 'Seguimiento en tiempo real' },
@@ -15,9 +18,6 @@ export const RETROVILLE_ADMIN_NAV_ITEMS = [
   { href: '/retroville/admin/contenido', label: 'Gestión de contenido' },
   { href: '/retroville/admin/configuracion', label: 'Configuración' },
 ] as const;
-
-export const RETROVILLE_ADMIN_LOGIN_PATH = '/retroville/admin/login';
-export const RETROVILLE_ADMIN_HOME_PATH = '/retroville/admin';
 
 export const RETROVILLE_PUBLIC_SETTING_KEYS = {
   contactEmail: 'retroville_contact_email',
