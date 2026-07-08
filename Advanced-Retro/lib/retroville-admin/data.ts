@@ -81,6 +81,67 @@ function groupCounts(values: Array<string | null | undefined>) {
     .sort((left, right) => right.value - left.value);
 }
 
+const RETROVILLE_HOME_ACTION_LABELS: Record<string, string> = {
+  open_press_kit: 'Press kit',
+  open_cast: 'Reparto',
+  open_episodes: 'Episodios',
+  open_worldbuilding_dossier: 'Dossier mundo',
+  email_pitch_contact: 'Contacto',
+};
+
+const RETROVILLE_HOME_LOCATION_LABELS: Record<string, string> = {
+  cinematic_hero: 'Hero',
+  presentation: 'Presentación',
+  cast_footer: 'Fin reparto',
+  episodes_footer: 'Fin episodios',
+  world_footer: 'Fin mundo',
+  buyer_brief: 'Buyer brief',
+};
+
+function formatRetrovillePrivateDocumentTitle(documentTitle: string) {
+  const normalized = String(documentTitle || '').trim();
+  if (!normalized) return 'Documento';
+  if (/biblia de serie/i.test(normalized)) return 'Biblia';
+  if (/episodios/i.test(normalized)) return 'Episodios';
+  if (/vision general|visión general/i.test(normalized)) return 'Visión';
+  return normalized.split('·')[0]?.trim() || normalized;
+}
+
+function formatRetrovilleHomeClickLabel(row: AnalyticsEventRecord) {
+  if (row.event_name === 'retroville_buyer_cta_click') {
+    const action = readMetaString(row.meta, 'action');
+    const location = readMetaString(row.meta, 'location');
+    const actionLabel = RETROVILLE_HOME_ACTION_LABELS[action] || action.replace(/_/g, ' ') || 'CTA';
+    const locationLabel = RETROVILLE_HOME_LOCATION_LABELS[location] || location.replace(/_/g, ' ') || 'Home';
+    return `${actionLabel} · ${locationLabel}`;
+  }
+
+  if (row.event_name === 'retroville_private_document_mail_click') {
+    return `Solicitar · ${formatRetrovillePrivateDocumentTitle(readMetaString(row.meta, 'document_title'))}`;
+  }
+
+  if (row.event_name === 'retroville_private_document_open') {
+    return `Previa · ${formatRetrovillePrivateDocumentTitle(readMetaString(row.meta, 'document_title'))}`;
+  }
+
+  if (row.event_name === 'retroville_newsletter_signup') {
+    const source = readMetaString(row.meta, 'source') || 'web';
+    return `Newsletter · ${source.replace(/_/g, ' ')}`;
+  }
+
+  if (row.event_name === 'retroville_event_signup') {
+    const source = readMetaString(row.meta, 'source') || 'web';
+    return `Reveal · ${source.replace(/_/g, ' ')}`;
+  }
+
+  if (row.event_name === 'retroville_event_calendar_save') {
+    const channel = readMetaString(row.meta, 'channel') || 'save';
+    return `Calendario · ${channel.replace(/_/g, ' ')}`;
+  }
+
+  return row.event_name.replace(/^retroville_/, '').replace(/_/g, ' ');
+}
+
 function classifyTrafficSource(referrer: string | null | undefined) {
   const ref = String(referrer || '').toLowerCase().trim();
   if (!ref) return 'Directo';
@@ -576,24 +637,7 @@ export async function getRetrovilleAdminRealtimeData() {
     ].includes(row.event_name);
   });
 
-  const clickLabels = clickEvents.map((row) => {
-    if (row.event_name === 'retroville_buyer_cta_click') {
-      return `${readMetaString(row.meta, 'location') || 'zona'} · ${readMetaString(row.meta, 'action') || 'cta'}`;
-    }
-    if (row.event_name === 'retroville_private_document_mail_click') {
-      return `Documento privado · ${readMetaString(row.meta, 'document_title') || 'solicitud'}`;
-    }
-    if (row.event_name === 'retroville_newsletter_signup') {
-      return `Newsletter · ${readMetaString(row.meta, 'source') || 'web'}`;
-    }
-    if (row.event_name === 'retroville_event_signup') {
-      return `Reveal · ${readMetaString(row.meta, 'source') || 'web'}`;
-    }
-    if (row.event_name === 'retroville_event_calendar_save') {
-      return `Calendario · ${readMetaString(row.meta, 'channel') || 'save'}`;
-    }
-    return row.event_name.replace(/^retroville_/, '').replace(/_/g, ' ');
-  });
+  const clickLabels = clickEvents.map((row) => formatRetrovilleHomeClickLabel(row));
   const clickLeaderboard = groupCounts(clickLabels).map((item) => ({
     ...item,
     percentage: clickLabels.length > 0 ? (item.value / clickLabels.length) * 100 : 0,

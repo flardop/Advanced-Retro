@@ -28,11 +28,19 @@ const palette = [
   '#60a5fa',
 ];
 
-function ChartShell({ title, children }: { title?: string; children: React.ReactNode }) {
+function ChartShell({
+  title,
+  children,
+  heightClass = 'h-[320px]',
+}: {
+  title?: string;
+  children: React.ReactNode;
+  heightClass?: string;
+}) {
   return (
     <div className="rounded-3xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5">
       {title ? <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--admin-text-muted)]">{title}</h3> : null}
-      <div className="h-[320px]">{children}</div>
+      <div className={heightClass}>{children}</div>
     </div>
   );
 }
@@ -75,12 +83,21 @@ export function AreaChart({ data, title, dataKey = 'value' }: { data: ChartPoint
 
 export function BarChart({ data, title, dataKey = 'value', horizontal = false }: { data: ChartPoint[]; title?: string; dataKey?: string; horizontal?: boolean }) {
   return (
-    <ChartShell title={title}>
+    <ChartShell title={title} heightClass={horizontal ? 'h-[420px]' : 'h-[320px]'}>
       <ResponsiveContainer width="100%" height="100%">
-        <ReBarChart data={data} layout={horizontal ? 'vertical' : 'horizontal'}>
+        <ReBarChart data={data} layout={horizontal ? 'vertical' : 'horizontal'} margin={horizontal ? { top: 8, right: 12, bottom: 8, left: 12 } : undefined}>
           <CartesianGrid stroke="rgba(148,163,184,0.08)" vertical={false} />
           <XAxis type={horizontal ? 'number' : 'category'} dataKey={horizontal ? undefined : 'label'} stroke="#94a3b8" tickLine={false} axisLine={false} />
-          <YAxis type={horizontal ? 'category' : 'number'} dataKey={horizontal ? 'label' : undefined} width={horizontal ? 120 : 40} stroke="#94a3b8" tickLine={false} axisLine={false} />
+          <YAxis
+            type={horizontal ? 'category' : 'number'}
+            dataKey={horizontal ? 'label' : undefined}
+            width={horizontal ? 240 : 40}
+            stroke="#94a3b8"
+            tickLine={false}
+            axisLine={false}
+            interval={0}
+            tick={{ fontSize: 12 }}
+          />
           <Tooltip content={<AdminTooltip />} />
           <Bar dataKey={dataKey} radius={[10, 10, 10, 10]}>
             {data.map((entry, index) => (

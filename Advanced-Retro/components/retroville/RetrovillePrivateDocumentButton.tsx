@@ -40,6 +40,14 @@ export default function RetrovillePrivateDocumentButton(props: RetrovillePrivate
   const mailtoHref = buildMailtoHref(documentTitle);
   const previewBody = buildRetrovilleAccessRequestBody(documentTitle).replace(/\s+/g, ' ').trim();
 
+  function openPreparedMail() {
+    trackPrivateDocumentAction('mail_click', documentTitle);
+
+    if (typeof window !== 'undefined') {
+      window.location.href = mailtoHref;
+    }
+  }
+
   return (
     <a
       href={mailtoHref}
@@ -47,8 +55,9 @@ export default function RetrovillePrivateDocumentButton(props: RetrovillePrivate
       aria-label={`${buttonLabel}. ${descriptionLead} Se abrirá tu correo predeterminado con el asunto y el mensaje ya preparados.`}
       title={`${descriptionLead} Se abrirá preparado: ${previewBody}`}
       data-no-auto-translate
-      onClick={() => {
-        trackPrivateDocumentAction('mail_click', documentTitle);
+      onClick={(event) => {
+        event.preventDefault();
+        openPreparedMail();
       }}
     >
       <Mail className="h-4 w-4" />
