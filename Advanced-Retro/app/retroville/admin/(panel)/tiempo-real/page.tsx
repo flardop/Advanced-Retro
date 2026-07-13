@@ -11,8 +11,16 @@ export default async function RetrovilleAdminRealtimePage() {
     <div className="space-y-8">
       <AdminPageHeader
         title="Seguimiento en tiempo real"
-        description="Quién está navegando ahora mismo, cuánto tiempo lleva y qué zonas del home están recibiendo más atención."
+        description="Quién está navegando ahora mismo, desde qué país o zona entra, qué parte de España está más viva y qué puedes exportar para estrategia social o editorial."
         breadcrumbs={[{ label: 'Retroville Admin' }, { label: 'Seguimiento en tiempo real' }]}
+        actions={
+          <a
+            href="/api/retroville/admin/realtime/export"
+            className="inline-flex items-center justify-center rounded-full border border-[var(--admin-border)] bg-[var(--admin-surface)] px-4 py-2 text-sm text-[var(--admin-text)] transition hover:border-[var(--admin-primary)] hover:text-white"
+          >
+            Exportar CSV live
+          </a>
+        }
       />
 
       <RetrovilleAdminRealtimeClient initialData={data} />

@@ -65,9 +65,14 @@ export type RetrovilleWaitlistAdminRow = {
   id: string;
   email: string;
   display_name: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  question?: string | null;
+  document_interest?: string | null;
   role_label: string | null;
   source: string | null;
-  signup_intent: 'newsletter' | 'event' | null;
+  signup_intent: 'newsletter' | 'event' | 'access' | null;
   event_slug: string | null;
   event_title: string | null;
   status: 'active' | 'unsubscribed';
@@ -84,4 +89,64 @@ export type RetrovilleWaitlistAdminRow = {
   created_at: string;
   last_seen_at: string | null;
   unsubscribed_at: string | null;
+};
+
+export type RetrovilleRealtimeSession = {
+  id: string;
+  currentPage: string;
+  durationSeconds: number;
+  deviceType: string;
+  country: string;
+  city: string;
+  region: string;
+  locationLabel: string;
+  lastHeartbeat: string;
+};
+
+export type RetrovilleRealtimeCountryBucket = {
+  label: string;
+  value: number;
+  share: number;
+};
+
+export type RetrovilleRealtimeGeoBucket = {
+  label: string;
+  country: string;
+  city: string;
+  region: string;
+  sessions: number;
+  share: number;
+  primaryPage: string;
+};
+
+export type RetrovilleRealtimeInsight = {
+  title: string;
+  detail: string;
+};
+
+export type RetrovilleAdminRealtimeData = {
+  summary: {
+    activeUsers: number;
+    activeInSpain: number;
+    countriesActive: number;
+    locationsActive: number;
+    topCountry: string;
+    topSpainLocation: string;
+  };
+  sessions: RetrovilleRealtimeSession[];
+  countryBuckets: RetrovilleRealtimeCountryBucket[];
+  geoBuckets: RetrovilleRealtimeGeoBucket[];
+  spainBuckets: RetrovilleRealtimeGeoBucket[];
+  deviceBuckets: RetrovilleRealtimeCountryBucket[];
+  strategyNotes: RetrovilleRealtimeInsight[];
+  clickLeaderboard: Array<{
+    label: string;
+    value: number;
+    percentage: number;
+  }>;
+  scrollLeaderboard: Array<{
+    path: string;
+    averageDepth: number;
+    sessions: number;
+  }>;
 };

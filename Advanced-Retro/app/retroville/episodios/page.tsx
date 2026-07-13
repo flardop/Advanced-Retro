@@ -86,6 +86,7 @@ export default function RetrovilleEpisodesPage() {
               <div className={styles.heroLinks}>
                 <Link href="/retroville/personajes">Personajes</Link>
                 <Link href="/retroville/sketches">Sketchbook</Link>
+                <Link href="/retroville/guias">Guías</Link>
               </div>
             </nav>
 

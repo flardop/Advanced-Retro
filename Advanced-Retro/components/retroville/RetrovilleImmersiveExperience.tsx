@@ -147,6 +147,12 @@ const residentCards = [
     body: 'Funcionario veterano del sistema urbano. Todo pasa por sus llaves, sus formularios y su paciencia agotada.',
     image: '/images/retroville/characters/crux.webp',
   },
+  {
+    name: 'FIRE CREW',
+    district: 'Retroville Fire Department',
+    body: 'Chief Brasa, Manga, Plano y Chispa forman la brigada más agotada del universo: llegan rápido, discuten más y apagan incendios con protocolo roto y cafeína.',
+    image: '/images/retroville/characters/fire-crew.png',
+  },
 ] as const;
 
 const conceptCards = [

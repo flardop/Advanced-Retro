@@ -151,6 +151,12 @@ const supportingCast = [
     description: 'Rutas, cambio exacto y cero ganas de explicar la misma parada dos veces.',
     image: '/images/retroville/characters/public-crew.png',
   },
+  {
+    name: 'FIRE CREW',
+    role: 'Emergencias de Retroville',
+    description: 'Chief Brasa, Manga, Plano y Chispa: llegan tarde, discuten mucho y aun así sostienen la ciudad cuando arde.',
+    image: '/images/retroville/characters/fire-crew.png',
+  },
 ] as const;
 
 const worldbuildingItems = [

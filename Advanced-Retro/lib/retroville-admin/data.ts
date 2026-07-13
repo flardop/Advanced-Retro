@@ -13,8 +13,12 @@ import {
 } from '@/lib/retroville-admin/page-registry';
 import type { AnalyticsEventRecord, ErrorLogRecord, PageViewRecord, UserSessionRecord } from '@/types/admin';
 import type {
+  RetrovilleAdminRealtimeData,
   RetrovilleAdminAccessLogRow,
   RetrovilleAdminLoginAttemptRow,
+  RetrovilleRealtimeCountryBucket,
+  RetrovilleRealtimeGeoBucket,
+  RetrovilleRealtimeSession,
   RetrovilleWaitlistAdminRow,
 } from '@/types/retroville-admin';
 
@@ -81,6 +85,55 @@ function groupCounts(values: Array<string | null | undefined>) {
     .sort((left, right) => right.value - left.value);
 }
 
+function normalizeCountryLabel(value: string | null | undefined) {
+  return String(value || '').trim() || 'Desconocido';
+}
+
+function normalizeLocationLabel(value: string | null | undefined) {
+  return String(value || '').trim() || '—';
+}
+
+function isSpainCountry(value: string | null | undefined) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'es' || normalized === 'spain' || normalized === 'espana' || normalized === 'españa';
+}
+
+function splitLocationParts(value: string | null | undefined) {
+  const clean = normalizeLocationLabel(value);
+  if (clean === '—') {
+    return {
+      city: '—',
+      region: '—',
+      locationLabel: '—',
+    };
+  }
+
+  const parts = clean
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!parts.length) {
+    return {
+      city: '—',
+      region: '—',
+      locationLabel: '—',
+    };
+  }
+
+  const [city, ...rest] = parts;
+  return {
+    city: city || '—',
+    region: rest.join(', ') || '—',
+    locationLabel: parts.join(', '),
+  };
+}
+
+function toShare(value: number, total: number) {
+  if (!total) return 0;
+  return (value / total) * 100;
+}
+
 const RETROVILLE_HOME_ACTION_LABELS: Record<string, string> = {
   open_press_kit: 'Press kit',
   open_cast: 'Reparto',
@@ -127,6 +180,11 @@ function formatRetrovilleHomeClickLabel(row: AnalyticsEventRecord) {
   if (row.event_name === 'retroville_newsletter_signup') {
     const source = readMetaString(row.meta, 'source') || 'web';
     return `Newsletter · ${source.replace(/_/g, ' ')}`;
+  }
+
+  if (row.event_name === 'retroville_access_request_signup') {
+    const source = readMetaString(row.meta, 'source') || 'web';
+    return `Acceso privado · ${source.replace(/_/g, ' ')}`;
   }
 
   if (row.event_name === 'retroville_event_signup') {
@@ -334,8 +392,13 @@ export async function getRetrovilleAdminDashboardData() {
       id: `waitlist-${row.id}`,
       type: 'signup',
       timestamp: row.created_at,
-      label: row.signup_intent === 'event' ? 'Registro al reveal' : 'Alta en La Señal',
-      detail: `${row.email} · ${row.role_label || 'perfil sin definir'} · ${row.page_path || '/retroville'}`,
+      label:
+        row.signup_intent === 'event'
+          ? 'Registro al reveal'
+          : row.signup_intent === 'access'
+            ? 'Solicitud de biblia'
+            : 'Alta en La Señal',
+      detail: `${row.email} · ${row.role_label || row.document_interest || 'interés general'} · ${row.page_path || '/retroville'}`,
     })),
     ...retroPageViews.slice().sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp))).slice(0, 4).map((row) => ({
       id: `view-${row.id}`,
@@ -384,6 +447,7 @@ export async function getRetrovilleAdminUsersData(input: {
   pageSize?: number;
   search?: string;
   profile?: string;
+  intent?: string;
   status?: string;
   sort?: string;
   direction?: 'asc' | 'desc';
@@ -395,6 +459,7 @@ export async function getRetrovilleAdminUsersData(input: {
   const pageSize = Math.max(1, Math.min(5000, Number(input.pageSize || RETROVILLE_ADMIN_DEFAULT_PAGE_SIZE)));
   const search = String(input.search || '').trim().toLowerCase();
   const profile = String(input.profile || '').trim();
+  const intent = String(input.intent || '').trim();
   const status = String(input.status || '').trim();
   const direction = input.direction === 'asc' ? 'asc' : 'desc';
   const sort = String(input.sort || 'created_at');
@@ -405,7 +470,7 @@ export async function getRetrovilleAdminUsersData(input: {
 
   if (search) {
     rows = rows.filter((row) =>
-      [row.display_name || '', row.email || '', row.page_path || ''].some((value) =>
+      [row.display_name || '', row.first_name || '', row.last_name || '', row.email || '', row.phone || '', row.question || '', row.page_path || ''].some((value) =>
         String(value).toLowerCase().includes(search)
       )
     );
@@ -413,6 +478,10 @@ export async function getRetrovilleAdminUsersData(input: {
 
   if (profile) {
     rows = rows.filter((row) => String(row.role_label || '').toLowerCase() === profile.toLowerCase());
+  }
+
+  if (intent) {
+    rows = rows.filter((row) => String(row.signup_intent || 'newsletter').toLowerCase() === intent.toLowerCase());
   }
 
   if (status) {
@@ -435,6 +504,8 @@ export async function getRetrovilleAdminUsersData(input: {
         return row.display_name || '';
       case 'email':
         return row.email || '';
+      case 'signup_intent':
+        return row.signup_intent || '';
       case 'role_label':
         return row.role_label || '';
       case 'page_path':
@@ -480,6 +551,7 @@ export async function getRetrovilleAdminUsersData(input: {
     summary: {
       totalSubscribers: waitlist.length,
       subscribersThisWeek: summaryThisWeek,
+      accessRequests: waitlist.filter((row) => row.signup_intent === 'access').length,
       roleBreakdown: roleBreakdown.map((item) => ({
         ...item,
         share: waitlist.length > 0 ? (item.value / waitlist.length) * 100 : 0,
@@ -606,7 +678,7 @@ export async function getRetrovilleAdminPageAnalyticsData(input: {
   };
 }
 
-export async function getRetrovilleAdminRealtimeData() {
+export async function getRetrovilleAdminRealtimeData(): Promise<RetrovilleAdminRealtimeData> {
   const { sessions, pageViews, events } = await getBaseRetrovilleRows();
   const activeCutoff = subHours(now(), 0.0334);
   const activeSessions = sessions
@@ -617,11 +689,54 @@ export async function getRetrovilleAdminRealtimeData() {
     .sort((left, right) => String(right.last_heartbeat).localeCompare(String(left.last_heartbeat)));
 
   const latestPageViewBySessionPath = new Map<string, PageViewRecord>();
+  const latestPageViewBySession = new Map<string, PageViewRecord>();
+  const latestGeoBySession = new Map<string, { timestamp: string; country: string; city: string }>();
+
   for (const row of pageViews.filter((entry) => isRetrovillePath(entry.url))) {
-    const key = `${row.session_id || row.id}|${normalizePath(row.url)}`;
+    const sessionKey = row.session_id || row.id;
+    const key = `${sessionKey}|${normalizePath(row.url)}`;
     const current = latestPageViewBySessionPath.get(key);
     if (!current || String(row.timestamp) > String(current.timestamp)) {
       latestPageViewBySessionPath.set(key, row);
+    }
+
+    const latestForSession = latestPageViewBySession.get(sessionKey);
+    if (!latestForSession || String(row.timestamp) > String(latestForSession.timestamp)) {
+      latestPageViewBySession.set(sessionKey, row);
+    }
+
+    const country = normalizeCountryLabel(row.country);
+    const city = normalizeLocationLabel(row.city);
+    if (country !== 'Desconocido' || city !== '—') {
+      const currentGeo = latestGeoBySession.get(sessionKey);
+      if (!currentGeo || String(row.timestamp) > String(currentGeo.timestamp)) {
+        latestGeoBySession.set(sessionKey, {
+          timestamp: row.timestamp,
+          country,
+          city,
+        });
+      }
+    }
+  }
+
+  for (const row of events.filter((entry) => String(entry.event_name).startsWith('retroville_'))) {
+    const sessionKey = String(row.session_id || '').trim();
+    if (!sessionKey) continue;
+
+    const path = normalizePath(row.path || readMetaString(row.meta, 'path'));
+    if (!isRetrovillePath(path)) continue;
+
+    const country = normalizeCountryLabel(readMetaString(row.meta, 'country'));
+    const city = normalizeLocationLabel(readMetaString(row.meta, 'city'));
+    if (country === 'Desconocido' && city === '—') continue;
+
+    const currentGeo = latestGeoBySession.get(sessionKey);
+    if (!currentGeo || String(row.created_at) > String(currentGeo.timestamp)) {
+      latestGeoBySession.set(sessionKey, {
+        timestamp: row.created_at,
+        country,
+        city,
+      });
     }
   }
 
@@ -650,24 +765,123 @@ export async function getRetrovilleAdminRealtimeData() {
     sessions: values.length,
   })).sort((left, right) => right.averageDepth - left.averageDepth);
 
-  return {
-    activeUsers: activeSessions.length,
-    sessions: activeSessions.slice(0, 20).map((row) => {
+  const sessionRows: RetrovilleRealtimeSession[] = activeSessions.slice(0, 40).map((row) => {
       const key = `${row.session_id}|${normalizePath(row.current_page)}`;
-      const latestView = latestPageViewBySessionPath.get(key);
+      const latestView = latestPageViewBySessionPath.get(key) || latestPageViewBySession.get(row.session_id);
+      const latestGeo = latestGeoBySession.get(row.session_id);
       const startedAt = safeDate(latestView?.timestamp || row.started_at);
       const durationSeconds = startedAt ? Math.max(1, Math.round((Date.now() - startedAt.getTime()) / 1000)) : 0;
+      const country = normalizeCountryLabel(row.country || latestGeo?.country || latestView?.country);
+      const location = splitLocationParts(row.city || latestGeo?.city || latestView?.city);
 
       return {
         id: row.id,
-        currentPage: normalizePath(row.current_page),
+        currentPage: normalizePath(row.current_page || latestView?.url),
         durationSeconds,
-        deviceType: row.device_type || 'Desconocido',
-        country: row.country || 'Desconocido',
-        city: row.city || '—',
+        deviceType: row.device_type || latestView?.device_type || 'Desconocido',
+        country,
+        city: location.city,
+        region: location.region,
+        locationLabel: location.locationLabel,
         lastHeartbeat: row.last_heartbeat,
       };
-    }),
+    });
+
+  const countryBuckets: RetrovilleRealtimeCountryBucket[] = groupCounts(sessionRows.map((row) => row.country))
+    .map((item) => ({
+      ...item,
+      share: toShare(item.value, sessionRows.length),
+    }))
+    .slice(0, 10);
+
+  const geoMap = new Map<
+    string,
+    {
+      country: string;
+      city: string;
+      region: string;
+      locationLabel: string;
+      sessions: number;
+      pages: Map<string, number>;
+    }
+  >();
+
+  for (const row of sessionRows) {
+    const key = `${row.country}|${row.locationLabel}`;
+    const entry = geoMap.get(key) || {
+      country: row.country,
+      city: row.city,
+      region: row.region,
+      locationLabel: row.locationLabel,
+      sessions: 0,
+      pages: new Map<string, number>(),
+    };
+
+    entry.sessions += 1;
+    entry.pages.set(row.currentPage, (entry.pages.get(row.currentPage) || 0) + 1);
+    geoMap.set(key, entry);
+  }
+
+  const geoBuckets: RetrovilleRealtimeGeoBucket[] = Array.from(geoMap.values())
+    .map((entry) => {
+      const primaryPage =
+        Array.from(entry.pages.entries()).sort((left, right) => right[1] - left[1])[0]?.[0] || '/retroville';
+      return {
+        label: entry.locationLabel !== '—' ? entry.locationLabel : entry.country,
+        country: entry.country,
+        city: entry.city,
+        region: entry.region,
+        sessions: entry.sessions,
+        share: toShare(entry.sessions, sessionRows.length),
+        primaryPage,
+      };
+    })
+    .sort((left, right) => right.sessions - left.sessions);
+
+  const spainBuckets = geoBuckets.filter((item) => isSpainCountry(item.country)).slice(0, 10);
+  const deviceBuckets: RetrovilleRealtimeCountryBucket[] = groupCounts(sessionRows.map((row) => row.deviceType))
+    .map((item) => ({
+      ...item,
+      share: toShare(item.value, sessionRows.length),
+    }))
+    .slice(0, 6);
+
+  const strategyNotes = [
+    countryBuckets[0]
+      ? {
+          title: 'País dominante ahora',
+          detail: `${countryBuckets[0].label} concentra ${countryBuckets[0].value} de ${sessionRows.length} sesiones activas en este momento.`,
+        }
+      : null,
+    spainBuckets[0]
+      ? {
+          title: 'Foco más vivo en España',
+          detail: `${spainBuckets[0].label} es la zona española con más actividad ahora mismo y su página más recorrida es ${spainBuckets[0].primaryPage}.`,
+        }
+      : null,
+    deviceBuckets[0]
+      ? {
+          title: 'Dispositivo dominante',
+          detail: `${deviceBuckets[0].label} lidera el tráfico activo con ${deviceBuckets[0].value} sesiones, útil para adaptar piezas rápidas, copies y creatividades.`,
+        }
+      : null,
+  ].filter(Boolean) as RetrovilleAdminRealtimeData['strategyNotes'];
+
+  return {
+    summary: {
+      activeUsers: sessionRows.length,
+      activeInSpain: sessionRows.filter((row) => isSpainCountry(row.country)).length,
+      countriesActive: new Set(sessionRows.map((row) => row.country)).size,
+      locationsActive: new Set(sessionRows.map((row) => `${row.country}|${row.locationLabel}`)).size,
+      topCountry: countryBuckets[0]?.label || '—',
+      topSpainLocation: spainBuckets[0]?.label || '—',
+    },
+    sessions: sessionRows,
+    countryBuckets,
+    geoBuckets: geoBuckets.slice(0, 12),
+    spainBuckets,
+    deviceBuckets,
+    strategyNotes,
     clickLeaderboard: clickLeaderboard.slice(0, 12),
     scrollLeaderboard: scrollLeaderboard.slice(0, 12),
   };

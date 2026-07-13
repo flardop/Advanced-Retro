@@ -12,6 +12,7 @@ type SearchParams = {
   page?: string;
   search?: string;
   profile?: string;
+  intent?: string;
   status?: string;
   sort?: string;
   direction?: 'asc' | 'desc';
@@ -26,6 +27,7 @@ function getUsersPageHref(searchParams: SearchParams, overrides: Partial<SearchP
     page: next.page || '',
     search: next.search || '',
     profile: next.profile || '',
+    intent: next.intent || '',
     status: next.status || '',
     sort: next.sort || '',
     direction: next.direction || '',
@@ -64,6 +66,7 @@ export default async function RetrovilleAdminUsersPage({
     page: Number(searchParams?.page || 1),
     search: searchParams?.search || '',
     profile: searchParams?.profile || '',
+    intent: searchParams?.intent || '',
     status: searchParams?.status || '',
     sort: searchParams?.sort || 'created_at',
     direction: searchParams?.direction === 'asc' ? 'asc' : 'desc',
@@ -76,6 +79,7 @@ export default async function RetrovilleAdminUsersPage({
   const exportHref = buildRetrovilleAdminQuery('/api/retroville/admin/users/export', {
     search: filters.search,
     profile: filters.profile,
+    intent: filters.intent,
     status: filters.status,
     sort: filters.sort,
     direction: filters.direction,
@@ -86,9 +90,9 @@ export default async function RetrovilleAdminUsersPage({
   return (
     <div className="space-y-8">
       <AdminPageHeader
-        title="Usuarios y newsletter"
-        description="Registro privado de la audiencia que se ha apuntado a La Señal o al reveal. Incluye origen, dispositivo, país y comportamiento básico por sesión."
-        breadcrumbs={[{ label: 'Retroville Admin' }, { label: 'Usuarios y newsletter' }]}
+        title="Suscriptores y solicitudes"
+        description="Base privada de contactos de Retroville. Aquí se juntan newsletter, reveal y solicitudes de biblia o seguimiento para que puedas filtrar, revisar y exportar correos, teléfonos y preguntas."
+        breadcrumbs={[{ label: 'Retroville Admin' }, { label: 'Suscriptores y solicitudes' }]}
         actions={
           <a
             href={exportHref}
@@ -101,14 +105,19 @@ export default async function RetrovilleAdminUsersPage({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
-          label="Total de suscriptores"
+          label="Total de contactos"
           value={data.summary.totalSubscribers.toLocaleString('es-ES')}
-          helper="Base total combinada de newsletter y reveal"
+          helper="Base total de newsletter, reveal y acceso privado"
         />
         <SummaryCard
           label="Esta semana"
           value={data.summary.subscribersThisWeek.toLocaleString('es-ES')}
           helper="Altas registradas en los últimos 7 días"
+        />
+        <SummaryCard
+          label="Solicitudes de biblia"
+          value={data.summary.accessRequests.toLocaleString('es-ES')}
+          helper="Contactos que han pedido acceso o más contexto del proyecto"
         />
         <div className="rounded-3xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-4">
           <DonutChart
@@ -138,12 +147,12 @@ export default async function RetrovilleAdminUsersPage({
         </div>
       </div>
 
-      <form className="grid gap-3 rounded-3xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 xl:grid-cols-[1.2fr_repeat(6,minmax(0,1fr))]">
+      <form className="grid gap-3 rounded-3xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5 xl:grid-cols-[1.2fr_repeat(7,minmax(0,1fr))]">
         <input
           type="text"
           name="search"
           defaultValue={filters.search}
-          placeholder="Buscar por nombre o email"
+          placeholder="Buscar por nombre, email o telefono"
           className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)] px-4 py-3 text-sm text-[var(--admin-text)] outline-none"
         />
         <select
@@ -157,6 +166,16 @@ export default async function RetrovilleAdminUsersPage({
               {item.label}
             </option>
           ))}
+        </select>
+        <select
+          name="intent"
+          defaultValue={filters.intent}
+          className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)] px-4 py-3 text-sm text-[var(--admin-text)] outline-none"
+        >
+          <option value="">Todos los canales</option>
+          <option value="newsletter">Newsletter</option>
+          <option value="event">Reveal</option>
+          <option value="access">Acceso privado</option>
         </select>
         <select
           name="status"
@@ -187,6 +206,7 @@ export default async function RetrovilleAdminUsersPage({
           <option value="created_at">Fecha</option>
           <option value="display_name">Nombre</option>
           <option value="email">Email</option>
+          <option value="signup_intent">Canal</option>
           <option value="role_label">Perfil</option>
           <option value="page_path">Página</option>
           <option value="device_type">Dispositivo</option>
@@ -225,6 +245,7 @@ export default async function RetrovilleAdminUsersPage({
                 <tr className="text-left text-[11px] uppercase tracking-[0.2em] text-[var(--admin-text-muted)]">
                   <th className="px-4 py-4">Avatar</th>
                   <th className="px-4 py-4">Nombre</th>
+                  <th className="px-4 py-4">Canal</th>
                   <th className="px-4 py-4">Perfil</th>
                   <th className="px-4 py-4">Registro</th>
                   <th className="px-4 py-4">Página</th>
@@ -250,9 +271,17 @@ export default async function RetrovilleAdminUsersPage({
                         })}
                         className="font-semibold text-[var(--admin-text)] underline-offset-4 hover:underline"
                       >
-                        {row.display_name || 'Sin nombre'}
+                        {row.display_name || row.first_name || 'Sin nombre'}
                       </Link>
                       <p className="mt-1 text-[var(--admin-text-muted)]">{row.email}</p>
+                      {row.phone ? <p className="mt-1 text-[var(--admin-text-muted)]">{row.phone}</p> : null}
+                    </td>
+                    <td className="px-4 py-4 text-[var(--admin-text)]">
+                      {row.signup_intent === 'event'
+                        ? 'Reveal'
+                        : row.signup_intent === 'access'
+                          ? 'Acceso privado'
+                          : 'Newsletter'}
                     </td>
                     <td className="px-4 py-4 text-[var(--admin-text)]">{row.role_label || 'Sin perfil'}</td>
                     <td className="px-4 py-4 text-[var(--admin-text)]">{toDateTimeLabel(row.created_at)}</td>
@@ -314,9 +343,34 @@ export default async function RetrovilleAdminUsersPage({
               <div className="mt-4 space-y-5">
                 <div>
                   <h2 className="text-2xl font-semibold text-[var(--admin-text)]">
-                    {selectedUser.user.display_name || selectedUser.user.email}
+                    {selectedUser.user.display_name || selectedUser.user.first_name || selectedUser.user.email}
                   </h2>
                   <p className="mt-1 text-sm text-[var(--admin-text-muted)]">{selectedUser.user.email}</p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
+                  <div className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)] px-4 py-4">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--admin-text-muted)]">Canal</p>
+                    <p className="mt-2 text-sm text-[var(--admin-text)]">
+                      {selectedUser.user.signup_intent === 'event'
+                        ? 'Reveal'
+                        : selectedUser.user.signup_intent === 'access'
+                          ? 'Acceso privado'
+                          : 'Newsletter'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)] px-4 py-4">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--admin-text-muted)]">Teléfono</p>
+                    <p className="mt-2 text-sm text-[var(--admin-text)]">{selectedUser.user.phone || '—'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)] px-4 py-4 md:col-span-2 xl:col-span-1">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--admin-text-muted)]">Documento o interés</p>
+                    <p className="mt-2 text-sm text-[var(--admin-text)]">{selectedUser.user.document_interest || '—'}</p>
+                  </div>
+                  <div className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)] px-4 py-4 md:col-span-2 xl:col-span-1">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--admin-text-muted)]">Pregunta</p>
+                    <p className="mt-2 text-sm leading-7 text-[var(--admin-text)]">{selectedUser.user.question || '—'}</p>
+                  </div>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">

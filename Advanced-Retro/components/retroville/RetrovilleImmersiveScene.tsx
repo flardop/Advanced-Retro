@@ -260,7 +260,13 @@ function GridFloor({ bounds }: { bounds: number }) {
   return (
     <mesh rotation-x={-Math.PI / 2} position={[0, 0.06, 0]}>
       <planeGeometry args={[bounds * 2.2, bounds * 2.2, 1, 1]} />
-      <primitive object={material} ref={materialRef} attach="material" />
+      <primitive
+        object={material}
+        ref={(node: any) => {
+          materialRef.current = node as THREE.ShaderMaterial | null;
+        }}
+        attach="material"
+      />
     </mesh>
   );
 }
@@ -364,7 +370,22 @@ function BuildingGroup({ group }: { group: BuildingGroupData }) {
 
   if (!group.instances.length) return null;
 
-  return <instancedMesh ref={meshRef} args={[geometry, material, group.instances.length]} castShadow receiveShadow />;
+  const instancedArgs: [never, never, number] = [
+    geometry as unknown as never,
+    material as unknown as never,
+    group.instances.length,
+  ];
+
+  return (
+    <instancedMesh
+      ref={(node: any) => {
+        meshRef.current = node as THREE.InstancedMesh | null;
+      }}
+      args={instancedArgs}
+      castShadow
+      receiveShadow
+    />
+  );
 }
 
 function LandmarkCores({ positions }: { positions: CityData['landmarkPositions'] }) {
@@ -379,7 +400,11 @@ function LandmarkCores({ positions }: { positions: CityData['landmarkPositions']
   });
 
   return (
-    <group ref={pulseRef}>
+    <group
+      ref={(node: any) => {
+        pulseRef.current = node as THREE.Group | null;
+      }}
+    >
       <mesh position={[positions.plaza.x, 1.6, positions.plaza.z]}>
         <cylinderGeometry args={[1.4, 1.4, 3.2, 6, 1, true]} />
         <meshStandardMaterial color="#111111" emissive="#c0392b" emissiveIntensity={1.4} roughness={0.45} metalness={0.12} />
@@ -480,7 +505,11 @@ function ParticleField({
 
   return (
     <>
-      <points ref={pointsRef}>
+      <points
+        ref={(node: any) => {
+          pointsRef.current = node as THREE.Points | null;
+        }}
+      >
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
@@ -500,7 +529,11 @@ function ParticleField({
         />
       </points>
 
-      <lineSegments ref={trailsRef}>
+      <lineSegments
+        ref={(node: any) => {
+          trailsRef.current = node as THREE.LineSegments | null;
+        }}
+      >
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"

@@ -87,36 +87,48 @@ const curatedSections = [
     ],
   },
   {
-    title: 'Sistemas Jugables',
-    phase: 'Fase activa · movilidad y ocio',
+    title: 'Arquitectura Y Skyline',
+    phase: 'Fase activa · volumenes, barrios y lectura urbana',
     intro:
-      'Cuando la ciudad se mueve o se usa, los sketches empiezan a funcionar como diseño de sistema: transporte, ocio, flujo de gente y lectura rápida.',
+      'Aqui aparece la ciudad como arquitectura reconocible: viviendas, sede cívica, escuela, piezas residenciales y la forma en la que cada edificio ayuda a leer el carácter de Retroville desde lejos.',
     items: [
       {
-        title: 'Metro-Pod',
-        tag: 'Transit',
-        image: '/images/retroville/process/metro-pod-translation-board.webp',
-        text: 'Una hoja de diseño pensada para fijar accesibilidad, visibilidad y lenguaje de transporte urbano dentro de la ciudad.',
+        title: 'Stacked Housing',
+        tag: 'Residencial',
+        image: '/images/retroville/retroville-stacked-housing-concept.png',
+        text: 'Bloques apilados y vivienda comprimida para que la ciudad respire como hardware reciclado y vida de alquiler.',
       },
       {
-        title: 'Retroville Fleet',
-        tag: 'Marina',
-        image: '/images/retroville/process/boats-translation-board.webp',
-        text: 'Ferrys, taxis de agua, patrullas y cruceros con ADN de consola. No son props sueltos: amplían el mapa y la vida pública.',
+        title: 'Civic Hall',
+        tag: 'Institucional',
+        image: '/images/retroville/retroville-civic-hall-concept.png',
+        text: 'Una lectura más limpia del ayuntamiento y del eje político, pensada para fijar poder, protocolo y fachada pública.',
       },
       {
-        title: 'Gym Gate',
-        tag: 'Leisure',
-        image: '/images/retroville/process/gym-translation-board.webp',
-        text: 'El gimnasio lleva la idea de hardware al gesto arquitectónico: una entrada que ya comunica actividad, energía y juego físico.',
+        title: 'Public School',
+        tag: 'Educacion',
+        image: '/images/retroville/retroville-school-concept.png',
+        text: 'La escuela como pieza de barrio y como símbolo de obediencia social dentro de una ciudad que educa para seguir funcionando.',
+      },
+      {
+        title: 'NOX House',
+        tag: 'Vivienda',
+        image: '/images/retroville/retroville-nox-house-concept.png',
+        text: 'La vivienda de NOX ayuda a bajar escala y a entender intimidad, rutina y vida privada dentro del universo.',
+      },
+      {
+        title: 'City Buildings Set',
+        tag: 'Skyline',
+        image: '/images/retroville/retroville-buildings-concept.png',
+        text: 'Exploracion de masa urbana para que la ciudad funcione como sistema y no como una suma de edificios aislados.',
       },
     ],
   },
   {
-    title: 'Mapas Y Distritos',
-    phase: 'Fase activa · masterplan y expansion',
+    title: 'Distritos Y Escala Urbana',
+    phase: 'Fase activa · masterplan, plazas y zonas de tono',
     intro:
-      'Después de traducir objetos a edificios, toca colocarlos dentro del conjunto. Estas hojas enseñan cómo encaja cada barrio dentro del plan general.',
+      'Estas hojas enseñan cómo se ordena Retroville por barrios, plazas y zonas con función dramática. No son postales: fijan dónde vive cada tipo de historia.',
     items: [
       {
         title: 'Masterplan Overview',
@@ -142,20 +154,96 @@ const curatedSections = [
         image: '/images/retroville/process/bit-grave-district-board.webp',
         text: 'El reverso del brillo: hardware muerto, basura histórica y un barrio entero definido por lo desechado y lo recuperado.',
       },
+      {
+        title: 'Nightclub District',
+        tag: 'Noche',
+        image: '/images/retroville/retroville-nightclub-concept.png',
+        text: 'La zona de fiesta trabaja luz, fachada y tono social para dejar claro dónde se vuelve más peligrosa la ciudad.',
+      },
+    ],
+  },
+  {
+    title: 'Movilidad Y Servicios',
+    phase: 'Fase activa · transporte, servicio y ciudad en uso',
+    intro:
+      'Cuando la ciudad se mueve o se usa, los sketches pasan a ser diseño de sistema: transporte, flotas, servicio público y circulación de barrio.',
+    items: [
+      {
+        title: 'Metro-Pod',
+        tag: 'Transit',
+        image: '/images/retroville/process/metro-pod-translation-board.webp',
+        text: 'Una hoja de diseño pensada para fijar accesibilidad, visibilidad y lenguaje de transporte urbano dentro de la ciudad.',
+      },
+      {
+        title: 'Retroville Fleet',
+        tag: 'Marina',
+        image: '/images/retroville/process/boats-translation-board.webp',
+        text: 'Ferrys, taxis de agua, patrullas y cruceros con ADN de consola. No son props sueltos: amplían el mapa y la vida pública.',
+      },
+      {
+        title: 'Vehicle Lineup',
+        tag: 'Parque móvil',
+        image: '/images/retroville/retroville-vehicle-lineup-concept.png',
+        text: 'Una hoja pensada para alinear coches, servicio, logística y lectura rápida del tráfico interno de la ciudad.',
+      },
+      {
+        title: 'Taxi Pod',
+        tag: 'Servicio',
+        image: '/images/retroville/retroville-taxi-pod-concept.png',
+        text: 'Vehículo corto y reconocible para reforzar movilidad local, tono juguetón y vida diaria de calle.',
+      },
+      {
+        title: 'Gripper Car',
+        tag: 'Vehiculo especial',
+        image: '/images/retroville/retroville-gripper-car-concept.png',
+        text: 'Propuesta de vehículo utilitario con personalidad propia, útil para servicio, gags y escenas de transporte físico.',
+      },
+    ],
+  },
+  {
+    title: 'Props, Fauna Y Vida Urbana',
+    phase: 'Fase activa · utileria, criaturas y soporte del mundo',
+    intro:
+      'La credibilidad del universo también depende de lo pequeño. Estas piezas ayudan a que el mundo tenga fauna, señalización, accesorios y microdetalle más allá del reparto principal.',
+    items: [
+      {
+        title: 'Gym Gate',
+        tag: 'Leisure',
+        image: '/images/retroville/process/gym-translation-board.webp',
+        text: 'El gimnasio lleva la idea de hardware al gesto arquitectónico: una entrada que ya comunica actividad, energía y juego físico.',
+      },
+      {
+        title: 'Urban Props',
+        tag: 'Utileria',
+        image: '/images/retroville/retroville-urban-props-concept.png',
+        text: 'Semaforos, cabinas, carteles, luminarias y piezas de calle que hacen que cada plano de fondo siga hablando el idioma de Retroville.',
+      },
+      {
+        title: 'Retro Creatures',
+        tag: 'Fauna',
+        image: '/images/retroville/retroville-creatures-concept.png',
+        text: 'Exploracion de animales y presencias secundarias para ampliar el ecosistema visual y no dejar la ciudad solo en manos del reparto principal.',
+      },
+      {
+        title: 'Boats Concept',
+        tag: 'Escala costera',
+        image: '/images/retroville/retroville-boats-concept.png',
+        text: 'Versión más abierta del sistema marítimo para reforzar costa, turismo, servicio y la lectura insular del mapa.',
+      },
     ],
   },
 ] as const;
 
 const featuredSketches = [
   {
-    title: 'Hotel Retroville',
-    tag: 'Traducción visual',
-    image: '/images/retroville/process/hotel-translation-board.webp',
-  },
-  {
     title: 'Masterplan Overview',
     tag: 'Mapa general',
     image: '/images/retroville/process/masterplan-overview-board.webp',
+  },
+  {
+    title: 'Public School',
+    tag: 'Arquitectura',
+    image: '/images/retroville/retroville-school-concept.png',
   },
   {
     title: 'Metro-Pod',
@@ -250,6 +338,9 @@ export default function RetrovilleSketchesPage() {
               <Link href="/retroville/personajes" className={styles.footerCta}>
                 Ver reparto <ArrowRight className="h-4 w-4" />
               </Link>
+              <Link href="/retroville/guias" className={styles.footerCta}>
+                Ver guías visuales <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
 
@@ -304,6 +395,7 @@ export default function RetrovilleSketchesPage() {
               <div className={styles.cardCopy}>
                 <span className={styles.cardTag}>{item.tag}</span>
                 <h3 className={`${displayFont.className} ${styles.cardTitle}`}>{item.title}</h3>
+                <p className={styles.cardText}>{item.text}</p>
               </div>
             </article>
           ))}
@@ -316,6 +408,9 @@ export default function RetrovilleSketchesPage() {
         <div className="flex flex-wrap justify-center gap-3">
           <Link href="/retroville/personajes" className={styles.footerCta}>
             Ver personajes <ArrowRight className="h-4 w-4" />
+          </Link>
+          <Link href="/retroville/guias" className={styles.footerCta}>
+            Ver guías visuales <ArrowRight className="h-4 w-4" />
           </Link>
           <Link href="/retroville/press" className={styles.footerCta}>
             Descargar press kit <ArrowRight className="h-4 w-4" />

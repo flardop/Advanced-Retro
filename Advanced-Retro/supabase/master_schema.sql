@@ -4748,7 +4748,12 @@ alter table if exists public.retroville_waitlist
   add column if not exists source text not null default 'public',
   add column if not exists signup_intent text,
   add column if not exists event_slug text,
-  add column if not exists event_title text;
+  add column if not exists event_title text,
+  add column if not exists first_name text,
+  add column if not exists last_name text,
+  add column if not exists phone text,
+  add column if not exists question text,
+  add column if not exists document_interest text;
 
 update public.retroville_waitlist
 set
@@ -4757,10 +4762,16 @@ set
   source = coalesce(nullif(trim(coalesce(source, '')), ''), 'public'),
   signup_intent = nullif(trim(coalesce(signup_intent, '')), ''),
   event_slug = nullif(trim(coalesce(event_slug, '')), ''),
-  event_title = nullif(trim(coalesce(event_title, '')), '')
+  event_title = nullif(trim(coalesce(event_title, '')), ''),
+  first_name = nullif(trim(coalesce(first_name, '')), ''),
+  last_name = nullif(trim(coalesce(last_name, '')), ''),
+  phone = nullif(trim(coalesce(phone, '')), ''),
+  question = nullif(trim(coalesce(question, '')), ''),
+  document_interest = nullif(trim(coalesce(document_interest, '')), '')
 where true;
 
 create index if not exists idx_retroville_waitlist_source on public.retroville_waitlist(source, created_at desc);
+create index if not exists idx_retroville_waitlist_signup_intent on public.retroville_waitlist(signup_intent, created_at desc);
 
 create table if not exists public.user_favorites (
   user_id uuid not null references public.profiles(id) on delete cascade,

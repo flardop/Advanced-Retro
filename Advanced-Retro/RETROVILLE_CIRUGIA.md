@@ -19,7 +19,7 @@ Cirugía del home de `advancedretro.es/retroville` sin rediseño total:
 - Guías visuales, anatomy sheet y dev sheets del bloque principal: eliminadas del flujo comercial y concentradas en `/retroville/sketches`.
 - Material de apoyo visual incrustado en la página de personajes: retirado del cast y movido a `/retroville/sketches`.
 - Testimonios de comunidad tipo “Lucía / Rubén / Mara / Dani”: eliminados del home.
-- Email personal visible `flardop44@gmail.com`: eliminado de las superficies públicas de Retroville tocadas en esta iteración y sustituido por `pitch@advancedretro.es`.
+- Email personal visible `flardop44@gmail.com`: eliminado de las superficies públicas de Retroville tocadas en esta iteración y sustituido por `retr0ovllee@gmail.com`.
 - Enlace de Reddit a perfil personal: eliminado de los canales oficiales de Retroville.
 
 ## Qué se ha añadido o modificado

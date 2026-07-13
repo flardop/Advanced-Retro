@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
       page: Number(searchParams.get('page') || 1),
       search: searchParams.get('search') || '',
       profile: searchParams.get('profile') || '',
+      intent: searchParams.get('intent') || '',
       status: searchParams.get('status') || '',
       sort: searchParams.get('sort') || 'created_at',
       direction: searchParams.get('direction') === 'asc' ? 'asc' : 'desc',

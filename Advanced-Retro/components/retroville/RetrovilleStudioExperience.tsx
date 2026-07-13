@@ -20,7 +20,7 @@ import {
   RETROVILLE_SOCIAL_CHANNELS,
   type RetrovilleAudienceSummary,
   buildRetrovilleLaunchCopy,
-  buildRetrovillePitchMailto,
+  buildRetrovillePitchGmailCompose,
 } from '@/app/retroville/shared';
 import { retrovilleEpisodes, retrovilleMainCharacters } from '@/app/retroville/content';
 import {
@@ -133,7 +133,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
   const [videoReady, setVideoReady] = useState(false);
   const [videoActive, setVideoActive] = useState(false);
   const launchCopy = buildRetrovilleLaunchCopy(launchLabel);
-  const contactMailto = buildRetrovillePitchMailto({
+  const contactGmailCompose = buildRetrovillePitchGmailCompose({
     subject: 'Retroville · Pitch y materiales',
     body: [
       'Hola equipo de Retroville,',
@@ -683,9 +683,14 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               className={`${styles.primaryButton} ${styles.privateRequestButton}`}
             />
             <a
-              href={contactMailto}
+              href={contactGmailCompose}
+              target="_blank"
+              rel="noreferrer"
+              data-no-retroville-shell="true"
               className={styles.mailLink}
               onClick={() => trackStudioAction('email_pitch_contact', 'buyer_brief')}
+              aria-label="Abrir Gmail con el correo de contacto de Retroville preparado"
+              title={`Abrir Gmail y escribir a ${RETROVILLE_PITCH_EMAIL}`}
             >
               <Mail className="h-4 w-4" />
               {RETROVILLE_PITCH_EMAIL}

@@ -36,6 +36,15 @@ export type RetrovilleDiscoveryLink = {
   description: string;
 };
 
+function toMailSafeText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/·/g, '-');
+}
+
 export function buildRetrovillePitchMailto({
   subject,
   body,
@@ -43,9 +52,12 @@ export function buildRetrovillePitchMailto({
   subject: string;
   body?: string;
 }) {
-  const normalizedBody = body?.replace(/\r?\n/g, '\r\n');
+  const normalizedSubject = toMailSafeText(subject);
+  const normalizedBody = body
+    ? toMailSafeText(body).replace(/\r?\n/g, '\r\n')
+    : undefined;
   const query = [
-    `subject=${encodeURIComponent(subject)}`,
+    `subject=${encodeURIComponent(normalizedSubject)}`,
     normalizedBody ? `body=${encodeURIComponent(normalizedBody)}` : null,
   ]
     .filter(Boolean)
@@ -54,14 +66,63 @@ export function buildRetrovillePitchMailto({
   return `mailto:${RETROVILLE_PITCH_EMAIL}${query ? `?${query}` : ''}`;
 }
 
+export function buildRetrovillePitchGmailCompose({
+  subject,
+  body,
+}: {
+  subject: string;
+  body?: string;
+}) {
+  const normalizedSubject = toMailSafeText(subject);
+  const normalizedBody = body
+    ? toMailSafeText(body).replace(/\r?\n/g, '\n')
+    : undefined;
+  const query = new URLSearchParams({
+    view: 'cm',
+    fs: '1',
+    to: RETROVILLE_PITCH_EMAIL,
+    su: normalizedSubject,
+  });
+
+  if (normalizedBody) {
+    query.set('body', normalizedBody);
+  }
+
+  return `https://mail.google.com/mail/?${query.toString()}`;
+}
+
+export function buildRetrovillePitchOutlookCompose({
+  subject,
+  body,
+}: {
+  subject: string;
+  body?: string;
+}) {
+  const normalizedSubject = toMailSafeText(subject);
+  const normalizedBody = body
+    ? toMailSafeText(body).replace(/\r?\n/g, '\n')
+    : undefined;
+  const query = new URLSearchParams({
+    to: RETROVILLE_PITCH_EMAIL,
+    subject: normalizedSubject,
+  });
+
+  if (normalizedBody) {
+    query.set('body', normalizedBody);
+  }
+
+  return `https://outlook.office.com/mail/deeplink/compose?${query.toString()}`;
+}
+
 export function buildRetrovilleAccessRequestBody(documentTitle: string) {
+  const safeTitle = toMailSafeText(documentTitle);
   return [
     'Hola equipo de Retroville,',
     '',
-    'Mi nombre es [escribe aquí tu nombre].',
-    'Soy [cuéntanos quién eres, tu estudio, medio o proyecto].',
-    `Me gustaría solicitar acceso a "${documentTitle}".`,
-    'La necesito porque [explica brevemente por qué la quieres y cómo la vas a usar].',
+    'Mi nombre es [escribe aqui tu nombre].',
+    'Soy [cuentanos quien eres, tu estudio, medio o proyecto].',
+    `Quiero solicitar acceso a "${safeTitle}".`,
+    'La necesito porque [explica brevemente por que la quieres y como la vas a usar].',
     '',
     'Gracias.',
   ].join('\n');
@@ -137,6 +198,12 @@ export const RETROVILLE_DISCOVERY_LINKS = [
     href: '/retroville/sketches',
     eyebrow: 'Proceso',
     description: 'Archivo visual con ciudad, props, vehículos y worldbuilding.',
+  },
+  {
+    label: 'Guías visuales',
+    href: '/retroville/guias',
+    eyebrow: 'Desarrollo cast',
+    description: 'Turnarounds, anatomy boards y hojas técnicas del reparto en un sitio separado.',
   },
   {
     label: 'Presentación',

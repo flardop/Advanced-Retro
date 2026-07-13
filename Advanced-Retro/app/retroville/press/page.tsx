@@ -108,6 +108,12 @@ const renderCards = [
     href: '/images/retroville/luna-character-large.png',
     alt: 'Render de Luna, personaje de Retroville',
   },
+  {
+    title: 'FIRE CREW',
+    image: '/images/retroville/characters/fire-crew.png',
+    href: '/images/retroville/characters/fire-crew.png',
+    alt: 'Render del Fire Crew de Retroville con Chief Brasa, Manga, Plano y Chispa',
+  },
 ] as const;
 
 function buildFactSheet(launchLabel: string) {
@@ -161,6 +167,9 @@ export default async function RetrovillePressPage() {
             <div className="flex flex-wrap gap-3">
               <Link href="/retroville/personajes" className="inline-flex min-h-[44px] items-center rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/72 transition hover:border-white/20 hover:text-white">
                 Personajes
+              </Link>
+              <Link href="/retroville/guias" className="inline-flex min-h-[44px] items-center rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/72 transition hover:border-white/20 hover:text-white">
+                Guías
               </Link>
               <Link href="/retroville/sketches" className="inline-flex min-h-[44px] items-center rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/72 transition hover:border-white/20 hover:text-white">
                 Sketchbook

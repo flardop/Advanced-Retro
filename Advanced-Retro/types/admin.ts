@@ -128,10 +128,15 @@ export type RetrovilleWaitlistRecord = {
   id: string;
   email: string;
   display_name: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  question?: string | null;
+  document_interest?: string | null;
   created_at: string;
   role_label: string | null;
   source: string | null;
-  signup_intent: 'newsletter' | 'event' | null;
+  signup_intent: 'newsletter' | 'event' | 'access' | null;
   event_slug: string | null;
   event_title: string | null;
 };

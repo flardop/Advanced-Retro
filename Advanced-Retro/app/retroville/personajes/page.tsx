@@ -130,6 +130,7 @@ export default function RetrovilleCharactersPage() {
               <div className={styles.heroLinks}>
                 <Link href="/retroville/episodios">Episodios</Link>
                 <Link href="/retroville/sketches">Sketchbook</Link>
+                <Link href="/retroville/guias">Guías</Link>
                 <Link href="/retroville/press">Press</Link>
               </div>
             </nav>
@@ -152,6 +153,10 @@ export default function RetrovilleCharactersPage() {
                 <div className={styles.heroActions}>
                   <Link href="/retroville/episodios" className={styles.inlineLink}>
                     Ver temporada 1
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link href="/retroville/guias" className={styles.inlineLink}>
+                    Ver guías visuales
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -222,12 +227,15 @@ export default function RetrovilleCharactersPage() {
                 </h2>
               </div>
               <p className={styles.sectionLead}>
-                Las guías visuales, anatomy sheets y hojas de desarrollo ya no compiten dentro del cast. Se han movido al
-                sketchbook para separar mejor venta del universo y archivo de proceso.
+                Las guías visuales, anatomy sheets y hojas de desarrollo ya no compiten dentro del cast. Ahora viven en
+                un apartado separado para distinguir mejor ficha narrativa, archivo técnico y material de proceso.
               </p>
             </div>
 
             <div className={styles.heroLinks}>
+              <Link href="/retroville/guias" className={styles.inlineLink}>
+                Abrir guías visuales <ArrowRight className="h-4 w-4" />
+              </Link>
               <Link href="/retroville/sketches" className={styles.inlineLink}>
                 Ver sketchbook completo <ArrowRight className="h-4 w-4" />
               </Link>

@@ -20,6 +20,7 @@ export type RetrovilleEpisode = {
 };
 
 export type RetrovilleGuideSlide = {
+  group: string;
   title: string;
   meta: string;
   image: string;
@@ -171,6 +172,50 @@ export const retrovilleSecondaryCharacters: readonly RetrovilleCharacter[] = [
       'Nano vive dentro de su playlist. Más callado, más sensible y más perdido en música que el resto de la ciudad.',
     chips: ['Música', 'Daydreaming', 'Batería baja'],
   },
+  {
+    name: 'RETROVILLE FIRE CREW',
+    role: 'Brigada de emergencia que convierte cada incendio en comedia de procedimiento roto',
+    inspiration: 'Radio transceiver, fire alarm box, alarm panel y rotating beacon convertidos en escuadrón',
+    district: 'Retroville Fire Department',
+    status: 'render-final',
+    image: '/images/retroville/characters/fire-crew.png',
+    description:
+      'Cuando Retroville arde, aparece este equipo de cuatro dispositivos: rápidos, infradotados de presupuesto y siempre a un paso del desastre. Chief Brasa, Manga, Plano y Chispa no apagan el caos; lo gestionan como pueden y casi siempre llegan igual de tarde que el humo.',
+    chips: ['Underfunded', 'Overcaffeinated', 'Still here'],
+  },
+  {
+    name: 'PATROL CHIEF',
+    role: 'Cara visible del orden y de la autoridad cansada de la ciudad',
+    inspiration: 'Dispositivo portátil policial convertido en mando de calle',
+    district: 'Patrol Grid',
+    status: 'render-final',
+    image: '/images/retroville/characters/patrol-chief.png',
+    description:
+      'El Patrol Chief representa la versión más seca del control urbano: presencia, protocolo y cansancio operativo dentro de una ciudad donde ni el orden llega limpio ni la vigilancia descansa.',
+    chips: ['Orden público', 'Jerarquía', 'Turno eterno'],
+  },
+  {
+    name: 'PATROL CREW',
+    role: 'Cuadrilla de patrulla que convierte la vigilancia en rutina absurda',
+    inspiration: 'Operadores policiales retro reconvertidos en fuerza de calle',
+    district: 'Patrol Grid',
+    status: 'render-final',
+    image: '/images/retroville/characters/patrol-chief.png',
+    description:
+      'La patrulla de Retroville es el brazo visible del control nocturno: vigilancia, cansancio y burocracia callejera empaquetados como servicio básico de una ciudad que nunca acaba de funcionar del todo.',
+    chips: ['Patrulla', 'Fatiga', 'Control de calle'],
+  },
+  {
+    name: 'PUBLIC CREW',
+    role: 'Equipo de servicio público que sostiene la movilidad diaria del universo',
+    inspiration: 'Operadores de transporte, cabinas y rutina cívica convertidos en grupo urbano',
+    district: 'Transit Loop',
+    status: 'render-final',
+    image: '/images/retroville/characters/public-crew.png',
+    description:
+      'Public Crew pone cara al sistema que mueve la ciudad: rutas, turnos, esperas y servicio público con humor seco. Son piezas clave para que Retroville se sienta vivida y no solo diseñada.',
+    chips: ['Servicio público', 'Movilidad', 'Rutina urbana'],
+  },
 ] as const;
 
 export const retrovilleIncomingCharacters: readonly RetrovilleCharacter[] = [
@@ -293,60 +338,133 @@ export const retrovilleSeasonTwoTease = {
 
 export const retrovilleGuideSlides: readonly RetrovilleGuideSlide[] = [
   {
+    group: 'Core cast',
     title: 'NOX styleguide',
     meta: 'Guía final',
     image: '/images/retroville/nox-styleguide.png',
     alt: 'Guía visual de NOX con pose, silueta y acabado final',
   },
   {
+    group: 'Core cast',
     title: 'LUNA styleguide',
     meta: 'Guía final',
     image: '/images/retroville/luna-styleguide.png',
     alt: 'Guía visual de Luna con pose, acabado y presencia del personaje',
   },
   {
+    group: 'Core cast',
     title: 'BUTTON CREW guide',
     meta: 'Guía final',
     image: '/images/retroville/button-crew-styleguide.webp',
     alt: 'Guía visual del Button Crew con personalidad, grupo y acabado final',
   },
   {
+    group: 'Core cast',
     title: 'Cast anatomy',
     meta: 'Archivo base',
     image: '/images/retroville/characters/character-anatomy-sheet.webp',
     alt: 'Hoja de anatomía del reparto principal de Retroville',
   },
   {
+    group: 'Vecindario',
     title: 'Nora v2',
     meta: 'Dev sheet',
     image: '/images/retroville/dev-characters/nora-v2-sheet.png',
     alt: 'Hoja de desarrollo de Nora con nueva iteración del personaje',
   },
   {
+    group: 'Vecindario',
     title: 'Joy & Grump',
     meta: 'Dev sheet',
     image: '/images/retroville/dev-characters/joy-grump-sheet.png',
     alt: 'Hoja de desarrollo de Joy y Grump con poses y construcción del dúo',
   },
   {
+    group: 'Servicios y ciudad',
     title: 'Shift Stick',
     meta: 'Dev sheet',
     image: '/images/retroville/dev-characters/shift-stick-sheet.png',
     alt: 'Hoja de desarrollo de Shift Stick como operador de tránsito de Retroville',
   },
   {
+    group: 'Escena competitiva',
     title: 'Trimp v2',
     meta: 'Revisión',
     image: '/images/retroville/dev-characters/trimp-v2-sheet.png',
     alt: 'Revisión visual de Trimp con nueva iteración del personaje',
   },
   {
+    group: 'Servicios y ciudad',
+    title: 'Fire Crew',
+    meta: 'Nuevo equipo',
+    image: '/images/retroville/dev-characters/fire-crew-sheet.png',
+    alt: 'Guía visual del Fire Crew de Retroville con turnaround, expresiones, props y jerarquía del equipo',
+  },
+  {
+    group: 'Servicios y ciudad',
+    title: 'Patrol Chief',
+    meta: 'Orden público',
+    image: '/images/retroville/dev-characters/patrol-chief-v2-sheet.png',
+    alt: 'Guía visual del Patrol Chief con turnaround, expresiones y detalles del uniforme',
+  },
+  {
+    group: 'Servicios y ciudad',
+    title: 'Patrol Crew',
+    meta: 'Escuadra de calle',
+    image: '/images/retroville/dev-characters/patrol-crew-v2-sheet.png',
+    alt: 'Guía visual del Patrol Crew de Retroville como grupo de patrulla urbana',
+  },
+  {
+    group: 'Servicios y ciudad',
+    title: 'Public Crew',
+    meta: 'Transporte público',
+    image: '/images/retroville/dev-characters/public-crew-v2-sheet.png',
+    alt: 'Guía visual del Public Crew como operadores del sistema público de Retroville',
+  },
+  {
+    group: 'Servicios y ciudad',
+    title: 'Mayor Tube v2',
+    meta: 'Ayuntamiento',
+    image: '/images/retroville/dev-characters/mayor-tube-v2-sheet.png',
+    alt: 'Guía visual de Mayor Tube con poses, expresiones y presencia institucional',
+  },
+  {
+    group: 'Infancia y nueva generacion',
+    title: 'Tomo v2',
+    meta: 'Infancia',
+    image: '/images/retroville/dev-characters/tomo-v2-sheet.png',
+    alt: 'Hoja de desarrollo de Tomo como personaje infantil del barrio',
+  },
+  {
+    group: 'Infancia y nueva generacion',
+    title: 'Pipo v2',
+    meta: 'Infancia',
+    image: '/images/retroville/dev-characters/pipo-v2-sheet.png',
+    alt: 'Hoja de desarrollo de Pipo como personaje infantil travieso de Retroville',
+  },
+  {
+    group: 'Infancia y nueva generacion',
+    title: 'Nano',
+    meta: 'Nueva generación',
+    image: '/images/retroville/dev-characters/nano-sheet.png',
+    alt: 'Hoja de desarrollo de Nano como pocket MP3 kid de Retroville',
+  },
+  {
+    group: 'Infancia y nueva generacion',
+    title: 'Nona girl',
+    meta: 'Incoming',
+    image: '/images/retroville/dev-characters/nona-girl-sheet.png',
+    alt: 'Hoja de desarrollo de la Nona girl con poses y exploración visual inicial',
+  },
+  {
+    group: 'Incoming y expansión',
     title: 'Jow & Andrew',
     meta: 'Incoming',
     image: '/images/retroville/characters/jow-andrew.webp',
     alt: 'Render de Jow y Andrew como pareja en desarrollo dentro de Retroville',
   },
   {
+    group: 'Incoming y expansión',
     title: 'La Mafia',
     meta: 'Incoming',
     image: '/images/retroville/characters/retroville-mafia.webp',

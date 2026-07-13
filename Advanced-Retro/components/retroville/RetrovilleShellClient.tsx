@@ -211,8 +211,10 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
       if (!(target instanceof Element)) return;
       const anchor = target.closest('a[href]');
       if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (anchor.dataset.noRetrovilleShell === 'true') return;
       if (anchor.target && anchor.target !== '_self') return;
       if (anchor.hasAttribute('download')) return;
+      if (!['http:', 'https:'].includes(anchor.protocol)) return;
 
       const destination = new URL(anchor.href, window.location.href);
       const current = new URL(window.location.href);

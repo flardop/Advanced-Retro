@@ -5,8 +5,8 @@ Fecha: 2026-06-30
 ## Estado de esta iteración
 
 - La estructura del home se mantiene tal como quedó aprobada: visión, protagonistas, episodios, distritos, buyer brief, comunidad y redes.
-- El email personal visible en frontend queda sustituido por `pitch@advancedretro.es`.
-- La solicitud de biblia y de dossier privado abre el correo predeterminado del usuario mediante `mailto:` ya preparado, sin modal intermedio.
+- El email visible para contacto y solicitudes privadas de Retroville queda unificado en `retr0ovllee@gmail.com`.
+- La solicitud de biblia y de dossier privado se canaliza mediante un formulario privado dentro de la web para guardar el contacto en el admin de Retroville.
 - La capa de comunidad se mantiene en la opción B: métricas reales de registro y perfiles declarados en formulario, sin testimonios inventados.
 
 ## Qué opción se eligió para comunidad
@@ -31,15 +31,15 @@ Resultado:
 
 ## Correo y documentos privados
 
-- Dirección pública usada en el frontend: `pitch@advancedretro.es`
+- Dirección pública usada en el frontend: `retr0ovllee@gmail.com`
 - Botones privados revisados:
   - `Solicitar biblia`
   - `Solicitar dossier`
-- El flujo actual abre la app o plataforma de correo predeterminada del usuario con asunto y cuerpo ya rellenos.
+- El flujo actual abre una capa privada de solicitud con captura de nombre, apellidos, email, teléfono y pregunta.
 - Verificado sobre el build local de producción en `http://127.0.0.1:3900/retroville`:
-  - no queda modal intermedio
+  - sí queda modal privado de captación
   - no queda rastro visible de `flardop44@gmail.com`
-  - los `mailto:` apuntan a `pitch@advancedretro.es`
+  - el email visible y centralizado de Retroville es `retr0ovllee@gmail.com`
 
 ## Registro, waitlist y analytics
 

@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
       pageSize: 5000,
       search: searchParams.get('search') || '',
       profile: searchParams.get('profile') || '',
+      intent: searchParams.get('intent') || '',
       status: searchParams.get('status') || '',
       sort: searchParams.get('sort') || 'created_at',
       direction: searchParams.get('direction') === 'asc' ? 'asc' : 'desc',
@@ -24,9 +25,15 @@ export async function GET(request: NextRequest) {
 
     const csv = convertRowsToCsv(
       result.rows.map((row) => ({
-        nombre: row.display_name || '',
+        nombre: row.first_name || '',
+        apellidos: row.last_name || '',
+        nombre_completo: row.display_name || '',
         email: row.email,
+        telefono: row.phone || '',
+        canal: row.signup_intent || 'newsletter',
         perfil: row.role_label || '',
+        documento_interes: row.document_interest || '',
+        pregunta: row.question || '',
         fecha_registro: row.created_at,
         pagina: row.page_path || '',
         dispositivo: row.device_type || '',
@@ -39,7 +46,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(csv, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="retroville-usuarios.csv"',
+        'Content-Disposition': 'attachment; filename="retroville-suscriptores.csv"',
       },
     });
   } catch (error) {

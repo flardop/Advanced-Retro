@@ -75,7 +75,7 @@ const featuredCast = [
   },
 ] as const;
 
-const supportCast = ['Nora', 'Trimp', 'Mayor Tube', 'Pipo', 'Nano', 'Public Crew', 'Mia', 'Joy & Grump'] as const;
+const supportCast = ['Nora', 'Trimp', 'Mayor Tube', 'Pipo', 'Nano', 'Public Crew', 'Fire Crew', 'Mia', 'Joy & Grump'] as const;
 
 const worldHighlights = [
   {
