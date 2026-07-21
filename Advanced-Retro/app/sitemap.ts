@@ -16,6 +16,7 @@ const STATIC_ROUTES = [
   '/retroville/comunidad',
   '/retroville/episodios',
   '/retroville/faq',
+  '/retroville/guias',
   '/retroville/legal',
   '/retroville/personajes',
   '/retroville/press',

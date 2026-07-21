@@ -7,7 +7,7 @@ export const RETROVILLE_SIGNUP_COUNT_THRESHOLD = 25;
 export const RETROVILLE_GOOGLE_SITE_VERIFICATION =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'googlebffb5f7b5e8a2336';
 export const RETROVILLE_PITCH_EMAIL = 'retr0ovllee@gmail.com';
-export const RETROVILLE_SEO_IMAGE = '/retroville/opengraph-image';
+export const RETROVILLE_SEO_IMAGE = '/images/retroville/retroville-share-card.png';
 
 export type RetrovilleAudienceBucket = {
   label: string;

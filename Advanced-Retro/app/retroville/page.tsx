@@ -94,7 +94,7 @@ export default async function RetrovillePage() {
     {
       question: '¿Cómo se solicita la biblia de la serie?',
       answer:
-        `La biblia se solicita desde el botón de acceso privado, que abre un formulario privado de Retroville para dejar los datos de contacto y centralizar la solicitud alrededor de ${RETROVILLE_PITCH_EMAIL}.`,
+        `La biblia se solicita desde el botón de acceso privado, que abre el correo predeterminado del usuario con el asunto y el mensaje ya preparados para escribir a ${RETROVILLE_PITCH_EMAIL}.`,
     },
   ]);
 
