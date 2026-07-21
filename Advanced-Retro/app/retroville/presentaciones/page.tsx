@@ -4,7 +4,11 @@ import RetrovilleExperience from '@/components/retroville/RetrovilleExperience';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildPageMetadata } from '@/lib/seo';
 import { absoluteUrl } from '@/lib/siteConfig';
-import { buildRetrovilleSeriesJsonLd, getRetrovilleState } from '@/app/retroville/shared';
+import {
+  buildRetrovilleSeriesJsonLd,
+  getRetrovilleState,
+  RETROVILLE_SEO_IMAGE,
+} from '@/app/retroville/shared';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +28,7 @@ export const metadata: Metadata = buildPageMetadata({
     'universo retroville',
     'advancedretro pitch',
   ],
-  image: '/images/retroville/retroville-street.png',
+  image: RETROVILLE_SEO_IMAGE,
 });
 
 export default async function RetrovillePresentacionesPage() {
@@ -39,7 +43,7 @@ export default async function RetrovillePresentacionesPage() {
     url: absoluteUrl('/retroville/presentaciones'),
     description:
       'Presentación oficial de Retroville con pitch, countdown, newsletter, personajes y worldbuilding del proyecto.',
-    image: absoluteUrl('/images/retroville/retroville-street.png'),
+    image: absoluteUrl(RETROVILLE_SEO_IMAGE),
     about: [
       { '@type': 'Thing', name: 'Pitch deck de serie original' },
       { '@type': 'Thing', name: 'Retroville' },
@@ -50,7 +54,7 @@ export default async function RetrovillePresentacionesPage() {
     path: '/retroville/presentaciones',
     description:
       'Presentación oficial del universo Retroville con tono de serie, personajes, ciudad, newsletter y materiales activos de desarrollo.',
-    image: '/images/retroville/retroville-street.png',
+    image: RETROVILLE_SEO_IMAGE,
     name: 'Presentación oficial de Retroville',
   });
   const breadcrumbs = buildBreadcrumbJsonLd([

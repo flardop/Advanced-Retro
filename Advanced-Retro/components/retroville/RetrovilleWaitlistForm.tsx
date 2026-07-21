@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from 'react';
 import { RETROVILLE_NEWSLETTER_NAME } from '@/app/retroville/shared';
 import { getTrackerClientContext } from '@/lib/admin/tracker';
+import { trackGoogleAdsConversion } from '@/lib/marketing/googleAds';
 
 type SignupIntent = 'newsletter' | 'event' | 'access';
 
@@ -78,6 +79,12 @@ export default function RetrovilleWaitlistForm({
       : intent === 'access'
         ? 'retroville:access-request'
         : 'retroville:newsletter-signup';
+  const googleAdsConversionLabel =
+    intent === 'event'
+      ? process.env.NEXT_PUBLIC_RETROVILLE_EVENT_CONVERSION_LABEL
+      : intent === 'access'
+        ? process.env.NEXT_PUBLIC_RETROVILLE_BIBLE_CONVERSION_LABEL
+        : process.env.NEXT_PUBLIC_RETROVILLE_NEWSLETTER_CONVERSION_LABEL;
   const fieldsCount =
     (showName ? 1 : 0) +
     (showLastName ? 1 : 0) +
@@ -132,7 +139,10 @@ export default function RetrovilleWaitlistForm({
         body: JSON.stringify({
           first_name: showName ? trimmedFirstName : null,
           last_name: showLastName ? trimmedLastName : null,
-          display_name: [showName ? trimmedFirstName : '', showLastName ? trimmedLastName : ''].filter(Boolean).join(' ') || null,
+          display_name:
+            [showName ? trimmedFirstName : '', showLastName ? trimmedLastName : '']
+              .filter(Boolean)
+              .join(' ') || null,
           email: trimmedEmail,
           phone: showPhone ? trimmedPhone : null,
           question: showQuestion ? trimmedQuestion : null,
@@ -173,6 +183,10 @@ export default function RetrovilleWaitlistForm({
             intent,
             document: documentInterest || '',
           },
+        });
+        trackGoogleAdsConversion(googleAdsConversionLabel, {
+          value: 1,
+          currency: 'EUR',
         });
         window.dispatchEvent(
           new CustomEvent(customEventName, {
@@ -342,13 +356,18 @@ export default function RetrovilleWaitlistForm({
       </button>
       {intent === 'access' ? (
         <p className={`text-xs leading-6 ${darkMode ? 'text-white/52' : 'text-slate-500'}`}>
-          Al enviarlo te añadimos a la base privada de Retroville para responderte, avisarte de nuevos materiales y mantenerte dentro de La Señal.
+          Al enviarlo te añadimos a la base privada de Retroville para responderte, avisarte de nuevos materiales y
+          mantenerte dentro de La Señal.
         </p>
       ) : null}
       {success ? (
         <p
           aria-live="polite"
-          className={`rounded-2xl border px-4 py-3 text-sm ${darkMode ? 'border-[rgba(212,154,67,0.28)] bg-[rgba(212,154,67,0.12)] text-[rgba(245,239,230,0.9)]' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}
+          className={`rounded-2xl border px-4 py-3 text-sm ${
+            darkMode
+              ? 'border-[rgba(212,154,67,0.28)] bg-[rgba(212,154,67,0.12)] text-[rgba(245,239,230,0.9)]'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+          }`}
         >
           {success}
         </p>
@@ -356,7 +375,9 @@ export default function RetrovilleWaitlistForm({
       {error ? (
         <p
           aria-live="assertive"
-          className={`rounded-2xl border px-4 py-3 text-sm ${darkMode ? 'border-red-400/25 bg-red-400/10 text-red-200' : 'border-red-200 bg-red-50 text-red-700'}`}
+          className={`rounded-2xl border px-4 py-3 text-sm ${
+            darkMode ? 'border-red-400/25 bg-red-400/10 text-red-200' : 'border-red-200 bg-red-50 text-red-700'
+          }`}
         >
           {error}
         </p>

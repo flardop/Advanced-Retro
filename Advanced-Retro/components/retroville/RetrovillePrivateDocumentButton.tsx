@@ -1,11 +1,28 @@
 'use client';
 
-import { Mail, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Check, Copy, Mail, X } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   RETROVILLE_PITCH_EMAIL,
+  buildRetrovilleAccessRequestBody,
+  buildRetrovillePitchMailto,
 } from '@/app/retroville/shared';
-import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
+import { trackGoogleAdsConversion } from '@/lib/marketing/googleAds';
+
+function buildMailtoHref(documentTitle: string) {
+  return buildRetrovillePitchMailto({
+    subject: `Solicitud de acceso · ${documentTitle}`,
+    body: buildRetrovilleAccessRequestBody(documentTitle),
+  });
+}
+
+function trackPrivateDocumentAction(action: string, documentTitle: string) {
+  if (typeof window === 'undefined') return;
+  window.retrovilleTrack?.(`retroville_private_document_${action}`, {
+    document_title: documentTitle,
+  });
+}
 
 type RetrovillePrivateDocumentButtonProps = {
   documentTitle: string;
@@ -22,127 +39,178 @@ export default function RetrovillePrivateDocumentButton(props: RetrovillePrivate
     documentTitle,
     buttonLabel,
     className,
-    eyebrowLabel = 'Acceso privado',
-    dialogTitle = 'Solicitar acceso privado',
+    eyebrowLabel = 'Documento privado',
+    dialogTitle = 'Solicitar acceso por correo',
     descriptionLead = 'La biblia de serie ya no se descarga de forma pública.',
-    mailButtonLabel = 'Enviar solicitud',
+    mailButtonLabel = 'Abrir correo preparado',
   } = props;
-  const [dialogVisible, setDialogVisible] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const titleId = useId();
+  const descriptionId = useId();
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const mailtoHref = useMemo(() => buildMailtoHref(documentTitle), [documentTitle]);
+  const previewBody = useMemo(() => buildRetrovilleAccessRequestBody(documentTitle), [documentTitle]);
 
   useEffect(() => {
-    if (!dialogVisible) return;
+    if (!open || typeof document === 'undefined') return;
 
-    const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
 
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setDialogVisible(false);
+        setOpen(false);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', onKeyDown);
     return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', onKeyDown);
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
     };
-  }, [dialogVisible]);
+  }, [open]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(false), 1800);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
+
+  function openPreparedMail() {
+    trackPrivateDocumentAction('mail_click', documentTitle);
+    trackGoogleAdsConversion(process.env.NEXT_PUBLIC_RETROVILLE_BIBLE_CONVERSION_LABEL, {
+      value: 1,
+      currency: 'EUR',
+    });
+
+    if (typeof window !== 'undefined') {
+      setOpen(false);
+      window.location.assign(mailtoHref);
+    }
+  }
+
+  async function handleCopyEmail() {
+    try {
+      await navigator.clipboard.writeText(RETROVILLE_PITCH_EMAIL);
+      trackPrivateDocumentAction('copy_email', documentTitle);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   return (
     <>
-      <a
-        href="#retroville-private-access"
-        data-no-retroville-shell="true"
-        onClick={(event) => {
-          event.preventDefault();
-          window.retrovilleTrack?.('retroville_private_document_open', {
-            document_title: documentTitle,
-            source: 'private_document_modal',
-          });
-          setDialogVisible(true);
-        }}
+      <button
+        type="button"
         className={className}
-        aria-label={`${buttonLabel}. ${descriptionLead} Se mostrará una ventana con un formulario privado para solicitar acceso y seguir el proyecto.`}
+        data-no-retroville-shell="true"
+        aria-label={`${buttonLabel}. ${descriptionLead} Se abrirá un popup con el correo ya preparado.`}
+        title={`${descriptionLead} El correo se abrirá listo para enviar.`}
+        data-no-auto-translate
+        onClick={() => {
+          trackPrivateDocumentAction('open', documentTitle);
+          setOpen(true);
+        }}
       >
         <Mail className="h-4 w-4" />
         {buttonLabel}
-      </a>
+      </button>
 
-      {dialogVisible ? (
-        <div
-          className="fixed inset-0 z-[160] flex items-center justify-center bg-[rgba(2,4,10,0.78)] px-4 py-6 backdrop-blur-sm"
-          onClick={() => setDialogVisible(false)}
-        >
-          <div
-            className="relative w-full max-w-[760px] rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,12,22,0.98),rgba(7,10,18,0.98))] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.44)] sm:p-7"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setDialogVisible(false)}
-              className="absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-white/82 transition hover:border-white/22 hover:bg-white/[0.08]"
-              aria-label="Cerrar ventana de solicitud"
-            >
-              <X className="h-5 w-5" />
-            </button>
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+            <div className="fixed inset-0 z-[260] overflow-y-auto bg-[rgba(2,4,12,0.88)] p-4 backdrop-blur-lg sm:p-6">
+              <div className="flex min-h-full items-center justify-center py-6">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby={titleId}
+                  aria-describedby={descriptionId}
+                  className="relative max-h-[calc(100dvh-2rem)] w-full max-w-5xl overflow-y-auto rounded-[2rem] border border-white/10 bg-[#090d18] shadow-[0_28px_90px_rgba(0,0,0,0.56)]"
+                >
+                  <button
+                    type="button"
+                    className="absolute right-4 top-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-[#121a2d] text-white/78 transition hover:border-white/25 hover:bg-[#182239] hover:text-white"
+                    onClick={() => setOpen(false)}
+                    ref={closeButtonRef}
+                    aria-label="Cerrar popup"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
 
-            <p className="pr-16 text-[11px] uppercase tracking-[0.24em] text-[#8ad7ff]">{eyebrowLabel}</p>
-            <h3 className="mt-4 max-w-[14ch] text-[clamp(2.4rem,7vw,4.5rem)] font-black uppercase leading-[0.92] text-white">
-              {dialogTitle}
-            </h3>
-            <p className="mt-4 max-w-[58ch] text-base leading-8 text-white/76">
-              {descriptionLead} Si quieres saber más del proyecto, pedir la biblia o quedarte dentro del siguiente
-              drop, deja aquí tus datos y tu pregunta. Entras en la base privada de Retroville y luego podrás recibir
-              seguimiento real del universo.
-            </p>
+                  <div className="grid gap-0 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+                    <div className="border-b border-white/8 p-6 lg:border-b-0 lg:border-r lg:p-8">
+                      <p className="text-[11px] uppercase tracking-[0.28em] text-[#ffc940]">{eyebrowLabel}</p>
+                      <h3
+                        id={titleId}
+                        className="mt-4 max-w-[10ch] text-[clamp(2.2rem,5vw,4.1rem)] font-black leading-[0.92] text-white [font-family:var(--font-display)]"
+                      >
+                        {dialogTitle}
+                      </h3>
+                      <p id={descriptionId} className="mt-5 max-w-[34ch] text-base leading-8 text-white/74">
+                        {descriptionLead} Desde aquí abrimos tu correo predeterminado con el asunto y el mensaje listos
+                        para pedir <strong className="text-white">{documentTitle}</strong>.
+                      </p>
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-[#ffc940]">Solicitud privada</p>
-                <p className="mt-3 text-[1.8rem] font-semibold leading-tight text-white">
-                  Acceso y seguimiento real
-                </p>
-                <p className="mt-3 text-sm leading-7 text-white/68">
-                  Este formulario sirve para filtrar interés serio, guardar los contactos dentro del panel de
-                  administración y responder mejor a quien de verdad quiere seguir Retroville.
-                </p>
-                <div className="mt-4 rounded-[1.15rem] border border-white/8 bg-[rgba(255,255,255,0.03)] px-4 py-4">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-[#8ad7ff]">Qué te pedimos</p>
-                  <ul className="mt-3 space-y-2 text-sm leading-7 text-white/72">
-                    <li>Nombre y apellidos para identificar bien cada contacto.</li>
-                    <li>Email y teléfono para poder responder por la vía más útil.</li>
-                    <li>Una pregunta o contexto para saber qué tipo de interés hay detrás.</li>
-                  </ul>
+                      <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-[#101726] p-5">
+                        <p className="text-[10px] uppercase tracking-[0.22em] text-[#8ad7ff]">Qué te pedimos</p>
+                        <ul className="mt-4 space-y-3 text-sm leading-7 text-white/72">
+                          <li>Nombre y una forma clara de identificar quién solicita el material.</li>
+                          <li>Email o medio de contacto para responder por la vía más útil.</li>
+                          <li>Una nota breve explicando para qué necesitas la biblia.</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="p-6 lg:p-8">
+                      <p className="text-[11px] uppercase tracking-[0.28em] text-[#8ad7ff]">Correo preparado</p>
+
+                      <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-[#101726] p-5">
+                        <p className="text-[10px] uppercase tracking-[0.22em] text-white/46">Destino</p>
+                        <p className="mt-3 break-all text-[1.1rem] font-semibold text-white">{RETROVILLE_PITCH_EMAIL}</p>
+                      </div>
+
+                      <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-[#101726] p-5">
+                        <p className="text-[10px] uppercase tracking-[0.22em] text-white/46">
+                          Texto que se abrirá preparado
+                        </p>
+                        <pre className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-white/78 [font-family:var(--font-body)]">
+                          {previewBody}
+                        </pre>
+                      </div>
+
+                      <div className="mt-6 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={openPreparedMail}
+                          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#7a332d,#4d1d1a)] px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110 sm:w-auto"
+                        >
+                          <Mail className="h-4 w-4" />
+                          {mailButtonLabel}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCopyEmail}
+                          className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-[#101726] px-5 py-3 text-sm font-semibold text-white/84 transition hover:border-white/20 hover:bg-[#182239] hover:text-white sm:w-auto"
+                        >
+                          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                          {copied ? 'Correo copiado' : 'Copiar correo'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-[#8ad7ff]">Déjanos tus datos</p>
-                <div className="mt-3">
-                  <RetrovilleWaitlistForm
-                    source="private_document_request"
-                    showName
-                    showLastName
-                    showPhone
-                    showQuestion
-                    phoneRequired
-                    intent="access"
-                    documentInterest={documentTitle}
-                    buttonLabel={mailButtonLabel}
-                    successMessage={`Perfecto. Tu solicitud para "${documentTitle}" ya está dentro y te hemos añadido a la base privada de Retroville.`}
-                    questionLabel="Tu pregunta o interés"
-                    questionPlaceholder="Cuéntanos quién eres, qué buscas y por qué te interesa este material."
-                  />
-                </div>
-              </div>
-            </div>
-
-            <p className="mt-5 text-sm leading-7 text-white/54">
-              Si prefieres escribir manualmente, también puedes contactar a <span className="text-white/82">{RETROVILLE_PITCH_EMAIL}</span>, pero esta vía es mejor porque deja todo centralizado dentro del admin.
-            </p>
-          </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body
+          )
+        : null}
     </>
   );
 }

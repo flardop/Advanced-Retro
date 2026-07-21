@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata } from '@/lib/seo';
-import { buildRetrovilleSeriesJsonLd, getRetrovilleState } from '@/app/retroville/shared';
+import {
+  buildRetrovilleSeriesJsonLd,
+  getRetrovilleState,
+  RETROVILLE_SEO_IMAGE,
+} from '@/app/retroville/shared';
 import {
   retrovilleBodyFont as bodyFont,
   retrovilleDisplayFont as displayFont,
@@ -27,7 +31,7 @@ export const metadata: Metadata = buildPageMetadata({
     'retroville newsletter',
     'retroville plataforma',
   ],
-  image: '/images/retroville/retroville-street.png',
+  image: RETROVILLE_SEO_IMAGE,
 });
 
 function buildFaqs(launchLabel: string) {
@@ -71,7 +75,7 @@ export default async function RetrovilleFaqPage() {
     path: '/retroville/faq',
     description:
       'Preguntas frecuentes oficiales de Retroville con respuestas claras sobre la serie, el lanzamiento, la newsletter y el estado del proyecto.',
-    image: '/images/retroville/retroville-street.png',
+    image: RETROVILLE_SEO_IMAGE,
     name: 'FAQ de Retroville',
   });
   const faqSchema = buildFaqJsonLd(faqs.map((faq) => ({ question: faq.question, answer: faq.answer })));

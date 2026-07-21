@@ -10,6 +10,7 @@ import {
   normalizeConsent,
   type CookieConsentState,
 } from '@/lib/cookieConsent';
+import { GOOGLE_ADS_ID } from '@/lib/marketing/googleAds';
 
 function readConsent(): CookieConsentState {
   if (typeof window === 'undefined') return createDefaultConsent();
@@ -24,6 +25,7 @@ function readConsent(): CookieConsentState {
 
 export default function OptionalAnalytics() {
   const gaMeasurementId = (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '').trim();
+  const googleTagId = gaMeasurementId || GOOGLE_ADS_ID;
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
 
   useEffect(() => {
@@ -48,14 +50,16 @@ export default function OptionalAnalytics() {
 
   return (
     <>
-      {gaMeasurementId ? (
+      {googleTagId ? (
         <>
           <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+            src={`https://www.googletagmanager.com/gtag/js?id=${googleTagId}`}
             strategy="afterInteractive"
           />
           <Script id="ga4-optional" strategy="afterInteractive">
-            {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${gaMeasurementId}', { anonymize_ip: true });`}
+            {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} window.gtag = gtag; gtag('js', new Date()); ${
+              gaMeasurementId ? `gtag('config', '${gaMeasurementId}', { anonymize_ip: true });` : ''
+            } ${GOOGLE_ADS_ID ? `gtag('config', '${GOOGLE_ADS_ID}');` : ''}`}
           </Script>
         </>
       ) : null}
@@ -63,4 +67,3 @@ export default function OptionalAnalytics() {
     </>
   );
 }
-

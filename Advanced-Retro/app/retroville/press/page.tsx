@@ -5,7 +5,11 @@ import { ArrowLeft, ArrowRight, Download, ExternalLink, FileText, ImageIcon } fr
 import RetrovillePrivateDocumentButton from '@/components/retroville/RetrovillePrivateDocumentButton';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd, buildPageMetadata } from '@/lib/seo';
-import { buildRetrovilleSeriesJsonLd, getRetrovilleState } from '@/app/retroville/shared';
+import {
+  buildRetrovilleSeriesJsonLd,
+  getRetrovilleState,
+  RETROVILLE_SEO_IMAGE,
+} from '@/app/retroville/shared';
 import {
   retrovilleBodyFont as bodyFont,
   retrovilleDisplayFont as displayFont,
@@ -29,7 +33,7 @@ export const metadata: Metadata = buildPageMetadata({
     'retroville media kit',
     'retroville press assets',
   ],
-  image: '/images/retroville/retroville-cast-presentation.png',
+  image: RETROVILLE_SEO_IMAGE,
 });
 
 const copyBlocks = [
@@ -135,14 +139,14 @@ export default async function RetrovillePressPage() {
     path: '/retroville/press',
     description:
       'Centro oficial de prensa de Retroville con descargas de logo, renders y solicitud privada de la biblia de serie.',
-    image: '/images/retroville/retroville-cast-presentation.png',
+    image: RETROVILLE_SEO_IMAGE,
     about: ['Press kit Retroville', 'Material oficial de prensa', 'Serie animada original'],
   });
   const retrovilleSeriesSchema = buildRetrovilleSeriesJsonLd({
     path: '/retroville/press',
     description:
       'Press kit oficial de Retroville con materiales descargables, renders, logo y dossier de la serie original.',
-    image: '/images/retroville/retroville-cast-presentation.png',
+    image: RETROVILLE_SEO_IMAGE,
     name: 'Press kit de Retroville',
   });
   const breadcrumbs = buildBreadcrumbJsonLd([

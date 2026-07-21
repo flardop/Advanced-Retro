@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd, buildItemListJsonLd, buildPageMetadata } from '@/lib/seo';
-import { buildRetrovilleSeriesJsonLd } from '@/app/retroville/shared';
+import { buildRetrovilleSeriesJsonLd, RETROVILLE_SEO_IMAGE } from '@/app/retroville/shared';
 import {
   retrovilleBodyFont as bodyFont,
   retrovilleDisplayFont as displayFont,
@@ -29,7 +29,7 @@ export const metadata: Metadata = buildPageMetadata({
     'retroville arquitectura',
     'advancedretro sketches',
   ],
-  image: '/images/retroville/process/hotel-translation-board.png',
+  image: RETROVILLE_SEO_IMAGE,
 });
 
 function toSketchAnchor(title: string) {

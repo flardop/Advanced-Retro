@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import RetrovilleFandomShowcase from '@/components/retroville/RetrovilleFandomShowcase';
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildCollectionPageJsonLd, buildPageMetadata } from '@/lib/seo';
-import { buildRetrovilleSeriesJsonLd } from '@/app/retroville/shared';
+import { buildRetrovilleSeriesJsonLd, RETROVILLE_SEO_IMAGE } from '@/app/retroville/shared';
 import {
   retrovilleBodyFont as bodyFont,
   retrovilleDisplayFont as displayFont,
@@ -25,7 +25,7 @@ export const metadata: Metadata = buildPageMetadata({
     'retroville publicaciones',
     'retroville archivo social',
   ],
-  image: '/images/retroville/retroville-street.png',
+  image: RETROVILLE_SEO_IMAGE,
 });
 
 export default function RetrovilleCommunityPage() {
@@ -34,7 +34,7 @@ export default function RetrovilleCommunityPage() {
     path: '/retroville/comunidad',
     description:
       'Archivo completo de publicaciones, fandom y señales sociales de Retroville.',
-    image: '/images/retroville/retroville-street.png',
+    image: RETROVILLE_SEO_IMAGE,
     about: ['Retroville', 'Fandom', 'Comunidad', 'Publicaciones oficiales'],
   });
 
@@ -42,7 +42,7 @@ export default function RetrovilleCommunityPage() {
     path: '/retroville/comunidad',
     description:
       'Archivo social oficial de Retroville con fandom, hashtags y piezas que expanden el universo fuera del pitch principal.',
-    image: '/images/retroville/retroville-street.png',
+    image: RETROVILLE_SEO_IMAGE,
     name: 'Comunidad y fandom de Retroville',
   });
 

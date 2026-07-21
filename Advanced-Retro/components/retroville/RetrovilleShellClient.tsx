@@ -13,6 +13,7 @@ import {
   type CookieConsentState,
 } from '@/lib/cookieConsent';
 import { getTrackerClientContext } from '@/lib/admin/tracker';
+import { GOOGLE_ADS_ID } from '@/lib/marketing/googleAds';
 import styles from './retroville-shell.module.css';
 
 declare global {
@@ -62,6 +63,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   const plausibleScriptUrl =
     (process.env.NEXT_PUBLIC_PLAUSIBLE_SCRIPT_URL || '').trim() || 'https://plausible.io/js/script.js';
   const gaMeasurementId = (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '').trim();
+  const googleTagId = gaMeasurementId || GOOGLE_ADS_ID;
   const lastPathRef = useRef(pathname);
   const analyticsPathRef = useRef(pathname);
   const reportedErrorsRef = useRef<Set<string>>(new Set());
@@ -332,14 +334,16 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
         />
       ) : null}
 
-      {analyticsEnabled && gaMeasurementId ? (
+      {analyticsEnabled && googleTagId ? (
         <>
           <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+            src={`https://www.googletagmanager.com/gtag/js?id=${googleTagId}`}
             strategy="afterInteractive"
           />
           <Script id="retroville-ga4" strategy="afterInteractive">
-            {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} window.gtag = gtag; gtag('js', new Date()); gtag('config', '${gaMeasurementId}', { anonymize_ip: true });`}
+            {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} window.gtag = gtag; gtag('js', new Date()); ${
+              gaMeasurementId ? `gtag('config', '${gaMeasurementId}', { anonymize_ip: true });` : ''
+            } ${GOOGLE_ADS_ID ? `gtag('config', '${GOOGLE_ADS_ID}');` : ''}`}
           </Script>
         </>
       ) : null}

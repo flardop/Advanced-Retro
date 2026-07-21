@@ -9,7 +9,7 @@ import {
   retrovilleSecondaryCharacters,
   toRetrovilleAnchor,
 } from '@/app/retroville/content';
-import { buildRetrovilleSeriesJsonLd } from '@/app/retroville/shared';
+import { buildRetrovilleSeriesJsonLd, RETROVILLE_SEO_IMAGE } from '@/app/retroville/shared';
 import {
   buildBreadcrumbJsonLd,
   buildCollectionPageJsonLd,
@@ -40,7 +40,7 @@ export const metadata: Metadata = buildPageMetadata({
     'jow andrew retroville',
     'nona retroville',
   ],
-  image: '/images/retroville/retroville-cast-presentation.png',
+  image: RETROVILLE_SEO_IMAGE,
 });
 
 function CharacterVisual({
@@ -84,7 +84,7 @@ export default function RetrovilleCharactersPage() {
     path: '/retroville/personajes',
     description:
       'Página oficial del reparto de Retroville con todo el cast presentado como universo principal y con la misma jerarquía visual.',
-    image: '/images/retroville/retroville-cast-presentation.png',
+    image: RETROVILLE_SEO_IMAGE,
     about: ['NOX', 'Luna', 'Button Crew', 'Retroville', 'Serie original'],
   });
 
@@ -92,7 +92,7 @@ export default function RetrovilleCharactersPage() {
     allCharacters.map((character) => ({
       name: character.name,
       path: `/retroville/personajes#${toRetrovilleAnchor(character.name)}`,
-      image: character.image || '/images/retroville/retroville-cast-presentation.png',
+      image: character.image || RETROVILLE_SEO_IMAGE,
       description: character.description,
     })),
     'Reparto de Retroville'
@@ -108,7 +108,7 @@ export default function RetrovilleCharactersPage() {
     path: '/retroville/personajes',
     description:
       'Página oficial del reparto de Retroville con todo el cast presentado con tratamiento principal, usando material ya desarrollado del universo.',
-    image: '/images/retroville/retroville-cast-presentation.png',
+    image: RETROVILLE_SEO_IMAGE,
     name: 'Personajes de Retroville',
   });
 

@@ -4,7 +4,11 @@ import { ArrowLeft, ArrowRight, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import StructuredData from '@/components/StructuredData';
 import RetrovilleEpisodeVaultSlider from '@/components/retroville/RetrovilleEpisodeVaultSlider';
 import RetrovillePrivateDocumentButton from '@/components/retroville/RetrovillePrivateDocumentButton';
-import { buildRetrovilleSeriesJsonLd, RETROVILLE_PITCH_EMAIL } from '@/app/retroville/shared';
+import {
+  buildRetrovilleSeriesJsonLd,
+  RETROVILLE_PITCH_EMAIL,
+  RETROVILLE_SEO_IMAGE,
+} from '@/app/retroville/shared';
 import {
   buildBreadcrumbJsonLd,
   buildCollectionPageJsonLd,
@@ -32,7 +36,7 @@ export const metadata: Metadata = buildPageMetadata({
     'serie animada retroville',
     'dossier episodios retroville',
   ],
-  image: '/images/retroville/retroville-street.png',
+  image: RETROVILLE_SEO_IMAGE,
 });
 
 const lockedEpisodeSlots = Array.from({ length: 10 }, (_, index) => String(index + 1).padStart(2, '0'));
@@ -50,7 +54,7 @@ export default function RetrovilleEpisodesPage() {
     path: '/retroville/episodios',
     description:
       'Página oficial de acceso editorial privado a la estructura de episodios de Retroville.',
-    image: '/images/retroville/retroville-street.png',
+    image: RETROVILLE_SEO_IMAGE,
     about: ['Retroville', 'Acceso privado', 'Episodios', 'Serie original'],
   });
 
@@ -64,7 +68,7 @@ export default function RetrovilleEpisodesPage() {
     path: '/retroville/episodios',
     description:
       'Acceso privado a la estructura de episodios de Retroville con solicitud directa por correo.',
-    image: '/images/retroville/retroville-street.png',
+    image: RETROVILLE_SEO_IMAGE,
     name: 'Acceso privado a episodios de Retroville',
   });
 

@@ -4,7 +4,12 @@ import RetrovilleStudioEntry from '@/components/retroville/RetrovilleStudioEntry
 import StructuredData from '@/components/StructuredData';
 import { buildBreadcrumbJsonLd, buildFaqJsonLd, buildPageMetadata } from '@/lib/seo';
 import { absoluteUrl } from '@/lib/siteConfig';
-import { buildRetrovilleSeriesJsonLd, getRetrovilleState, RETROVILLE_PITCH_EMAIL } from '@/app/retroville/shared';
+import {
+  buildRetrovilleSeriesJsonLd,
+  getRetrovilleState,
+  RETROVILLE_PITCH_EMAIL,
+  RETROVILLE_SEO_IMAGE,
+} from '@/app/retroville/shared';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +41,7 @@ export const metadata: Metadata = buildPageMetadata({
     'press kit serie animada',
     'serie de animacion retro',
   ],
-  image: '/images/retroville/retroville-street.png',
+  image: RETROVILLE_SEO_IMAGE,
 });
 
 export default async function RetrovillePage() {
@@ -51,7 +56,7 @@ export default async function RetrovillePage() {
     url: absoluteUrl('/retroville'),
     description:
       'Retroville es una serie animada original con cast, worldbuilding, materiales de pitch y acceso privado a la biblia de la serie.',
-    image: absoluteUrl('/images/retroville/retroville-street.png'),
+    image: absoluteUrl(RETROVILLE_SEO_IMAGE),
     about: [
       { '@type': 'Thing', name: 'World building retro' },
       { '@type': 'Thing', name: 'Universo narrativo gaming' },
@@ -62,7 +67,7 @@ export default async function RetrovillePage() {
       path: '/retroville',
       description:
         'Serie original en desarrollo ambientada en una ciudad donde el hardware olvidado sigue vivo entre humor oscuro, barrio, cast coral y materiales listos para pitch.',
-      image: '/images/retroville/retroville-street.png',
+      image: RETROVILLE_SEO_IMAGE,
     }),
     character: [
       { '@type': 'Thing', name: 'NOX' },
