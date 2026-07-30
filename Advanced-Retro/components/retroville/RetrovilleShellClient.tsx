@@ -77,7 +77,10 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
 
   useEffect(() => {
-    const syncProgress = () => {
+    scrollDepthMilestonesRef.current = new Set();
+    const milestones = [25, 50, 75, 90];
+
+    const syncScrollMetrics = () => {
       progressFrameRef.current = null;
       const root = document.documentElement;
       const maxScroll = Math.max(0, root.scrollHeight - window.innerHeight);
@@ -86,35 +89,8 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
       if (progressFillRef.current) {
         progressFillRef.current.style.transform = `scaleX(${nextProgress})`;
       }
-    };
 
-    const requestSync = () => {
-      if (progressFrameRef.current !== null) return;
-      progressFrameRef.current = window.requestAnimationFrame(syncProgress);
-    };
-
-    syncProgress();
-    window.addEventListener('scroll', requestSync, { passive: true });
-    window.addEventListener('resize', requestSync);
-    return () => {
-      if (progressFrameRef.current !== null) {
-        window.cancelAnimationFrame(progressFrameRef.current);
-      }
-      window.removeEventListener('scroll', requestSync);
-      window.removeEventListener('resize', requestSync);
-    };
-  }, [pathname]);
-
-  useEffect(() => {
-    scrollDepthMilestonesRef.current = new Set();
-    const milestones = [25, 50, 75, 90];
-
-    const trackMilestones = () => {
-      const root = document.documentElement;
-      const maxScroll = Math.max(0, root.scrollHeight - window.innerHeight);
-      const progress = maxScroll > 0 ? Math.min(1, window.scrollY / maxScroll) : 1;
-      const percent = Math.round(progress * 100);
-
+      const percent = Math.round(nextProgress * 100);
       milestones.forEach((milestone) => {
         if (percent < milestone || scrollDepthMilestonesRef.current.has(milestone)) return;
         scrollDepthMilestonesRef.current.add(milestone);
@@ -127,12 +103,20 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
       });
     };
 
-    trackMilestones();
-    window.addEventListener('scroll', trackMilestones, { passive: true });
-    window.addEventListener('resize', trackMilestones);
+    const requestSync = () => {
+      if (progressFrameRef.current !== null) return;
+      progressFrameRef.current = window.requestAnimationFrame(syncScrollMetrics);
+    };
+
+    syncScrollMetrics();
+    window.addEventListener('scroll', requestSync, { passive: true });
+    window.addEventListener('resize', requestSync);
     return () => {
-      window.removeEventListener('scroll', trackMilestones);
-      window.removeEventListener('resize', trackMilestones);
+      if (progressFrameRef.current !== null) {
+        window.cancelAnimationFrame(progressFrameRef.current);
+      }
+      window.removeEventListener('scroll', requestSync);
+      window.removeEventListener('resize', requestSync);
     };
   }, [pathname]);
 
