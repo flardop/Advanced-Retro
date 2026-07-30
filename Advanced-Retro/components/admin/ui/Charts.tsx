@@ -76,15 +76,17 @@ function ChartShell({
   title,
   children,
   heightClass = 'h-[320px]',
+  heightStyle,
 }: {
   title?: string;
   children: React.ReactNode;
   heightClass?: string;
+  heightStyle?: React.CSSProperties;
 }) {
   return (
     <div className="rounded-3xl border border-[var(--admin-border)] bg-[var(--admin-surface)] p-5">
       {title ? <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--admin-text-muted)]">{title}</h3> : null}
-      <div className={heightClass}>{children}</div>
+      <div className={heightClass} style={heightStyle}>{children}</div>
     </div>
   );
 }
@@ -126,13 +128,19 @@ export function AreaChart({ data, title, dataKey = 'value' }: { data: ChartPoint
 }
 
 export function BarChart({ data, title, dataKey = 'value', horizontal = false }: { data: ChartPoint[]; title?: string; dataKey?: string; horizontal?: boolean }) {
+  const horizontalHeight = Math.min(720, Math.max(420, data.length * 46 + 86));
+
   return (
-    <ChartShell title={title} heightClass={horizontal ? 'h-[420px]' : 'h-[320px]'}>
+    <ChartShell
+      title={title}
+      heightClass={horizontal ? 'h-auto min-h-[420px]' : 'h-[320px]'}
+      heightStyle={horizontal ? { height: horizontalHeight } : undefined}
+    >
       <ResponsiveContainer width="100%" height="100%">
         <ReBarChart
           data={data}
           layout={horizontal ? 'vertical' : 'horizontal'}
-          margin={horizontal ? { top: 8, right: 14, bottom: 8, left: 6 } : undefined}
+          margin={horizontal ? { top: 8, right: 18, bottom: 8, left: 10 } : undefined}
         >
           <CartesianGrid stroke="rgba(148,163,184,0.08)" vertical={false} />
           <XAxis
@@ -146,13 +154,13 @@ export function BarChart({ data, title, dataKey = 'value', horizontal = false }:
           <YAxis
             type={horizontal ? 'category' : 'number'}
             dataKey={horizontal ? 'label' : undefined}
-            width={horizontal ? 230 : 40}
+            width={horizontal ? 260 : 40}
             stroke="#94a3b8"
             tickLine={false}
             axisLine={false}
             interval={0}
-            tick={{ fontSize: 12 }}
-            tickFormatter={horizontal ? (value) => shortenChartLabel(value, 20) : undefined}
+            tick={{ fontSize: 11 }}
+            tickFormatter={horizontal ? (value) => shortenChartLabel(value, 18) : undefined}
             tickMargin={8}
           />
           <Tooltip content={<AdminTooltip />} />

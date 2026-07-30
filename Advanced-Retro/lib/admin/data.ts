@@ -118,6 +118,37 @@ function humanizeWaitlistSource(source: string | null | undefined) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+const RETROVILLE_HOME_ACTION_LABELS: Record<string, string> = {
+  open_press_kit: 'Press kit',
+  open_cast: 'Reparto',
+  open_episodes: 'Temporada',
+  open_sketchbook: 'Sketchbook',
+  open_worldbuilding_dossier: 'Dossier mundo',
+  email_pitch_contact: 'Contacto directo',
+  open_topbar_link: 'Header',
+  open_reveal_register: 'Registrarme al reveal',
+};
+
+const RETROVILLE_HOME_LOCATION_LABELS: Record<string, string> = {
+  cinematic_hero: 'Hero',
+  intro_gate: 'Intro',
+  topbar: 'Header',
+  presentation: 'Presentacion',
+  cast_footer: 'Fin reparto',
+  episodes_footer: 'Fin episodios',
+  world_footer: 'Fin mundo',
+  buyer_brief: 'Buyer brief',
+};
+
+function humanizeRetrovillePrivateDocumentTitle(value: string | null | undefined) {
+  const normalized = String(value || '').trim();
+  if (!normalized) return 'Documento';
+  if (/biblia de serie/i.test(normalized)) return 'Biblia';
+  if (/episodios/i.test(normalized)) return 'Episodios';
+  if (/vision general|visión general/i.test(normalized)) return 'Vision';
+  return normalized.split('·')[0]?.trim() || normalized;
+}
+
 function readMetaString(meta: Record<string, unknown> | null | undefined, key: string) {
   const value = meta?.[key];
   return typeof value === 'string' && value.trim() ? value.trim() : '';
@@ -150,7 +181,12 @@ function humanizeRetrovilleEventName(eventName: string | null | undefined) {
       return 'Documento privado · Popup abierto';
     case 'retroville_private_document_mail_click':
       return 'Documento privado · Click en email';
+    case 'retroville_private_document_gmail_compose_click':
+      return 'Documento privado · Gmail web';
+    case 'retroville_private_document_outlook_compose_click':
+      return 'Documento privado · Outlook web';
     case 'retroville_private_document_email_copy':
+    case 'retroville_private_document_copy_email':
       return 'Documento privado · Correo copiado';
     default:
       return normalized
@@ -163,8 +199,18 @@ function humanizeRetrovilleEventName(eventName: string | null | undefined) {
 function buildRetrovilleBuyerLabel(meta: Record<string, unknown> | null | undefined) {
   const location = readMetaString(meta, 'location');
   const action = readMetaString(meta, 'action');
-  const label = [location, action].filter(Boolean).join(' · ');
-  return label || 'CTA sin detalle';
+  const label = readMetaString(meta, 'label');
+
+  if (action === 'open_topbar_link') {
+    const navLabel = label || 'Enlace';
+    const locationLabel = RETROVILLE_HOME_LOCATION_LABELS[location] || location.replace(/_/g, ' ') || 'Header';
+    return `${navLabel} · ${locationLabel}`;
+  }
+
+  const actionLabel = RETROVILLE_HOME_ACTION_LABELS[action] || label || action.replace(/_/g, ' ') || 'CTA';
+  const locationLabel = RETROVILLE_HOME_LOCATION_LABELS[location] || location.replace(/_/g, ' ') || 'Home';
+  const formatted = [actionLabel, locationLabel].filter(Boolean).join(' · ');
+  return formatted || 'CTA sin detalle';
 }
 
 function describeRetrovilleEvent(row: AnalyticsEventRecord) {
@@ -182,7 +228,8 @@ function describeRetrovilleEvent(row: AnalyticsEventRecord) {
     return source ? `${base} · ${source}` : base;
   }
   if (String(row.event_name || '').startsWith('retroville_private_document_')) {
-    return documentTitle ? `${base} · ${documentTitle}` : base;
+    const shortTitle = humanizeRetrovillePrivateDocumentTitle(documentTitle);
+    return shortTitle ? `${base} · ${shortTitle}` : base;
   }
   return base;
 }

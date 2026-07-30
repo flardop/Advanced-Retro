@@ -137,15 +137,18 @@ function toShare(value: number, total: number) {
 const RETROVILLE_HOME_ACTION_LABELS: Record<string, string> = {
   open_press_kit: 'Press kit',
   open_cast: 'Reparto',
-  open_episodes: 'Episodios',
+  open_episodes: 'Temporada',
   open_sketchbook: 'Sketchbook',
   open_worldbuilding_dossier: 'Dossier mundo',
-  email_pitch_contact: 'Contacto',
+  email_pitch_contact: 'Contacto directo',
+  open_topbar_link: 'Header',
+  open_reveal_register: 'Registrarme al reveal',
 };
 
 const RETROVILLE_HOME_LOCATION_LABELS: Record<string, string> = {
   cinematic_hero: 'Hero',
   intro_gate: 'Intro',
+  topbar: 'Header',
   presentation: 'Presentación',
   cast_footer: 'Fin reparto',
   episodes_footer: 'Fin episodios',
@@ -166,17 +169,36 @@ function formatRetrovilleHomeClickLabel(row: AnalyticsEventRecord) {
   if (row.event_name === 'retroville_buyer_cta_click') {
     const action = readMetaString(row.meta, 'action');
     const location = readMetaString(row.meta, 'location');
-    const actionLabel = RETROVILLE_HOME_ACTION_LABELS[action] || action.replace(/_/g, ' ') || 'CTA';
+    const label = readMetaString(row.meta, 'label');
+    if (action === 'open_topbar_link') {
+      const navLabel = label || 'Enlace';
+      const locationLabel = RETROVILLE_HOME_LOCATION_LABELS[location] || location.replace(/_/g, ' ') || 'Header';
+      return `${navLabel} · ${locationLabel}`;
+    }
+
+    const actionLabel = RETROVILLE_HOME_ACTION_LABELS[action] || label || action.replace(/_/g, ' ') || 'CTA';
     const locationLabel = RETROVILLE_HOME_LOCATION_LABELS[location] || location.replace(/_/g, ' ') || 'Home';
     return `${actionLabel} · ${locationLabel}`;
   }
 
   if (row.event_name === 'retroville_private_document_mail_click') {
-    return `Solicitar · ${formatRetrovillePrivateDocumentTitle(readMetaString(row.meta, 'document_title'))}`;
+    return `Correo predeterminado · ${formatRetrovillePrivateDocumentTitle(readMetaString(row.meta, 'document_title'))}`;
   }
 
   if (row.event_name === 'retroville_private_document_open') {
     return `Previa · ${formatRetrovillePrivateDocumentTitle(readMetaString(row.meta, 'document_title'))}`;
+  }
+
+  if (row.event_name === 'retroville_private_document_gmail_compose_click') {
+    return `Gmail web · ${formatRetrovillePrivateDocumentTitle(readMetaString(row.meta, 'document_title'))}`;
+  }
+
+  if (row.event_name === 'retroville_private_document_outlook_compose_click') {
+    return `Outlook web · ${formatRetrovillePrivateDocumentTitle(readMetaString(row.meta, 'document_title'))}`;
+  }
+
+  if (row.event_name === 'retroville_private_document_copy_email') {
+    return `Copiar correo · ${formatRetrovillePrivateDocumentTitle(readMetaString(row.meta, 'document_title'))}`;
   }
 
   if (row.event_name === 'retroville_newsletter_signup') {
@@ -748,6 +770,9 @@ export async function getRetrovilleAdminRealtimeData(): Promise<RetrovilleAdminR
       'retroville_buyer_cta_click',
       'retroville_private_document_mail_click',
       'retroville_private_document_open',
+      'retroville_private_document_gmail_compose_click',
+      'retroville_private_document_outlook_compose_click',
+      'retroville_private_document_copy_email',
       'retroville_newsletter_signup',
       'retroville_event_signup',
       'retroville_event_calendar_save',
