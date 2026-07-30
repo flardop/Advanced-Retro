@@ -28,6 +28,50 @@ const palette = [
   '#60a5fa',
 ];
 
+const RETROVILLE_PATH_LABELS: Record<string, string> = {
+  '/retroville': 'Home',
+  '/retroville/personajes': 'Personajes',
+  '/retroville/episodios': 'Episodios',
+  '/retroville/sketches': 'Sketchbook',
+  '/retroville/guias': 'Guías',
+  '/retroville/comunidad': 'Comunidad',
+  '/retroville/presentaciones': 'Presentación',
+  '/retroville/press': 'Press kit',
+  '/retroville/legal': 'Legal',
+  '/retroville/faq': 'FAQ',
+};
+
+function humanizeChartLabel(value: string | number | null | undefined) {
+  const raw = String(value || '').trim();
+  if (!raw) return 'Dato';
+  if (RETROVILLE_PATH_LABELS[raw]) return RETROVILLE_PATH_LABELS[raw];
+
+  return raw
+    .replace(/^Solicitar · /i, 'Solicitud · ')
+    .replace(/^Previa · /i, 'Popup · ')
+    .replace(/^Newsletter · retroville reveal card$/i, 'Newsletter · Reveal')
+    .replace(/^Reveal · retroville reveal card$/i, 'Reveal · Registro')
+    .replace(/^Acceso privado · .*$/i, 'Acceso privado')
+    .replace(/^Calendario · google$/i, 'Calendario · Google')
+    .replace(/^Calendario · ics$/i, 'Calendario · ICS')
+    .replace(/visión/gi, 'Vision')
+    .replace(/^retroville_/i, '')
+    .replace(/^\/retroville\/?/i, '')
+    .replace(/[_/]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
+function shortenChartLabel(value: string | number | null | undefined, maxLength = 28) {
+  const normalized = humanizeChartLabel(value);
+  if (normalized.length <= maxLength) return normalized;
+
+  const trimmed = normalized.slice(0, maxLength - 1);
+  const compact = trimmed.replace(/[\s·_-]+[^·\s_-]*$/, '').trim();
+  return `${compact || trimmed}…`;
+}
+
 function ChartShell({
   title,
   children,
@@ -49,7 +93,7 @@ function AdminTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-2xl border border-[var(--admin-border)] bg-[var(--admin-surface-2)] px-3 py-2 text-xs text-[var(--admin-text)] shadow-2xl">
-      {label ? <p className="mb-1 font-semibold">{label}</p> : null}
+      {label ? <p className="mb-1 font-semibold">{humanizeChartLabel(label)}</p> : null}
       {payload.map((entry: any) => (
         <p key={entry.dataKey} style={{ color: entry.color }}>
           {entry.name}: {entry.value}
@@ -71,7 +115,7 @@ export function AreaChart({ data, title, dataKey = 'value' }: { data: ChartPoint
             </linearGradient>
           </defs>
           <CartesianGrid stroke="rgba(148,163,184,0.1)" vertical={false} />
-          <XAxis dataKey="label" stroke="#94a3b8" tickLine={false} axisLine={false} />
+          <XAxis dataKey="label" stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(value) => shortenChartLabel(value, 14)} />
           <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} />
           <Tooltip content={<AdminTooltip />} />
           <Area type="monotone" dataKey={dataKey} stroke="var(--admin-primary)" fill="url(#adminAreaFill)" strokeWidth={2.5} />
@@ -85,18 +129,31 @@ export function BarChart({ data, title, dataKey = 'value', horizontal = false }:
   return (
     <ChartShell title={title} heightClass={horizontal ? 'h-[420px]' : 'h-[320px]'}>
       <ResponsiveContainer width="100%" height="100%">
-        <ReBarChart data={data} layout={horizontal ? 'vertical' : 'horizontal'} margin={horizontal ? { top: 8, right: 12, bottom: 8, left: 12 } : undefined}>
+        <ReBarChart
+          data={data}
+          layout={horizontal ? 'vertical' : 'horizontal'}
+          margin={horizontal ? { top: 8, right: 14, bottom: 8, left: 6 } : undefined}
+        >
           <CartesianGrid stroke="rgba(148,163,184,0.08)" vertical={false} />
-          <XAxis type={horizontal ? 'number' : 'category'} dataKey={horizontal ? undefined : 'label'} stroke="#94a3b8" tickLine={false} axisLine={false} />
+          <XAxis
+            type={horizontal ? 'number' : 'category'}
+            dataKey={horizontal ? undefined : 'label'}
+            stroke="#94a3b8"
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={horizontal ? undefined : (value) => shortenChartLabel(value, 12)}
+          />
           <YAxis
             type={horizontal ? 'category' : 'number'}
             dataKey={horizontal ? 'label' : undefined}
-            width={horizontal ? 240 : 40}
+            width={horizontal ? 230 : 40}
             stroke="#94a3b8"
             tickLine={false}
             axisLine={false}
             interval={0}
             tick={{ fontSize: 12 }}
+            tickFormatter={horizontal ? (value) => shortenChartLabel(value, 20) : undefined}
+            tickMargin={8}
           />
           <Tooltip content={<AdminTooltip />} />
           <Bar dataKey={dataKey} radius={[10, 10, 10, 10]}>
@@ -116,7 +173,7 @@ export function LineChart({ data, title, dataKey = 'value' }: { data: ChartPoint
       <ResponsiveContainer width="100%" height="100%">
         <ReLineChart data={data}>
           <CartesianGrid stroke="rgba(148,163,184,0.08)" vertical={false} />
-          <XAxis dataKey="label" stroke="#94a3b8" tickLine={false} axisLine={false} />
+          <XAxis dataKey="label" stroke="#94a3b8" tickLine={false} axisLine={false} tickFormatter={(value) => shortenChartLabel(value, 12)} />
           <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} />
           <Tooltip content={<AdminTooltip />} />
           <Line type="monotone" dataKey={dataKey} stroke="var(--admin-primary)" strokeWidth={3} dot={false} />

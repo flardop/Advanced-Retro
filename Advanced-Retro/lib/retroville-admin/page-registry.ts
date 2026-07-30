@@ -51,6 +51,17 @@ const PAGE_REGISTRY: RetrovillePageRegistryEntry[] = [
     published: true,
   },
   {
+    path: '/retroville/guias',
+    label: 'Guías',
+    seoTitle: 'Guias visuales de Retroville | Cast sheets, turnarounds y desarrollo',
+    metaDescription:
+      'Archivo separado de guias visuales de Retroville con turnarounds, dev sheets, anatomy boards y material tecnico del reparto.',
+    canonical: `${siteUrl}/retroville/guias`,
+    structuredDataTypes: ['CollectionPage', 'TVSeries', 'ItemList'],
+    sourceFile: 'app/retroville/guias/page.tsx',
+    published: true,
+  },
+  {
     path: '/retroville/episodios',
     label: 'Episodios',
     seoTitle: 'Episodios privados de Retroville | Acceso editorial',
@@ -178,17 +189,11 @@ export async function getRetrovillePageRegistry() {
 }
 
 export function isRetrovillePageInSitemap(path: string) {
-  return [
-    '/retroville',
-    '/retroville/comunidad',
-    '/retroville/episodios',
-    '/retroville/faq',
-    '/retroville/legal',
-    '/retroville/personajes',
-    '/retroville/press',
-    '/retroville/presentaciones',
-    '/retroville/sketches',
-  ].includes(path);
+  const entry = PAGE_REGISTRY.find((page) => page.path === path);
+  if (!entry) return false;
+  if (entry.published === false) return false;
+  if (entry.noIndex) return false;
+  return !path.startsWith('/retroville/admin');
 }
 
 export function isRetrovillePageAllowedByRobots(path: string) {

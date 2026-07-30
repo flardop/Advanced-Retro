@@ -112,12 +112,6 @@ const renderCards = [
     href: '/images/retroville/luna-character-large.png',
     alt: 'Render de Luna, personaje de Retroville',
   },
-  {
-    title: 'FIRE CREW',
-    image: '/images/retroville/characters/fire-crew.png',
-    href: '/images/retroville/characters/fire-crew.png',
-    alt: 'Render del Fire Crew de Retroville con Chief Brasa, Manga, Plano y Chispa',
-  },
 ] as const;
 
 function buildFactSheet(launchLabel: string) {

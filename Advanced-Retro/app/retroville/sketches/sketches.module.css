@@ -48,7 +48,7 @@
 .heroGrid {
   min-height: calc(100vh - 120px);
   display: grid;
-  grid-template-columns: minmax(380px, 1.06fr) minmax(500px, 0.94fr);
+  grid-template-columns: minmax(320px, 0.8fr) minmax(520px, 1.2fr);
   align-items: start;
   gap: clamp(42px, 5vw, 84px);
   padding-top: clamp(1.6rem, 4vw, 4rem);
@@ -57,7 +57,7 @@
 .heroCopy {
   position: relative;
   z-index: 1;
-  max-width: 760px;
+  max-width: min(100%, 34rem);
   padding-right: clamp(0.5rem, 1.4vw, 1.1rem);
 }
 
@@ -193,10 +193,11 @@
 }
 
 .heroTitle {
-  max-width: none;
-  font-size: clamp(2.6rem, 3.9vw, 4.15rem);
+  font-size: clamp(2.2rem, 2.9vw, 3.35rem);
   line-height: 0.88;
-  max-width: 5.9ch;
+  max-width: 6ch;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .heroText,
@@ -209,7 +210,7 @@
 }
 
 .heroText {
-  max-width: 680px;
+  max-width: 620px;
   margin-top: 26px;
 }
 
@@ -378,6 +379,15 @@
   .heroMosaic {
     min-height: auto;
     margin-top: 1.4rem;
+  }
+
+  .heroCopy {
+    max-width: none;
+    padding-right: 0;
+  }
+
+  .heroTitle {
+    max-width: 7.4ch;
   }
 
   .operator,

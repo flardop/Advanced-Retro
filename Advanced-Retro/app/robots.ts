@@ -5,6 +5,8 @@ export default function robots(): MetadataRoute.Robots {
   const siteUrl = getSiteUrl();
   const disallowRules = [
     '/admin',
+    '/retroville/admin',
+    '/retroville/admin/',
     '/dashboard/',
     '/admin/test-images',
     '/admin/update-images',
@@ -41,7 +43,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: disallowRules,
       },
     ],
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: [`${siteUrl}/sitemap.xml`, `${siteUrl}/retroville/sitemap.xml`],
     host: siteUrl,
   };
 }

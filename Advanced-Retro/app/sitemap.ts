@@ -5,6 +5,7 @@ import { getProductHref } from '@/lib/productUrl';
 import { BLOG_POSTS } from '@/lib/blogPosts';
 import { PLATFORM_LANDING_SLUGS } from '@/lib/platformSeo';
 import { listRetroStorageAuctions } from '@/lib/retroStorageAuctions';
+import { getRetrovillePageRegistry, isRetrovillePageInSitemap } from '@/lib/retroville-admin/page-registry';
 
 const STATIC_ROUTES = [
   '/',
@@ -12,16 +13,6 @@ const STATIC_ROUTES = [
   '/mystery-boxes',
   '/subastas',
   '/ruleta',
-  '/retroville',
-  '/retroville/comunidad',
-  '/retroville/episodios',
-  '/retroville/faq',
-  '/retroville/guias',
-  '/retroville/legal',
-  '/retroville/personajes',
-  '/retroville/press',
-  '/retroville/presentaciones',
-  '/retroville/sketches',
   '/creator',
   '/memberships',
   '/tiendas',
@@ -39,6 +30,7 @@ const STATIC_ROUTES = [
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
   const now = new Date();
+  const retrovilleRegistry = await getRetrovillePageRegistry();
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
     url: `${siteUrl}${path}`,
@@ -63,6 +55,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
                 : 0.7,
   }));
 
+  const retrovilleEntries: MetadataRoute.Sitemap = retrovilleRegistry
+    .filter((entry) => isRetrovillePageInSitemap(entry.path))
+    .map((entry) => ({
+      url: `${siteUrl}${entry.path}`,
+      lastModified: entry.lastModified ? new Date(entry.lastModified) : now,
+      changeFrequency: entry.path === '/retroville' ? 'daily' : 'weekly',
+      priority: entry.path === '/retroville' ? 0.92 : entry.path === '/retroville/sketches' ? 0.86 : 0.84,
+    }));
+
   const platformEntries: MetadataRoute.Sitemap = PLATFORM_LANDING_SLUGS.map((slug) => ({
     url: `${siteUrl}/tienda/${slug}`,
     lastModified: now,
@@ -86,7 +87,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   if (!supabaseAdmin) {
-    return [...staticEntries, ...platformEntries, ...blogEntries, ...auctionEntries];
+    return [...staticEntries, ...retrovilleEntries, ...platformEntries, ...blogEntries, ...auctionEntries];
   }
 
   const { data: products } = await supabaseAdmin
@@ -102,5 +103,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticEntries, ...platformEntries, ...blogEntries, ...auctionEntries, ...productEntries];
+  return [...staticEntries, ...retrovilleEntries, ...platformEntries, ...blogEntries, ...auctionEntries, ...productEntries];
 }

@@ -198,10 +198,10 @@
 }
 
 .topbarPanel {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   min-width: 0;
   align-items: center;
-  justify-content: space-between;
   gap: clamp(0.85rem, 1.6vw, 1.5rem);
 }
 
@@ -258,7 +258,8 @@
 .topbarNav {
   flex: 1 1 auto;
   min-width: 0;
-  justify-content: center;
+  justify-content: flex-start;
+  row-gap: 0.55rem;
 }
 
 .mobileMenuToggle {
@@ -354,6 +355,7 @@
 .topbarActions {
   flex: 0 0 auto;
   justify-content: flex-end;
+  row-gap: 0.55rem;
 }
 
 .cinematicSection,
@@ -364,13 +366,13 @@
 
 .cinematicSection {
   --rv-cinematic-video-scale: 1.12;
-  --rv-cinematic-video-translate: 28px;
-  --rv-cinematic-video-blur: 0.72px;
+  --rv-cinematic-video-translate: 24px;
+  --rv-cinematic-video-blur: 0.18px;
   --rv-cinematic-copy-translate: 18px;
   --rv-cinematic-copy-opacity: 0.9;
   display: grid;
   gap: clamp(1rem, 2.4vw, 1.6rem);
-  padding-top: clamp(1rem, 2.6vw, 1.8rem);
+  padding-top: clamp(1.15rem, 2.6vw, 1.95rem);
 }
 
 .cinematicFrame {
@@ -397,9 +399,10 @@
   transform-origin: center top;
   filter: blur(var(--rv-cinematic-video-blur));
   will-change: transform;
+  backface-visibility: hidden;
   transition:
     transform 180ms ease-out,
-    filter 220ms ease-out;
+    filter 120ms ease-out;
 }
 
 .cinematicShade {
@@ -592,6 +595,8 @@
 
 .section {
   padding-top: clamp(3rem, 7vw, 5rem);
+  content-visibility: auto;
+  contain-intrinsic-size: 780px;
 }
 
 .sectionHeader {
@@ -935,7 +940,7 @@
   }
 }
 
-@media (max-width: 1320px) {
+@media (max-width: 1480px) {
   .topbar {
     grid-template-columns: 1fr;
     padding: 1rem;
@@ -943,7 +948,8 @@
 
   .topbarPanel {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.8rem;
   }
 
   .topbarNav,
@@ -1004,6 +1010,7 @@
 
   .topbarPanelOpen {
     display: grid;
+    grid-template-columns: 1fr;
     gap: 0.7rem;
   }
 

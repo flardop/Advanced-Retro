@@ -79,6 +79,7 @@ const footerLinks = [
   { label: 'Home', href: '/retroville' },
   { label: 'Personajes', href: '/retroville/personajes' },
   { label: 'Episodios', href: '/retroville/episodios' },
+  { label: 'Sketchbook', href: '/retroville/sketches' },
   { label: 'Comunidad', href: '/retroville/comunidad' },
   { label: 'Presentación', href: '/retroville/presentaciones' },
   { label: 'Press', href: '/retroville/press' },
@@ -90,6 +91,7 @@ const topbarLinks = [
   { label: 'Cast', href: '#cast' },
   { label: 'Temporada', href: '#episodes' },
   { label: 'Ciudad', href: '#world' },
+  { label: 'Sketchbook', href: '/retroville/sketches' },
   { label: 'Acceso', href: '#buyer-brief' },
   { label: 'Comunidad', href: '#community' },
 ] as const;
@@ -132,6 +134,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
   const [mobileViewport, setMobileViewport] = useState(Boolean(initialMobileExperience));
   const [videoReady, setVideoReady] = useState(false);
   const [videoActive, setVideoActive] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const launchCopy = buildRetrovilleLaunchCopy(launchLabel);
   const contactGmailCompose = buildRetrovillePitchGmailCompose({
     subject: 'Retroville · Pitch y materiales',
@@ -158,6 +161,23 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const syncPreference = () => setReducedMotion(media.matches);
+
+    syncPreference();
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', syncPreference);
+      return () => media.removeEventListener('change', syncPreference);
+    }
+
+    media.addListener(syncPreference);
+    return () => media.removeListener(syncPreference);
   }, []);
 
   useEffect(() => {
@@ -208,25 +228,39 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
 
     let frame = 0;
 
+    const section = cinematicRef.current;
+    if (!section) return;
+
+    if (mobileViewport || reducedMotion) {
+      section.style.setProperty('--rv-cinematic-video-scale', '1.03');
+      section.style.setProperty('--rv-cinematic-video-translate', '0px');
+      section.style.setProperty('--rv-cinematic-video-blur', mobileViewport ? '0.14px' : '0.18px');
+      section.style.setProperty('--rv-cinematic-copy-translate', '0px');
+      section.style.setProperty('--rv-cinematic-copy-opacity', '1');
+
+      if (cinematicTimelineRef.current) {
+        cinematicTimelineRef.current.dataset.step = mobileViewport ? '1' : '0';
+      }
+
+      return;
+    }
+
+    section.style.setProperty('--rv-cinematic-video-blur', '0.18px');
+
     const updateProgress = () => {
       frame = 0;
-      const section = cinematicRef.current;
-      if (!section) return;
 
       const rect = section.getBoundingClientRect();
       const viewportHeight = window.innerHeight || 1;
       const totalDistance = Math.max(rect.height + viewportHeight * 0.28, viewportHeight);
       const nextProgress = clampUnit((viewportHeight * 0.28 - rect.top) / totalDistance);
       const nextStep = nextProgress < 0.28 ? '0' : nextProgress < 0.62 ? '1' : '2';
-      const baseBlur = mobileViewport ? 0.5 : 0.72;
-      const blurDepth = mobileViewport ? 0.2 : 0.28;
 
       section.style.setProperty('--rv-cinematic-video-scale', `${1.12 - nextProgress * 0.11}`);
       section.style.setProperty(
         '--rv-cinematic-video-translate',
-        `${28 - nextProgress * (mobileViewport ? 38 : 54)}px`
+        `${24 - nextProgress * 46}px`
       );
-      section.style.setProperty('--rv-cinematic-video-blur', `${Math.max(0.24, baseBlur - nextProgress * blurDepth)}px`);
       section.style.setProperty('--rv-cinematic-copy-translate', `${18 - nextProgress * 22}px`);
       section.style.setProperty('--rv-cinematic-copy-opacity', `${0.9 + nextProgress * 0.1}`);
 
@@ -249,7 +283,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
       window.removeEventListener('scroll', requestUpdate);
       window.removeEventListener('resize', requestUpdate);
     };
-  }, [introDismissed, mobileViewport]);
+  }, [introDismissed, mobileViewport, reducedMotion]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -357,17 +391,38 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
             >
               <nav className={styles.topbarNav} aria-label="Secciones principales de Retroville">
                 {topbarLinks.map((link) => (
-                  <a key={link.href} href={link.href} onClick={closeMobileNav}>
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => {
+                      trackStudioAction('open_topbar_link', 'topbar', link.label);
+                      closeMobileNav();
+                    }}
+                  >
                     {link.label}
                   </a>
                 ))}
               </nav>
 
               <div className={styles.topbarActions}>
-                <Link href="/retroville/press" className={styles.secondaryButton} onClick={closeMobileNav}>
+                <Link
+                  href="/retroville/press"
+                  className={styles.secondaryButton}
+                  onClick={() => {
+                    trackStudioAction('open_press_kit', 'topbar');
+                    closeMobileNav();
+                  }}
+                >
                   Press kit
                 </Link>
-                <a href="#community" className={styles.primaryButton} onClick={closeMobileNav}>
+                <a
+                  href="#community"
+                  className={styles.primaryButton}
+                  onClick={() => {
+                    trackStudioAction('open_reveal_register', 'topbar');
+                    closeMobileNav();
+                  }}
+                >
                   Registrarme al reveal
                 </a>
               </div>
@@ -381,7 +436,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               muted
               loop
               playsInline
-              preload="none"
+              preload="metadata"
               poster="/videos/retroville/retroville-city-approach-poster.jpg"
               aria-label="Aproximación cinematográfica a la ciudad de Retroville"
             >
@@ -463,6 +518,13 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                 onClick={() => trackStudioAction('open_episodes', 'presentation')}
               >
                 Ver episodios
+              </Link>
+              <Link
+                href="/retroville/sketches"
+                className={styles.secondaryButton}
+                onClick={() => trackStudioAction('open_sketchbook', 'presentation')}
+              >
+                Ver sketchbook
               </Link>
             </div>
           </div>

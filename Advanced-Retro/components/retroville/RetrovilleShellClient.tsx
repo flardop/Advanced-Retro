@@ -71,6 +71,7 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
   const navigationTimerRef = useRef<number | null>(null);
   const clearTransitionTimerRef = useRef<number | null>(null);
   const progressFillRef = useRef<HTMLDivElement | null>(null);
+  const scrollDepthMilestonesRef = useRef<Set<number>>(new Set());
   const [routeTransition, setRouteTransition] = useState<'idle' | 'cover' | 'reveal'>('reveal');
   const [easterEggVisible, setEasterEggVisible] = useState(false);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
@@ -101,6 +102,37 @@ export default function RetrovilleShellClient({ children }: { children: React.Re
       }
       window.removeEventListener('scroll', requestSync);
       window.removeEventListener('resize', requestSync);
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    scrollDepthMilestonesRef.current = new Set();
+    const milestones = [25, 50, 75, 90];
+
+    const trackMilestones = () => {
+      const root = document.documentElement;
+      const maxScroll = Math.max(0, root.scrollHeight - window.innerHeight);
+      const progress = maxScroll > 0 ? Math.min(1, window.scrollY / maxScroll) : 1;
+      const percent = Math.round(progress * 100);
+
+      milestones.forEach((milestone) => {
+        if (percent < milestone || scrollDepthMilestonesRef.current.has(milestone)) return;
+        scrollDepthMilestonesRef.current.add(milestone);
+        window.retrovilleTrack?.('retroville_scroll_depth', {
+          percent: milestone,
+          progress: milestone / 100,
+          path: pathname,
+          source: 'retroville_shell',
+        });
+      });
+    };
+
+    trackMilestones();
+    window.addEventListener('scroll', trackMilestones, { passive: true });
+    window.addEventListener('resize', trackMilestones);
+    return () => {
+      window.removeEventListener('scroll', trackMilestones);
+      window.removeEventListener('resize', trackMilestones);
     };
   }, [pathname]);
 

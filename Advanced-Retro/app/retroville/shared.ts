@@ -7,7 +7,7 @@ export const RETROVILLE_SIGNUP_COUNT_THRESHOLD = 25;
 export const RETROVILLE_GOOGLE_SITE_VERIFICATION =
   process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'googlebffb5f7b5e8a2336';
 export const RETROVILLE_PITCH_EMAIL = 'retr0ovllee@gmail.com';
-export const RETROVILLE_SEO_IMAGE = '/images/retroville/retroville-share-card.png';
+export const RETROVILLE_SEO_IMAGE = '/images/retroville/retroville-cast-presentation.png';
 
 export type RetrovilleAudienceBucket = {
   label: string;
@@ -35,6 +35,16 @@ export type RetrovilleDiscoveryLink = {
   href: string;
   eyebrow: string;
   description: string;
+};
+
+type RetrovilleWaitlistRow = {
+  role_label?: string | null;
+  signup_intent?: string | null;
+};
+
+type RetrovilleSignupEventRow = {
+  event_name?: string | null;
+  meta?: Record<string, unknown> | null;
 };
 
 function toMailSafeText(value: string) {
@@ -263,6 +273,31 @@ function buildAudienceBreakdown(values: Array<string | null | undefined>) {
     .sort((a, b) => b.value - a.value);
 }
 
+function readMetaString(meta: Record<string, unknown> | null | undefined, key: string) {
+  const value = meta?.[key];
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function buildAudienceSummaryFromWaitlistRows(rows: RetrovilleWaitlistRow[]): RetrovilleAudienceSummary {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  return {
+    totalRegistrations: safeRows.length,
+    newsletterRegistrations: safeRows.filter((row) => row.signup_intent === 'newsletter').length,
+    eventRegistrations: safeRows.filter((row) => row.signup_intent === 'event').length,
+    roleBreakdown: buildAudienceBreakdown(safeRows.map((row) => row.role_label)).slice(0, 4),
+  };
+}
+
+function buildAudienceSummaryFromSignupEvents(rows: RetrovilleSignupEventRow[]): RetrovilleAudienceSummary {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  return {
+    totalRegistrations: safeRows.length,
+    newsletterRegistrations: safeRows.filter((row) => row.event_name === 'retroville_newsletter_signup').length,
+    eventRegistrations: safeRows.filter((row) => row.event_name === 'retroville_event_signup').length,
+    roleBreakdown: buildAudienceBreakdown(safeRows.map((row) => readMetaString(row.meta, 'role_label'))).slice(0, 4),
+  };
+}
+
 export function buildRetrovilleLaunchCopy(launchLabel: string) {
   return `El ${launchLabel} llega la primera señal publica de Retroville: activamos el primer reveal, abrimos el siguiente drop y avisamos primero a quienes ya reciben La Señal.`;
 }
@@ -285,7 +320,7 @@ export async function getRetrovilleState() {
     };
   }
 
-  const [settingsRes, waitlistRes] = await Promise.all([
+  const [settingsRes, waitlistRes, signupEventsRes] = await Promise.all([
     supabaseService
       .from('admin_settings')
       .select('value')
@@ -295,18 +330,31 @@ export async function getRetrovilleState() {
       .from('retroville_waitlist')
       .select('role_label, signup_intent', { count: 'exact' })
       .limit(5000),
+    supabaseService
+      .from('analytics_events')
+      .select('event_name, meta')
+      .in('event_name', [
+        'retroville_newsletter_signup',
+        'retroville_event_signup',
+        'retroville_access_request_signup',
+      ])
+      .limit(5000),
   ]);
 
   const parsedDate = new Date(String(settingsRes.data?.value || fallbackIso));
   const launchDate = Number.isFinite(parsedDate.getTime()) ? parsedDate : RETROVILLE_FALLBACK_DATE;
-  const waitlistRows = waitlistRes.data || [];
-  const waitlistCount = Math.max(0, Number(waitlistRes.count || waitlistRows.length));
-  const audienceSummary: RetrovilleAudienceSummary = {
-    totalRegistrations: waitlistCount,
-    newsletterRegistrations: waitlistRows.filter((row) => row.signup_intent === 'newsletter').length,
-    eventRegistrations: waitlistRows.filter((row) => row.signup_intent === 'event').length,
-    roleBreakdown: buildAudienceBreakdown(waitlistRows.map((row) => row.role_label)).slice(0, 4),
-  };
+  const waitlistRows = (waitlistRes.data || []) as RetrovilleWaitlistRow[];
+  const signupEventRows = (signupEventsRes.data || []) as RetrovilleSignupEventRow[];
+  const waitlistSummary = buildAudienceSummaryFromWaitlistRows(waitlistRows);
+  const signupEventSummary = buildAudienceSummaryFromSignupEvents(signupEventRows);
+  const audienceSummary =
+    waitlistSummary.totalRegistrations > 0 || signupEventSummary.totalRegistrations === 0
+      ? waitlistSummary
+      : signupEventSummary;
+  const waitlistCount =
+    waitlistSummary.totalRegistrations > 0
+      ? Math.max(0, Number(waitlistRes.count || waitlistSummary.totalRegistrations))
+      : signupEventSummary.totalRegistrations;
 
   return {
     launchIso: launchDate.toISOString(),

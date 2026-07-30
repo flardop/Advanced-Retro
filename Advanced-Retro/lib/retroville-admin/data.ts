@@ -138,12 +138,14 @@ const RETROVILLE_HOME_ACTION_LABELS: Record<string, string> = {
   open_press_kit: 'Press kit',
   open_cast: 'Reparto',
   open_episodes: 'Episodios',
+  open_sketchbook: 'Sketchbook',
   open_worldbuilding_dossier: 'Dossier mundo',
   email_pitch_contact: 'Contacto',
 };
 
 const RETROVILLE_HOME_LOCATION_LABELS: Record<string, string> = {
   cinematic_hero: 'Hero',
+  intro_gate: 'Intro',
   presentation: 'Presentación',
   cast_footer: 'Fin reparto',
   episodes_footer: 'Fin episodios',
