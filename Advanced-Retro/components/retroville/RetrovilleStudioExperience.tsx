@@ -104,7 +104,7 @@ const retrovilleTheme = {
   '--rv-green': '#57f0ae',
   '--rv-text': '#f5f7ff',
   '--rv-text-muted': 'rgba(229, 234, 255, 0.72)',
-  '--rv-text-dim': 'rgba(219, 229, 255, 0.5)',
+  '--rv-text-dim': 'rgba(219, 229, 255, 0.58)',
 } as CSSProperties;
 
 type RetrovilleStudioExperienceProps = {
@@ -487,7 +487,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
             <p className={`${styles.sectionEyebrow} ${styles.revealItem}`} data-reveal>
               Pitch claro
             </p>
-            <h1 className={`${displayFont.className} ${styles.presentationTitle} ${styles.revealItem}`} data-reveal style={createRevealDelay(1)}>
+            <h1 className={`${displayFont.className} ${styles.presentationTitle}`}>
               UNA IP CLARA EN
               <br />
               DIEZ SEGUNDOS
@@ -751,7 +751,7 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               data-no-retroville-shell="true"
               className={styles.mailLink}
               onClick={() => trackStudioAction('email_pitch_contact', 'buyer_brief')}
-              aria-label="Abrir Gmail con el correo de contacto de Retroville preparado"
+              aria-label={`Abrir Gmail para escribir a ${RETROVILLE_PITCH_EMAIL}`}
               title={`Abrir Gmail y escribir a ${RETROVILLE_PITCH_EMAIL}`}
             >
               <Mail className="h-4 w-4" />
@@ -820,7 +820,6 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                   href={channel.href}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label={channel.ariaLabel}
                   className={`${styles.footerCard} ${styles.revealItem}`}
                   data-reveal
                   style={createRevealDelay(index)}

@@ -52,7 +52,6 @@ const contentSecurityPolicyReportOnly = [
   "script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://va.vercel-scripts.com",
   "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
   "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://vitals.vercel-insights.com https://api.stripe.com https://checkout.stripe.com https://r.stripe.com https://m.stripe.network https://api.ebay.com https://api.sandbox.ebay.com https://*.supabase.co",
-  'upgrade-insecure-requests',
 ].join('; ');
 
 const nextConfig = {
@@ -96,6 +95,15 @@ const nextConfig = {
       },
       {
         source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=2592000, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        source: '/videos/:path*',
         headers: [
           {
             key: 'Cache-Control',

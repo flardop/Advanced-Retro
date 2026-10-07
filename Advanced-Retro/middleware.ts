@@ -58,12 +58,33 @@ function isStandalonePassThroughPath(pathname: string) {
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/images/') ||
+    pathname.startsWith('/videos/') ||
+    pathname.startsWith('/downloads/') ||
     pathname.startsWith('/icons/') ||
     pathname.startsWith('/fonts/') ||
     pathname === '/favicon.ico' ||
+    pathname === '/manifest.webmanifest' ||
     pathname === '/robots.txt' ||
     pathname === '/sitemap.xml'
   );
+}
+
+function handleLegacyRetrovilleRedirect(request: NextRequest, response: NextResponse) {
+  if (isRetrovilleStandalone()) return null;
+
+  const pathname = request.nextUrl.pathname;
+  const isRetrovillePage = pathname === '/retroville' || pathname.startsWith('/retroville/');
+  const isPrivateAdminPage = pathname === '/retroville/admin' || pathname.startsWith('/retroville/admin/');
+
+  if (!isRetrovillePage || isPrivateAdminPage) return null;
+
+  const suffix = pathname.slice('/retroville'.length) || '/';
+  const url = new URL(request.nextUrl.toString());
+  url.protocol = 'https:';
+  url.hostname = 'retroville.es';
+  url.port = '';
+  url.pathname = suffix;
+  return redirectWithState(url, 308, response);
 }
 
 function handleStandalonePrefixedPath(request: NextRequest, response: NextResponse) {
@@ -233,6 +254,12 @@ function handleCanonicalHost(request: NextRequest, baseResponse?: NextResponse) 
 
 export async function middleware(request: NextRequest) {
   const sessionResponse = await refreshAuthSession(request);
+  const legacyRetrovilleRedirect = handleLegacyRetrovilleRedirect(request, sessionResponse);
+
+  if (legacyRetrovilleRedirect) {
+    return legacyRetrovilleRedirect;
+  }
+
   const prefixedRedirect = handleStandalonePrefixedPath(request, sessionResponse);
 
   if (prefixedRedirect) {
