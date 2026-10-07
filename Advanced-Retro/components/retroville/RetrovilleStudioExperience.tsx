@@ -341,10 +341,10 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
 
           <div className={styles.introContent}>
             <Image
-              src="/images/retroville/retroville-logo.webp"
+              src="/images/retroville/retroville-logo-lcp.webp"
               alt="Logo de Retroville"
-              width={1536}
-              height={1023}
+              width={640}
+              height={427}
               sizes="(max-width: 768px) 300px, 440px"
               className={styles.introLogo}
               priority
@@ -364,10 +364,10 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               <div className={styles.topbarPrimary}>
                 <div className={styles.topbarBrand}>
                   <Image
-                    src="/images/retroville/retroville-logo.webp"
+                    src="/images/retroville/retroville-logo-lcp.webp"
                     alt="Logo pequeño de Retroville"
-                    width={160}
-                    height={107}
+                    width={640}
+                    height={427}
                     sizes="84px"
                     className={styles.topbarBrandLogo}
                   />
