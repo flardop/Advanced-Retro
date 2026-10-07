@@ -63,6 +63,9 @@ function isStandalonePassThroughPath(pathname: string) {
     pathname.startsWith('/icons/') ||
     pathname.startsWith('/fonts/') ||
     pathname === '/favicon.ico' ||
+    pathname === '/favicon.svg' ||
+    pathname === '/favicon.png' ||
+    pathname === '/apple-touch-icon.png' ||
     pathname === '/manifest.webmanifest' ||
     pathname === '/robots.txt' ||
     pathname === '/sitemap.xml'
