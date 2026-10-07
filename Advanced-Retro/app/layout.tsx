@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import '../styles/globals.css';
 import '../styles/retroville.css';
 import '../styles/z-index.css';
-import { JetBrains_Mono, Manrope, Sora } from 'next/font/google';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import GlobalPageTranslator from '@/components/GlobalPageTranslator';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
@@ -10,6 +9,7 @@ import StructuredData from '@/components/StructuredData';
 import StoreChromeShell from '@/components/StoreChromeShell';
 import { absoluteUrl, getSiteUrl } from '@/lib/siteConfig';
 import { SEO_BASE_KEYWORDS, SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE } from '@/lib/seo';
+import { siteBodyFont, siteDisplayFont, siteMonoFont } from '@/lib/siteFonts';
 import {
   LEGAL_CITY,
   LEGAL_COUNTRY,
@@ -28,23 +28,9 @@ const socialProfiles = String(process.env.NEXT_PUBLIC_SOCIAL_PROFILES || '')
   .map((value) => value.trim())
   .filter(Boolean);
 
-const displayFont = Sora({
-  subsets: ['latin'],
-  weight: ['600', '700', '800'],
-  variable: '--font-display',
-});
-
-const bodyFont = Manrope({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-body',
-});
-
-const monoFont = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['500', '700'],
-  variable: '--font-mono',
-});
+const displayFont = siteDisplayFont;
+const bodyFont = siteBodyFont;
+const monoFont = siteMonoFont;
 
 export const metadata: Metadata = {
   title: {

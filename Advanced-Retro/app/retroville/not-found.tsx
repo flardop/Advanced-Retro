@@ -1,10 +1,14 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { Anton, DM_Sans, Space_Mono } from 'next/font/google';
+import {
+  retrovilleBodyFont,
+  retrovilleDisplayFont,
+  retrovilleMonoFont,
+} from '@/lib/retroville/fonts';
 
-const displayFont = Anton({ subsets: ['latin'], weight: '400' });
-const bodyFont = DM_Sans({ subsets: ['latin'] });
-const monoFont = Space_Mono({ subsets: ['latin'], weight: ['400', '700'] });
+const displayFont = retrovilleDisplayFont;
+const bodyFont = retrovilleBodyFont;
+const monoFont = retrovilleMonoFont;
 
 export default function RetrovilleNotFound() {
   return (

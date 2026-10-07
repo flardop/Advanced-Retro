@@ -17,11 +17,11 @@ import {
   Rocket,
   Sparkles,
 } from 'lucide-react';
-import { Bebas_Neue, DM_Sans } from 'next/font/google';
 import styles from './creator.module.css';
+import { retrovilleBodyFont, retrovilleDisplayFont } from '@/lib/retroville/fonts';
 
-const displayFont = Bebas_Neue({ subsets: ['latin'], weight: '400' });
-const bodyFont = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '700'] });
+const displayFont = retrovilleDisplayFont;
+const bodyFont = retrovilleBodyFont;
 
 const heroName = 'JOEL RIVERA RODRIGUEZ';
 const scrambleAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

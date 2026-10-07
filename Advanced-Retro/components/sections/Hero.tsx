@@ -3,13 +3,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
-import { Bebas_Neue } from 'next/font/google';
 import { useLocale } from '@/components/LocaleProvider';
+import { retrovilleDisplayFont } from '@/lib/retroville/fonts';
 
-const heroDisplay = Bebas_Neue({
-  subsets: ['latin'],
-  weight: '400',
-});
+const heroDisplay = retrovilleDisplayFont;
 
 const quickLinks = [
   { label: 'Game Boy', href: '/tienda/game-boy' },
