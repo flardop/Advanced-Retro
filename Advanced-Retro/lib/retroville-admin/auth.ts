@@ -41,7 +41,8 @@ export function getRetrovilleAdminCookieOptions() {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax' as const,
-    path: '/retroville/admin',
+    // Admin pages and their API routes live under different prefixes.
+    path: '/',
     maxAge: RETROVILLE_ADMIN_SESSION_MAX_AGE_SECONDS,
   };
 }

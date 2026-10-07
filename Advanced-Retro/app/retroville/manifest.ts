@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { retrovillePublicPath } from '@/lib/siteConfig';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -6,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'Retroville',
     description:
       'Serie animada original ambientada en una ciudad construida con hardware abandonado, humor oscuro y worldbuilding propio.',
-    start_url: '/retroville',
+    start_url: retrovillePublicPath('/retroville'),
     display: 'standalone',
     background_color: '#06070d',
     theme_color: '#06070d',

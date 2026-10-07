@@ -6,6 +6,7 @@ import {
   RETROVILLE_ADMIN_HOME_PATH,
   RETROVILLE_ADMIN_LOGIN_PATH,
 } from '@/lib/retroville-admin/constants';
+import { isRetrovilleStandalone, retrovillePublicPath } from '@/lib/siteConfig';
 
 const isProduction =
   process.env.VERCEL_ENV === 'production' || process.env.ENFORCE_CANONICAL_HOST === 'true';
@@ -41,11 +42,48 @@ function applyNoIndexHeaderIfNeeded(response: NextResponse, request: NextRequest
 }
 
 function isAdminRoute(pathname: string) {
+  if (isRetrovilleStandalone() && (pathname === '/admin' || pathname.startsWith('/admin/'))) {
+    return false;
+  }
   return pathname === '/admin' || pathname.startsWith('/admin/');
 }
 
 function isRetrovilleAdminRoute(pathname: string) {
-  return pathname === '/retroville/admin' || pathname.startsWith('/retroville/admin/');
+  const publicAdminPath = retrovillePublicPath('/retroville/admin');
+  return pathname === publicAdminPath || pathname.startsWith(`${publicAdminPath}/`);
+}
+
+function isStandalonePassThroughPath(pathname: string) {
+  return (
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/images/') ||
+    pathname.startsWith('/icons/') ||
+    pathname.startsWith('/fonts/') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml'
+  );
+}
+
+function handleStandalonePrefixedPath(request: NextRequest, response: NextResponse) {
+  if (!isRetrovilleStandalone()) return null;
+  const pathname = request.nextUrl.pathname;
+  if (pathname !== '/retroville' && !pathname.startsWith('/retroville/')) return null;
+
+  const url = request.nextUrl.clone();
+  url.pathname = retrovillePublicPath(pathname);
+  return redirectWithState(url, 308, response);
+}
+
+function rewriteStandaloneRetroville(request: NextRequest, response: NextResponse) {
+  if (!isRetrovilleStandalone() || isStandalonePassThroughPath(request.nextUrl.pathname)) {
+    return response;
+  }
+
+  const url = request.nextUrl.clone();
+  url.pathname = request.nextUrl.pathname === '/' ? '/retroville' : `/retroville${request.nextUrl.pathname}`;
+  return copyResponseState(response, NextResponse.rewrite(url));
 }
 
 function copyResponseState(source: NextResponse, target: NextResponse) {
@@ -141,19 +179,21 @@ async function handleRetrovilleAdminAccess(request: NextRequest, response: NextR
     return null;
   }
 
-  const isAuthEntryRoute = pathname === RETROVILLE_ADMIN_HOME_PATH || pathname === RETROVILLE_ADMIN_LOGIN_PATH;
+  const adminHomePath = retrovillePublicPath(RETROVILLE_ADMIN_HOME_PATH);
+  const adminLoginPath = retrovillePublicPath(RETROVILLE_ADMIN_LOGIN_PATH);
+  const isAuthEntryRoute = pathname === adminHomePath || pathname === adminLoginPath;
   const sessionCookie = request.cookies.get(RETROVILLE_ADMIN_COOKIE_NAME)?.value;
 
   if (!sessionCookie && !isAuthEntryRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = RETROVILLE_ADMIN_HOME_PATH;
+    url.pathname = adminHomePath;
     url.searchParams.set('redirectedFrom', pathname);
     return redirectWithState(url, 307, response);
   }
 
-  if (pathname === RETROVILLE_ADMIN_LOGIN_PATH) {
+  if (pathname === adminLoginPath) {
     const url = request.nextUrl.clone();
-    url.pathname = RETROVILLE_ADMIN_HOME_PATH;
+    url.pathname = adminHomePath;
     return redirectWithState(url, 307, response);
   }
 
@@ -193,6 +233,12 @@ function handleCanonicalHost(request: NextRequest, baseResponse?: NextResponse) 
 
 export async function middleware(request: NextRequest) {
   const sessionResponse = await refreshAuthSession(request);
+  const prefixedRedirect = handleStandalonePrefixedPath(request, sessionResponse);
+
+  if (prefixedRedirect) {
+    return prefixedRedirect;
+  }
+
   const retrovilleAdminResponse = await handleRetrovilleAdminAccess(request, sessionResponse);
 
   if (retrovilleAdminResponse && retrovilleAdminResponse.headers.has('location')) {
@@ -205,7 +251,16 @@ export async function middleware(request: NextRequest) {
     return adminResponse;
   }
 
-  return handleCanonicalHost(request, adminResponse || retrovilleAdminResponse || sessionResponse);
+  const canonicalResponse = handleCanonicalHost(
+    request,
+    adminResponse || retrovilleAdminResponse || sessionResponse,
+  );
+
+  if (canonicalResponse.headers.has('location')) {
+    return canonicalResponse;
+  }
+
+  return rewriteStandaloneRetroville(request, canonicalResponse);
 }
 
 export const config = {

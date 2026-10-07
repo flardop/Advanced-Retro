@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import RetrovilleShellClient from '@/components/retroville/RetrovilleShellClient';
 import { RETROVILLE_GOOGLE_SITE_VERIFICATION } from '@/app/retroville/shared';
+import { retrovillePublicPath } from '@/lib/siteConfig';
 
 export const metadata: Metadata = {
   category: 'entertainment',
-  manifest: '/retroville/manifest.webmanifest',
+  manifest: retrovillePublicPath('/retroville/manifest.webmanifest'),
   verification: {
     google: RETROVILLE_GOOGLE_SITE_VERIFICATION,
   },

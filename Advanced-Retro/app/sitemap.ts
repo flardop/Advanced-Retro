@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getSiteUrl } from '@/lib/siteConfig';
+import { getSiteUrl, isRetrovilleStandalone, retrovillePublicPath } from '@/lib/siteConfig';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getProductHref } from '@/lib/productUrl';
 import { BLOG_POSTS } from '@/lib/blogPosts';
@@ -31,6 +31,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = getSiteUrl();
   const now = new Date();
   const retrovilleRegistry = await getRetrovillePageRegistry();
+
+  if (isRetrovilleStandalone()) {
+    return retrovilleRegistry
+      .filter((entry) => isRetrovillePageInSitemap(entry.path))
+      .map((entry) => ({
+        url: `${siteUrl}${retrovillePublicPath(entry.path)}`,
+        lastModified: entry.lastModified ? new Date(entry.lastModified) : now,
+        changeFrequency: entry.path === '/retroville' ? 'daily' : 'weekly',
+        priority: entry.path === '/retroville' ? 1 : entry.path === '/retroville/sketches' ? 0.9 : 0.86,
+      }));
+  }
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
     url: `${siteUrl}${path}`,

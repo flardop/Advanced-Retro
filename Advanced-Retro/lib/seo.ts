@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { absoluteUrl } from '@/lib/siteConfig';
+import { absoluteUrl, retrovillePublicPath } from '@/lib/siteConfig';
 
 // Central SEO copy. Edita estos textos para ajustar posicionamiento sin tocar lógica.
 export const SEO_BRAND_NAME = 'AdvancedRetro.es';
@@ -119,7 +119,7 @@ type BuildPageMetadataInput = {
 
 export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
   const image = input.image || SEO_DEFAULT_IMAGE;
-  const canonicalPath = input.path.startsWith('/') ? input.path : `/${input.path}`;
+  const canonicalPath = retrovillePublicPath(input.path);
   const noIndex = Boolean(input.noIndex);
   const type = input.type || 'website';
   const title = clampText(stripBrandFromTitle(input.title), TITLE_MAX);

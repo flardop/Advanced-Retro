@@ -47,8 +47,11 @@ type AudienceProfile = {
 };
 
 const EVENT_TITLE = 'Primer reveal publico de Retroville';
-const EVENT_LOCATION = 'Online · AdvancedRetro';
-const FALLBACK_EVENT_URL = 'https://advancedretro.es/retroville';
+const EVENT_LOCATION = 'Online · Retroville';
+const FALLBACK_EVENT_URL =
+  process.env.NEXT_PUBLIC_RETROVILLE_STANDALONE === 'true'
+    ? 'https://retroville.es/'
+    : 'https://advancedretro.es/retroville';
 
 const districtCards = [
   {

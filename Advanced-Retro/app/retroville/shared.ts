@@ -384,12 +384,12 @@ export function buildRetrovilleSeriesJsonLd(input: {
     creator: {
       '@type': 'Organization',
       name: 'AdvancedRetro.es',
-      url: absoluteUrl('/'),
+      url: 'https://advancedretro.es',
     },
     author: {
       '@type': 'Organization',
       name: 'AdvancedRetro.es',
-      url: absoluteUrl('/'),
+      url: 'https://advancedretro.es',
     },
     sameAs: RETROVILLE_SOCIAL_CHANNELS.map((channel) => channel.href),
   };
