@@ -239,7 +239,7 @@ export default function DevRetrovilleAccess() {
               <Sparkles className="h-4 w-4" />
               Modo preview · acceso restringido al equipo
             </div>
-            <h2 className="text-4xl font-black leading-[0.95] text-white sm:text-6xl">El próximo gran proyecto del universo AdvancedRetro.</h2>
+            <h2 className="text-4xl font-black leading-[0.95] text-white sm:text-6xl">Una nueva serie original nacida en Retroville.</h2>
             <p className="max-w-2xl text-base leading-relaxed text-slate-300">
               Retroville será una plataforma retro nueva: una ciudad digital, un arcade online, un espacio de marketplace y un mundo narrativo donde la cultura gaming vintage deja de ser catálogo y se convierte en universo vivo.
             </p>
@@ -398,7 +398,7 @@ export default function DevRetrovilleAccess() {
         </section>
 
         <footer className="border-t border-white/10 pt-4 text-center text-xs uppercase tracking-[0.24em] text-white/40">
-          © AdvancedRetro — Retroville está en desarrollo. No compartir esta URL.
+          © Retroville - Proyecto en desarrollo. No compartir esta URL.
         </footer>
       </div>
       <style jsx global>{`

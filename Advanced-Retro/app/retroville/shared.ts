@@ -383,13 +383,13 @@ export function buildRetrovilleSeriesJsonLd(input: {
     genre: ['Animación', 'Comedia negra', 'Sci-fi retro'],
     creator: {
       '@type': 'Organization',
-      name: 'AdvancedRetro.es',
-      url: 'https://advancedretro.es',
+      name: 'Retroville',
+      url: absoluteUrl('/'),
     },
     author: {
       '@type': 'Organization',
-      name: 'AdvancedRetro.es',
-      url: 'https://advancedretro.es',
+      name: 'Retroville',
+      url: absoluteUrl('/'),
     },
     sameAs: RETROVILLE_SOCIAL_CHANNELS.map((channel) => channel.href),
   };

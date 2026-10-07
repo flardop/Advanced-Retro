@@ -58,7 +58,7 @@ function buildFaqs(launchLabel: string) {
     {
       question: '¿Quién está haciendo Retroville?',
       answer:
-        'Retroville está siendo desarrollado por AdvancedRetro como una propiedad original con personajes, masterplan urbano, materiales visuales y documentación técnica en crecimiento.',
+        'Retroville es una propiedad original con personajes, masterplan urbano, materiales visuales y documentación técnica en crecimiento.',
     },
     {
       question: '¿Qué recibo si me apunto a La Señal de Retroville?',

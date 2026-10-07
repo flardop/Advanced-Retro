@@ -48,10 +48,7 @@ type AudienceProfile = {
 
 const EVENT_TITLE = 'Primer reveal publico de Retroville';
 const EVENT_LOCATION = 'Online · Retroville';
-const FALLBACK_EVENT_URL =
-  process.env.NEXT_PUBLIC_RETROVILLE_STANDALONE === 'true'
-    ? 'https://retroville.es/'
-    : 'https://advancedretro.es/retroville';
+const FALLBACK_EVENT_URL = 'https://retroville.es/';
 
 const districtCards = [
   {
@@ -218,11 +215,11 @@ const visualDevelopmentCards = [
 
 const founderProfile = {
   name: 'Joel Rivera Rodriguez',
-  role: 'Founder of AdvancedRetro & Retroville',
+  role: 'Creator of Retroville',
   image: '/images/creator/joel-color.jpg',
   paragraphs: [
     'Hola. Soy Joel Rivera Rodriguez, apasionado del diseno web, del desarrollo de experiencias digitales y de construir universos con identidad propia.',
-    'En AdvancedRetro y Retroville no me interesa ensenar piezas bonitas sin contexto, sino demostrar como combino creatividad, criterio visual y resolucion de problemas para levantar proyectos con voz propia.',
+    'En Retroville no me interesa ensenar piezas bonitas sin contexto, sino demostrar como combino creatividad, criterio visual y resolucion de problemas para levantar un proyecto con voz propia.',
     'Retroville tambien funciona como parte de mi bio: resume lo que hago, como pienso y hacia donde quiero llevar mi trabajo cuando mezclo narrativa, diseno, producto y cultura visual.',
   ],
   highlights: ['UX/UI & Web Design', 'Developer', 'Creative Direction', 'Worldbuilding'],
@@ -230,7 +227,7 @@ const founderProfile = {
 
 const signalHashtags = [
   '#Retroville',
-  '#AdvancedRetro',
+  '#RetrovilleSeries',
   '#RetroGaming',
   '#RetroStyle',
   '#3DAnimation',
@@ -464,10 +461,10 @@ function buildIcsFile(launchIso: string, eventUrl: string) {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//AdvancedRetro//Retroville//ES',
+    'PRODID:-//Retroville//Retroville//ES',
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
-    `UID:retroville-first-reveal-${start}@advancedretro.es`,
+    `UID:retroville-first-reveal-${start}@retroville.es`,
     `DTSTAMP:${stamp}`,
     `DTSTART;VALUE=DATE:${start}`,
     `DTEND;VALUE=DATE:${end}`,
@@ -736,7 +733,7 @@ export default function RetrovilleImmersiveExperience({
           <div className={styles.overlay}>
             <div className={styles.overlayTop}>
               <div>
-                <p className={styles.eyebrow}>AdvancedRetro original series</p>
+                <p className={styles.eyebrow}>Retroville original series</p>
                 <p className={styles.signalCopy}>Ciudad procedural · Scroll cinematografico · Audio reactivo</p>
               </div>
               <button
@@ -819,7 +816,7 @@ export default function RetrovilleImmersiveExperience({
               <p className={styles.eyebrow}>Concepto</p>
               <h3 className={styles.editorialTitle}>Una landing de worldbuilding, no una tienda.</h3>
               <p className={styles.editorialLead}>
-                Retroville es una serie animada original creada dentro del universo AdvancedRetro. La ciudad esta formada por cartuchos, consolas, perifericos y restos de hardware olvidado que vuelven a encenderse con humor oscuro, barrio y caos social.
+                Retroville es una serie animada original con identidad propia. La ciudad esta formada por cartuchos, consolas, perifericos y restos de hardware olvidado que vuelven a encenderse con humor oscuro, barrio y caos social.
               </p>
               <p className={styles.cardBody}>
                 Lejos de parecer una web generica de gaming, la entrada tiene que sentirse como una presentacion visual para fans, colaboradores o estudios: ciudad viva, tono adulto y personajes que ya parecen existir fuera de pantalla.

@@ -45,7 +45,7 @@ const copyBlocks = [
   {
     title: 'Descripcion media',
     body:
-      'Retroville es una serie animada original creada dentro del universo AdvancedRetro. La historia transcurre en una ciudad formada por cartuchos, consolas, periféricos y restos de hardware olvidado. Sus barrios, vehículos y edificios nacen de referencias reales del mundo gaming y se convierten en arquitectura, sistemas sociales y humor visual.\n\nEl reparto está liderado por NOX, Luna y Button Crew, y el tono combina comedia negra, vida de barrio, nostalgia tecnológica y caos social. Retroville está desarrollado como una propiedad con personajes, masterplan urbano, sketchbook activo y materiales de temporada en evolución.',
+      'Retroville es una serie animada original con identidad propia. La historia transcurre en una ciudad formada por cartuchos, consolas, periféricos y restos de hardware olvidado. Sus barrios, vehículos y edificios nacen de referencias reales del mundo gaming y se convierten en arquitectura, sistemas sociales y humor visual.\n\nEl reparto está liderado por NOX, Luna y Button Crew, y el tono combina comedia negra, vida de barrio, nostalgia tecnológica y caos social. Retroville está desarrollado como una propiedad con personajes, masterplan urbano, sketchbook activo y materiales de temporada en evolución.',
   },
   {
     title: 'Descripcion larga',
@@ -121,7 +121,7 @@ function buildFactSheet(launchLabel: string) {
     ['Estado', 'En desarrollo y presentacion activa'],
     ['Ventana publica', launchLabel],
     ['Universo', '14 personajes principales + ciudad en expansion'],
-    ['Creador', 'AdvancedRetro'],
+    ['Creador', 'Retroville'],
   ] as const;
 }
 

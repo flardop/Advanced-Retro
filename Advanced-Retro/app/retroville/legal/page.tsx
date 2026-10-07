@@ -93,7 +93,7 @@ export default function RetrovilleLegalPage() {
                 Protección del universo Retroville
               </h1>
               <p className="mt-7 max-w-3xl text-lg leading-9 text-white/68">
-                Retroville es una serie y universo narrativo original creado dentro del ecosistema AdvancedRetro. Este aviso resume de forma clara qué materiales están protegidos, qué usos no están permitidos y cómo solicitar permiso para colaboraciones, prensa o licencias.
+                Retroville es una serie y un universo narrativo original con identidad propia. Este aviso resume de forma clara qué materiales están protegidos, qué usos no están permitidos y cómo solicitar permiso para colaboraciones, prensa o licencias.
               </p>
             </div>
 
@@ -116,7 +116,7 @@ export default function RetrovilleLegalPage() {
           <article className="rounded-[2rem] border border-white/10 bg-[#0d0d16] p-6 sm:p-8">
             <h2 className={`${displayFont.className} text-4xl uppercase tracking-[0.03em]`}>Titularidad</h2>
             <p className="mt-5 text-base leading-8 text-white/64">
-              Los personajes, diseños, nombres, ilustraciones, bocetos, renders, textos, conceptos, mundo narrativo y materiales asociados a Retroville pertenecen a sus creadores y a AdvancedRetro, salvo que se indique expresamente lo contrario. Su publicación online no supone cesión de derechos ni licencia automática de uso.
+              Los personajes, diseños, nombres, ilustraciones, bocetos, renders, textos, conceptos, mundo narrativo y materiales asociados a Retroville pertenecen a sus creadores, salvo que se indique expresamente lo contrario. Su publicación online no supone cesión de derechos ni licencia automática de uso.
             </p>
           </article>
 

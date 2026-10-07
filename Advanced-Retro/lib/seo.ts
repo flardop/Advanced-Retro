@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { absoluteUrl, retrovillePublicPath } from '@/lib/siteConfig';
+import { absoluteUrl, isRetrovilleStandalone, retrovillePublicPath } from '@/lib/siteConfig';
 
 // Central SEO copy. Edita estos textos para ajustar posicionamiento sin tocar lógica.
 export const SEO_BRAND_NAME = 'AdvancedRetro.es';
@@ -118,14 +118,17 @@ type BuildPageMetadataInput = {
 };
 
 export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
-  const image = input.image || SEO_DEFAULT_IMAGE;
+  const isStandaloneRetrovillePage =
+    isRetrovilleStandalone() &&
+    (input.path === '/retroville' || input.path.startsWith('/retroville/'));
+  const image = input.image || (isStandaloneRetrovillePage ? '/images/retroville/retroville-logo.webp' : SEO_DEFAULT_IMAGE);
   const canonicalPath = retrovillePublicPath(input.path);
   const noIndex = Boolean(input.noIndex);
   const type = input.type || 'website';
   const title = clampText(stripBrandFromTitle(input.title), TITLE_MAX);
   const description = clampText(input.description, DESCRIPTION_MAX);
   const keywords = uniqueKeywords([
-    ...(input.inheritBaseKeywords === false ? [] : SEO_BASE_KEYWORDS),
+    ...(input.inheritBaseKeywords === false || isStandaloneRetrovillePage ? [] : SEO_BASE_KEYWORDS),
     ...(input.keywords || []),
   ]);
 
@@ -168,7 +171,7 @@ export function buildPageMetadata(input: BuildPageMetadataInput): Metadata {
       title,
       description,
       url: canonicalPath,
-      siteName: SEO_BRAND_NAME,
+      siteName: isStandaloneRetrovillePage ? 'Retroville' : SEO_BRAND_NAME,
       type,
       locale: 'es_ES',
       images: [

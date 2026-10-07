@@ -7,7 +7,7 @@ import GlobalPageTranslator from '@/components/GlobalPageTranslator';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
 import StructuredData from '@/components/StructuredData';
 import StoreChromeShell from '@/components/StoreChromeShell';
-import { absoluteUrl, getSiteUrl } from '@/lib/siteConfig';
+import { absoluteUrl, getSiteUrl, isRetrovilleStandalone } from '@/lib/siteConfig';
 import { SEO_BASE_KEYWORDS, SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE } from '@/lib/seo';
 import { siteBodyFont, siteDisplayFont, siteMonoFont } from '@/lib/siteFonts';
 import {
@@ -19,6 +19,7 @@ import {
 } from '@/lib/legal';
 
 const siteUrl = getSiteUrl();
+const retrovilleStandalone = isRetrovilleStandalone();
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 const bingVerification = process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION;
 const contactEmail = PUBLIC_SUPPORT_EMAIL;
@@ -32,7 +33,7 @@ const displayFont = siteDisplayFont;
 const bodyFont = siteBodyFont;
 const monoFont = siteMonoFont;
 
-export const metadata: Metadata = {
+const storeMetadata: Metadata = {
   title: {
     default: SEO_DEFAULT_TITLE,
     template: '%s | AdvancedRetro.es',
@@ -118,6 +119,88 @@ export const metadata: Metadata = {
   },
 };
 
+const retrovilleMetadata: Metadata = {
+  title: {
+    default: 'Retroville | Serie animada original',
+    template: '%s | Retroville',
+  },
+  description:
+    'Retroville es una serie animada original con personajes, worldbuilding, episodios y materiales de presentación.',
+  metadataBase: new URL(siteUrl),
+  alternates: {
+    canonical: '/',
+    languages: {
+      'es-ES': '/',
+      'x-default': '/',
+    },
+  },
+  creator: 'Retroville',
+  publisher: 'Retroville',
+  applicationName: 'Retroville',
+  manifest: '/manifest.webmanifest',
+  category: 'entertainment',
+  keywords: [
+    'Retroville',
+    'serie animada original',
+    'animación',
+    'comedia negra',
+    'ciencia ficción retro',
+    'worldbuilding',
+  ],
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: '/icons/retroville/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/retroville/favicon-64.png', sizes: '64x64', type: 'image/png' },
+    ],
+    apple: '/icons/retroville/apple-touch-icon.png',
+    shortcut: '/icons/retroville/favicon-32.png',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
+  openGraph: {
+    title: 'Retroville | Serie animada original',
+    description:
+      'Una ciudad donde el hardware olvidado sigue vivo entre humor oscuro, barrio y caos social.',
+    url: siteUrl,
+    siteName: 'Retroville',
+    type: 'website',
+    locale: 'es_ES',
+    images: [
+      {
+        url: absoluteUrl('/images/retroville/retroville-cast-presentation.png'),
+        width: 1200,
+        height: 630,
+        alt: 'Retroville',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Retroville | Serie animada original',
+    description:
+      'Una ciudad donde el hardware olvidado sigue vivo entre humor oscuro, barrio y caos social.',
+    images: [absoluteUrl('/images/retroville/retroville-cast-presentation.png')],
+  },
+};
+
+export const metadata: Metadata = retrovilleStandalone
+  ? retrovilleMetadata
+  : storeMetadata;
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -125,27 +208,33 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const brandName = retrovilleStandalone ? 'Retroville' : 'AdvancedRetro.es';
+  const brandLogo = retrovilleStandalone
+    ? absoluteUrl('/images/retroville/retroville-logo.webp')
+    : absoluteUrl('/logo.png');
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'AdvancedRetro.es',
+    name: brandName,
     url: siteUrl,
-    logo: absoluteUrl('/logo.png'),
-    email: contactEmail,
-    telephone: contactPhone || undefined,
-    sameAs: socialProfiles,
+    logo: brandLogo,
+    email: retrovilleStandalone ? undefined : contactEmail,
+    telephone: retrovilleStandalone ? undefined : contactPhone || undefined,
+    sameAs: retrovilleStandalone ? undefined : socialProfiles,
   };
 
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'AdvancedRetro.es',
+    name: brandName,
     url: siteUrl,
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: `${siteUrl}/tienda?q={search_term_string}`,
-      'query-input': 'required name=search_term_string',
-    },
+    potentialAction: retrovilleStandalone
+      ? undefined
+      : {
+          '@type': 'SearchAction',
+          target: `${siteUrl}/tienda?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
   };
 
   const onlineStoreSchema = {
@@ -200,6 +289,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     },
   };
 
+  const structuredData = retrovilleStandalone
+    ? [organizationSchema, websiteSchema]
+    : [organizationSchema, websiteSchema, onlineStoreSchema, localBusinessSchema];
+
   return (
     <html lang="es" data-site-theme="steam-market" className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}>
       <body className="font-body min-h-screen flex flex-col overflow-x-hidden">
@@ -207,7 +300,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LocaleProvider>
             <StructuredData
               id="schema-org"
-              data={[organizationSchema, websiteSchema, onlineStoreSchema, localBusinessSchema]}
+              data={structuredData}
             />
             <GlobalPageTranslator />
             <StoreChromeShell>{children}</StoreChromeShell>

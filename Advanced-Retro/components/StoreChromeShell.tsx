@@ -26,9 +26,12 @@ function isStandalonePath(pathname: string) {
   );
 }
 
+const isRetrovilleStandaloneBuild =
+  process.env.NEXT_PUBLIC_RETROVILLE_STANDALONE === 'true';
+
 export default function StoreChromeShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '/';
-  const standalone = isStandalonePath(pathname);
+  const standalone = isRetrovilleStandaloneBuild || isStandalonePath(pathname);
 
   if (standalone) {
     return (

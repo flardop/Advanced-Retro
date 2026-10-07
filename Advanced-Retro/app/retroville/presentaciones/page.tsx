@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Presentaciones de Retroville | Pitch oficial y reveal del universo',
   description:
-    'Accede a la presentación oficial de Retroville: pitch actual, personajes, worldbuilding, newsletter y materiales base del universo original de AdvancedRetro.',
+    'Accede a la presentación oficial de Retroville: pitch actual, personajes, worldbuilding, newsletter y materiales base de su universo original.',
   path: '/retroville/presentaciones',
   category: 'entertainment',
   inheritBaseKeywords: false,
@@ -26,7 +26,7 @@ export const metadata: Metadata = buildPageMetadata({
     'retroville serie animada',
     'reveal retroville',
     'universo retroville',
-    'advancedretro pitch',
+    'retroville pitch',
   ],
   image: RETROVILLE_SEO_IMAGE,
 });

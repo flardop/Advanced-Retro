@@ -4,10 +4,7 @@ import { CalendarDays, Download } from 'lucide-react';
 import { useMemo } from 'react';
 import RetrovilleWaitlistForm from '@/components/retroville/RetrovilleWaitlistForm';
 
-const FALLBACK_EVENT_URL =
-  process.env.NEXT_PUBLIC_RETROVILLE_STANDALONE === 'true'
-    ? 'https://retroville.es/'
-    : 'https://advancedretro.es/retroville';
+const FALLBACK_EVENT_URL = 'https://retroville.es/';
 const EVENT_TITLE = 'Primer reveal público de Retroville';
 const EVENT_LOCATION = 'Online · Retroville';
 
@@ -62,7 +59,7 @@ function buildIcsFile(launchIso: string, eventUrl: string) {
     'PRODID:-//Retroville//Launch//ES',
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
-    `UID:retroville-first-reveal-${start}@advancedretro.es`,
+    `UID:retroville-first-reveal-${start}@retroville.es`,
     `DTSTAMP:${stamp}`,
     `DTSTART;VALUE=DATE:${start}`,
     `DTEND;VALUE=DATE:${end}`,

@@ -397,12 +397,12 @@ export default function RetrovilleExperience({
         <div className={styles.heroPortal} style={{ opacity: 0.34 + heroProgress * 0.6 }} />
 
         <div className="relative z-10 flex items-center justify-between gap-4 border-b border-white/6 pb-5">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-cyan)]">Universo original de AdvancedRetro</p>
+          <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--rv-cyan)]">Universo original de Retroville</p>
           <Link
             href="/"
             className="inline-flex min-h-[44px] items-center rounded-full border border-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/72 transition hover:border-white/20 hover:bg-white/[0.04] hover:text-white"
           >
-            Volver a AdvancedRetro
+            Volver a Retroville
           </Link>
         </div>
 
@@ -1051,7 +1051,7 @@ export default function RetrovilleExperience({
               />
             </div>
             <div className="mt-12 border-t border-white/8 pt-6 text-sm text-[var(--rv-text-dim)]">
-              <p>© AdvancedRetro · Retroville está en desarrollo.</p>
+              <p>© Retroville · Serie original en desarrollo.</p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                 {RETROVILLE_SOCIAL_CHANNELS.map((social) => (
                   <a
@@ -1088,7 +1088,7 @@ export default function RetrovilleExperience({
                 </Link>
               </div>
               <Link href="/" className="mt-3 inline-flex text-white transition hover:text-[var(--rv-green)]">
-                ← Volver a AdvancedRetro
+                ← Volver a Retroville
               </Link>
             </div>
           </div>

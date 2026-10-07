@@ -15,7 +15,7 @@ import styles from './sketches.module.css';
 export const metadata: Metadata = buildPageMetadata({
   title: 'Sketchbook de Retroville | Proceso vivo, mapas y concept art',
   description:
-    'Archivo visual vivo de Retroville con sketches a lapiz, tableros de traduccion, mapas de ciudad y hojas de proceso del universo original de AdvancedRetro.',
+    'Archivo visual vivo de Retroville con sketches a lapiz, tableros de traduccion, mapas de ciudad y hojas de proceso de su universo original.',
   path: '/retroville/sketches',
   category: 'entertainment',
   inheritBaseKeywords: false,
@@ -27,7 +27,7 @@ export const metadata: Metadata = buildPageMetadata({
     'retroville mapas',
     'retroville concept art',
     'retroville arquitectura',
-    'advancedretro sketches',
+    'retroville sketches',
   ],
   image: RETROVILLE_SEO_IMAGE,
 });

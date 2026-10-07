@@ -51,7 +51,7 @@ export default function RetrovilleNotFound() {
               Ver sketchbook
             </Link>
             <Link href="/" className="mt-2 inline-flex items-center gap-2 text-sm text-white/62 transition hover:text-[#00ff88]">
-              <ArrowLeft className="h-4 w-4" /> Volver a AdvancedRetro
+              <ArrowLeft className="h-4 w-4" /> Volver a Retroville
             </Link>
           </div>
         </div>

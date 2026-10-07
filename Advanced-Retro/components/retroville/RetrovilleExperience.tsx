@@ -23,7 +23,7 @@ function RetrovilleLoadingShell({ launchLabel }: { launchLabel: string }) {
     >
       <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center gap-6 px-6 py-20 sm:px-10 lg:px-12">
         <div className="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.24em] text-white/58">
-          <span>AdvancedRetro original series</span>
+          <span>Retroville original series</span>
           <span className="text-[#d49a43]">{launchLabel}</span>
         </div>
 

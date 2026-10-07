@@ -135,7 +135,7 @@ export default function RetrovilleShowcaseExperience({
       <div className={styles.shell}>
         <header className={styles.topbar}>
           <div>
-            <p className={styles.topbarLabel}>Universo original de AdvancedRetro</p>
+            <p className={styles.topbarLabel}>Universo original de Retroville</p>
             <p className={styles.topbarMeta}>Serie animada en desarrollo</p>
           </div>
 
@@ -148,7 +148,7 @@ export default function RetrovilleShowcaseExperience({
           </nav>
 
           <Link href="/" className={styles.homeLink}>
-            Volver a AdvancedRetro
+            Volver a Retroville
           </Link>
         </header>
 
@@ -186,7 +186,7 @@ export default function RetrovilleShowcaseExperience({
 
             <div className={styles.heroContent}>
               <div className={styles.heroEyebrowRow}>
-                <span className={styles.eyebrow}>AdvancedRetro&apos;s original universe</span>
+                <span className={styles.eyebrow}>Retroville original universe</span>
                 <span className={styles.signalPill}>
                   <Radio className="h-3.5 w-3.5" />
                   Primer reveal {launchLabel}

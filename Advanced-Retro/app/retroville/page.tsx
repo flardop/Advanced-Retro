@@ -33,7 +33,7 @@ export const metadata: Metadata = buildPageMetadata({
     'nox retroville',
     'button crew',
     'luna retroville',
-    'advancedretro serie',
+    'retroville serie',
     'universo retroville',
     'pitch retroville',
     'serie animada original',

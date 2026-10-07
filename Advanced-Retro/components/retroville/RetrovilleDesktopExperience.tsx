@@ -764,7 +764,7 @@ export default function RetrovilleDesktopExperience({
           />
           <div className={styles.waitlistFooter}>
             <div className={styles.waitlistFooterMeta}>
-              <p>© AdvancedRetro · Retroville está en desarrollo como serie original.</p>
+              <p>© Retroville · Serie original en desarrollo.</p>
               <div className={styles.socialLinks}>
                 {RETROVILLE_SOCIAL_CHANNELS.map((social) => (
                   <a
@@ -792,7 +792,7 @@ export default function RetrovilleDesktopExperience({
               </div>
             </div>
             <Link href="/" className={styles.backHomeLink}>
-              Volver a AdvancedRetro
+              Volver a Retroville
             </Link>
           </div>
         </div>
@@ -807,10 +807,10 @@ export default function RetrovilleDesktopExperience({
         <div className={styles.scanlines} />
 
         <div className={styles.chromeBar}>
-          <p className={styles.chromeLabel}>Universo original de AdvancedRetro</p>
+          <p className={styles.chromeLabel}>Universo original de Retroville</p>
           <div className={styles.chromeActions}>
             <span className={styles.stepCounter}>{String(Math.max(activeStep, 1)).padStart(2, '0')} / {String(slideCount).padStart(2, '0')}</span>
-            <Link href="/" className={styles.chromeLink}>Volver a AdvancedRetro</Link>
+            <Link href="/" className={styles.chromeLink}>Volver a Retroville</Link>
           </div>
         </div>
 
