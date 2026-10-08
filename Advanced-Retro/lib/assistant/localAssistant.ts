@@ -38,7 +38,6 @@ export type AssistantResponsePayload = {
 type AssistantIntent =
   | 'greeting'
   | 'mystery'
-  | 'retroville'
   | 'gift'
   | 'order'
   | 'shipping'
@@ -81,7 +80,6 @@ const PRODUCT_QUERY_GENERIC_WORDS = new Set([
   'login',
   'sesion',
   'sesión',
-  'retroville',
   'recomiendame',
   'recomiéndame',
   'recomendame',
@@ -218,7 +216,6 @@ function detectIntent(text: string, productHints: AssistantProductHint[]): Assis
 
   if (/hola|buenas|hey|hello/.test(normalized)) return 'greeting';
   if (/mystery|ruleta|roulette|ticket(s)? de ruleta|tirada|spin/.test(normalized)) return 'mystery';
-  if (/retroville|serie|show|universo/.test(normalized)) return 'retroville';
   if (/regalo|gift|recomienda|recomendaci[oó]n|busco algo|sorprender/.test(normalized)) return 'gift';
   if (/ticket|soporte|support|ayuda con mi cuenta|incidencia/.test(normalized)) return 'support';
   if (/pedido|order|mi compra/.test(normalized)) return 'order';
@@ -293,11 +290,6 @@ function buildRouteSuggestions(
     case 'community':
       push('Comunidad', '/comunidad', 'Community');
       push('Blog', '/blog', 'Blog');
-      break;
-    case 'retroville':
-      push('Retroville', '/retroville');
-      push('YouTube de Retroville', 'https://www.youtube.com/@RetroVille-y9v');
-      push('Instagram de Retroville', 'https://www.instagram.com/retroville_show/');
       break;
     default:
       break;
@@ -558,7 +550,6 @@ function buildReply(params: {
     ? `\n\n${isEn ? 'I have already found a few options that fit:' : 'Ya he encontrado algunas opciones que encajan:'}\n${formatProductList(productHints, locale)}`
     : '';
   const knowledgeMystery = formatKnowledgeTopic(locale, 'mystery');
-  const knowledgeRetroville = formatKnowledgeTopic(locale, 'retroville');
   const knowledgeShipping = formatKnowledgeTopic(locale, 'shipping');
   const knowledgeReturns = formatKnowledgeTopic(locale, 'returns');
   const knowledgeMemberships = getAssistantKnowledge(locale, 'memberships');
@@ -581,8 +572,6 @@ function buildReply(params: {
     }
     case 'mystery':
       return knowledgeMystery;
-    case 'retroville':
-      return knowledgeRetroville;
     case 'gift':
       return `${isEn ? 'Yes, we can narrow it down properly.' : 'Sí, podemos afinarlo bien.'}${platform ? (isEn ? ` I already have ${platform} as the main platform.` : ` Ya tengo ${platform} como plataforma principal.`) : ''}${budgetText ? (isEn ? ` I also have a budget ${budgetText}.` : ` También tengo un presupuesto ${budgetText}.`) : ''}${facts.style === 'safe' ? (isEn ? ' Since you want something safe, I would prioritise recognisable titles or clean accessories.' : ' Como buscas algo seguro, priorizaría títulos reconocibles o accesorios limpios.') : facts.style === 'special' ? (isEn ? ' Since you want something more special, I would prioritise more collectible or characterful items.' : ' Como buscas algo más especial, priorizaría piezas con más carácter o valor coleccionable.') : platform || budgetText ? (isEn ? ' The next useful detail is whether you want something safe or something more collectible.' : ' El siguiente dato útil es si prefieres algo seguro o algo más coleccionable.') : (isEn ? ' If you tell me the platform and budget, I can refine it properly.' : ' Si me dices plataforma y presupuesto, te lo afino de verdad.')} ${facts.wantsPersonalized && personalizationLead ? personalizationLead : facts.wantsPersonalized && userContext.isLoggedIn ? (isEn ? 'I can use your favourites and recent interests to personalise the recommendation.' : 'Puedo usar tus favoritos e intereses recientes para personalizar la recomendación.') : ''}${onlyAccessoryMatches ? (isEn ? ' Right now the clean matches I am seeing are more accessory-like than “main gift” material, so I would treat them as backup options unless you specifically want protectors or storage.' : ' Ahora mismo las coincidencias más limpias que veo son más accesorio que “regalo principal”, así que las tomaría como plan B salvo que justo busques protectores o almacenaje.') : ''}${productsBlock}${bundleBlock}`.trim();
     case 'support':
@@ -628,7 +617,7 @@ function buildReply(params: {
         ? 'I did not get a clean product match yet. Tell me the platform, budget and whether you want something safe or collectible, and I will narrow it down more coherently.'
         : 'Todavía no me ha salido una coincidencia de producto limpia. Dime plataforma, presupuesto y si buscas algo seguro o más coleccionable y te lo afino con más criterio.';
     default:
-      return `${isEn ? 'I can help with products, orders, shipping, memberships, Retroville and the wider ecosystem.' : 'Puedo ayudarte con productos, pedidos, envíos, membresías, Retroville y el ecosistema general.'} ${facts.wantsPersonalized && personalizationLead ? personalizationLead : ''} ${buildAccountSnapshot(locale, userContext)}`.trim();
+      return `${isEn ? 'I can help with products, orders, shipping, memberships and the wider store ecosystem.' : 'Puedo ayudarte con productos, pedidos, envíos, membresías y el ecosistema general de la tienda.'} ${facts.wantsPersonalized && personalizationLead ? personalizationLead : ''} ${buildAccountSnapshot(locale, userContext)}`.trim();
   }
 }
 

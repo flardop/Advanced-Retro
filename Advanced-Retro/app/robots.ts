@@ -1,9 +1,8 @@
 import type { MetadataRoute } from 'next';
-import { getSiteUrl, isRetrovilleStandalone } from '@/lib/siteConfig';
+import { getSiteUrl } from '@/lib/siteConfig';
 
 export default function robots(): MetadataRoute.Robots {
   const siteUrl = getSiteUrl();
-  const standalone = isRetrovilleStandalone();
   const disallowRules = [
     '/admin',
     '/retroville/admin',
@@ -44,7 +43,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: disallowRules,
       },
     ],
-    sitemap: standalone ? `${siteUrl}/sitemap.xml` : [`${siteUrl}/sitemap.xml`, `${siteUrl}/retroville/sitemap.xml`],
+    sitemap: `${siteUrl}/sitemap.xml`,
     host: siteUrl,
   };
 }

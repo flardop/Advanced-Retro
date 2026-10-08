@@ -50,7 +50,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     benefits: [
       { label: 'Acceso a la tienda oficial y al catálogo completo' },
       { label: 'Participación básica en comunidad' },
-      { label: 'Acceso al blog y al universo Retroville' },
+      { label: 'Acceso al blog y a las guías de coleccionismo' },
       { label: '1 participación al mes en ruleta' },
       { label: 'Avisos por email de nuevos productos' },
     ],
@@ -97,7 +97,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
       { label: 'Tienda personal con productos ilimitados', emphasized: true },
       { label: 'Panel con analytics básicos de su tienda' },
       { label: 'Presentación sin branding visible de AdvancedRetro', emphasized: true },
-      { label: 'Acceso prioritario a la beta de Retroville' },
+      { label: 'Acceso prioritario a nuevas funciones y lanzamientos' },
       { label: 'Soporte directo en menos de 24h' },
     ],
   },

@@ -62,7 +62,7 @@ export default function Hero() {
             badge: 'The most exclusive retro store',
             title: 'ADVANCEDRETRO',
             subtitle:
-              'Online store from Spain for retro games, consoles and collection components. Retroville lives separately as the original universe of the project.',
+              'Online store from Spain for retro games, consoles and collection components, with real photos, visible condition and human support.',
             primaryCta: 'Explore store',
             secondaryCta: 'View Mystery Boxes',
             capsule: 'Exclusive drops',
@@ -70,14 +70,12 @@ export default function Hero() {
             shelfBody:
               'Three tiers, three different moods. Click any box to jump into the mystery flow.',
             trust: ['Real photos', 'State visible', 'Shipping from Spain', 'Human support'],
-            universeLead: 'Looking for the narrative side?',
-            universeCta: 'Explore Retroville separately',
           }
         : {
             badge: 'La tienda retro más exclusiva',
             title: 'ADVANCEDRETRO',
             subtitle:
-              'Tienda online desde España para comprar juegos retro, consolas y componentes de colección. Retroville vive aparte como universo original del proyecto.',
+              'Tienda online desde España para comprar juegos retro, consolas y componentes de colección, con fotos reales, estado visible y soporte humano.',
             primaryCta: 'Explorar tienda',
             secondaryCta: 'Ver Mystery Boxes',
             capsule: 'Drops exclusivos',
@@ -85,8 +83,6 @@ export default function Hero() {
             shelfBody:
               'Tres niveles, tres perfiles de drop. Pulsa cualquier caja para entrar al flujo mystery.',
             trust: ['Fotos reales', 'Estado visible', 'Envío desde España', 'Soporte humano'],
-            universeLead: '¿Buscas la parte narrativa?',
-            universeCta: 'Explorar Retroville aparte',
           },
     [locale]
   );
@@ -149,13 +145,6 @@ export default function Hero() {
                       {item}
                     </span>
                   ))}
-                </div>
-
-                <div className="mt-4 flex flex-col gap-2 text-sm text-slate-300 sm:flex-row sm:flex-wrap sm:items-center">
-                  <span>{copy.universeLead}</span>
-                  <Link href="/retroville" className="text-primary underline-offset-4 hover:underline">
-                    {copy.universeCta}
-                  </Link>
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-2 text-xs sm:flex sm:flex-wrap">

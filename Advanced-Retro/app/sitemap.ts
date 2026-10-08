@@ -47,33 +47,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${siteUrl}${path}`,
     lastModified: now,
     changeFrequency:
-      path === '/' || path === '/tienda' || path === '/retroville'
-        ? 'daily'
-        : path.startsWith('/retroville/')
-          ? 'weekly'
-          : 'weekly',
+      path === '/' || path === '/tienda' ? 'daily' : 'weekly',
     priority:
       path === '/'
         ? 1
         : path === '/tienda'
           ? 0.95
-          : path === '/retroville'
-            ? 0.92
-            : path.startsWith('/retroville/')
-              ? 0.84
-              : path === '/comunidad'
-                ? 0.85
-                : 0.7,
+          : path === '/comunidad'
+            ? 0.85
+            : 0.7,
   }));
-
-  const retrovilleEntries: MetadataRoute.Sitemap = retrovilleRegistry
-    .filter((entry) => isRetrovillePageInSitemap(entry.path))
-    .map((entry) => ({
-      url: `${siteUrl}${entry.path}`,
-      lastModified: entry.lastModified ? new Date(entry.lastModified) : now,
-      changeFrequency: entry.path === '/retroville' ? 'daily' : 'weekly',
-      priority: entry.path === '/retroville' ? 0.92 : entry.path === '/retroville/sketches' ? 0.86 : 0.84,
-    }));
 
   const platformEntries: MetadataRoute.Sitemap = PLATFORM_LANDING_SLUGS.map((slug) => ({
     url: `${siteUrl}/tienda/${slug}`,
@@ -98,7 +81,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   if (!supabaseAdmin) {
-    return [...staticEntries, ...retrovilleEntries, ...platformEntries, ...blogEntries, ...auctionEntries];
+    return [...staticEntries, ...platformEntries, ...blogEntries, ...auctionEntries];
   }
 
   const { data: products } = await supabaseAdmin
@@ -114,5 +97,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticEntries, ...retrovilleEntries, ...platformEntries, ...blogEntries, ...auctionEntries, ...productEntries];
+  return [...staticEntries, ...platformEntries, ...blogEntries, ...auctionEntries, ...productEntries];
 }

@@ -1,7 +1,7 @@
 {
   "es": {
     "greeting": {
-      "lead": "Puedo ayudarte con productos, pedidos, envíos, membresías, Mystery Boxes, Ruleta y Retroville.",
+      "lead": "Puedo ayudarte con productos, pedidos, envíos, membresías, Mystery Boxes y Ruleta.",
       "note": "Si quieres, también puedo orientarte según tus favoritos y tu actividad reciente en la cuenta."
     },
     "mystery": {
@@ -64,7 +64,7 @@
   },
   "en": {
     "greeting": {
-      "lead": "I can help with products, orders, shipping, memberships, Mystery Boxes, Roulette and Retroville.",
+      "lead": "I can help with products, orders, shipping, memberships, Mystery Boxes and Roulette.",
       "note": "If you want, I can also guide you using your favourites and recent account activity."
     },
     "mystery": {

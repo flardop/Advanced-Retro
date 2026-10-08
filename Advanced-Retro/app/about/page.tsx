@@ -25,9 +25,9 @@ export default function AboutPage() {
         'Es una tienda online de juegos retro, consolas y componentes de colección con foco en claridad de ficha, soporte y envío desde España.',
     },
     {
-      question: '¿Retroville es la tienda?',
+      question: '¿Cómo puedo resolver una duda antes de comprar?',
       answer:
-        'No. Retroville es el universo creativo original de la marca. La tienda sigue siendo la capa de compra, catálogo y soporte.',
+        'Puedes contactar con soporte para confirmar compatibilidad, estado o componentes incluidos antes de cerrar la compra.',
     },
     {
       question: '¿Cómo se publican los productos?',
@@ -86,11 +86,11 @@ export default function AboutPage() {
               </article>
 
               <article className="rounded-2xl border border-line bg-[rgba(10,18,30,0.58)] p-5">
-                <p className="text-xs uppercase tracking-[0.14em] text-primary">Marca</p>
-                <h2 className="mt-3 text-xl font-semibold text-text">Retroville vive aparte</h2>
+                <p className="text-xs uppercase tracking-[0.14em] text-primary">Confianza</p>
+                <h2 className="mt-3 text-xl font-semibold text-text">Compra con información clara</h2>
                 <p className="mt-3 text-sm leading-relaxed text-textMuted">
-                  Retroville es el universo narrativo original del proyecto. Sirve para construir marca
-                  y comunidad, pero no sustituye la capa de tienda ni la experiencia de compra.
+                  Cada ficha busca explicar con claridad qué incluye el producto, su estado y la ayuda
+                  disponible antes y después de realizar el pedido.
                 </p>
               </article>
             </div>
@@ -123,9 +123,6 @@ export default function AboutPage() {
                   <Link href="/contacto" className="button-secondary w-full text-center">
                     Contacto y soporte
                   </Link>
-                  <Link href="/retroville" className="button-secondary w-full text-center">
-                    Ver Retroville
-                  </Link>
                   <Link href="/creator" className="button-secondary w-full text-center">
                     Ver founder / CV
                   </Link>
@@ -153,7 +150,7 @@ export default function AboutPage() {
                   El apartado completo del founder y CV sigue existiendo dentro de AdvancedRetro. Ahí está reunida toda tu información personal y profesional: portfolio, recorrido, capacidades, historia y proyectos.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  {['UX/UI Design', 'Web Development', 'Next.js', 'Storytelling', 'Retroville', 'AdvancedRetro'].map((item) => (
+                  {['UX/UI Design', 'Web Development', 'Next.js', 'E-commerce', 'Storytelling', 'AdvancedRetro'].map((item) => (
                     <span key={item} className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-textMuted">
                       {item}
                     </span>

@@ -58,7 +58,6 @@ function NavbarContent() {
       key: 'universo',
       label: 'Universo',
       items: [
-        { href: '/retroville', label: 'Retroville', description: 'El universo narrativo original de AdvancedRetro.' },
         { href: '/blog', label: 'Blog', description: 'Guías, criterio de compra y cultura retro.' },
         { href: '/tiendas', label: 'Tiendas de la comunidad', description: 'Directorio de tiendas creadas por miembros.' },
         { href: '/crear-tienda', label: 'Crear mi tienda', description: 'Lanza tu tienda dentro del ecosistema.' },
@@ -88,7 +87,6 @@ function NavbarContent() {
       { href: '/about', label: 'Quiénes somos' },
       { href: '/creator', label: 'Founder' },
       { href: '/blog', label: 'Blog' },
-      { href: '/retroville', label: 'Retroville' },
       { href: '/contacto', label: 'Contacto' },
     ],
     []

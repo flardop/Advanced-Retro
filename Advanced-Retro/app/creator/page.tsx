@@ -6,7 +6,7 @@ import { absoluteUrl } from '@/lib/siteConfig';
 export const metadata = buildPageMetadata({
   title: 'Joel Rivera Rodriguez — Creador de AdvancedRetro',
   description:
-    'Portfolio online de Joel Rivera Rodriguez: UX/UI & Web Designer, developer y creador de AdvancedRetro.es y Retroville.',
+    'Portfolio online de Joel Rivera Rodriguez: UX/UI & Web Designer, developer y creador de AdvancedRetro.es.',
   path: '/creator',
   keywords: [
     'Joel Rivera Rodriguez',
@@ -14,7 +14,6 @@ export const metadata = buildPageMetadata({
     'web designer portfolio',
     'developer portfolio',
     'AdvancedRetro creator',
-    'Retroville',
   ],
   image: '/images/creator/joel-color.jpg',
 });
@@ -26,7 +25,7 @@ export default function CreatorPage() {
     name: 'Joel Rivera Rodriguez',
     jobTitle: 'UX/UI & Web Designer · Developer · Creator',
     description:
-      'Portfolio online de Joel Rivera Rodriguez: UX/UI & Web Designer, developer y creador de AdvancedRetro.es y Retroville.',
+      'Portfolio online de Joel Rivera Rodriguez: UX/UI & Web Designer, developer y creador de AdvancedRetro.es.',
     image: absoluteUrl('/images/creator/joel-color.jpg'),
     url: absoluteUrl('/creator'),
     email: 'mailto:pitch@advancedretro.es',

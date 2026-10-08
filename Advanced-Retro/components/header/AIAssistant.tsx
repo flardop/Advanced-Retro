@@ -20,12 +20,12 @@ const starterMessage: Message = {
   id: '0',
   role: 'assistant',
   content:
-    '¡Hola! Soy el asistente de AdvancedRetro. Puedo ayudarte a encontrar productos, orientarte con pedidos, explicarte Mystery Boxes y Ruleta o contarte qué es Retroville.',
+    '¡Hola! Soy el asistente de AdvancedRetro. Puedo ayudarte a encontrar productos, orientarte con pedidos y explicarte Mystery Boxes, Ruleta y membresías.',
   links: [
     { label: 'Tienda', href: '/tienda' },
     { label: 'Mystery Boxes', href: '/mystery-boxes' },
     { label: 'Ruleta', href: '/ruleta' },
-    { label: 'Retroville', href: '/retroville' },
+    { label: 'Membresías', href: '/memberships' },
   ],
 };
 
@@ -33,7 +33,7 @@ const quickPrompts = [
   'Quiero encontrar un regalo retro',
   'Explícame Mystery Boxes y Ruleta',
   'Necesito ayuda con un pedido',
-  'Cuéntame qué es Retroville',
+  '¿Qué ventajas tienen las membresías?',
 ] as const;
 
 function makeId() {

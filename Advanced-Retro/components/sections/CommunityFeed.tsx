@@ -44,7 +44,7 @@ export default function CommunityFeed() {
                 <span className="chip border-primary/50 text-primary">Sin anuncios de usuarios</span>
                 <span className="chip">Soporte comprador ↔ tienda</span>
                 <span className="chip">Blog y novedades</span>
-                <span className="chip">Retroville y eventos</span>
+                <span className="chip">Torneos y eventos</span>
               </div>
             </div>
 
@@ -68,7 +68,7 @@ export default function CommunityFeed() {
               {[
                 ['Leer guías y noticias', 'Contenido editorial, análisis y novedades de videojuegos retro.'],
                 ['Pedir soporte', 'Tickets privados para compras, dudas y seguimiento.'],
-                ['Seguir Retroville', 'Actualizaciones del universo narrativo y próximos lanzamientos.'],
+                ['Seguir las novedades', 'Actualizaciones de la tienda, eventos y próximos lanzamientos.'],
               ].map(([title, text]) => (
                 <div key={title} className="rounded-2xl border border-line bg-[rgba(10,18,30,0.55)] p-4">
                   <p className="font-semibold text-text">{title}</p>

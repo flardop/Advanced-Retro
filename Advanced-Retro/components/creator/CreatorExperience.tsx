@@ -136,15 +136,6 @@ const featuredProjects = [
     accent: 'from-sky-400/60 via-cyan-300/20 to-transparent',
   },
   {
-    title: 'Retroville',
-    strap: 'Serie · Worldbuilding · Dirección creativa',
-    href: '/retroville',
-    external: false,
-    body:
-      'Un universo narrativo original donde el hardware olvidado sigue vivo. Personajes, ciudad, iconografía, transporte, lore y tono de serie en construcción.',
-    accent: 'from-violet-500/60 via-fuchsia-400/20 to-transparent',
-  },
-  {
     title: 'Escritura y publicaciones',
     strap: 'Narrativa · Libros · Proyecto de largo aliento',
     href: '#contacto',
