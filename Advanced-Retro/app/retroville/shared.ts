@@ -183,11 +183,11 @@ export const RETROVILLE_SOCIAL_CHANNELS = [
     description: 'Fragmentos del universo, comentarios y señales más ligeras en formato social.',
   },
   {
-    label: 'Kickstarter',
-    href: 'https://www.kickstarter.com/profile/1318310768',
-    ariaLabel: 'Abrir Kickstarter de Retroville',
-    eyebrow: 'Apoyo futuro',
-    description: 'Punto natural para campaña, comunidad support y posibles coleccionables.',
+    label: 'Apoya el teaser en Kickstarter',
+    href: 'https://www.kickstarter.com/projects/1318310768/retroville-the-city-that-never-updated?ref=agt1xc',
+    ariaLabel: 'Apoyar el teaser de Retroville en Kickstarter',
+    eyebrow: 'Campaña activa',
+    description: 'Ayuda a financiar el teaser narrativo de NOX y las recompensas. Objetivo de 1.500 €.',
   },
 ] as const satisfies readonly RetrovilleSocialChannel[];
 
