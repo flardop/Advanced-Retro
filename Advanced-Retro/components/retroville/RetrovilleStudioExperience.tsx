@@ -30,6 +30,8 @@ import {
 } from '@/lib/retroville/fonts';
 import styles from './retroville-studio.module.css';
 
+const kickstarterUrl = 'https://www.kickstarter.com/projects/1318310768/retroville-the-city-that-never-updated?ref=agt1xc';
+
 const showcaseEpisodes = retrovilleEpisodes.slice(0, 3);
 
 const districtCards = [
@@ -350,6 +352,15 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
               priority
             />
             <p className={styles.introTagline}>Every forgotten game ends up somewhere.</p>
+            <a
+              href={kickstarterUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.primaryButton}
+              onClick={() => trackStudioAction('open_kickstarter', 'intro_gate')}
+            >
+              Apoya el teaser en Kickstarter
+            </a>
             <button type="button" className={styles.introCta} onClick={handleIntroEnter}>
               Entrar en Retroville
               <ArrowRight className="h-4 w-4" />
@@ -416,14 +427,16 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                   Press kit
                 </Link>
                 <a
-                  href="#community"
+                  href={kickstarterUrl}
+                  target="_blank"
+                  rel="noreferrer"
                   className={styles.primaryButton}
                   onClick={() => {
-                    trackStudioAction('open_reveal_register', 'topbar');
+                    trackStudioAction('open_kickstarter', 'topbar');
                     closeMobileNav();
                   }}
                 >
-                  Registrarme al reveal
+                  Apoya el teaser en Kickstarter
                 </a>
               </div>
             </div>
@@ -455,7 +468,16 @@ export default function RetrovilleStudioExperience(props: RetrovilleStudioExperi
                 que quieres activar alrededor de la serie.
               </p>
               <div className={styles.cinematicActions}>
-                <a href="#community" className={styles.cinematicButton}>
+                <a
+                  href={kickstarterUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.cinematicButton}
+                  onClick={() => trackStudioAction('open_kickstarter', 'cinematic_hero')}
+                >
+                  Apoya el teaser en Kickstarter
+                </a>
+                <a href="#community" className={styles.cinematicGhostButton}>
                   Registrarme al primer reveal
                 </a>
                 <Link
